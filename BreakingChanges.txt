@@ -1,0 +1,39 @@
+Tracking changes for all breaks since 2.0
+
+- Auth Handlers were delay populated in 2.0. They are now going to be populated in the client constructors. They are internally settable. So Test can change it. 
+
+- maxResults while listing queues in nullable now.
+
+- Table now allows query execution with a resolver against non generic query types(Dynamic Entity types).
+
+- Container, Blob, Directory, Queue and Table names are now validated at the client side.
+
+- Table now does SAS similar to queues and containers.
+
+- All header, query and generic constants are public now so people can use it when they use protocol layer.
+
+- There is now a way users can update their sastoken. This is provided by the StorageCredentials class' updateSas method.
+
+- Users now have an API that takes only the key value when they want to update their key.
+
+- Cloud*Blob now has BeginOpenRead and EndOpenRead methods to asynchronously open a stream to read from the blob.
+
+- The BlobTypeMismatch and ExtendedErrorUnavailable error strings have changed in SR.cs.
+
+- OperationContext.RequestResults does not have a setter anymore.
+
+- Renamed CloudQueue.EndBeginClear(IAsyncResult) to CloudQueue.EndClear(IAsyncResult).
+
+- StreamExtensions.WriteToSync<T>(Stream, Stream, long?, long? bool, bool, ExecutionState<T>, StreamDescriptor) now throws InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream").
+
+- StreamExtensions.WriteToAsync<T>(stream, Stream, long?, long?, bool, ExecutionState<T>, StreamDescriptor, CancellationToken token) now throws InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream").
+
+- The StorageException thrown when an operation is cancelled now includes an OperationCanceledException as its inner exception.
+
+Tracking changes for all breaks since 2.1 RTM
+
+- When DataServiceContext is used to execute table operations, response received event on OperationContext is no longer fired.
+
+- ContinuationTokens are written with an additional <ContinuationToken> element enclosing them if WriteXml() method is used - ReadXml() parser is updated to handle this, but anyone parsing their own could be affected
+
+- Only the ServiceProperties that are uploaded are changed. For example, if the user wants to just set CORS, the Logging and Metering related settings elements can be omitted and the omitted settings will be remain unchanged.
