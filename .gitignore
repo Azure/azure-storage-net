@@ -109,8 +109,10 @@ Backup*/
 UpgradeLog*.XML
 
 # NuGet
-/microsoft-azure-api/Services/Storage/Test/Unit/RT/AppPackages/
-libraries/packages
+AppPackages/
+
+# Test Results
+TestResults/
 
 # Mac development
 .DS_Store
