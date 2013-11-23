@@ -223,10 +223,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void ListTablesWithPrefixExtended()
         {
             DoListTablesWithPrefixExtended(TablePayloadFormat.Json);
-            Thread.Sleep(30000);
-            DoListTablesWithPrefixExtended(TablePayloadFormat.JsonNoMetadata);
-            Thread.Sleep(30000);
-            DoListTablesWithPrefixExtended(TablePayloadFormat.AtomPub);
         }
 
         private void DoListTablesWithPrefixExtended(TablePayloadFormat format)
