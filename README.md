@@ -49,7 +49,7 @@ For general suggestions about Windows Azure please use our [UserVoice forum](htt
 
 # Storage Client Library for .NET 4, Windows 8, and Windows Phone 8 (3.0.0.0)
 
-The Storage Client Library ships with the Windows Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. You can [read about the 2.1 release on the storage team blog post](http://blogs.msdn.com/b/windowsazurestorage/archive/2013/09/07/announcing-storage-client-library-2-1-rtm.aspx).
+The Storage Client Library ships with the Windows Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
 Please note that Windows 8 and Windows Phone 8 libraries are CTP (Community
 Technology Preview) releases.
@@ -61,8 +61,8 @@ Technology Preview) releases.
 To get the source code of the SDK via git just type:
 
 ```bash
-git clone git://github.com/WindowsAzure/azure-sdk-for-net.git
-cd azure-sdk-for-net
+git clone git://github.com/WindowsAzure/azure-storage-net.git
+cd azure-storage-net
 ```
 
 ### Via NuGet
@@ -76,7 +76,7 @@ within your project you can also have them installed by the .NET package manager
 
 ### OData
 
-This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.2.0) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
+This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.6.0) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
 
 The ODataLib libraries can be downloaded directly or referenced by your code project through NuGet.  
 
@@ -90,16 +90,16 @@ The specific ODataLib packages are:
 
 FiddlerCore is required by:
 
-- Test\Unit\FaultInjection\HttpMangler
-- Test\Unit\FaultInjection\XStoreMangler
-- Test\Unit\DotNet40
+- Test\FaultInjection\HttpMangler
+- Test\FaultInjection\AzureStoreMangler
+- Test\WindowsDesktop
 
 This dependency is not included and must be downloaded from [http://www.fiddler2.com/Fiddler/Core/](http://www.fiddler2.com/Fiddler/Core/).
 
 Once installed:
 
-- Copy `FiddlerCore.dll` `\azure-sdk-for-net\microsoft-azure-api\Services\Storage\Test\Unit\FaultInjection\Dependencies\DotNet2`
-- Copy `FiddlerCore4.dll` to `azure-sdk-for-net\microsoft-azure-api\Services\Storage\Test\Unit\FaultInjection\Dependencies\DotNet4`
+- Copy `FiddlerCore.dll` `\azure-storage-net\Test\FaultInjection\Dependencies\DotNet2`
+- Copy `FiddlerCore4.dll` to `azure-storage-net\Test\FaultInjection\Dependencies\DotNet4`
 
 ## Code Samples
 
@@ -131,71 +131,6 @@ Now, to create a table entity using the client:
 ```csharp
 CloudTable peopleTable = tableClient.GetTableReference("people");
 peopleTable.Create();
-```
-
-# Windows Azure Management Libraries
-
-Automate, configure and command your Windows Azure deployments, infrastructure and accounts with the Windows Azure Management Libraries.
-
-> *Preview:* At this time the Windows Azure Management Libraries are in the preview state as the teams gather feedback and prepare for the initial release. Please enjoy using the libraries and source in any capacity, but understand that there may be breaking changes with the 1.0 release.
-
-## Download & Install
-
-### Via Git
-
-To get the source code of the SDK via git just type:
-
-```bash
-git clone git://github.com/WindowsAzure/azure-sdk-for-net.git
-cd azure-sdk-for-net\libraries
-```
-
-### Via NuGet
-
-Official binaries are distributed by Microsoft and available using the .NET package manager [NuGet](http://www.nuget.org/).
-
-To get all of the management libraries setup in your project:
-
-`Install-Package Microsoft.WindowsAzure.Management.Libraries -IncludePrerelease`
-
-> You can also install just the management library for a service of interest. To deploy a virtual machine to the cloud, the `Microsoft.WindowsAzure.Management.Compute` package can be used, for example.
-
-### Code Samples
-
-Once a storage account has been created, the Windows Storage SDK can be used to upload .CSPKG files into the storage account. Then, the cloud service could be deployed. The code below demonstrates this functionality. 
-
-```csharp
-var blobs = CloudStorageAccount.Parse(storageConnectionString).CreateCloudBlobClient();
-
-var container = blobs.GetContainerReference("deployments");
-
-await container.CreateIfNotExistsAsync();
-
-await container.SetPermissionsAsync(
-    new BlobContainerPermissions()
-    {
-        PublicAccess = BlobContainerPublicAccessType.Container
-    });
-
-var blob = container.GetBlockBlobReference("MyCloudService.cspkg");
-
-await blob.UploadFromFileAsync("MyCloudService.cspkg", FileMode.Open);
-
-var cloudServiceName = "MyCloudService";
-
-using (ComputeManagementClient client =
-    CloudContext.Clients.CreateComputeManagementClient(Credentials))
-{
-    await client.Deployments.CreateAsync(cloudServiceName,
-        DeploymentSlot.Production,
-        new DeploymentCreateParameters
-        {
-            Name = cloudServiceName + "Prod",
-            PackageUri = blob.Uri,
-            Configuration = File.ReadAllText("MyCloudService.cscfg"),
-            StartDeployment = true
-        });
-}
 ```
 
 # Learn More
