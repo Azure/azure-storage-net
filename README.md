@@ -3,7 +3,7 @@
 The Windows Azure SDK for .NET allows you to build Windows Azure applications 
 that take advantage of scalable cloud computing resources.
 
-This repository contains the open source subset of the .NET SDK. For documentation of the 
+This repository contains the open source subset of the .NET Storage SDK. For documentation of the 
 complete SDK, please see the [Windows Azure .NET Developer Center](http://www.windowsazure.com/en-us/develop/net/).
 
 # Features
@@ -70,7 +70,12 @@ cd azure-storage-net
 To get the binaries of this library as distributed by Microsoft, ready for use
 within your project you can also have them installed by the .NET package manager [NuGet](http://www.nuget.org/).
 
+#### Desktop
 `Install-Package WindowsAzure.Storage`
+
+#### Windows 8 and Windows Phone
+`Install-Package WindowsAzure.Storage-Preview -Pre`
+`Install-Package WindowsAzure.Storage.Table-Preview -Pre`
 
 ## Dependencies
 
