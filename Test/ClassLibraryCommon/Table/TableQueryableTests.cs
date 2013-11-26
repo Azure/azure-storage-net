@@ -175,20 +175,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryableExecuteQueryGeneric()
         {
-            currentTable = tableClient.GetTableReference(GenerateRandomTableName());
-            currentTable.CreateIfNotExists();
+            CloudTable table = tableClient.GetTableReference(GenerateRandomTableName());
+            table.CreateIfNotExists();
 
             BaseEntity entity = new BaseEntity("mypk", "myrk");
             TableOperation operation = TableOperation.Insert(entity);
-            currentTable.Execute(operation);
+            table.Execute(operation);
 
-            IQueryable<BaseEntity> query = currentTable.CreateQuery<BaseEntity>().Where(x => x.PartitionKey == "mypk");
+            IQueryable<BaseEntity> query = table.CreateQuery<BaseEntity>().Where(x => x.PartitionKey == "mypk");
             foreach (BaseEntity ent in query.ToList())
             {
                 Assert.AreEqual("mypk", ent.PartitionKey);
             }
 
-            IEnumerable<BaseEntity> entities1 = GetEntities<BaseEntity>(currentTable, "mypk");
+            IEnumerable<BaseEntity> entities1 = GetEntities<BaseEntity>(table, "mypk");
             foreach (BaseEntity ent in entities1)
             {
                 Assert.AreEqual("mypk", ent.PartitionKey);
