@@ -1,26 +1,10 @@
-Tracking changes for all breaks since 2.0
-
-- Auth Handlers were delay populated in 2.0. They are now going to be populated in the client constructors. They are internally settable. So Test can change it. 
+Tracking Breaking Changes since 2.0
 
 - maxResults while listing queues in nullable now.
 
-- Table now allows query execution with a resolver against non generic query types(Dynamic Entity types).
-
-- Container, Blob, Directory, Queue and Table names are now validated at the client side.
-
-- Table now does SAS similar to queues and containers.
-
-- All header, query and generic constants are public now so people can use it when they use protocol layer.
-
-- There is now a way users can update their sastoken. This is provided by the StorageCredentials class' updateSas method.
-
-- Users now have an API that takes only the key value when they want to update their key.
-
-- Cloud*Blob now has BeginOpenRead and EndOpenRead methods to asynchronously open a stream to read from the blob.
-
 - The BlobTypeMismatch and ExtendedErrorUnavailable error strings have changed in SR.cs.
 
-- OperationContext.RequestResults does not have a setter anymore.
+- OperationContext.RequestResults does not expose a setter anymore.
 
 - Renamed CloudQueue.EndBeginClear(IAsyncResult) to CloudQueue.EndClear(IAsyncResult).
 
@@ -30,10 +14,31 @@ Tracking changes for all breaks since 2.0
 
 - The StorageException thrown when an operation is cancelled now includes an OperationCanceledException as its inner exception.
 
-Tracking changes for all breaks since 2.1 RTM
+Tracking Breaking Changes since 2.1 RTM
 
 - When DataServiceContext is used to execute table operations, response received event on OperationContext is no longer fired.
 
-- ContinuationTokens are written with an additional <ContinuationToken> element enclosing them if WriteXml() method is used - ReadXml() parser is updated to handle this, but anyone parsing their own could be affected
+- ContinuationTokens are written with an additional <ContinuationToken> element enclosing them if WriteXml() method is used - ReadXml() parser is updated to handle this.
 
-- Only the ServiceProperties that are uploaded are changed. For example, if the user wants to just set CORS, the Logging and Metering related settings elements can be omitted and the omitted settings will be remain unchanged.
+- Only the ServiceProperties that are provided are changed. In previous REST versions ommitting a properties section such as Metrics would result in those settings being removed by the service.
+
+- Please refer to the blog post about Breaking Changes on the server side in the new storage protocol version(2013-08-15) here: 
+http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/23/windows-azure-storage-breaking-changes-for-windows-azure-tables-november-2013.aspx.
+
+Additionally, the following error messages have changed in the Table Service:
+
+Entity over 1MB – 
+
+Error message previously - The entity is larger than allowed by the Table Service.
+Error message now - The entity is larger than the maximum allowed size (1MB).
+
+Batch over 4MB - 
+
+Error message previously - The content length for the requested operation has exceeded the limit.
+Error message now - The content length for the requested operation has exceeded the limit (4MB).
+
+Property name over 255 chars –
+
+Error message previously – The property name exceeds the maximum allowed length.
+Error message now - The property name exceeds the maximum allowed length (255).
+

@@ -361,7 +361,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             {
                 reader.DateParseHandling = DateParseHandling.None;
                 JObject dataSet = JObject.Load(reader);
-                JArray dataTable = (JArray)dataSet["value"];
+                JToken dataTable = dataSet["value"];
 
                 foreach (JToken token in dataTable)
                 {

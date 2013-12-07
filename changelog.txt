@@ -158,3 +158,23 @@ Issues fixed in 2.1.0.2 :
 Issues fixed in 2.1.0.3 :
 
   - All: Registered wait handles are unregistered sooner for more efficient GC.
+
+Issues fixed in 2.1.0.4 :
+ 
+  - Tables: Do not send the cast operator in the table query filter string.
+
+Issues fixed in 3.0.0.0 :
+
+  - All: Support for 2013-08-15 REST version - see here for additional details: http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/27/windows-azure-storage-release-introducing-cors-json-minute-metrics-and-more.aspx.
+  - All: Suppress warning for FiddlerCore EntensionAttribute conflict.
+  - Blobs: Added support for XML serialize/deserialize of BlobContinuationToken.
+  - Blobs: Added ParallelOperationThreadCount and SingleBlobUploadThresholdInBytes to BlobRequestOptions.
+  - Queues: QueueContinuationToken is moved to Queue namespace(Microsoft.WindowsAzure.Storage.Queue).
+  - Tables: Fixed GetHashCode() in EntityProperty to return equal values for binary types.
+  - Tables (RT): Fixed error parsing for tables.
+
+Issues fixed in 3.0.1.0 :
+
+  - Tables: Added an explicit reference to Microsoft.Data.Services.Client in the Nuget package.
+  - Tables: Fixed an issue caused by a Json .NET bug that resulted in an error being thrown while parsing a table query response. More details on the bug can be found here: http://james.newtonking.com/archive/2013/11/29/fixing-jarray-getenumerator-method-not-found-bug
+
