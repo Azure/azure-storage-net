@@ -640,7 +640,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire the lease while in available state, make idempotent call
             await SetAvailableStateAsync(leasedBlob);
+            leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             leaseId = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
+            Assert.IsNotNull(leasedBlob.Properties.ETag);
             leaseId2 = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
             Assert.AreEqual(leaseId, leaseId2);
 
@@ -731,7 +733,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Renew infinite lease
             leaseId = await SetLeasedStateAsync(leasedBlob, null /* infinite lease */);
+            leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
+            Assert.IsNotNull(leasedBlob.Properties.ETag);
 
             // Renew infinite lease (wrong lease)
             leaseId = await SetLeasedStateAsync(leasedBlob, null /* infinite lease */);
@@ -877,7 +881,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Change leased lease, with idempotent change
             leaseId = await SetLeasedStateAsync(leasedBlob, null /* infinite lease */);
+            leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             leaseId2 = await leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
+            Assert.IsNotNull(leasedBlob.Properties.ETag);
             leaseId2 = await leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Change a leased lease, with same proposed ID but different lease ID
@@ -987,7 +993,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Release lease (right lease)
             leaseId = await SetLeasedStateAsync(leasedBlob, null /* infinite lease */);
+            leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             await leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
+            Assert.IsNotNull(leasedBlob.Properties.ETag);
 
             // Release lease in released state (old lease)
             leaseId = await SetReleasedStateAsync(leasedBlob, null /* infinite lease */);
@@ -1062,7 +1070,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Break infinite lease (default break time)
             leaseId = await SetLeasedStateAsync(leasedBlob, null /* infinite lease */);
+            leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             leaseTime = await leasedBlob.BreakLeaseAsync(null /* default break period */);
+            Assert.IsNotNull(leasedBlob.Properties.ETag);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (zero break time)
@@ -2188,7 +2198,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire the lease while in available state, make idempotent call
             await SetUnleasedStateAsync(leasedContainer);
+            leasedContainer = this.GetContainerReference("lease-tests");
             leaseId = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
+            Assert.IsNotNull(leasedContainer.Properties.ETag);
             leaseId2 = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
             Assert.AreEqual(leaseId, leaseId2);
 
@@ -2279,7 +2291,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Renew infinite lease
             leaseId = await SetLeasedStateAsync(leasedContainer, null /* infinite lease */);
+            leasedContainer = this.GetContainerReference("lease-tests");
             await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
+            Assert.IsNotNull(leasedContainer.Properties.ETag);
 
             // Renew infinite lease (wrong lease)
             leaseId = await SetLeasedStateAsync(leasedContainer, null /* infinite lease */);
@@ -2420,7 +2434,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Change leased lease, with idempotent change
             leaseId = await SetLeasedStateAsync(leasedContainer, null /* infinite lease */);
+            leasedContainer = this.GetContainerReference("lease-tests");
             leaseId2 = await leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
+            Assert.IsNotNull(leasedContainer.Properties.ETag);
             leaseId2 = await leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Change a leased lease, with same proposed ID but different lease ID
@@ -2530,7 +2546,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Release lease (right lease)
             leaseId = await SetLeasedStateAsync(leasedContainer, null /* infinite lease */);
+            leasedContainer = this.GetContainerReference("lease-tests");
             await leasedContainer.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
+            Assert.IsNotNull(leasedContainer.Properties.ETag);
 
             // Release lease in released state (old lease)
             leaseId = await SetReleasedStateAsync(leasedContainer, null /* infinite lease */);
@@ -2605,7 +2623,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Break infinite lease (default break time)
             leaseId = await SetLeasedStateAsync(leasedContainer, null /* infinite lease */);
+            leasedContainer = this.GetContainerReference("lease-tests");
             leaseTime = await leasedContainer.BreakLeaseAsync(null /* default break period */);
+            Assert.IsNotNull(leasedContainer.Properties.ETag);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (zero break time)

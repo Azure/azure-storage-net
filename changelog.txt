@@ -175,6 +175,7 @@ Issues fixed in 3.0.0.0 :
 
 Issues fixed in 3.0.1.0 :
 
+  - Blobs: LastModified and ETag properties are populated after Lease operations.
   - Tables: Added an explicit reference to Microsoft.Data.Services.Client in the Nuget package.
   - Tables: Fixed an issue caused by a Json .NET bug that resulted in an error being thrown while parsing a table query response. More details on the bug can be found here: http://james.newtonking.com/archive/2013/11/29/fixing-jarray-getenumerator-method-not-found-bug
-
+  - Tables (RT): Fixed continuation tokens for queries and listing operations.
