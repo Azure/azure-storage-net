@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -195,6 +196,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             AssertSecondaryEndpoint();
 
             CloudQueueClient client = GenerateCloudQueueClient();
+            client.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
         }
     }

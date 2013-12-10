@@ -321,6 +321,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             props.HourMetrics.RetentionDays = null;
             props.HourMetrics.Version = "1.0";
 
+            props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
+            props.MinuteMetrics.RetentionDays = null;
+            props.MinuteMetrics.Version = "1.0";
+
             return props;
         }
         #endregion

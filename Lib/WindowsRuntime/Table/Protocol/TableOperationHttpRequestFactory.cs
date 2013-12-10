@@ -29,17 +29,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
     internal class TableOperationHttpRequestMessageFactory
     {
-        internal static HttpRequestMessage BuildRequestCore(Uri uri, HttpMethod method, int? timeout, OperationContext ctx)
+        internal static HttpRequestMessage BuildRequestCore(Uri uri, UriQueryBuilder builder, HttpMethod method, int? timeout, HttpContent content, OperationContext ctx)
         {
-            Uri uriRequest = uri;
-            if (timeout != null && timeout != 0)
-            {
-                UriQueryBuilder builder = new UriQueryBuilder();
-                builder.Add("timeout", timeout.ToString());
-                uriRequest = builder.AddToUri(uri);
-            }
+            HttpRequestMessage msg = HttpRequestMessageFactory.CreateRequestMessage(method, uri, timeout, builder, content, ctx);
 
-            HttpRequestMessage msg = new HttpRequestMessage(method, uriRequest);
             msg.Headers.Add("Accept", "application/atom+xml,application/xml");
             msg.Headers.Add("Accept-Charset", "UTF-8");
             msg.Headers.Add("MaxDataServiceVersion", "2.0;NetFx");
@@ -47,16 +40,16 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return msg;
         }
 
-        internal static HttpRequestMessage BuildRequestForTableQuery(Uri uri, int? timeout, OperationContext ctx)
+        internal static HttpRequestMessage BuildRequestForTableQuery(Uri uri, UriQueryBuilder builder, int? timeout, HttpContent content, OperationContext ctx)
         {
-            HttpRequestMessage msg = BuildRequestCore(uri, HttpMethod.Get, timeout, ctx);
+            HttpRequestMessage msg = BuildRequestCore(uri, builder, HttpMethod.Get, timeout, content, ctx);
 
             return msg;
         }
 
-        internal static HttpRequestMessage BuildRequestForTableOperation<T>(RESTCommand<T> cmd, Uri uri, int? timeout, TableOperation operation, CloudTableClient client, OperationContext ctx)
+        internal static HttpRequestMessage BuildRequestForTableOperation<T>(RESTCommand<T> cmd, Uri uri, UriQueryBuilder builder, int? timeout, TableOperation operation, CloudTableClient client, HttpContent content, OperationContext ctx)
         {
-            HttpRequestMessage msg = BuildRequestCore(uri, operation.HttpMethod, timeout, ctx);
+            HttpRequestMessage msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, content, ctx);
 
             if (operation.OperationType == TableOperationType.InsertOrMerge || operation.OperationType == TableOperationType.Merge)
             {
@@ -98,9 +91,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return msg;
         }
 
-        internal static HttpRequestMessage BuildRequestForTableBatchOperation<T>(RESTCommand<T> cmd, Uri uri, int? timeout, string tableName, TableBatchOperation batch, CloudTableClient client, OperationContext ctx)
+        internal static HttpRequestMessage BuildRequestForTableBatchOperation<T>(RESTCommand<T> cmd, Uri uri, UriQueryBuilder builder, int? timeout, string tableName, TableBatchOperation batch, CloudTableClient client, HttpContent content, OperationContext ctx)
         {
-            HttpRequestMessage msg = BuildRequestCore(NavigationHelper.AppendPathToSingleUri(uri, "$batch"), HttpMethod.Post, timeout, ctx);
+            HttpRequestMessage msg = BuildRequestCore(NavigationHelper.AppendPathToSingleUri(uri, "$batch"), builder, HttpMethod.Post, timeout, content, ctx);
 
             // create the writer, indent for readability of the examples.  
             ODataMessageWriterSettings writerSettings = new ODataMessageWriterSettings()

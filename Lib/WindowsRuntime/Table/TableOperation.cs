@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertCmd.RetrieveResponseStream = true;
             insertCmd.Handler = client.AuthenticationHandler;
             insertCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, serverTimeout, operation, client, ctx);
+            insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
             insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx);
@@ -123,7 +123,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             deleteCmd.RetrieveResponseStream = false;
             deleteCmd.Handler = client.AuthenticationHandler;
             deleteCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, serverTimeout, operation, client, ctx);
+            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return deleteCmd;
@@ -138,7 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             mergeCmd.RetrieveResponseStream = false;
             mergeCmd.Handler = client.AuthenticationHandler;
             mergeCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            mergeCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, serverTimeout, operation, client, ctx);
+            mergeCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
             mergeCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return mergeCmd;
@@ -153,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             replaceCmd.RetrieveResponseStream = false;
             replaceCmd.Handler = client.AuthenticationHandler;
             replaceCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            replaceCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, serverTimeout, operation, client, ctx);
+            replaceCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
             replaceCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return replaceCmd;
@@ -169,7 +169,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.Handler = client.AuthenticationHandler;
             retrieveCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, serverTimeout, operation, client, ctx);
+            retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
                   Task.Run(async () =>

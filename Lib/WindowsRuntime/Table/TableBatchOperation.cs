@@ -64,7 +64,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batchCmd.RetrieveResponseStream = true;
             batchCmd.Handler = client.AuthenticationHandler;
             batchCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            batchCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableBatchOperation(cmd, uri, serverTimeout, tableName, batch, client, ctx);
+            batchCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableBatchOperation(cmd, uri, builder, serverTimeout, tableName, batch, client, cnt, ctx);
             batchCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp.StatusCode, results, cmd, ex);
             batchCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableBatchOperationPostProcess(results, batch, cmd, resp, ctx);
             batchCmd.RecoveryAction = (cmd, ex, ctx) => results.Clear();

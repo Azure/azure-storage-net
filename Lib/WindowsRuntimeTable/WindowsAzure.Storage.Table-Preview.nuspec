@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>WindowsAzure.Storage.Table-Preview</id>
-    <version>3.0.0.0-preview</version>
+    <version>3.0.1.0-preview</version>
     <title>Windows Azure Storage Tables Extension for Windows Runtime</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -11,11 +11,12 @@
     <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>This table extension library provides support for strong entity types (POCOs), generic queries, reflection based serialization and the EntityResolver for languages other than JavaScript when developing Windows Store Apps.
+For this release see notes - https://github.com/WindowsAzure/azure-storage-net/blob/master/README.md and https://github.com/WindowsAzure/azure-storage-net/blob/master/changelog.txt
 Windows Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/</description>
     <summary>A table extension library for Windows Runtime for working with Windows Azure Storage tables.</summary>
     <tags>Microsoft, Azure, Storage, Table, Scalable, winrt, windowsazureofficial</tags>
     <dependencies>
-      	<dependency id="WindowsAzure.Storage-Preview" version="3.0.0.0-preview" />
+      	<dependency id="WindowsAzure.Storage-Preview" version="3.0.1.0-preview" />
     </dependencies>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System.Xml" targetFramework="" />

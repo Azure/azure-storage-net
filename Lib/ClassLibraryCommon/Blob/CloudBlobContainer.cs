@@ -2394,6 +2394,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
                 return BlobHttpResponseParsers.GetLeaseId(resp);
             };
 
@@ -2420,7 +2421,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Renew, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
+                return NullType.Value;
+            };
 
             return putCmd;
         }
@@ -2449,6 +2455,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
                 return BlobHttpResponseParsers.GetLeaseId(resp);
             };
 
@@ -2475,7 +2482,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Release, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
+                return NullType.Value;
+            };
 
             return putCmd;
         }
@@ -2505,6 +2517,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, TimeSpan.Zero, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
 
                 int? remainingLeaseTime = BlobHttpResponseParsers.GetRemainingLeaseTime(resp);
                 if (!remainingLeaseTime.HasValue)
@@ -2634,7 +2647,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                this.ParseSizeAndLastModified(resp);
+                this.UpdateETagAndLastModified(resp);
                 return NullType.Value;
             };
 
@@ -2664,7 +2677,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                this.ParseSizeAndLastModified(resp);
+                this.UpdateETagAndLastModified(resp);
                 return NullType.Value;
             };
 
@@ -2700,7 +2713,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 ContainerHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, containerAcl);
-                this.ParseSizeAndLastModified(resp);
+                this.UpdateETagAndLastModified(resp);
                 return containerAcl;
             };
 
@@ -2802,7 +2815,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Retrieve ETag and LastModified date time from response.
         /// </summary>
         /// <param name="response">The response to parse.</param>
-        private void ParseSizeAndLastModified(HttpWebResponse response)
+        private void UpdateETagAndLastModified(HttpWebResponse response)
         {
             BlobContainerProperties parsedProperties = ContainerHttpResponseParsers.GetProperties(response);
             this.Properties.ETag = parsedProperties.ETag;

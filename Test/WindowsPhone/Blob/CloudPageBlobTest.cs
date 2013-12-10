@@ -326,7 +326,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(1024, blob2.Properties.Length);
                 Assert.AreEqual(blob.Properties.ETag, blob2.Properties.ETag);
                 Assert.AreEqual(blob.Properties.LastModified, blob2.Properties.LastModified);
-                Assert.IsNull(blob2.Properties.CacheControl);
                 Assert.IsNull(blob2.Properties.ContentEncoding);
                 Assert.IsNull(blob2.Properties.ContentLanguage);
                 Assert.AreEqual("application/octet-stream", blob2.Properties.ContentType);

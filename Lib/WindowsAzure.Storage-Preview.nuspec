@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>WindowsAzure.Storage-Preview</id>
-    <version>3.0.0.0-preview</version>
+    <version>3.0.1.0-preview</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -11,7 +11,7 @@
     <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>This client library enables working with the Windows Azure storage services which include the blob service for storing binary and text data, the table service for storing structured non-relational data, and the queue service for storing messages that may be accessed by a client. 
-For this release see notes - https://github.com/WindowsAzure/azure-sdk-for-net/blob/preview/microsoft-azure-api/Services/Storage/changelog.txt
+For this release see notes - https://github.com/WindowsAzure/azure-storage-net/blob/master/README.md and https://github.com/WindowsAzure/azure-storage-net/blob/master/changelog.txt
 Windows Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/</description>
     <summary>A client library for Windows Phone and Windows Runtime for working with Windows Azure storage services including blobs, tables, and queues.</summary>
     <tags>Microsoft, Azure, Storage, Table, Blob, Queue, Scalable, winrt, windowsphone, windowsazureofficial</tags>

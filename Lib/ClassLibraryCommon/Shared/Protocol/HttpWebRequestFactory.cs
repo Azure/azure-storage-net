@@ -119,6 +119,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             builder.Add(Constants.QueryConstants.Component, "acl");
 
             HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+
+            // Windows phone adds */* as the Accept type when we don't set one explicitly.
+#if WINDOWS_PHONE
+            request.Accept = Constants.XMLAcceptHeaderValue;
+#endif
             return request;
         }
 
@@ -140,6 +145,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             builder.Add(Constants.QueryConstants.Component, "acl");
 
             HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, operationContext);
+
+            // Windows phone adds */* as the Accept type when we don't set one explicitly.
+#if WINDOWS_PHONE
+            request.Accept = Constants.XMLAcceptHeaderValue;
+#endif
             return request;
         }
 

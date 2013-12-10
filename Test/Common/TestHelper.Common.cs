@@ -292,7 +292,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
             TestHelper.AssertNAttempts(opContext, 1);
             Assert.AreEqual(opContext.LastResult.HttpStatusCode, expectedStatusCode);
-            Assert.IsTrue(allowedErrorCodes.Contains(opContext.LastResult.ExtendedErrorInformation.ErrorCode), "Unexpected Error Code, recieved" + opContext.LastResult.ExtendedErrorInformation.ErrorCode);
+            Assert.IsTrue(allowedErrorCodes.Contains(opContext.LastResult.ExtendedErrorInformation.ErrorCode), "Unexpected Error Code, received " + opContext.LastResult.ExtendedErrorInformation.ErrorCode);
 
             if (errorMessageBeginsWith != null)
             {

@@ -633,6 +633,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal const string DefaultTableName = "TableName";
 
         /// <summary>
+        /// Header value to set Accept to XML.
+        /// </summary>
+        internal const string XMLAcceptHeaderValue = "application/xml";
+
+        /// <summary>
         /// Header value to set Accept to AtomPub.
         /// </summary>
         internal const string AtomAcceptHeaderValue = "application/atom+xml,application/atomsvc+xml,application/xml";
@@ -704,7 +709,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "3.0.0";
+            public const string UserAgentProductVersion = "3.0.1";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.

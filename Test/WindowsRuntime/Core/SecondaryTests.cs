@@ -51,22 +51,22 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 RetryPolicy = new NoRetry(),
             };
 
-            StorageException e = await TestHelper.ExpectedExceptionAsync<StorageException>(
+            Exception e = await TestHelper.ExpectedExceptionAsync<Exception>(
                 async () => await container.FetchAttributesAsync(null, options, null),
                 "Request should fail when an URI is not provided for the target location");
-            Assert.IsInstanceOfType(e.InnerException, typeof(InvalidOperationException));
+            Assert.IsInstanceOfType(e.InnerException.InnerException, typeof(InvalidOperationException));
 
             options.LocationMode = LocationMode.SecondaryThenPrimary;
-            e = await TestHelper.ExpectedExceptionAsync<StorageException>(
+            e = await TestHelper.ExpectedExceptionAsync<Exception>(
                 async () => await container.FetchAttributesAsync(null, options, null),
                 "Request should fail when an URI is not provided for the target location");
-            Assert.IsInstanceOfType(e.InnerException, typeof(InvalidOperationException));
+            Assert.IsInstanceOfType(e.InnerException.InnerException, typeof(InvalidOperationException));
 
             options.LocationMode = LocationMode.PrimaryThenSecondary;
-            e = await TestHelper.ExpectedExceptionAsync<StorageException>(
+            e = await TestHelper.ExpectedExceptionAsync<Exception>(
                 async () => await container.FetchAttributesAsync(null, options, null),
                 "Request should fail when an URI is not provided for the target location");
-            Assert.IsInstanceOfType(e.InnerException, typeof(InvalidOperationException));
+            Assert.IsInstanceOfType(e.InnerException.InnerException, typeof(InvalidOperationException));
         }
 
         [TestMethod]
