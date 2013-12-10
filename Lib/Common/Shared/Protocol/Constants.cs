@@ -633,6 +633,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal const string DefaultTableName = "TableName";
 
         /// <summary>
+        /// Header value to set Accept to XML.
+        /// </summary>
+        internal const string XMLAcceptHeaderValue = "application/xml";
+
+        /// <summary>
         /// Header value to set Accept to AtomPub.
         /// </summary>
         internal const string AtomAcceptHeaderValue = "application/atom+xml,application/atomsvc+xml,application/xml";

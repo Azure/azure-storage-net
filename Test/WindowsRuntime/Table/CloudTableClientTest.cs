@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -255,6 +256,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             AssertSecondaryEndpoint();
 
             CloudTableClient client = GenerateCloudTableClient();
+            client.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
         }
     }

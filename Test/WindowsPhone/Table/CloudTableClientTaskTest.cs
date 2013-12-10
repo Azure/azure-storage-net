@@ -167,16 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task ListTablesSegmentedMaxResultsAsync()
         {
-            await DoListTablesSegmentedMaxResultsAsync(TablePayloadFormat.Json);
-            await DoListTablesSegmentedMaxResultsAsync(TablePayloadFormat.JsonNoMetadata);
-            await DoListTablesSegmentedMaxResultsAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoListTablesSegmentedMaxResultsAsync(TablePayloadFormat.AtomPub);
-        }
-
-        private async Task DoListTablesSegmentedMaxResultsAsync(TablePayloadFormat format)
-        {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
 

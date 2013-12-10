@@ -154,10 +154,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertResult = await currentTable.ExecuteAsync(TableOperation.Insert(ent, true));
             Assert.AreEqual(HttpStatusCode.Created, (HttpStatusCode)insertResult.HttpStatusCode);
 
-            // Default is true.
+            // Default is false.
             ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
             insertResult = await currentTable.ExecuteAsync(TableOperation.Insert(ent));
-            Assert.AreEqual(HttpStatusCode.Created, (HttpStatusCode)insertResult.HttpStatusCode);
+            Assert.AreEqual(HttpStatusCode.NoContent, (HttpStatusCode)insertResult.HttpStatusCode);
         }
 
         [TestMethod]

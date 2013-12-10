@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -466,6 +467,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             AssertSecondaryEndpoint();
 
             CloudBlobClient client = GenerateCloudBlobClient();
+            client.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
         }
     }
