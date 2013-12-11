@@ -16,7 +16,7 @@ Tracking Breaking Changes since 2.1 RTM
 
 - When DataServiceContext is used to execute table operations, response received event on OperationContext is no longer fired.
 
-- Inserts in table operations no longer echo content. This will cause the resulting HTTP status code on the TableResult for successful inserts to be 204 (no-content) rather than 201 (Created). Echo content can be re-enabled by using the insert(TableEntity, boolean) method and specifying true. 
+- Inserts in table operations no longer echo content. This will cause the resulting HTTP status code on the TableResult for successful inserts to be 204 (no-content) rather than 201 (Created). Echo content can be re-enabled by using the insert(TableEntity, boolean) method and specifying true. 
 
 - QueueContinuationToken is moved to Queue namespace(Microsoft.WindowsAzure.Storage.Queue).
 
