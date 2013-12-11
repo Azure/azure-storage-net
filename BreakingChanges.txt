@@ -8,15 +8,15 @@ Tracking Breaking Changes since 2.0
 
 - Renamed CloudQueue.EndBeginClear(IAsyncResult) to CloudQueue.EndClear(IAsyncResult).
 
-- StreamExtensions.WriteToSync<T>(Stream, Stream, long?, long? bool, bool, ExecutionState<T>, StreamDescriptor) now throws InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream").
-
-- StreamExtensions.WriteToAsync<T>(stream, Stream, long?, long?, bool, ExecutionState<T>, StreamDescriptor, CancellationToken token) now throws InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream").
+- Sync and Async blob upload methods (BeginPutBlock, PutBlock, BeginUploadFromStream, UploadFromStream, BeginWritePages and WritePages) now throw InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream") when the length of the stream exceeds the permitted length.
 
 - The StorageException thrown when an operation is cancelled now includes an OperationCanceledException as its inner exception.
 
 Tracking Breaking Changes since 2.1 RTM
 
 - When DataServiceContext is used to execute table operations, response received event on OperationContext is no longer fired.
+
+- QueueContinuationToken is moved to Queue namespace(Microsoft.WindowsAzure.Storage.Queue).
 
 - ContinuationTokens are written with an additional <ContinuationToken> element enclosing them if WriteXml() method is used - ReadXml() parser is updated to handle this.
 

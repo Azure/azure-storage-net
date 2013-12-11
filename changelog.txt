@@ -169,7 +169,6 @@ Issues fixed in 3.0.0.0 :
   - All: Suppress warning for FiddlerCore EntensionAttribute conflict.
   - Blobs: Added support for XML serialize/deserialize of BlobContinuationToken.
   - Blobs: Added ParallelOperationThreadCount and SingleBlobUploadThresholdInBytes to BlobRequestOptions.
-  - Queues: QueueContinuationToken is moved to Queue namespace(Microsoft.WindowsAzure.Storage.Queue).
   - Tables: Fixed GetHashCode() in EntityProperty to return equal values for binary types.
   - Tables (RT): Fixed error parsing for tables.
 
