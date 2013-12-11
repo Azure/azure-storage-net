@@ -163,13 +163,14 @@ Issues fixed in 2.1.0.4 :
  
   - Tables: Do not send the cast operator in the table query filter string.
 
-Issues fixed in 3.0.0.0 :
+Changes in 3.0.0.0 :
 
   - All: Support for 2013-08-15 REST version - see here for additional details: http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/27/windows-azure-storage-release-introducing-cors-json-minute-metrics-and-more.aspx.
   - All: Suppress warning for FiddlerCore EntensionAttribute conflict.
   - Blobs: Added support for XML serialize/deserialize of BlobContinuationToken.
   - Blobs: Added ParallelOperationThreadCount and SingleBlobUploadThresholdInBytes to BlobRequestOptions.
   - Tables: Fixed GetHashCode() in EntityProperty to return equal values for binary types.
+  - Tables: JsonMinimalMetadata is now the default payload format (rather than AtomPub). Payload format can be specified for all table requests by using CloudTableClient.TablePayloadFormat or for an individual table request by using TableRequestOptions.TablePayloadFormat.
   - Tables (RT): Fixed error parsing for tables.
 
 Issues fixed in 3.0.1.0 :
