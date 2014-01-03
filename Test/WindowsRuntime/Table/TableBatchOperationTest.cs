@@ -1001,6 +1001,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchOnSecondaryAsync()
         {
+            AssertSecondaryEndpoint();
+
             CloudTable table = GenerateCloudTableClient().GetTableReference(GenerateRandomTableName());
 
             TableRequestOptions options = new TableRequestOptions()

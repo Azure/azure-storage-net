@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     public sealed partial class TableOperation
     {
         /// <summary>
-        /// Creates a new table operation that replaces the contents of
+        /// Creates a new table operation that retrieves the contents of
         /// the given entity in a table.
         /// </summary>
         /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Creates a new table operation that replaces the contents of
+        /// Creates a new table operation that retrieves the contents of
         /// the given entity in a table.
         /// </summary>
         /// <typeparam name="TResult">The return type which the specified <see cref="EntityResolver{T}"/> will resolve the given entity to.</typeparam>

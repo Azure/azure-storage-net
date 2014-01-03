@@ -398,7 +398,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext)
@@ -433,7 +433,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="visibilityTimeout">The visibility timeout interval.</param>
         /// <param name="updateFields">The message update fields.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext)

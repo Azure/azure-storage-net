@@ -68,6 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
             queue.Create();
+            queue.Create();
             queue.Delete();
         }
 
@@ -86,6 +87,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             using (AutoResetEvent waitHandle = new AutoResetEvent(false))
             {
                 IAsyncResult result = queue.BeginCreate(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                queue.EndCreate(result);
+
+                result = queue.BeginCreate(ar => waitHandle.Set(), null);
                 waitHandle.WaitOne();
                 queue.EndCreate(result);
 
@@ -112,7 +117,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
             queue.CreateAsync().Wait();
-            queue.ExistsAsync().Wait();
+            queue.CreateAsync().Wait();
+            Assert.IsTrue(queue.ExistsAsync().Result);
             queue.DeleteAsync().Wait();
         }
 #endif
