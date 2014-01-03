@@ -333,7 +333,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
@@ -457,7 +457,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Downloads the blob's contents as a string.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The contents of the blob, as a string.</returns>
         public IAsyncOperation<string> DownloadTextAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -591,7 +591,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -619,7 +619,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -648,7 +648,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction SetPropertiesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -678,7 +678,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction DeleteAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -768,7 +768,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request, or <c>null</c>.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A blob snapshot.</returns>
         [DoesServiceRequest]
         public IAsyncOperation<CloudBlockBlob> CreateSnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -964,7 +964,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// on the blob. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction PutBlockAsync(string blockId, IInputStream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -1027,7 +1027,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blockList">An enumerable collection of block IDs, as base64-encoded strings.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction PutBlockListAsync(IEnumerable<string> blockList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -1058,7 +1058,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// committed blocks, uncommitted blocks, or both.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of objects implementing <see cref="ListBlockItem"/>.</returns>
         [DoesServiceRequest]
         public IAsyncOperation<IEnumerable<ListBlockItem>> DownloadBlockListAsync(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)

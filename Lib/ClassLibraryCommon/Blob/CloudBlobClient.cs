@@ -211,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// in the result segment, up to the per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="continuationToken">A continuation token returned by a previous listing operation.</param> 
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -296,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// in the result segment, up to the per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="continuationToken">A continuation token returned by a previous listing operation.</param> 
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
         public Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken continuationToken, BlobRequestOptions options, OperationContext operationContext)
@@ -313,7 +313,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// in the result segment, up to the per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="continuationToken">A continuation token returned by a previous listing operation.</param> 
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]

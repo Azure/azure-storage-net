@@ -469,7 +469,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="size">The maximum size of the page blob, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction CreateAsync(long size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -499,7 +499,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="size">The maximum size of the page blob, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction ResizeAsync(long size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -531,7 +531,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="sequenceNumber">The sequence number. Set this parameter to <c>null</c> if <paramref name="sequenceNumberAction"/> is equal to <see cref="F:SequenceNumberAction.Increment"/>.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction SetSequenceNumberAsync(SequenceNumberAction sequenceNumberAction, long? sequenceNumber, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -598,7 +598,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -656,7 +656,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -685,7 +685,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction SetPropertiesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -715,7 +715,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction DeleteAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -805,7 +805,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A blob snapshot.</returns>
         [DoesServiceRequest]
         public IAsyncOperation<CloudPageBlob> CreateSnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -1001,7 +1001,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// on the blob. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction WritePagesAsync(IInputStream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -1066,7 +1066,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="length">The length of the data range to be cleared, in bytes. The length must be a multiple of 512.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction ClearPagesAsync(long startOffset, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)

@@ -159,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 if (value.HasValue)
                 {
 #if WINDOWS_RT
-                if (value.Value == TablePayloadFormat.Json || value.Value == TablePayloadFormat.JsonNoMetadata)
+                if (value.Value == TablePayloadFormat.Json || value.Value == TablePayloadFormat.JsonNoMetadata || value.Value == TablePayloadFormat.JsonFullMetadata)
                 {
                     throw new ArgumentException(SR.JsonNotSupportedOnRT, "value");
                 }

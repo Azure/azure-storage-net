@@ -174,26 +174,24 @@ namespace Microsoft.WindowsAzure.Storage
             Assert.AreEqual("Unused", storageException.RequestInformation.HttpStatusMessage);
         }
 
-        internal static void ExecuteAPMMethodWithRetry<T>(int ExpectedAttempts,
-         ProxyBehavior[] behaviors,
-         Func<IRequestOptions, OperationContext, AsyncCallback, object, ICancellableAsyncResult> begin,
-         Func<IAsyncResult, T> end)
+        internal static void ExecuteAPMMethodWithRetry<T>(int expectedAttempts,
+            ProxyBehavior[] behaviors,
+            Func<IRequestOptions, OperationContext, AsyncCallback, object, ICancellableAsyncResult> begin,
+            Func<IAsyncResult, T> end)
         {
             string failMessage = null;
             OperationContext opContext = new OperationContext();
 
             using (HttpMangler proxy = new HttpMangler(false, behaviors))
             {
-                Debug.WriteLine("Begin");
                 using (ManualResetEvent completedEvent = new ManualResetEvent(false))
                 {
-                    ICancellableAsyncResult saveResult = begin(null
-                        , opContext,
+                    ICancellableAsyncResult saveResult = begin(null,
+                        opContext,
                         (resp) =>
                         {
                             try
                             {
-                                Debug.WriteLine("End");
                                 end(resp);
                             }
                             catch (Exception badEx)
@@ -205,10 +203,10 @@ namespace Microsoft.WindowsAzure.Storage
                                 completedEvent.Set();
                             }
                         },
-                    null);
+                        null);
 
                     completedEvent.WaitOne();
-                    TestHelper.AssertNAttempts(opContext, ExpectedAttempts);
+                    TestHelper.AssertNAttempts(opContext, expectedAttempts);
                 }
             }
 
@@ -217,36 +215,36 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
 #if TASK
-        internal static void ExecuteTaskMethodWithRetry<T>(int ExpectedAttempts,
-        ProxyBehavior[] behaviors,
-        Func<IRequestOptions, OperationContext, Task<T>> method)
+        internal static void ExecuteTaskMethodWithRetry<T>(int expectedAttempts,
+            ProxyBehavior[] behaviors,
+            Func<IRequestOptions, OperationContext, Task<T>> method)
         {
             OperationContext opContext = new OperationContext();
 
             using (HttpMangler proxy = new HttpMangler(false, behaviors))
             {
                 method(null, opContext).Wait();
-                TestHelper.AssertNAttempts(opContext, ExpectedAttempts);
+                TestHelper.AssertNAttempts(opContext, expectedAttempts);
             }
         }
 #endif
 
-        internal static void ExecuteMethodWithRetry<T>(int ExpectedAttempts,
-        ProxyBehavior[] behaviors,
-        Func<IRequestOptions, OperationContext, T> method)
+        internal static void ExecuteMethodWithRetry<T>(int expectedAttempts,
+            ProxyBehavior[] behaviors,
+            Func<IRequestOptions, OperationContext, T> method)
         {
             OperationContext opContext = new OperationContext();
 
             using (HttpMangler proxy = new HttpMangler(false, behaviors))
             {
                 method(null, opContext);
-                TestHelper.AssertNAttempts(opContext, ExpectedAttempts);
+                TestHelper.AssertNAttempts(opContext, expectedAttempts);
             }
         }
 
-        internal static void ExecuteMethodWithRetryInTryFinally<T>(int ExpectedAttempts,
-        ProxyBehavior[] behaviors,
-        Func<IRequestOptions, OperationContext, T> method)
+        internal static void ExecuteMethodWithRetryInTryFinally<T>(int expectedAttempts,
+            ProxyBehavior[] behaviors,
+            Func<IRequestOptions, OperationContext, T> method)
         {
             OperationContext opContext = new OperationContext();
 
@@ -258,7 +256,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 finally
                 {
-                    TestHelper.AssertNAttempts(opContext, ExpectedAttempts);
+                    TestHelper.AssertNAttempts(opContext, expectedAttempts);
                 }
             }
         }

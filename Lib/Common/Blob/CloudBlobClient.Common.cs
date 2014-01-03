@@ -245,7 +245,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             set
             {
-                CommonUtility.AssertInBounds("UploadParallelActiveTasks", value, 1, Constants.MaxParallelOperationThreadCount);
+                CommonUtility.AssertInBounds("ParallelOperationThreadCount", value, 1, Constants.MaxParallelOperationThreadCount);
                 this.parallelOperationThreadCount = value;
             }
         }

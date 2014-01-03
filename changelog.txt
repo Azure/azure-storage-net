@@ -180,3 +180,10 @@ Issues fixed in 3.0.1.0 :
   - Tables: Added an explicit reference to Microsoft.Data.Services.Client in the Nuget package.
   - Tables: Fixed an issue caused by a Json .NET bug that resulted in an error being thrown while parsing a table query response. More details on the bug can be found here: http://james.newtonking.com/archive/2013/11/29/fixing-jarray-getenumerator-method-not-found-bug
   - Tables (RT): Fixed continuation tokens for queries and listing operations.
+
+Issues fixed in 3.0.2.0 :
+
+  - All (WP): Fixed an issue causing ArgumentOutOfRangeException in many APIs.
+  - Queues: Fixed an issue causing NullReferenceException when trying to re-create an existing queue.
+  - Tables: Fixed an issue with TableServiceContext causing NullReferenceException when the error response cannot be parsed.
+  - Tables (RT): Do not allow users to set JsonFullMetadata format on RequestOptions in RT, because JSON is not supported on the RT library yet.

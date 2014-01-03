@@ -39,70 +39,80 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// </returns>
         internal static StorageException TranslateDataServiceException(Exception e, RequestResult reqResult, Func<Stream, IDictionary<string, string>, StorageExtendedErrorInformation> parseError)
         {
-            // The exception thrown is based on whether it is a change/query operation.
-            DataServiceRequestException dsre = FindInnerExceptionOfType<DataServiceRequestException>(e);
-
-            DataServiceQueryException dsqe = FindInnerExceptionOfType<DataServiceQueryException>(e);
-
-            if (dsre == null && dsqe == null)
+            try
             {
-                InvalidOperationException ioe = TableUtilities.FindInnerExceptionOfType<InvalidOperationException>(e);
+                // The exception thrown is based on whether it is a change/query operation.
+                DataServiceRequestException dsre = FindInnerExceptionOfType<DataServiceRequestException>(e);
 
-                if (ioe != null && !(ioe is WebException) && string.CompareOrdinal(ioe.Source, "Microsoft.Data.Services.Client") == 0 && ioe.Message.Contains("type is not compatible with the expected"))
+                DataServiceQueryException dsqe = FindInnerExceptionOfType<DataServiceQueryException>(e);
+
+                if (dsre == null && dsqe == null)
                 {
-                    return new StorageException(reqResult, e.Message, e) { IsRetryable = false };
-                }
+                    InvalidOperationException ioe = TableUtilities.FindInnerExceptionOfType<InvalidOperationException>(e);
 
-                return null;
-            }
-            else if (dsre != null)
-            {
-                DataServiceResponse response = dsre.Response;
-
-                IDictionary<string, string> headers;
-                foreach (OperationResponse operationResponse in response)
-                {
-                    reqResult.HttpStatusCode = operationResponse.StatusCode;
-
-                    // The exception thrown will contain the first error in the group of requests.
-                    if (reqResult.HttpStatusCode >= 300)
+                    if (ioe != null && !(ioe is WebException) && string.CompareOrdinal(ioe.Source, "Microsoft.Data.Services.Client") == 0 && ioe.Message.Contains("type is not compatible with the expected"))
                     {
-                        headers = operationResponse.Headers;
-
-                        // Strip off the extra exception type at the beginning.
-                        string innerException = dsre.InnerException.ToString().Replace("System.Data.Services.Client.DataServiceClientException: ", string.Empty);
-
-                        using (Stream stream = new MemoryStream(Encoding.UTF8.GetBytes(innerException)))
-                        {
-                            reqResult.ExtendedErrorInformation = parseError(stream, headers);
-                        }
-
-                        break;
+                        return new StorageException(reqResult, e.Message, e) { IsRetryable = false };
                     }
+
+                    return null;
                 }
-
-                return new StorageException(
-                            reqResult,
-                            reqResult.ExtendedErrorInformation != null ? reqResult.ExtendedErrorInformation.ErrorCode : dsre.Message,
-                            dsre);
-            }
-            else
-            {
-                QueryOperationResponse response = dsqe.Response;
-
-                reqResult.HttpStatusCode = response.StatusCode;
-
-                string innerException = dsqe.InnerException.Message;
-
-                using (Stream stream = new MemoryStream(Encoding.UTF8.GetBytes(innerException)))
+                else if (dsre != null)
                 {
-                    reqResult.ExtendedErrorInformation = parseError(stream, response.Headers);
-                }
+                    DataServiceResponse response = dsre.Response;
 
-                return new StorageException(
-                    reqResult,
-                    reqResult.ExtendedErrorInformation != null ? reqResult.ExtendedErrorInformation.ErrorCode : dsqe.Message,
-                    dsqe);
+                    // Get the batch status code first in case batch does not contain any responses.
+                    reqResult.HttpStatusCode = response.BatchStatusCode;
+
+                    IDictionary<string, string> headers;
+                    foreach (OperationResponse operationResponse in response)
+                    {
+                        reqResult.HttpStatusCode = operationResponse.StatusCode;
+
+                        // The exception thrown will contain the first error in the group of requests.
+                        if (reqResult.HttpStatusCode >= 300)
+                        {
+                            headers = operationResponse.Headers;
+
+                            // Strip off the extra exception type at the beginning.
+                            string innerException = dsre.InnerException.ToString().Replace("System.Data.Services.Client.DataServiceClientException: ", string.Empty);
+
+                            using (Stream stream = new MemoryStream(Encoding.UTF8.GetBytes(innerException)))
+                            {
+                                reqResult.ExtendedErrorInformation = parseError(stream, headers);
+                            }
+
+                            break;
+                        }
+                    }
+
+                    return new StorageException(
+                                reqResult,
+                                reqResult.ExtendedErrorInformation != null ? reqResult.ExtendedErrorInformation.ErrorCode : dsre.Message,
+                                dsre);
+                }
+                else
+                {
+                    QueryOperationResponse response = dsqe.Response;
+
+                    reqResult.HttpStatusCode = response.StatusCode;
+
+                    string innerException = dsqe.InnerException.Message;
+
+                    using (Stream stream = new MemoryStream(Encoding.UTF8.GetBytes(innerException)))
+                    {
+                        reqResult.ExtendedErrorInformation = parseError(stream, response.Headers);
+                    }
+
+                    return new StorageException(
+                        reqResult,
+                        reqResult.ExtendedErrorInformation != null ? reqResult.ExtendedErrorInformation.ErrorCode : dsqe.Message,
+                        dsqe);
+                }
+            }
+            catch (Exception)
+            {
+                return new StorageException(reqResult, e.Message, e);
             }
         }
 

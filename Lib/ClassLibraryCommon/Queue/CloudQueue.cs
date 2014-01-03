@@ -640,7 +640,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Begins an asynchronous operation to delete a queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>    
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>    
         /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -1311,7 +1311,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void AddMessage(CloudQueueMessage message, TimeSpan? timeToLive = null, TimeSpan? initialVisibilityDelay = null, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1348,7 +1348,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>        
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -1443,7 +1443,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="visibilityTimeout">The visibility timeout interval.</param>
         /// <param name="updateFields">Flags of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void UpdateMessage(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1479,7 +1479,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="visibilityTimeout">The visibility timeout interval.</param>
         /// <param name="updateFields">An EnumSet of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>

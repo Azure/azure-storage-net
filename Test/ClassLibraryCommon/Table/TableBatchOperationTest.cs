@@ -2836,7 +2836,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableBatchOperation batch = new TableBatchOperation();
             for (int i = 0; i < 100; i++)
             {
-                DynamicTableEntity insertEntity = new DynamicTableEntity("retry test", i.ToString());
+                DynamicTableEntity insertEntity = new DynamicTableEntity("retry test", format.ToString() + i.ToString());
                 insertEntity.Properties.Add("prop", new EntityProperty(new byte[20 * 1024]));
                 batch.Insert(insertEntity);
             }
@@ -2872,6 +2872,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchOnSecondary()
         {
+            AssertSecondaryEndpoint();
+
             CloudTable table = GenerateCloudTableClient().GetTableReference(GenerateRandomTableName());
 
             TableRequestOptions options = new TableRequestOptions()

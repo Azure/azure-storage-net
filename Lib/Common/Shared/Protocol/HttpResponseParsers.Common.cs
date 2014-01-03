@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Text;
     using System.Xml;
@@ -65,23 +66,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 throw ex;
             }
 
-            bool foundExpectedStatusCode = false;
-            StringBuilder expectedStatusCodeString = null;
-            foreach (HttpStatusCode expectedStatusCode in expectedStatusCodes)
+            if (!expectedStatusCodes.Contains(actualStatusCode))
             {
-                if (actualStatusCode == expectedStatusCode)
-                {
-                    foundExpectedStatusCode = true;
-                    break;
-                }
-
-                expectedStatusCodeString.Append(expectedStatusCode);
-                expectedStatusCodeString.Append(",");
-            }
-
-            if (!foundExpectedStatusCode)
-            {
-                throw new StorageException(cmd.CurrentResult, string.Format(CultureInfo.InvariantCulture, SR.UnexpectedResponseCode, expectedStatusCodeString.ToString().TrimEnd(','), actualStatusCode.ToString()), null);
+                string expectedStatusCodeString = string.Join(",", expectedStatusCodes);
+                throw new StorageException(cmd.CurrentResult, string.Format(CultureInfo.InvariantCulture, SR.UnexpectedResponseCode, expectedStatusCodeString, actualStatusCode.ToString()), null);
             }
 
             return retVal;

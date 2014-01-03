@@ -61,7 +61,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
-             
+
+            await queue.CreateAsync();
             await queue.CreateAsync();
             await queue.DeleteAsync();
         }
