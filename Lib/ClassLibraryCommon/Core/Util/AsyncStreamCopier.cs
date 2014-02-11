@@ -34,6 +34,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         private volatile int currentWriteCount = -1;
         private StreamDescriptor streamCopyState = null;
 
+        // This keeps track of any exceptions that happens during the copy itself and is set on the executionState at the end.
+        private Exception exceptionRef = null;
+
         // This variable keeps track of bytes that have already been read from the source stream.
         // It should only be modified using Interlocked.Add and read with Interlocked.Read.
         private long currentBytesReadFromSource = 0;
@@ -121,7 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 this.waitHandle = ThreadPool.RegisterWaitForSingleObject(
                     this.completedEvent,
                     AsyncStreamCopier<T>.MaximumCopyTimeCallback,
-                    this.state,
+                    this,
                     this.state.RemainingTimeout,
                     true);
             }
@@ -142,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         public void Abort()
         {
             this.cancelRequested = true;
-            AsyncStreamCopier<T>.ForceAbort(this.state, false);
+            AsyncStreamCopier<T>.ForceAbort(this, false);
         }
 
         /// <summary>
@@ -191,15 +194,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 {
                     if (this.state.ReqTimedOut)
                     {
-                        this.state.ExceptionRef = Exceptions.GenerateTimeoutException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, ex);
+                        this.exceptionRef = Exceptions.GenerateTimeoutException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, ex);
                     }
                     else if (this.cancelRequested)
                     {
-                        this.state.ExceptionRef = Exceptions.GenerateCancellationException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, ex);
+                        this.exceptionRef = Exceptions.GenerateCancellationException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, ex);
                     }
                     else
                     {
-                        this.state.ExceptionRef = ex;
+                        this.exceptionRef = ex;
                     }
 
                     // if there is an outstanding read/write let it signal completion since we populated the exception. 
@@ -280,9 +283,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             // If nothing more needs to be read and no write operation is scheduled, we are finished.
             if (this.ReachedEndOfSrc() && this.writeRes == null)
             {
-                if (this.state.ExceptionRef == null && this.copyLen.HasValue && this.NextReadLength() != 0)
+                if (this.exceptionRef == null && this.copyLen.HasValue && this.NextReadLength() != 0)
                 {
-                    this.state.ExceptionRef = new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
+                    this.exceptionRef = new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
                 }
 
                 this.SignalCompletion();
@@ -292,31 +295,33 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <summary>
         /// Callback for timeout timer. Aborts the AsyncStreamCopier operation if a timeout occurs.
         /// </summary>
-        /// <param name="state">Callback state.</param>
+        /// <param name="copier">AsyncStreamCopier operation.</param>
         /// <param name="timedOut">True if the timer has timed out, false otherwise.</param>
-        private static void MaximumCopyTimeCallback(object state, bool timedOut)
+        private static void MaximumCopyTimeCallback(object copier, bool timedOut)
         {
             if (timedOut)
             {
-                ExecutionState<T> executionState = (ExecutionState<T>)state;
-                AsyncStreamCopier<T>.ForceAbort(executionState, true);
+                AsyncStreamCopier<T> asyncCopier = (AsyncStreamCopier<T>)copier;
+                AsyncStreamCopier<T>.ForceAbort(asyncCopier, true);
             }
         }
 
         /// <summary>
         /// Aborts the AsyncStreamCopier operation.
         /// </summary>
-        /// <param name="executionState">An object that stores state of the operation.</param>
+        /// <param name="copier">AsyncStreamCopier operation.</param>
         /// <param name="timedOut">True if aborted due to a time out, or false for a general cancellation.</param>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
-        private static void ForceAbort(ExecutionState<T> executionState, bool timedOut)
+        private static void ForceAbort(AsyncStreamCopier<T> copier, bool timedOut)
         {
-            if (executionState.Req != null)
+            if (copier.state.Req != null)
             {
                 try
                 {
-                    executionState.ReqTimedOut = timedOut;
-                    executionState.Req.Abort();
+                    copier.state.ReqTimedOut = timedOut;
+#if !WINDOWS_PHONE
+                    copier.state.Req.Abort();
+#endif
                 }
                 catch (Exception)
                 {
@@ -324,9 +329,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 }
             }
 
-            executionState.ExceptionRef = timedOut ?
-                Exceptions.GenerateTimeoutException(executionState.Cmd != null ? executionState.Cmd.CurrentResult : null, null) :
-                Exceptions.GenerateCancellationException(executionState.Cmd != null ? executionState.Cmd.CurrentResult : null, null);
+            copier.exceptionRef = timedOut ?
+                Exceptions.GenerateTimeoutException(copier.state.Cmd != null ? copier.state.Cmd.CurrentResult : null, null) :
+                Exceptions.GenerateCancellationException(copier.state.Cmd != null ? copier.state.Cmd.CurrentResult : null, null);
         }
 
         /// <summary>
@@ -352,13 +357,20 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             // Re hookup cancellation delegate
             this.state.CancelDelegate = this.previousCancellationDelegate;
 
+#if WINDOWS_PHONE
+            if ((this.cancelRequested || this.state.ReqTimedOut) && this.state.Req != null)
+            {
+                this.state.Req.Abort();
+            }
+#endif
+
             // clear references
             this.src = null;
             this.dest = null;
             this.currentReadBuff = null;
             this.currentWriteBuff = null;
 
-            if (this.state.ExceptionRef == null &&
+            if (this.exceptionRef == null &&
                 this.streamCopyState != null &&
                 this.streamCopyState.Md5HashRef != null)
             {
@@ -374,6 +386,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 {
                     this.streamCopyState.Md5HashRef = null;
                 }
+            }
+
+            // set the exceptionRef on the execution state
+            if (this.exceptionRef != null)
+            {
+                this.state.ExceptionRef = this.exceptionRef;
             }
 
             // invoke the caller's callback
@@ -403,20 +421,20 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         {
             if (this.maximumLen.HasValue && Interlocked.Read(ref this.currentBytesReadFromSource) > this.maximumLen)
             {
-                this.state.ExceptionRef = new InvalidOperationException(SR.StreamLengthError);
+                this.exceptionRef = new InvalidOperationException(SR.StreamLengthError);
             }
             else if (this.state.OperationExpiryTime.HasValue && DateTime.Now >= this.state.OperationExpiryTime.Value)
             {
-                this.state.ExceptionRef = Exceptions.GenerateTimeoutException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, null);
+                this.exceptionRef = Exceptions.GenerateTimeoutException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, null);
             }
             else if (this.state.CancelRequested)
             {
-                this.state.ExceptionRef = Exceptions.GenerateCancellationException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, null);
+                this.exceptionRef = Exceptions.GenerateCancellationException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, null);
             }
 
             // note cancellation will new up a exception and store it, so this will be not null;
             // continue if no exceptions so far
-            return !this.cancelRequested && this.state.ExceptionRef == null;
+            return !this.cancelRequested && this.exceptionRef == null;
         }
 
         /// <summary>

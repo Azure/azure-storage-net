@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         protected ICloudBlob blob;
         protected BlobProperties blobProperties;
         protected long currentOffset;
-        protected MemoryStream internalBuffer;
+        protected MultiBufferMemoryStream internalBuffer;
         protected int streamMinimumReadSizeInBytes;
         protected AccessCondition accessCondition;
         protected BlobRequestOptions options;
@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.blobProperties = new BlobProperties(blob.Properties);
             this.currentOffset = 0;
             this.streamMinimumReadSizeInBytes = this.blob.StreamMinimumReadSizeInBytes;
-            this.internalBuffer = new MemoryStream(this.streamMinimumReadSizeInBytes);
+            this.internalBuffer = new MultiBufferMemoryStream(blob.ServiceClient.BufferManager);
             this.accessCondition = accessCondition;
             this.options = options;
             this.operationContext = operationContext;
@@ -280,16 +280,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             if (disposing)
             {
-                if (this.blobMD5 != null)
-                {
-                    this.blobMD5.Dispose();
-                    this.blobMD5 = null;
-                }
-
                 if (this.internalBuffer != null)
                 {
                     this.internalBuffer.Dispose();
                     this.internalBuffer = null;
+                }
+
+                if (this.blobMD5 != null)
+                {
+                    this.blobMD5.Dispose();
+                    this.blobMD5 = null;
                 }
             }
 

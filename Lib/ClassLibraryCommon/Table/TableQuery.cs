@@ -553,7 +553,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp != null ? resp.StatusCode : HttpStatusCode.Unused, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                ResultSegment<RESULT_TYPE> resSeg = TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE, T>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+                ResultSegment<RESULT_TYPE> resSeg = TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE, T>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;

@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        /*[TestMethod]
+        [TestMethod]
         [Description("Cancel blob download to stream")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -70,16 +70,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
                         OperationContext operationContext = new OperationContext();
-                        Task task = blob.DownloadToStreamAsync(downloadedBlob, null, null, operationContext);
-                        await Task.Delay(100);
-                        task.Cancel();
+                        CancellationTokenSource source = new CancellationTokenSource(100);
+                        Task task = blob.DownloadToStreamAsync(downloadedBlob, null, null, operationContext, source.Token);
                         try
                         {
-                            await action;
+                            await task;
                         }
                         catch (Exception)
                         {
-                            Assert.AreEqual(operationContext.LastResult.Exception.Message, "A task was canceled.");
+                            Assert.AreEqual(operationContext.LastResult.Exception.Message, "Operation was canceled by user.");
                             Assert.AreEqual(operationContext.LastResult.HttpStatusCode, 306);
                             //Assert.AreEqual(operationContext.LastResult.HttpStatusMessage, "Unused");
                         }
@@ -113,16 +112,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (ManualResetEvent waitHandle = new ManualResetEvent(false))
                     {
                         OperationContext operationContext = new OperationContext();
-                        IAsyncAction action = blob.UploadFromStreamAsync(originalBlob, null, null, operationContext);
-                        await Task.Delay(100);
-                        action.Cancel();
+                        CancellationTokenSource source = new CancellationTokenSource(100);
+                        Task task = blob.UploadFromStreamAsync(originalBlob, null, null, operationContext, source.Token);
                         try
                         {
-                            await action;
+                            await task;
                         }
                         catch (Exception)
                         {
-                            Assert.AreEqual(operationContext.LastResult.Exception.Message, "A task was canceled.");
+                            Assert.AreEqual(operationContext.LastResult.Exception.Message, "Operation was canceled by user.");
                             Assert.AreEqual(operationContext.LastResult.HttpStatusCode, 306);
                             //Assert.AreEqual(operationContext.LastResult.HttpStatusMessage, "Unused");
                         }
@@ -134,6 +132,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.DeleteIfExistsAsync().Wait();
             }
-        }*/
+        }
     }
 }

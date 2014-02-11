@@ -19,6 +19,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
     using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -28,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     [TestClass]
     public class CloudBlobDirectoryTest : BlobTestBase
     {
-        string[] Delimiters = new string[] { "$", "@", "-", "%", "/", "|"};
+        string[] Delimiters = new string[] { ":", "$", "@", "-", "%", "/", "|", "$$", "::", "//" };
 
         private async Task<bool> CloudBlobDirectorySetupWithDelimiterAsync(CloudBlobContainer container, string delimiter = "/")
         {
@@ -102,9 +104,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.CreateAsync(0);
                     Assert.IsTrue(await blob.ExistsAsync());
                     Assert.AreEqual("Dir1" + delimiter + "Blob1", blob.Name);
+
+                    // get the blob's parent
                     CloudBlobDirectory parent = blob.Parent;
                     Assert.AreEqual(parent.Prefix, "Dir1" + delimiter);
-                    await blob.DeleteAsync();
+
+                    // get container as parent
+                    CloudBlobDirectory root = parent.Parent;
+                    Assert.AreEqual(root.Prefix, "");
+
+                    // make sure the parent of the container dir is null
+                    CloudBlobDirectory empty = root.Parent;
+                    Assert.IsNull(empty);
+
+                    // from container, get directory reference to container
+                    root = container.GetDirectoryReference("");
+                    Assert.AreEqual("", root.Prefix);
+                    Assert.AreEqual(container.Uri.AbsoluteUri, root.Uri.AbsoluteUri);
+
+                    BlobResultSegment segment = await root.ListBlobsSegmentedAsync(null);
+                    List<IListBlobItem> list = new List<IListBlobItem>();
+                    list.AddRange(segment.Results);
+                    while (segment.ContinuationToken != null)
+                    {
+                        segment = await container.ListBlobsSegmentedAsync(segment.ContinuationToken);
+                        list.AddRange(segment.Results);
+                    }
+
+                    Assert.AreEqual(1, list.Count);
+
+                    // make sure the parent of the container dir is null
+                    empty = root.Parent;
+                    Assert.IsNull(empty);
+
+                    await blob.DeleteIfExistsAsync();
                 }
                 finally
                 {
@@ -260,7 +293,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CloudBlobDirectory root = container.GetDirectoryReference("TopDir1" + delimiter);
                     CloudBlobDirectory parent = root.Parent;
-                    Assert.IsNull(parent);
+                    Assert.IsNotNull(parent);
+
+                    CloudBlobDirectory empty = parent.Parent;
+                    Assert.IsNull(empty);
                 }
                 finally
                 {
@@ -485,7 +521,5 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
         }
-
-
     }
 }

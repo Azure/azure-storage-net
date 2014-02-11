@@ -45,20 +45,20 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             {
                 if (ex != null)
                 {
-                    throw StorageException.TranslateException(ex, cmd.CurrentResult, null);
+                    throw ex;
                 }
                 else if (operation.OperationType == TableOperationType.Insert)
                 {
                     if (resp.StatusCode != HttpStatusCode.Created)
                     {
-                        throw StorageException.TranslateException(ex, cmd.CurrentResult, null);
+                        throw ex;
                     }
                 }
                 else
                 {
                     if (resp.StatusCode != HttpStatusCode.NoContent)
                     {
-                        throw StorageException.TranslateException(ex, cmd.CurrentResult, null);
+                        throw ex;
                     }
                 }
             }

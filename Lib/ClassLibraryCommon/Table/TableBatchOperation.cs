@@ -126,13 +126,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batchCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             batchCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableBatchOperation(uri, builder, client.BufferManager, timeout, table.Name, batch, ctx, requestOptions.PayloadFormat.Value, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableBatchOperation(uri, builder, client.BufferManager, timeout, table.Name, batch, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
                 batchCmd.SendStream = res.Item2;
                 return res.Item1;
             };
 
             batchCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp != null ? resp.StatusCode : HttpStatusCode.Unused, results, cmd, ex);
-            batchCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableBatchOperationPostProcess(results, batch, cmd, resp, ctx, requestOptions, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+            batchCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableBatchOperationPostProcess(results, batch, cmd, resp, ctx, requestOptions, client.AccountName);
             batchCmd.RecoveryAction = (cmd, ex, ctx) => results.Clear();
 
             return batchCmd;

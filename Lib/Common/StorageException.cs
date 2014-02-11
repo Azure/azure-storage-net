@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Text;
 
 #if WINDOWS_DESKTOP
+    using Microsoft.WindowsAzure.Storage.Core;
     using System.Runtime.Serialization;
     using System.IO;
     using System.Collections.Generic;
@@ -137,9 +138,6 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="reqResult">The request result.</param>
         /// <returns>The storage exception.</returns>
         /// <returns>An exception of type <see cref="StorageException"/>.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "General Exception wrapped as a StorageException.")]
-        [SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily", Justification = "Code clarity.")]
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "req", Justification = "Reviewed : req is allowed.")]
         public static StorageException TranslateException(Exception ex, RequestResult reqResult)
         {
             return TranslateException(ex, reqResult, null);
@@ -152,9 +150,91 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="reqResult">The request result.</param>
         /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
         /// <returns>The storage exception.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "General Exception wrapped as a StorageException.")]
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "req", Justification = "Reviewed : req is allowed.")]
         public static StorageException TranslateException(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError)
+        {
+            StorageException storageException;
+            if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
+            {
+                return storageException;
+            }
+
+            WebException we = ex as WebException;
+            if (we != null)
+            {
+                try
+                {
+                    HttpWebResponse response = we.Response as HttpWebResponse;
+                    if (response != null)
+                    {
+                        StorageException.PopulateRequestResult(reqResult, response);
+#if WINDOWS_RT
+                        reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(response.GetResponseStream().AsInputStream());
+#else
+                        reqResult.ExtendedErrorInformation = parseError(response.GetResponseStream());
+#endif
+                    }
+                }
+                catch (Exception)
+                {
+                    // no op
+                }
+            }
+
+            // Just wrap in StorageException
+            return new StorageException(reqResult, ex.Message, ex);
+        }
+
+        /// <summary>
+        /// Translates the specified exception into a storage exception.
+        /// </summary>
+        /// <param name="ex">The exception to translate.</param>
+        /// <param name="reqResult">The request result.</param>
+        /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
+        /// <param name="responseStream">The error stream that contains the error information.</param>
+        /// <returns>The storage exception.</returns>
+        internal static StorageException TranslateExceptionWithPreBufferedStream(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError, Stream responseStream)
+        {
+            StorageException storageException;
+            if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
+            {
+                return storageException;
+            }
+
+            WebException we = ex as WebException;
+            if (we != null)
+            {
+                try
+                {
+                    HttpWebResponse response = we.Response as HttpWebResponse;
+                    if (response != null)
+                    {
+                        PopulateRequestResult(reqResult, response);
+
+#if WINDOWS_RT
+                        reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(responseStream);
+#else
+                        reqResult.ExtendedErrorInformation = parseError(responseStream);
+#endif
+                    }
+                }
+                catch (Exception)
+                {
+                    // no op
+                }
+            }
+
+            // Just wrap in StorageException
+            return new StorageException(reqResult, ex.Message, ex);
+        }
+
+        /// <summary>
+        /// Tries to translate the specified exception into a storage exception.
+        /// </summary>
+        /// <param name="ex">The exception to translate.</param>
+        /// <param name="reqResult">The request result.</param>
+        /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
+        /// <returns>The storage exception or null.</returns>
+        private static StorageException CoreTranslate(Exception ex, RequestResult reqResult, ref Func<Stream, StorageExtendedErrorInformation> parseError)
         {
             CommonUtility.AssertNotNull("reqResult", reqResult);
             CommonUtility.AssertNotNull("ex", ex);
@@ -203,42 +283,8 @@ namespace Microsoft.WindowsAzure.Storage
                 }
             }
 #endif
-
-            WebException we = ex as WebException;
-            if (we != null)
-            {
-                try
-                {
-                    HttpWebResponse response = we.Response as HttpWebResponse;
-                    if (response != null)
-                    {
-                        reqResult.HttpStatusMessage = response.StatusDescription;
-                        reqResult.HttpStatusCode = (int)response.StatusCode;
-                        if (response.Headers != null)
-                        {
-#if WINDOWS_DESKTOP
-                            reqResult.ServiceRequestID = HttpWebUtility.TryGetHeader(response, Constants.HeaderConstants.RequestIdHeader, null);
-                            reqResult.ContentMd5 = HttpWebUtility.TryGetHeader(response, "Content-MD5", null);
-                            string tempDate = HttpWebUtility.TryGetHeader(response, "Date", null);
-                            reqResult.RequestDate = string.IsNullOrEmpty(tempDate) ? DateTime.Now.ToString("R", CultureInfo.InvariantCulture) : tempDate;
-                            reqResult.Etag = response.Headers[HttpResponseHeader.ETag];
-#endif
-                        }
-#if WINDOWS_RT
-                        reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(response.GetResponseStream().AsInputStream());
-#else
-                        reqResult.ExtendedErrorInformation = parseError(response.GetResponseStream());
-#endif
-                    }
-                }
-                catch (Exception)
-                {
-                    // no op
-                }
-            }
-
-            // Not WebException, just wrap in StorageException
-            return new StorageException(reqResult, ex.Message, ex);
+            // return null and check in the caller
+            return null;
         }
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
@@ -249,8 +295,6 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="reqResult">The request result.</param>
         /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
         /// <returns>The storage exception.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "General Exception wrapped as a StorageException.")]
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "req", Justification = "Reviewed : req is allowed.")]
         internal static StorageException TranslateDataServiceException(Exception ex, RequestResult reqResult, Func<Stream, IDictionary<string, string>, StorageExtendedErrorInformation> parseError)
         {
             CommonUtility.AssertNotNull("reqResult", reqResult);
@@ -290,6 +334,26 @@ namespace Microsoft.WindowsAzure.Storage
             return new StorageException(reqResult, ex.Message, ex);
         }
 #endif
+        /// <summary>
+        /// Populate the RequestResult.
+        /// </summary>
+        /// <param name="reqResult">The request result.</param>
+        /// <param name="response">The web response.</param>
+        private static void PopulateRequestResult(RequestResult reqResult, HttpWebResponse response)
+        {
+            reqResult.HttpStatusMessage = response.StatusDescription;
+            reqResult.HttpStatusCode = (int)response.StatusCode;
+            if (response.Headers != null)
+            {
+#if WINDOWS_DESKTOP
+                reqResult.ServiceRequestID = HttpWebUtility.TryGetHeader(response, Constants.HeaderConstants.RequestIdHeader, null);
+                reqResult.ContentMd5 = HttpWebUtility.TryGetHeader(response, "Content-MD5", null);
+                string tempDate = HttpWebUtility.TryGetHeader(response, "Date", null);
+                reqResult.RequestDate = string.IsNullOrEmpty(tempDate) ? DateTime.Now.ToString("R", CultureInfo.InvariantCulture) : tempDate;
+                reqResult.Etag = response.Headers[HttpResponseHeader.ETag];
+#endif
+            }
+        }
 
         /// <summary>
         /// Represents an exception thrown by the Windows Azure storage client library. 

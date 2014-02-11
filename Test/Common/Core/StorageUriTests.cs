@@ -175,7 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudBlobDirectory directory = container.GetDirectoryReference("directory");
             Assert.IsTrue(directoryUri.Equals(directory.StorageUri));
             Assert.IsTrue(directoryUri.PrimaryUri.Equals(directory.Uri));
-            Assert.IsNull(directory.Parent);
+            Assert.IsNotNull(directory.Parent);
             Assert.IsTrue(containerUri.Equals(directory.Container.StorageUri));
             Assert.IsTrue(endpoint.Equals(directory.ServiceClient.StorageUri));
 
