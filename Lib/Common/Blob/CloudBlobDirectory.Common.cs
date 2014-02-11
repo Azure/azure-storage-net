@@ -32,30 +32,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private CloudBlobDirectory parent;
 
         /// <summary>
-        /// Stores the prefix this directory represents.
-        /// </summary>
-        private string prefix;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlobDirectory"/> class given an address and a client.
         /// </summary>
-        /// <param name="absolutePath">The blob directory's address.</param>
+        /// <param name="uri">The blob directory's Uri.</param>
+        /// <param name="prefix">The blob directory's prefix.</param> 
         /// <param name="container">The container for the virtual directory.</param>
-        internal CloudBlobDirectory(string absolutePath, CloudBlobContainer container)
+        internal CloudBlobDirectory(StorageUri uri, string prefix, CloudBlobContainer container)
         {
-            CommonUtility.AssertNotNullOrEmpty("absolutePath", absolutePath);
+            CommonUtility.AssertNotNull("uri", uri);
+            CommonUtility.AssertNotNull("prefix", prefix);
             CommonUtility.AssertNotNull("container", container);
 
             this.ServiceClient = container.ServiceClient;
             this.Container = container;
-
-            string delimiter = Uri.EscapeUriString(this.ServiceClient.DefaultDelimiter);
-            if (!absolutePath.EndsWith(delimiter, StringComparison.Ordinal))
-            {
-                absolutePath = absolutePath + delimiter;
-            }
-
-            this.StorageUri = NavigationHelper.AppendPathToUri(this.ServiceClient.StorageUri, absolutePath);
+            this.Prefix = prefix;
+            this.StorageUri = uri;
         }
 
         /// <summary>
@@ -75,7 +66,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return this.StorageUri.PrimaryUri;
             }
         }
-
 
         /// <summary>
         /// Gets the blob directory's URIs for all locations.
@@ -99,15 +89,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (this.parent == null)
                 {
-                    StorageUri parentUri = NavigationHelper.GetParentAddress(
-                            this.StorageUri,
-                            this.ServiceClient.DefaultDelimiter,
-                            this.ServiceClient.UsePathStyleUris);
+                    string parentName = NavigationHelper.GetParentName(this.StorageUri, this.ServiceClient.DefaultDelimiter, this.ServiceClient.UsePathStyleUris);
 
-                    if (parentUri != null)
+                    if (parentName != null)
                     {
+                        StorageUri parentUri = NavigationHelper.AppendPathToUri(this.Container.StorageUri, parentName);
+
                         this.parent = new CloudBlobDirectory(
-                            parentUri.PrimaryUri.AbsoluteUri,
+                            parentUri,
+                            parentName,
                             this.Container);
                     }
                 }
@@ -120,18 +110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets the prefix.
         /// </summary>
         /// <value>The prefix.</value>
-        public string Prefix
-        {
-            get
-            {
-                if (this.prefix == null)
-                {
-                    this.InitializePrefix();
-                }
-
-                return this.prefix;
-            }
-        }
+        public string Prefix { get; private set; }
 
         /// <summary>
         /// Gets a reference to a page blob in this virtual directory.
@@ -189,19 +168,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public CloudBlobDirectory GetSubdirectoryReference(string itemName)
         {
             CommonUtility.AssertNotNull("itemName", itemName);
-            StorageUri subdirectoryUri = NavigationHelper.AppendPathToUri(this.StorageUri, itemName, this.ServiceClient.DefaultDelimiter);
-            return new CloudBlobDirectory(subdirectoryUri.PrimaryUri.AbsoluteUri, this.Container);
-        }
-       
-        /// <summary>
-        /// Initializes the prefix.
-        /// </summary>
-        private void InitializePrefix()
-        {
-            // Need to add the trailing slash or MakeRelativeUri will return the containerName again
-            Uri parentUri = new Uri(this.Container.Uri + NavigationHelper.Slash);
+            if (!string.IsNullOrEmpty(itemName) && !itemName.EndsWith(this.ServiceClient.DefaultDelimiter, StringComparison.Ordinal))
+            {
+                itemName = itemName + this.ServiceClient.DefaultDelimiter;
+            }
 
-            this.prefix = Uri.UnescapeDataString(parentUri.MakeRelativeUri(this.Uri).OriginalString);
+            StorageUri subdirectoryUri = NavigationHelper.AppendPathToUri(this.StorageUri, itemName, this.ServiceClient.DefaultDelimiter);
+            return new CloudBlobDirectory(subdirectoryUri, this.Prefix + itemName, this.Container);
         }
     }
 }

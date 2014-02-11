@@ -16,6 +16,7 @@
       <Value>Fisma</Value>
       <Value>func</Value>
       <Value>impl</Value>
+      <Value>Json</Value>
       <Value>Md</Value>
       <Value>myblob</Value>
       <Value>mycontainer</Value>
@@ -235,7 +236,7 @@
           <RuleSettings>
             <BooleanProperty Name="Enabled">False</BooleanProperty>
           </RuleSettings>
-        </Rule>       
+        </Rule>
       </Rules>
       <AnalyzerSettings />
     </Analyzer>

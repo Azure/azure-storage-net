@@ -204,29 +204,30 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         #region TableEntity Serialization Helpers
 
-        internal static List<ODataProperty> GetPropertiesFromDictionary(IDictionary<string, EntityProperty> properties)
+        internal static IEnumerable<ODataProperty> GetPropertiesFromDictionary(IDictionary<string, EntityProperty> properties)
         {
-            return properties.Select(kvp => new ODataProperty() { Name = kvp.Key, Value = kvp.Value.PropertyAsObject }).ToList();
+            return properties.Select(kvp => new ODataProperty() { Name = kvp.Key, Value = kvp.Value.PropertyAsObject });
         }
 
-        internal static List<ODataProperty> GetPropertiesWithKeys(ITableEntity entity, OperationContext operationContext, TableOperationType operationType)
+        internal static IEnumerable<ODataProperty> GetPropertiesWithKeys(ITableEntity entity, OperationContext operationContext, TableOperationType operationType)
         {
-            List<ODataProperty> retProps = GetPropertiesFromDictionary(entity.WriteEntity(operationContext));
-
             if (operationType == TableOperationType.Insert)
             {
                 if (entity.PartitionKey != null)
                 {
-                    retProps.Add(new ODataProperty() { Name = TableConstants.PartitionKey, Value = entity.PartitionKey });
+                    yield return new ODataProperty() { Name = TableConstants.PartitionKey, Value = entity.PartitionKey };
                 }
 
                 if (entity.RowKey != null)
                 {
-                    retProps.Add(new ODataProperty() { Name = TableConstants.RowKey, Value = entity.RowKey });
+                    yield return new ODataProperty() { Name = TableConstants.RowKey, Value = entity.RowKey };
                 }
             }
 
-            return retProps;
+            foreach (ODataProperty property in GetPropertiesFromDictionary(entity.WriteEntity(operationContext)))
+            {
+                yield return property;
+            }
         }
         #endregion
 

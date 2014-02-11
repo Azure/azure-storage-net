@@ -371,15 +371,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (this.parent == null)
                 {
-                    StorageUri parentUri = NavigationHelper.GetParentAddress(
-                            this.StorageUri,
-                            this.ServiceClient.DefaultDelimiter,
-                            this.ServiceClient.UsePathStyleUris);
+                    string parentName = NavigationHelper.GetParentName(this.StorageUri, this.ServiceClient.DefaultDelimiter, this.ServiceClient.UsePathStyleUris);
 
-                    if (parentUri != null)
+                    if (parentName != null)
                     {
+                        StorageUri parentUri = NavigationHelper.AppendPathToUri(this.Container.StorageUri, parentName);
+
                         this.parent = new CloudBlobDirectory(
-                            parentUri.PrimaryUri.AbsoluteUri,
+                            parentUri,
+                            parentName,
                             this.Container);
                     }
                 }

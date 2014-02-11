@@ -50,6 +50,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private AuthenticationScheme authenticationScheme;
 
+        private string accountName;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudTableClient"/> class using the specified Table service endpoint
         /// and anonymous credentials.
@@ -90,12 +92,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
         {
             this.StorageUri = storageUri;
-            this.Credentials = credentials ?? new StorageCredentials();
+            this.Credentials = credentials ?? new StorageCredentials();      
             this.RetryPolicy = new ExponentialRetry();
             this.LocationMode = LocationMode.PrimaryOnly;
             this.ServerTimeout = Constants.DefaultServerSideTimeout;
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
+
+            if (!this.Credentials.IsSharedKey)
+            {
+                this.AccountName = NavigationHelper.GetAccountNameFromUri(this.BaseUri, this.UsePathStyleUris);
+            }
         }
 
         /// <summary>
@@ -212,6 +219,23 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <value>Is <c>true</c> if use path style URIs; otherwise, <c>false</c>.</value>
         internal bool UsePathStyleUris { get; private set; }
+
+        /// <summary>
+        /// Gets the associated account name for the client.
+        /// </summary>
+        /// <value>The account name.</value>
+        internal string AccountName
+        {
+            get
+            {
+                return this.accountName ?? this.Credentials.AccountName;
+            }
+
+            private set
+            {
+                this.accountName = value;
+            }
+        }
 
         /// <summary>
         /// Gets a reference to the specified table.

@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
@@ -81,23 +82,20 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     return;
                 }
 
-                lock (executionState.CancellationLockerObject)
+                if (Executor.CheckCancellation(executionState))
                 {
-                    if (Executor.CheckCancellation(executionState))
-                    {
-                        Executor.EndOperation(executionState);
-                        return;
-                    }
+                    Executor.EndOperation(executionState);
+                    return;
+                }
 
-                    // 5. potentially upload data
-                    if (executionState.RestCMD.SendStream != null)
-                    {
-                        Executor.BeginGetRequestStream(executionState);
-                    }
-                    else
-                    {
-                        Executor.BeginGetResponse(executionState);
-                    }
+                // 5. potentially upload data
+                if (executionState.RestCMD.SendStream != null)
+                {
+                    Executor.BeginGetRequestStream(executionState);
+                }
+                else
+                {
+                    Executor.BeginGetResponse(executionState);
                 }
             }
             catch (Exception ex)
@@ -198,39 +196,36 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         {
             executionState.CurrentOperation = ExecutorOperation.EndUploadRequest;
 
-            lock (executionState.CancellationLockerObject)
+            Executor.CheckCancellation(executionState);
+
+            if (executionState.ExceptionRef != null)
             {
-                Executor.CheckCancellation(executionState);
-
-                if (executionState.ExceptionRef != null)
+                try
                 {
-                    try
-                    {
-                        executionState.Req.Abort();
-                    }
-                    catch (Exception)
-                    {
-                        // No op
-                    }
-
-                    Executor.EndOperation(executionState);
+                    executionState.Req.Abort();
                 }
-                else
+                catch (Exception)
                 {
-                    try
-                    {
-                        executionState.ReqStream.Flush();
-                        executionState.ReqStream.Dispose();
-                        executionState.ReqStream = null;
-                    }
-                    catch (Exception)
-                    {
-                        // If we could not flush/dispose the request stream properly,
-                        // BeginGetResponse will fail with a more meaningful error anyway.
-                    }
-
-                    Executor.BeginGetResponse(executionState);
+                    // No op
                 }
+
+                Executor.EndOperation(executionState);
+            }
+            else
+            {
+                try
+                {
+                    executionState.ReqStream.Flush();
+                    executionState.ReqStream.Dispose();
+                    executionState.ReqStream = null;
+                }
+                catch (Exception)
+                {
+                    // If we could not flush/dispose the request stream properly,
+                    // BeginGetResponse will fail with a more meaningful error anyway.
+                }
+
+                Executor.BeginGetResponse(executionState);
             }
         }
         #endregion
@@ -289,7 +284,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     }
                     else
                     {
-                        executionState.ExceptionRef = ExecutorBase.TranslateExceptionBasedOnParseError(ex, executionState.Cmd.CurrentResult, executionState.Resp, executionState.Cmd.ParseError);
+                        // Store this exception for now. It will be parsed/thrown after the stream is read in step 8
+                        executionState.ExceptionRef = ex;
                     }
                 }
 
@@ -300,21 +296,37 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 if (executionState.RestCMD.PreProcessResponse != null)
                 {
                     executionState.CurrentOperation = ExecutorOperation.PreProcess;
-                    executionState.Result = executionState.RestCMD.PreProcessResponse(executionState.RestCMD, executionState.Resp, executionState.ExceptionRef, executionState.OperationContext);
 
-                    // clear exception
-                    executionState.ExceptionRef = null;
-                    Logger.LogInformational(executionState.OperationContext, SR.TracePreProcessDone);
+                    try
+                    {
+                        executionState.Result = executionState.RestCMD.PreProcessResponse(executionState.RestCMD, executionState.Resp, executionState.ExceptionRef, executionState.OperationContext);
+
+                        // clear exception
+                        executionState.ExceptionRef = null;
+                        Logger.LogInformational(executionState.OperationContext, SR.TracePreProcessDone);
+                    }
+                    catch (Exception ex)
+                    {
+                        executionState.ExceptionRef = ex;
+                    }
                 }
 
                 Executor.CheckCancellation(executionState);
 
-                // 8. (Potentially reads stream from server)
-                if (executionState.ExceptionRef == null)
-                {
-                    executionState.CurrentOperation = ExecutorOperation.GetResponseStream;
-                    executionState.RestCMD.ResponseStream = executionState.Resp.GetResponseStream();
+                executionState.CurrentOperation = ExecutorOperation.GetResponseStream;
+                executionState.RestCMD.ResponseStream = executionState.Resp.GetResponseStream();
 
+                // 8. (Potentially reads stream from server)
+                if (executionState.ExceptionRef != null)
+                {
+                    executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
+                    Logger.LogInformational(executionState.OperationContext, SR.TraceDownloadError);
+
+                    executionState.RestCMD.ErrorStream = new MemoryStream();
+                    executionState.RestCMD.ResponseStream.WriteToAsync(executionState.RestCMD.ErrorStream, null /* copyLength */, null /* maxLength */, false /* calculateMd5 */, executionState, new StreamDescriptor(), EndResponseStreamCopy);
+                }
+                else
+                {
                     if (!executionState.RestCMD.RetrieveResponseStream)
                     {
                         executionState.RestCMD.DestinationStream = Stream.Null;
@@ -337,11 +349,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         Executor.EndOperation(executionState);
                     }
                 }
-                else
-                {
-                    // End
-                    Executor.EndOperation(executionState);
-                }
             }
             catch (Exception ex)
             {
@@ -353,6 +360,32 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         private static void EndResponseStreamCopy<T>(ExecutionState<T> executionState)
         {
+            // At this time, the response/error stream has been read. So try to parse the error if there was en exception
+            if (executionState.RestCMD.ErrorStream != null)
+            {
+                executionState.RestCMD.ErrorStream.Seek(0, SeekOrigin.Begin);
+                if (executionState.Cmd.ParseError != null)
+                {
+                    executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null), executionState.RestCMD.ErrorStream);
+                }
+                else
+                {
+                    executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, null, executionState.RestCMD.ErrorStream);
+                }
+
+                // Dispose the stream and end the operation
+                try
+                {
+                    executionState.RestCMD.ErrorStream.Dispose();
+                    executionState.RestCMD.ErrorStream = null;
+                }
+                catch (Exception)
+                {
+                    // no-op
+                }
+            }
+
+            // Dispose the stream and end the operation
             try
             {
                 if (executionState.RestCMD.ResponseStream != null)
@@ -367,6 +400,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             }
 
             executionState.CurrentOperation = ExecutorOperation.EndDownloadResponse;
+
             Executor.EndOperation(executionState);
         }
         #endregion
@@ -377,48 +411,45 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         {
             Executor.FinishRequestAttempt(executionState);
 
-            lock (executionState.CancellationLockerObject)
+            try
+            {
+                // If an operation has been canceled of timed out this should overwrite any exception
+                Executor.CheckCancellation(executionState);
+                Executor.CheckTimeout(executionState, true);
+
+                // Success
+                if (executionState.ExceptionRef == null)
+                {
+                    // Step 9 - This will not be called if an exception is raised during stream copying
+                    Executor.ProcessEndOfRequest(executionState);
+                    executionState.OnComplete();
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(executionState.OperationContext, SR.TracePostProcessError, ex.Message);
+                executionState.ExceptionRef = ExecutorBase.TranslateExceptionBasedOnParseError(ex, executionState.Cmd.CurrentResult, executionState.Resp, executionState.Cmd.ParseError);
+            }
+            finally
             {
                 try
                 {
-                    // If an operation has been canceled of timed out this should overwrite any exception
-                    Executor.CheckCancellation(executionState);
-                    Executor.CheckTimeout(executionState, true);
-
-                    // Success
-                    if (executionState.ExceptionRef == null)
+                    if (executionState.ReqStream != null)
                     {
-                        // Step 9 - This will not be called if an exception is raised during stream copying
-                        Executor.ProcessEndOfRequest(executionState);
-                        executionState.OnComplete();
-                        return;
+                        executionState.ReqStream.Dispose();
+                        executionState.ReqStream = null;
+                    }
+
+                    if (executionState.Resp != null)
+                    {
+                        executionState.Resp.Close();
+                        executionState.Resp = null;
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Logger.LogWarning(executionState.OperationContext, SR.TracePostProcessError, ex.Message);
-                    executionState.ExceptionRef = ExecutorBase.TranslateExceptionBasedOnParseError(ex, executionState.Cmd.CurrentResult, executionState.Resp, executionState.Cmd.ParseError);
-                }
-                finally
-                {
-                    try
-                    {
-                        if (executionState.ReqStream != null)
-                        {
-                            executionState.ReqStream.Dispose();
-                            executionState.ReqStream = null;
-                        }
-
-                        if (executionState.Resp != null)
-                        {
-                            executionState.Resp.Close();
-                            executionState.Resp = null;
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        // no op
-                    }
+                    // no op
                 }
             }
 

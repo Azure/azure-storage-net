@@ -66,6 +66,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         // Stream to potentially copy response into
         public Stream DestinationStream = null;
 
+        // Stream to potentially copy error response into
+        public Stream ErrorStream = null;
+
         // if true, the inStream will be set before processresponse is called.
         public bool RetrieveResponseStream = false;
 

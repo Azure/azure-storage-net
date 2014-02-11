@@ -18,6 +18,8 @@
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -27,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     [TestClass]
     public class CloudBlobDirectoryTest : BlobTestBase
     {
-        string[] Delimiters = new string[] {"$", "@", "-", "%", "/", "|"};
+        string[] Delimiters = new string[] { ":", "$", "@", "-", "%", "/", "|", "$$", "::", "//"};
 
         private bool CloudBlobDirectorySetupWithDelimiter(CloudBlobContainer container, string delimiter = "/")
         {
@@ -97,13 +99,34 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     container.Create();
                     CloudPageBlob blob = container.GetPageBlobReference("Dir1" + delimiter + "Blob1");
                     blob.Create(0);
-                    Assert.IsTrue(blob.Exists());
                     Assert.AreEqual("Dir1" + delimiter + "Blob1", blob.Name);
+
+                    // get the blob's parent
                     CloudBlobDirectory parent = blob.Parent;
                     Assert.AreEqual(parent.Prefix, "Dir1" + delimiter);
-                    blob.Delete();
-                }
 
+                    // get container as parent
+                    CloudBlobDirectory root = parent.Parent;
+                    Assert.AreEqual(root.Prefix, "");
+
+                    // make sure the parent of the container dir is null
+                    CloudBlobDirectory empty = root.Parent;
+                    Assert.IsNull(empty);
+
+                    // from container, get directory reference to container
+                    root = container.GetDirectoryReference("");
+                    Assert.AreEqual("", root.Prefix);
+                    Assert.AreEqual(container.Uri.AbsoluteUri, root.Uri.AbsoluteUri);
+
+                    List<IListBlobItem> list = root.ListBlobs().ToList();
+                    Assert.AreEqual(1, list.Count);
+
+                    // make sure the parent of the container dir is null
+                    empty = root.Parent;
+                    Assert.IsNull(empty);
+
+                    blob.DeleteIfExists();
+                }
                 finally
                 {
                     container.DeleteIfExists();
@@ -223,7 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 list1.AddRange(result1.Results);
                                 token = result1.ContinuationToken;
                             }
-                            while(token!=null);
+                            while (token != null);
 
                             Assert.IsTrue(list1.Count == 3);
 
@@ -255,7 +278,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             Assert.IsTrue(item41.Uri.Equals(container.Uri + "/TopDir1" + delimiter + "MidDir2" + delimiter + "EndDir1" + delimiter + "EndBlob1"));
 
                             IListBlobItem item42 = list2.ElementAt(1);
-                            Assert.IsTrue(item42.Uri.Equals(container.Uri + "/TopDir1" + delimiter + "MidDir2" + delimiter + "EndDir2" + delimiter + "EndBlob2"));                 
+                            Assert.IsTrue(item42.Uri.Equals(container.Uri + "/TopDir1" + delimiter + "MidDir2" + delimiter + "EndDir2" + delimiter + "EndBlob2"));
                         }
                     }
                 }
@@ -365,7 +388,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             BlobResultSegment result1 = directory.ListBlobsSegmented(token);
                             token = result1.ContinuationToken;
                             list1.AddRange(result1.Results);
-                        } 
+                        }
                         while (token != null);
 
                         Assert.IsTrue(list1.Count == 3);
@@ -387,7 +410,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             BlobResultSegment result2 = midDir2.ListBlobsSegmented(true, BlobListingDetails.None, null, token, null, null);
                             token = result2.ContinuationToken;
                             list2.AddRange(result2.Results);
-                        } 
+                        }
                         while (token != null);
 
                         Assert.IsTrue(list2.Count == 2);
@@ -455,7 +478,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CloudBlobDirectory root = container.GetDirectoryReference("TopDir1" + delimiter);
                     CloudBlobDirectory parent = root.Parent;
-                    Assert.IsNull(parent);
+                    Assert.IsNotNull(parent);
+
+                    CloudBlobDirectory empty = parent.Parent;
+                    Assert.IsNull(empty);
                 }
                 finally
                 {
@@ -601,6 +627,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlobContainer container = client.GetContainerReference("$root");
 
                 CloudPageBlob pageBlob = container.GetPageBlobReference("Dir1" + delimiter + "Blob1");
+
                 if (delimiter == "/")
                 {
                     TestHelper.ExpectedException(
@@ -612,6 +639,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 else
                 {
                     CloudPageBlob blob = container.GetPageBlobReference("TopDir1" + delimiter + "MidDir1" + delimiter + "EndDir1" + delimiter + "EndBlob1");
+
                     CloudBlobDirectory directory = blob.Parent;
                     Assert.AreEqual(directory.Prefix, "TopDir1" + delimiter + "MidDir1" + delimiter + "EndDir1" + delimiter);
                     Assert.AreEqual(directory.Uri, container.Uri + "/TopDir1" + delimiter + "MidDir1" + delimiter + "EndDir1" + delimiter);
@@ -647,14 +675,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 try
                 {
-                    CloudPageBlob blob = container.GetPageBlobReference(delimiter+delimiter+delimiter+"Blob1");
+                    CloudPageBlob blob = container.GetPageBlobReference(delimiter + delimiter + delimiter + "Blob1");
 
                     ////Traverse from leaf to root
                     CloudBlobDirectory directory1 = blob.Parent;
-                    Assert.AreEqual(directory1.Prefix, delimiter+delimiter+delimiter);
+                    Assert.AreEqual(directory1.Prefix, delimiter + delimiter + delimiter);
 
                     CloudBlobDirectory directory2 = directory1.Parent;
-                    Assert.AreEqual(directory2.Prefix, delimiter+delimiter);
+                    Assert.AreEqual(directory2.Prefix, delimiter + delimiter);
 
                     CloudBlobDirectory directory3 = directory2.Parent;
                     Assert.AreEqual(directory3.Prefix, delimiter);
@@ -662,13 +690,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     ////Traverse from root to leaf
                     CloudBlobDirectory directory4 = container.GetDirectoryReference(delimiter);
                     CloudBlobDirectory directory5 = directory4.GetSubdirectoryReference(delimiter);
-                    Assert.AreEqual(directory5.Prefix, delimiter+delimiter);
+                    Assert.AreEqual(directory5.Prefix, delimiter + delimiter);
 
                     CloudBlobDirectory directory6 = directory5.GetSubdirectoryReference(delimiter);
-                    Assert.AreEqual(directory6.Prefix, delimiter+delimiter+delimiter);
+                    Assert.AreEqual(directory6.Prefix, delimiter + delimiter + delimiter);
 
                     CloudPageBlob blob2 = directory6.GetPageBlobReference("Blob1");
-                    Assert.AreEqual(blob2.Name, delimiter+delimiter+delimiter+"Blob1");
+                    Assert.AreEqual(blob2.Name, delimiter + delimiter + delimiter + "Blob1");
                     Assert.AreEqual(blob2.Uri, blob.Uri);
                 }
                 finally
@@ -677,8 +705,5 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
         }
-
-
     }
 }
-

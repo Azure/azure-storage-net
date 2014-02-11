@@ -130,6 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         // Since HttpClient wont throw for non success, manually check and populate an exception
                         if (!executionState.Resp.IsSuccessStatusCode)
                         {
+                            // At this point, don't try to read the stream to parse the error
                             executionState.ExceptionRef = await Exceptions.PopulateStorageExceptionFromHttpResponseMessage(executionState.Resp, executionState.Cmd.CurrentResult);
                         }
 
@@ -140,10 +141,19 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         if (cmd.PreProcessResponse != null)
                         {
                             executionState.CurrentOperation = ExecutorOperation.PreProcess;
-                            executionState.Result = cmd.PreProcessResponse(cmd, executionState.Resp, executionState.ExceptionRef, executionState.OperationContext);
 
-                            // clear exception
-                            executionState.ExceptionRef = null;
+                            try
+                            {
+                                executionState.Result = cmd.PreProcessResponse(cmd, executionState.Resp, executionState.ExceptionRef, executionState.OperationContext);
+
+                                // clear exception
+                                executionState.ExceptionRef = null;
+                            }
+                            catch (Exception ex)
+                            {
+                                executionState.ExceptionRef = ex;
+                            }
+
                             Logger.LogInformational(executionState.OperationContext, SR.TracePreProcessDone);
                         }
 
@@ -151,28 +161,54 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         executionState.CurrentOperation = ExecutorOperation.GetResponseStream;
                         cmd.ResponseStream = await executionState.Resp.Content.ReadAsStreamAsync();
 
-                        if (!cmd.RetrieveResponseStream)
+                        // The stream is now available in ResponseStream. Use the stream to parse out the response or error
+                        if (executionState.ExceptionRef != null)
                         {
-                            cmd.DestinationStream = Stream.Null;
-                        }
-
-                        if (cmd.DestinationStream != null)
-                        {
-                            if (cmd.StreamCopyState == null)
-                            {
-                                cmd.StreamCopyState = new StreamDescriptor();
-                            }
+                            executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
+                            Logger.LogInformational(executionState.OperationContext, SR.TraceDownloadError);
 
                             try
                             {
-                                executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
-                                Logger.LogInformational(executionState.OperationContext, SR.TraceDownload);
-                                await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, null /* copyLength */, null /* maxLength */, cmd.CalculateMd5ForResponseStream, executionState, cmd.StreamCopyState, token);
+                                cmd.ErrorStream = new MemoryStream();
+                                await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), token);
+                                cmd.ErrorStream.Seek(0, SeekOrigin.Begin);
+                                executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, null /* parseError */, cmd.ErrorStream);
+                                throw executionState.ExceptionRef;
                             }
                             finally
                             {
                                 cmd.ResponseStream.Dispose();
                                 cmd.ResponseStream = null;
+
+                                cmd.ErrorStream.Dispose();
+                                cmd.ErrorStream = null;
+                            }
+                        }
+                        else
+                        {
+                            if (!cmd.RetrieveResponseStream)
+                            {
+                                cmd.DestinationStream = Stream.Null;
+                            }
+
+                            if (cmd.DestinationStream != null)
+                            {
+                                if (cmd.StreamCopyState == null)
+                                {
+                                    cmd.StreamCopyState = new StreamDescriptor();
+                                }
+
+                                try
+                                {
+                                    executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
+                                    Logger.LogInformational(executionState.OperationContext, SR.TraceDownload);
+                                    await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, null /* copyLength */, null /* maxLength */, cmd.CalculateMd5ForResponseStream, executionState, cmd.StreamCopyState, token);
+                                }
+                                finally
+                                {
+                                    cmd.ResponseStream.Dispose();
+                                    cmd.ResponseStream = null;
+                                }
                             }
                         }
 
@@ -213,7 +249,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                             IExtendedRetryPolicy extendedRetryPolicy = executionState.RetryPolicy as IExtendedRetryPolicy;
                             if (extendedRetryPolicy != null)
                             {
-                                RetryContext retryContext = new RetryContext(executionState.RetryCount++,
+                                RetryContext retryContext = new RetryContext(
+                                    executionState.RetryCount++,
                                     cmd.CurrentResult,
                                     executionState.CurrentLocation,
                                     cmd.LocationMode);

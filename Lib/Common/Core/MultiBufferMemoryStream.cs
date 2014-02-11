@@ -276,6 +276,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
             this.Reserve(value);
             this.length = value;
+            this.position = Math.Min(this.position, this.length);
         }
 
         /// <summary>

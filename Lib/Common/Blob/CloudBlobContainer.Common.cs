@@ -263,9 +263,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A reference to a virtual blob directory.</returns>
         public CloudBlobDirectory GetDirectoryReference(string relativeAddress)
         {
-            CommonUtility.AssertNotNullOrEmpty("relativeAddress", relativeAddress);
+            CommonUtility.AssertNotNull("relativeAddress", relativeAddress);
+            if (!string.IsNullOrEmpty(relativeAddress) && !relativeAddress.EndsWith(this.ServiceClient.DefaultDelimiter, StringComparison.Ordinal))
+            {
+                relativeAddress = relativeAddress + this.ServiceClient.DefaultDelimiter;
+            }
+
             StorageUri blobDirectoryUri = NavigationHelper.AppendPathToUri(this.StorageUri, relativeAddress);
-            return new CloudBlobDirectory(blobDirectoryUri.PrimaryUri.AbsoluteUri, this);
+            return new CloudBlobDirectory(blobDirectoryUri, relativeAddress, this);
         }
     }
 }

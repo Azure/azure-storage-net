@@ -187,3 +187,13 @@ Issues fixed in 3.0.2.0 :
   - Queues: Fixed an issue causing NullReferenceException when trying to re-create an existing queue.
   - Tables: Fixed an issue with TableServiceContext causing NullReferenceException when the error response cannot be parsed.
   - Tables (RT): Do not allow users to set JsonFullMetadata format on RequestOptions in RT, because JSON is not supported on the RT library yet.
+
+Issues fixed in 3.0.3.0 :
+
+  - All: Fixed an issue that was causing a deadlock because the cancellation registration was being de-registered while holding on to a lock that the cancellation callback was waiting on.
+  - All: Fixed an issue where parsing exception information out of the response stream while using async was blocking on IO calls.
+  - All (WP): Fixed an issue with cancellation and timeout during upload and download causing a thread to hang. HttpWebRequest.Abort is not called during stream operations anymore.
+  - Blobs: Streams opened with OpenRead methods use the user-provided buffer pooling implementation.
+  - Blobs: If the parent of a blob is the container, Cloud{BlockBlob|PageBlob|BlobDirectory}.Parent returns a valid CloudBlobDirectory with an empty prefix. Similarly, container.GetDirectoryReference("") gets a valid CloudBlobDirectory representing the container.
+  - Tables (Perf): Fixed an issue where the entity properties were being enumerated twice during table write operations while using JSON.
+  - Tables (Perf): Parse the URI for the account name only once in the client constructor and store it so that all table operations can use the stored value.

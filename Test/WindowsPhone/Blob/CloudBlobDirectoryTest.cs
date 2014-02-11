@@ -260,7 +260,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CloudBlobDirectory root = container.GetDirectoryReference("TopDir1" + delimiter);
                     CloudBlobDirectory parent = root.Parent;
-                    Assert.IsNull(parent);
+                    Assert.IsNotNull(parent);
+
+                    CloudBlobDirectory empty = parent.Parent;
+                    Assert.IsNull(empty);
                 }
                 finally
                 {

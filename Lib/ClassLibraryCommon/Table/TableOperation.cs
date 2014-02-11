@@ -178,14 +178,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             insertCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
                 insertCmd.SendStream = res.Item2;
                 return res.Item1;
             };
 
-            insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd);
+            insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
-            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
 
             return insertCmd;
         }
@@ -199,8 +199,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             deleteCmd.RetrieveResponseStream = false;
             deleteCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             deleteCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            deleteCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris)).Item1;
-            deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd);
+            deleteCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName).Item1;
+            deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
             return deleteCmd;
         }
@@ -216,12 +216,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             mergeCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             mergeCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
                 mergeCmd.SendStream = res.Item2;
                 return res.Item1;
             };
 
-            mergeCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd);
+            mergeCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
             return mergeCmd;
         }
@@ -237,12 +237,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             replaceCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             replaceCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
                 replaceCmd.SendStream = res.Item2;
                 return res.Item1;
             };
 
-            replaceCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd);
+            replaceCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
             return replaceCmd;
         }
@@ -257,8 +257,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             retrieveCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            retrieveCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris)).Item1;
-            retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd);
+            retrieveCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName).Item1;
+            retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
@@ -266,7 +266,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     return result;
                 }
 
-                result = TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris));
+                result = TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
                 return result;
             };
 

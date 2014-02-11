@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using Microsoft.Data.OData;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
@@ -37,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
     internal class TableOperationHttpResponseParsers
     {
-        internal static TableResult TableOperationPreProcess<T>(TableResult result, TableOperation operation, HttpWebResponse resp, Exception ex, StorageCommandBase<T> cmd)
+        internal static TableResult TableOperationPreProcess(TableResult result, TableOperation operation, HttpWebResponse resp, Exception ex)
         {
             result.HttpStatusCode = (int)resp.StatusCode;
 
@@ -45,14 +46,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             {
                 if (resp.StatusCode != HttpStatusCode.OK && resp.StatusCode != HttpStatusCode.NotFound)
                 {
-                    throw ExecutorBase.TranslateExceptionBasedOnParseError(ex, cmd.CurrentResult, resp, cmd.ParseError);
+                    CommonUtility.AssertNotNull("ex", ex);
+                    throw ex;
                 }
             }
             else
             {
                 if (ex != null)
                 {
-                    throw ExecutorBase.TranslateExceptionBasedOnParseError(ex, cmd.CurrentResult, resp, cmd.ParseError);
+                    throw ex;
                 }
                 else if (operation.OperationType == TableOperationType.Insert)
                 {
@@ -60,14 +62,14 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     {
                         if (resp.StatusCode != HttpStatusCode.Created)
                         {
-                            throw ExecutorBase.TranslateExceptionBasedOnParseError(ex, cmd.CurrentResult, resp, cmd.ParseError);
+                            throw ex;
                         }
                     }
                     else
                     {
                         if (resp.StatusCode != HttpStatusCode.NoContent)
                         {
-                            throw ExecutorBase.TranslateExceptionBasedOnParseError(ex, cmd.CurrentResult, resp, cmd.ParseError);
+                            throw ex;
                         }
                     }
                 }
@@ -75,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 {
                     if (resp.StatusCode != HttpStatusCode.NoContent)
                     {
-                        throw ExecutorBase.TranslateExceptionBasedOnParseError(ex, cmd.CurrentResult, resp, cmd.ParseError);
+                        throw ex;
                     }
                 }
             }

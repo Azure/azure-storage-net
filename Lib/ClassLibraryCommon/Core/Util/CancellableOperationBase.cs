@@ -49,18 +49,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         {
             get
             {
-                lock (this.cancellationLockerObject)
-                {
-                    return this.cancelDelegate;
-                }
+                return this.cancelDelegate;
             }
 
             set
             {
-                lock (this.cancellationLockerObject)
-                {
-                    this.cancelDelegate = value;
-                }
+                this.cancelDelegate = value;
             }
         }
 

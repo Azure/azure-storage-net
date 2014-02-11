@@ -75,7 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
             // Since the default is JSON light, this is valid. If users change it to Atom or NoMetadata, this gets updated.
             if (this.payloadFormat == TablePayloadFormat.Json)
             {
-                this.Format.UseJson(new TableStorageModel(NavigationHelper.GetAccountNameFromUri(client.BaseUri, client.UsePathStyleUris)));
+                this.Format.UseJson(new TableStorageModel(client.AccountName));
             }
         }
 

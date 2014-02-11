@@ -141,7 +141,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             string containerName;
             StorageUri containerUri;
-            GetContainerNameAndAddress(blobAddress, usePathStyleUris, out containerName, out containerUri);
+            bool explicitRoot = GetContainerNameAndAddress(blobAddress, usePathStyleUris, out containerName, out containerUri);
+            if (!explicitRoot)
+            {
+                return null;
+            }
+
             containerName += NavigationHelper.Slash;
 
             // Get the blob path as the rest of the Uri
@@ -170,7 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 {
                     // Case 2 /<Container>/<folder>
                     // Parent of a folder is container
-                    parentName = null;
+                    parentName = string.Empty;
                 }
                 else
                 {
@@ -179,34 +184,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     parentName = Uri.UnescapeDataString(blobPath.Substring(0, parentLength + delimiter.Length));
                     if (parentName == containerName)
                     {
-                        parentName = null;
+                        parentName = string.Empty;
                     }
                 }
             }
 
-            return parentName;
-        }
-
-        /// <summary>
-        /// Retrieves the parent address for a blob Uri.
-        /// </summary>
-        /// <param name="blobAddress">The blob address.</param>
-        /// <param name="delimiter">The delimiter.</param>
-        /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
-        /// <returns>The address of the parent.</returns>
-        /// <example>
-        /// GetParentName(new Uri("http://test.blob.core.windows.net/mycontainer/myfolder/myblob", null))
-        /// will return "http://test.blob.core.windows.net/mycontainer/myfolder/"
-        /// </example>
-        internal static StorageUri GetParentAddress(StorageUri blobAddress, string delimiter, bool? usePathStyleUris)
-        {
-            string parentName = GetParentName(blobAddress, delimiter, usePathStyleUris);
-            if (parentName == null)
-            {
-                return null;
-            }
-
-            return NavigationHelper.AppendPathToUri(NavigationHelper.GetServiceClientBaseAddress(blobAddress, usePathStyleUris), parentName);
+            return string.IsNullOrEmpty(parentName) ? parentName : parentName.Substring(containerName.Length);
         }
 
         /// <summary>
@@ -272,83 +255,83 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// Appends a path to a list of URIs correctly using "/" as separator.
         /// </summary>
         /// <param name="uriList">The base URI.</param>
-        /// <param name="relativeOrAbsoluteUri">The relative or absolute URI.</param>
+        /// <param name="relativeUri">The relative or absolute URI.</param>
         /// <returns>The list of appended URIs.</returns>
-        internal static StorageUri AppendPathToUri(StorageUri uriList, string relativeOrAbsoluteUri)
+        internal static StorageUri AppendPathToUri(StorageUri uriList, string relativeUri)
         {
-            return AppendPathToUri(uriList, relativeOrAbsoluteUri, NavigationHelper.Slash);
+            return AppendPathToUri(uriList, relativeUri, NavigationHelper.Slash);
         }
 
         /// <summary>
         /// Appends a path to a list of URIs correctly using "/" as separator.
         /// </summary>
         /// <param name="uriList">The base URI.</param>
-        /// <param name="relativeOrAbsoluteUri">The relative or absolute URI.</param>
+        /// <param name="relativeUri">The relative or absolute URI.</param>
         /// <param name="sep">The separator.</param>
         /// <returns>The list of appended URIs.</returns>
-        internal static StorageUri AppendPathToUri(StorageUri uriList, string relativeOrAbsoluteUri, string sep)
+        internal static StorageUri AppendPathToUri(StorageUri uriList, string relativeUri, string sep)
         {
             return new StorageUri(
-                AppendPathToSingleUri(uriList.PrimaryUri, relativeOrAbsoluteUri, sep),
-                AppendPathToSingleUri(uriList.SecondaryUri, relativeOrAbsoluteUri, sep));
+                AppendPathToSingleUri(uriList.PrimaryUri, relativeUri, sep),
+                AppendPathToSingleUri(uriList.SecondaryUri, relativeUri, sep));
         }
 
         /// <summary>
         /// Append a relative path to a URI, handling trailing slashes appropriately.
         /// </summary>
         /// <param name="uri">The base URI.</param>
-        /// <param name="relativeOrAbsoluteUri">The relative or absolute URI.</param>
+        /// <param name="relativeUri">The relative or absolute URI.</param>
         /// <returns>The appended Uri.</returns>
-        internal static Uri AppendPathToSingleUri(Uri uri, string relativeOrAbsoluteUri)
+        internal static Uri AppendPathToSingleUri(Uri uri, string relativeUri)
         {
-            return AppendPathToSingleUri(uri, relativeOrAbsoluteUri, NavigationHelper.Slash);
+            return AppendPathToSingleUri(uri, relativeUri, NavigationHelper.Slash);
         }
 
         /// <summary>
         /// Append a relative path to a URI, handling trailing slashes appropriately.
         /// </summary>
         /// <param name="uri">The base URI.</param>
-        /// <param name="relativeOrAbsoluteUri">The relative or absolute URI.</param>
+        /// <param name="relativeUri">The relative or absolute URI.</param>
         /// <param name="sep">The separator.</param>
         /// <returns>The appended Uri.</returns>
-        internal static Uri AppendPathToSingleUri(Uri uri, string relativeOrAbsoluteUri, string sep)
+        internal static Uri AppendPathToSingleUri(Uri uri, string relativeUri, string sep)
         {
-            if (uri == null)
+            if (uri == null || relativeUri.Length == 0)
             {
-                return null;
+                return uri;
             }
 
-            Uri relativeUri;
+            Uri absoluteUri;
 
             // Because of URI's Scheme, URI.TryCreate() can't differentiate a string with colon from an absolute URI. 
             // A workaround is added here to verify if a given string is an absolute URI.
-            if (Uri.TryCreate(relativeOrAbsoluteUri, UriKind.Absolute, out relativeUri) && (relativeUri.Scheme == "http" || relativeUri.Scheme == "https"))
+            if (Uri.TryCreate(relativeUri, UriKind.Absolute, out absoluteUri) && (string.CompareOrdinal(absoluteUri.Scheme, "http") == 0 || string.CompareOrdinal(absoluteUri.Scheme, "https") == 0))
             {
                 // Handle case if relPath is an absolute Uri
-                if (uri.IsBaseOf(relativeUri))
+                if (uri.IsBaseOf(absoluteUri))
                 {
-                    return relativeUri;
+                    return absoluteUri;
                 }
                 else
                 {
                     // Happens when using fiddler, DNS aliases, or potentially NATs
-                    Uri absoluteUri = new Uri(relativeOrAbsoluteUri);
+                    absoluteUri = new Uri(relativeUri);
                     return new Uri(uri, absoluteUri.AbsolutePath);
                 }
             }
 
             sep = Uri.EscapeUriString(sep);
-            relativeOrAbsoluteUri = Uri.EscapeUriString(relativeOrAbsoluteUri);
+            relativeUri = Uri.EscapeUriString(relativeUri);
 
             UriBuilder ub = new UriBuilder(uri);
             string appendString = null;
             if (ub.Path.EndsWith(sep, StringComparison.Ordinal))
             {
-                appendString = relativeOrAbsoluteUri;
+                appendString = relativeUri;
             }
             else
             {
-                appendString = sep + relativeOrAbsoluteUri;
+                appendString = sep + relativeUri;
             }
 
             ub.Path += appendString;
@@ -418,10 +401,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="usePathStyleUris">True to use path style Uris.</param>
         /// <param name="containerName">Name of the container.</param>
         /// <param name="containerUri">The container URI.</param>
-        private static void GetContainerNameAndAddress(StorageUri blobAddress, bool? usePathStyleUris, out string containerName, out StorageUri containerUri)
+        /// <returns><c>true</c> when the container is an explicit container. <c>false</c>, otherwise.</returns> 
+        private static bool GetContainerNameAndAddress(StorageUri blobAddress, bool? usePathStyleUris, out string containerName, out StorageUri containerUri)
         {
-            containerName = GetContainerName(blobAddress.PrimaryUri, usePathStyleUris);
+            string blobName;
+            bool explicitCont = GetContainerNameAndBlobName(blobAddress.PrimaryUri, usePathStyleUris, out containerName, out blobName);
             containerUri = NavigationHelper.AppendPathToUri(GetServiceClientBaseAddress(blobAddress, usePathStyleUris), containerName);
+            
+            return explicitCont;
         }
 
         /// <summary>
@@ -431,7 +418,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
         /// <param name="containerName">The resulting container name.</param>
         /// <param name="blobName">The resulting blob name.</param>
-        private static void GetContainerNameAndBlobName(Uri blobAddress, bool? usePathStyleUris, out string containerName, out string blobName)
+        /// <returns>A bool representing whether the blob is in an explicit container or not.</returns>
+        private static bool GetContainerNameAndBlobName(Uri blobAddress, bool? usePathStyleUris, out string containerName, out string blobName)
         {
             CommonUtility.AssertNotNull("blobAddress", blobAddress);
 
@@ -476,7 +464,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 string[] blobNameSegments = new string[addressParts.Length - firstBlobIndex];
                 Array.Copy(addressParts, firstBlobIndex, blobNameSegments, 0, blobNameSegments.Length);
                 blobName = string.Concat(blobNameSegments);
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>

@@ -167,12 +167,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 #if WINDOWS_DESKTOP
         protected static bool CheckCancellation<T>(ExecutionState<T> executionState)
         {
-            if (executionState.CancelRequested)
+            lock (executionState.CancellationLockerObject)
             {
-                executionState.ExceptionRef = Exceptions.GenerateCancellationException(executionState.Cmd.CurrentResult, null);
-            }
+                if (executionState.CancelRequested)
+                {
+                    executionState.ExceptionRef = Exceptions.GenerateCancellationException(executionState.Cmd.CurrentResult, null);
+                }
 
-            return executionState.CancelRequested;
+                return executionState.CancelRequested;
+            }
         }
 #endif
 

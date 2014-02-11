@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     /// </summary>
     internal class SR
     {
+        public const string AbsoluteAddressNotPermitted = "Address '{0}' is an absolute address. Only relative addresses are permitted.";
         public const string ArgumentEmptyError = "The argument must not be empty string.";
         public const string ArgumentOutOfRangeError = "The argument is out of range. Value passed: {0}";
         public const string ArgumentTooLargeError = "The argument '{0}' is larger than maximum of '{1}'";
@@ -132,6 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceAbortError = "Could not abort pending request because of {0}.";
         public const string TraceAbortRetry = "Aborting pending retry due to user request.";
         public const string TraceDownload = "Downloading response body.";
+        public const string TraceDownloadError = "Downloading error response body.";
         public const string TraceRetryInfo = "The extended retry policy set the next location to {0} and updated the location mode to {1}.";
         public const string TraceGenericError = "Exception thrown during the operation: {0}.";
         public const string TraceGetResponse = "Waiting for response.";
