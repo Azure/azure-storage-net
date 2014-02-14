@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         internal static string ComputeHmac256(byte[] key, string message)
         {
 #if WINDOWS_RT
-            MacAlgorithmProvider macAlgorithmProvider = MacAlgorithmProvider.OpenAlgorithm("HMAC_SHA256");
+            MacAlgorithmProvider macAlgorithmProvider = MacAlgorithmProvider.OpenAlgorithm(MacAlgorithmNames.hmacSha256);
             IBuffer keyMaterial = CryptographicBuffer.CreateFromByteArray(key);
             CryptographicKey hmacKey = macAlgorithmProvider.CreateKey(keyMaterial);
             IBuffer messageBuffer = CryptographicBuffer.ConvertStringToBinary(message, BinaryStringEncoding.Utf8);
