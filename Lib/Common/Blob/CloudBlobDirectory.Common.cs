@@ -23,7 +23,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a virtual directory of blobs on the client which emulates a hierarchical data store by using delimiter characters.
     /// </summary>
-    /// <remarks>Containers, which are encapsulated as <see cref="CloudBlobContainer"/> objects, hold directories, and directories hold block blobs and page blobs. Directories can also contain sub-directories.</remarks>
     public sealed partial class CloudBlobDirectory : IListBlobItem
     {
         /// <summary>
@@ -50,15 +49,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets the service client for the virtual directory.
+        /// Gets the Blob service client for the virtual directory.
         /// </summary>
-        /// <value>A client object that specifies the endpoint for the Windows Azure Blob service.</value>
+        /// <value>A <see cref="CloudBlobClient"/> object.</value>
         public CloudBlobClient ServiceClient { get; private set; }
 
         /// <summary>
         /// Gets the URI that identifies the virtual directory for the primary location.
         /// </summary>
-        /// <value>The URI to the virtual directory, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> containing the URI to the virtual directory, at the primary location.</value>
         public Uri Uri
         {
             get
@@ -68,21 +67,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets the blob directory's URIs for all locations.
+        /// Gets the blob directory's URIs for both the primary and secondary locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the blob directory's URIs for all locations.</value>
+        /// <value>An object of type <see cref="StorageUri"/> containing the blob directory's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
         /// Gets the container for the virtual directory.
         /// </summary>
-        /// <value>The container for the virtual directory.</value>
+        /// <value>A <see cref="CloudBlobContainer"/> object.</value>
         public CloudBlobContainer Container { get; private set; }
 
         /// <summary>
         /// Gets the parent directory for the virtual directory.
         /// </summary>
-        /// <value>The virtual directory's parent directory.</value>
+        /// <value>A <see cref="CloudBlobDirectory"/> object.</value>
         public CloudBlobDirectory Parent
         {
             get
@@ -109,14 +108,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the prefix.
         /// </summary>
-        /// <value>The prefix.</value>
+        /// <value>A string containing the prefix.</value>
         public string Prefix { get; private set; }
 
         /// <summary>
         /// Gets a reference to a page blob in this virtual directory.
         /// </summary>
-        /// <param name="blobName">The name of the blob.</param>
-        /// <returns>A reference to a page blob.</returns>
+        /// <param name="blobName">A string containing the name of the blob.</param>
+        /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
         public CloudPageBlob GetPageBlobReference(string blobName)
         {
             return this.GetPageBlobReference(blobName, null /* snapshotTime */);
@@ -126,8 +125,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Returns a reference to a page blob in this virtual directory.
         /// </summary>
         /// <param name="blobName">The name of the page blob.</param>
-        /// <param name="snapshotTime">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <returns>A reference to a page blob.</returns>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
         public CloudPageBlob GetPageBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
@@ -139,8 +138,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a reference to a block blob in this virtual directory.
         /// </summary>
-        /// <param name="blobName">The name of the blob.</param>
-        /// <returns>A reference to a block blob.</returns>
+        /// <param name="blobName">A string containing the name of the blob.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
         public CloudBlockBlob GetBlockBlobReference(string blobName)
         {
             return this.GetBlockBlobReference(blobName, null /* snapshotTime */);
@@ -149,9 +148,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a reference to a block blob in this virtual directory.
         /// </summary>
-        /// <param name="blobName">The name of the blob.</param>
-        /// <param name="snapshotTime">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <returns>A reference to a block blob.</returns>
+        /// <param name="blobName">A string containing the name of the blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
         public CloudBlockBlob GetBlockBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);

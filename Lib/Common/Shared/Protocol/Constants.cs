@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constant for the max value of ParallelOperationThreadCount for Block Blobs.
         /// </summary>
         public const int MaxParallelOperationThreadCount = 64;
-        
+
         /// <summary>
         /// Maximum number of shared access policy identifiers supported by server.
         /// </summary>
@@ -709,7 +709,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "3.0.3";
+            public const string UserAgentProductVersion = "3.1.0";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.
@@ -1003,7 +1003,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string CopyIdHeader = PrefixForStorageHeader + "copy-id";
 
             /// <summary>
-            /// Header that specifies the copy last modified time.
+            /// Header that specifies the conclusion time of the last attempted blob copy operation 
+            /// where this blob was the destination blob.
             /// </summary>
             public const string CopyCompletionTimeHeader = PrefixForStorageHeader + "copy-completion-time";
 
@@ -1246,6 +1247,23 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the table continuation token type.
             /// </summary>
             public const string TableType = "Table";
+        }
+
+        /// <summary>
+        /// Constants for version strings
+        /// </summary>
+        [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Justification = "Reviewed.")]
+        public static class VersionConstants
+        {
+            /// <summary>
+            /// Constant for the 2013-08-15 version.
+            /// </summary>
+            public const string August2013 = "2013-08-15";
+
+            /// <summary>
+            /// Constant for the 2012-02-12 version.
+            /// </summary>
+            public const string February2012 = "2012-02-12";
         }
     }
 }

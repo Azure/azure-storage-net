@@ -34,11 +34,11 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// <summary>
         /// Determines whether the operation should be retried and the interval until the next retry.
         /// </summary>
-        /// <param name="currentRetryCount">The number of retries for the given operation. A value of zero signifies this is the first error encountered.</param>
-        /// <param name="statusCode">The status code for the last operation.</param>
+        /// <param name="currentRetryCount">An integer specifying the number of retries for the given operation. A value of zero signifies this is the first error encountered.</param>
+        /// <param name="statusCode">An integer containing the status code for the last operation.</param>
         /// <param name="lastException">An <see cref="Exception"/> object that represents the last exception encountered.</param>
-        /// <param name="retryInterval">The interval to wait until the next retry.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="retryInterval">A <see cref="TimeSpan"/> indicating the interval to wait until the next retry.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the operation should be retried; otherwise, <c>false</c>.</returns>
         [SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "3#", Justification = "Back compatibility")]
         bool ShouldRetry(int currentRetryCount, int statusCode, Exception lastException, out TimeSpan retryInterval, OperationContext operationContext);

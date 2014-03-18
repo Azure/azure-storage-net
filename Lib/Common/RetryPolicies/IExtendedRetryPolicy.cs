@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// Determines whether the operation should be retried and the interval until the next retry.
         /// </summary>
         /// <param name="retryContext">A <see cref="RetryContext"/> object that indicates the number of retries, the results of the last request, and whether the next retry should happen in the primary or secondary location, and specifies the location mode.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="RetryInfo"/> object that indicates the location mode, and whether the next retry should happen in the primary or secondary location. If <c>null</c>, the operation will not be retried.</returns>
         RetryInfo Evaluate(RetryContext retryContext, OperationContext operationContext);
     }

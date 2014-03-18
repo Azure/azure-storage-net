@@ -67,6 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidCorsRule = "A CORS rule must contain at least one allowed origin and allowed method, and MaxAgeInSeconds cannot have a value less than zero.";
         public const string InvalidDirectoryName = "Directory name is invalid. Valid names should be 1 through 1024 characters long and should not end with a . or /";
         public const string InvalidGeoReplicationStatus = "Invalid geo-replication status in response: '{0}'";
+        public const string InvalidHeaders = "Headers are not supported in the 2012-02-12 version.";
         public const string InvalidLeaseStatus = "Invalid lease status in response: '{0}'";
         public const string InvalidLeaseState = "Invalid lease state in response: '{0}'";
         public const string InvalidLeaseDuration = "Invalid lease duration in response: '{0}'";
@@ -74,6 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidMetricsLevel = "Invalid metrics level specified.";
         public const string InvalidPageSize = "Page data must be a multiple of 512 bytes.";
         public const string InvalidQueueName = "Queue name is invalid. Valid names start and end with a lower case letter or a number and has in between a lower case letter, number or dash with no consecutive dashes and is 3 through 63 characters long";
+        public const string InvalidSASVersion = "SAS Version invalid. Valid versions include 2012-02-12 and 2013-08-15.";
         public const string InvalidTableName = "Table name is invalid. Valid names are case insensitive, start with a letter and is followed by letters or numbers and is 3 through 63 characters long";
         public const string IQueryableExtensionObjectMustBeTableQuery = "Query must be a TableQuery<T>";
         public const string JsonNotSupportedOnRT = "JSON payloads are not supported in Windows Runtime.";

@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Sets the content of this message.
         /// </summary>
-        /// <param name="content">The new message content.</param>
+        /// <param name="content">The content of the message as a byte array.</param>
         public void SetMessageContent(byte[] content)
         {
             this.RawString = Convert.ToBase64String(content);

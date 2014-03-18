@@ -77,21 +77,21 @@ namespace Microsoft.WindowsAzure.Storage
         public string RequestDate { get; internal set; }
 
         /// <summary>
-        /// Gets the location that the request was sent to.
+        /// Gets the location to which the request was sent.
         /// </summary>
-        /// <value>The location that the request was sent to.</value>
+        /// <value>A <see cref="StorageLocation"/> enumeration value.</value>
         public StorageLocation TargetLocation { get; internal set; }
 
         /// <summary>
         /// Gets the extended error information.
         /// </summary>
-        /// <value>The extended error information.</value>
+        /// <value>A <see cref="StorageExtendedErrorInformation"/> object.</value>
         public StorageExtendedErrorInformation ExtendedErrorInformation { get; internal set; }
 
         /// <summary>
         /// Gets or sets the exception.
         /// </summary>
-        /// <value>The exception.</value>
+        /// <value>An <see cref="System.Exception"/> object.</value>
         public Exception Exception
         {
             get
@@ -118,13 +118,13 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets the start time of the operation.
         /// </summary>
-        /// <value>The start time of the operation.</value>
+        /// <value>A <see cref="DateTime"/> value indicating the start time of the operation.</value>
         public DateTime StartTime { get; internal set; }
 
         /// <summary>
         /// Gets the end time of the operation.
         /// </summary>
-        /// <value>The end time of the operation.</value>
+        /// <value>A <see cref="DateTime"/> value indicating the end time of the operation.</value>
         public DateTime EndTime { get; internal set; }
 #endif
         /// <summary>

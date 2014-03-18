@@ -52,19 +52,19 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// <summary>
         /// Gets or sets the target location for the next retry.
         /// </summary>
-        /// <value>The target location for the next retry.</value>
+        /// <value>A <see cref="StorageLocation"/> enumeration value.</value>
         public StorageLocation TargetLocation { get; set; }
 
         /// <summary>
         /// Gets or sets the location mode for subsequent retries.
         /// </summary>
-        /// <value>The location mode for subsequent retries.</value>
+        /// <value>A <see cref="LocationMode"/> object.</value>
         public LocationMode UpdatedLocationMode { get; set; }
 
         /// <summary>
         /// Gets the interval until the next retry.
         /// </summary>
-        /// <value>The interval until the next retry.</value>
+        /// <value>A <see cref="TimeSpan"/> object specifying the interval until the next retry.</value>
         public TimeSpan RetryInterval
         {
             get

@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a value indicating whether or not the block has been committed.
         /// </summary>
-        /// <value><c>True</c> if the block has been committed; otherwise, <c>false</c>.</value>
+        /// <value><c>true</c> if the block has been committed; otherwise, <c>false</c>.</value>
         public bool Committed { get; internal set; }
     }
 }

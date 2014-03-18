@@ -197,3 +197,7 @@ Issues fixed in 3.0.3.0 :
   - Blobs: If the parent of a blob is the container, Cloud{BlockBlob|PageBlob|BlobDirectory}.Parent returns a valid CloudBlobDirectory with an empty prefix. Similarly, container.GetDirectoryReference("") gets a valid CloudBlobDirectory representing the container.
   - Tables (Perf): Fixed an issue where the entity properties were being enumerated twice during table write operations while using JSON.
   - Tables (Perf): Parse the URI for the account name only once in the client constructor and store it so that all table operations can use the stored value.
+
+Issues fixed in 3.1.0.0 : 
+
+  - All: Added the ability to choose which SAS Version to use when generating Shared Access Signatures (either the 2012-02-12 or 2013-08-15 versions).

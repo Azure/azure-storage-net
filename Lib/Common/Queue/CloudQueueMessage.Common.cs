@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets the maximum amount of time a message is kept in the queue.
         /// </summary>
-        /// <value>The maximum amount of time a message is kept in the queue.</value>
+        /// <value>A <see cref="TimeSpan"/> specifying the maximum amount of time a message is kept in the queue.</value>
         public static TimeSpan MaxTimeToLive
         {
             get
@@ -107,8 +107,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudQueueMessage"/> class with the given message ID and pop receipt.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt token.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string containing the pop receipt token.</param>
         public CloudQueueMessage(string messageId, string popReceipt)
         {
             this.Id = messageId;
@@ -155,37 +155,37 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets the message ID.
         /// </summary>
-        /// <value>The message ID.</value>
+        /// <value>A string containing the message ID.</value>
         public string Id { get; internal set; }
 
         /// <summary>
         /// Gets the message's pop receipt.
         /// </summary>
-        /// <value>The pop receipt value.</value>
+        /// <value>A string containing the pop receipt value.</value>
         public string PopReceipt { get; internal set; }
 
         /// <summary>
         /// Gets the time that the message was added to the queue.
         /// </summary>
-        /// <value>The time that the message was added to the queue.</value>
+        /// <value>A <see cref="DateTimeOffset"/> indicating the time that the message was added to the queue.</value>
         public DateTimeOffset? InsertionTime { get; internal set; }
 
         /// <summary>
         /// Gets the time that the message expires.
         /// </summary>
-        /// <value>The time that the message expires.</value>
+        /// <value>A <see cref="DateTimeOffset"/> indicating the time that the message expires.</value>
         public DateTimeOffset? ExpirationTime { get; internal set; }
 
         /// <summary>
         /// Gets the time that the message will next be visible.
         /// </summary>
-        /// <value>The time that the message will next be visible.</value>
+        /// <value>A <see cref="DateTimeOffset"/> indicating the time that the message will next be visible.</value>
         public DateTimeOffset? NextVisibleTime { get; internal set; }
 
         /// <summary>
         /// Gets the content of the message, as a string.
         /// </summary>
-        /// <value>The message content.</value>
+        /// <value>A string containing the message content.</value>
         public string AsString
         {
             get
@@ -282,7 +282,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Sets the content of this message.
         /// </summary>
-        /// <param name="content">The new message content.</param>
+        /// <param name="content">A string containing the new message content.</param>
         public void SetMessageContent(string content)
         {
             if (content == null)

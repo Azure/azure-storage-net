@@ -93,13 +93,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the next marker for continuing results for <see cref="ICloudBlob"/> enumeration operations.
         /// </summary>
-        /// <value>The next marker.</value>
+        /// <value>A string containing the NextMarker value.</value>
         public string NextMarker { get; set; }
 
         /// <summary>
         /// Gets or sets the storage location that the continuation token applies to.
         /// </summary>
-        /// <value>The storage location that the continuation token applies to.</value>
+        /// <value>A <see cref="StorageLocation"/> enumeration value.</value>
         public StorageLocation? TargetLocation { get; set; }
 
 #if WINDOWS_DESKTOP

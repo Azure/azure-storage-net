@@ -30,7 +30,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// <summary>
     /// Represents a continuation token returned by the Queue service.
     /// </summary>
-    /// <remarks><see cref="QueueContinuationToken"/> continuation tokens are used in methods that return a <see cref="QueueResultSegment"/> object, such as <see cref="CloudQueueClient.ListQueuesSegmented(QueueContinuationToken)"/>.</remarks>    
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     [Serializable]
 
@@ -90,15 +89,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Gets or sets the NextMarker for continuing results for CloudQueue enumeration operations.
+        /// Gets or sets the next marker for continuing results for <see cref="CloudQueue"/> enumeration operations.
         /// </summary>
-        /// <value>The next marker.</value>
+        /// <value>A string containing the NextMarker value.</value>
         public string NextMarker { get; set; }
 
         /// <summary>
         /// Gets or sets the storage location that the continuation token applies to.
         /// </summary>
-        /// <value>The storage location that the continuation token applies to.</value>
+        /// <value>A <see cref="StorageLocation"/> enumeration value.</value>
         public StorageLocation? TargetLocation { get; set; }
 
 #if WINDOWS_DESKTOP

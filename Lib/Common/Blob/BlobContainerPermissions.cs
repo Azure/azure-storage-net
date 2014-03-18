@@ -34,13 +34,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the public access setting for the container.
         /// </summary>
-        /// <value>The public access setting for the container.</value>
+        /// <value>A <see cref="BlobContainerPublicAccessType"/> enumeration value.</value>
         public BlobContainerPublicAccessType PublicAccess { get; set; }
 
         /// <summary>
         /// Gets the set of shared access policies for the container.
         /// </summary>
-        /// <value>The set of shared access policies for the container.</value>
+        /// <value>A <see cref="SharedAccessBlobPolicies"/> object.</value>
         public SharedAccessBlobPolicies SharedAccessPolicies { get; private set; }
     }
 }

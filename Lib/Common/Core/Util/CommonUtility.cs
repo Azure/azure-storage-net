@@ -89,11 +89,11 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 
         /// <summary>
-        /// Gets the first header value or null if no header values exist.
+        /// Gets the first header value or <c>null</c> if no header values exist.
         /// </summary>
         /// <typeparam name="T">The type of header objects contained in the enumerable.</typeparam>
         /// <param name="headerValues">An enumerable that contains header values.</param>
-        /// <returns>The first header value or null if no header values exist.</returns>
+        /// <returns>The first header value or <c>null</c> if no header values exist.</returns>
         public static string GetFirstHeaderValue<T>(IEnumerable<T> headerValues) where T : class
         {
             if (headerValues != null)
@@ -109,7 +109,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 
         /// <summary>
-        /// Throws an exception if the string is empty or null.
+        /// Throws an exception if the string is empty or <c>null</c>.
         /// </summary>
         /// <param name="paramName">The name of the parameter.</param>
         /// <param name="value">The value of the parameter.</param>

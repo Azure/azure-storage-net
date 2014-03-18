@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
         /// Signs the specified HTTP request so it can be authenticated by the Windows Azure storage services.
         /// </summary>
         /// <param name="request">The HTTP request to sign.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         void SignRequest(HttpWebRequest request, OperationContext operationContext);
     }
 }

@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Returns a buffer to the pool.
         /// </summary>
-        /// <param name="buffer">A reference to the buffer being returned.</param>
+        /// <param name="buffer">A byte array specifying the buffer to return to the pool.</param>
         /// <exception cref="System.ArgumentNullException">Buffer reference cannot be null.</exception>
         /// <exception cref="System.ArgumentException">Length of buffer does not match the pool's buffer length property.</exception>
 #if WINDOWS_RT
@@ -40,9 +40,9 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
         /// <summary>
-        /// Gets a buffer of at least the specified size from the pool.
+        /// Gets a buffer of the specified size or larger from the pool.
         /// </summary>
-        /// <param name="bufferSize"> The size, in bytes, of the requested buffer.</param>
+        /// <param name="bufferSize">The size, in bytes, of the requested buffer.</param>
         /// <exception cref="System.ArgumentOutOfRangeException">The value specified for <paramref name="bufferSize"/> cannot be less than zero.</exception>
         /// <returns>A byte array that is the requested size of the buffer.</returns>
         byte[] TakeBuffer(int bufferSize);

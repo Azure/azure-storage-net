@@ -233,7 +233,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="ex">The exception to translate.</param>
         /// <param name="reqResult">The request result.</param>
         /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
-        /// <returns>The storage exception or null.</returns>
+        /// <returns>The storage exception or <c>null</c>.</returns>
         private static StorageException CoreTranslate(Exception ex, RequestResult reqResult, ref Func<Stream, StorageExtendedErrorInformation> parseError)
         {
             CommonUtility.AssertNotNull("reqResult", reqResult);

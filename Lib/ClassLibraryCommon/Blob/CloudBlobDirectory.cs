@@ -33,9 +33,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Returns an enumerable collection of the blobs in the virtual directory that are retrieved lazily.
         /// </summary>
-        /// <param name="useFlatBlobListing">Specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
+        /// <param name="useFlatBlobListing">A boolean value that specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
         /// <param name="blobListingDetails">A <see cref="BlobListingDetails"/> enumeration describing which items to include in the listing.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of objects that implement <see cref="IListBlobItem"/> and are retrieved lazily.</returns>
         [DoesServiceRequest]
@@ -48,8 +48,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Returns a result segment containing a collection of blob items 
         /// in the virtual directory.
         /// </summary>
-        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
-        /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
+        /// <param name="currentToken">A <see cref="BlobContinuationToken"/> object returned by a previous listing operation.</param>
+        /// <returns>A <see cref="BlobResultSegment"/> object.</returns>
         [DoesServiceRequest]
         public BlobResultSegment ListBlobsSegmented(BlobContinuationToken currentToken)
         {
@@ -60,14 +60,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Returns a result segment containing a collection of blob items 
         /// in the virtual directory.
         /// </summary>
-        /// <param name="useFlatBlobListing">Specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
+        /// <param name="useFlatBlobListing">A boolean value that specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
         /// <param name="blobListingDetails">A <see cref="BlobListingDetails"/> enumeration describing which items to include in the listing.</param>
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
         /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>    
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
+        /// <returns>A <see cref="BlobResultSegment"/> object.</returns>
         [DoesServiceRequest]
         public BlobResultSegment ListBlobsSegmented(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -80,9 +80,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// in the virtual directory.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginListBlobsSegmented(BlobContinuationToken currentToken, AsyncCallback callback, object state)
         {
@@ -93,16 +93,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Begins an asynchronous operation to return a result segment containing a collection of blob items 
         /// in the virtual directory.
         /// </summary>
-        /// <param name="useFlatBlobListing">Specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
+        /// <param name="useFlatBlobListing">A boolean value that specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
         /// <param name="blobListingDetails">A <see cref="BlobListingDetails"/> enumeration describing which items to include in the listing.</param>
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
         /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>  
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginListBlobsSegmented(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
@@ -114,7 +114,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// in the virtual directory.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
+        /// <returns>A <see cref="BlobResultSegment"/> object.</returns>
         public BlobResultSegment EndListBlobsSegmented(IAsyncResult asyncResult)
         {
             return this.Container.EndListBlobsSegmented(asyncResult);
@@ -122,11 +122,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to return a result segment containing a collection of blob items 
+        /// Initiates an asynchronous operation to return a result segment containing a collection of blob items 
         /// in the virtual directory.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="BlobResultSegment"/>.</returns>
         [DoesServiceRequest]
         public Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken)
         {
@@ -134,12 +134,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to return a result segment containing a collection of blob items 
+        /// Initiates an asynchronous operation to return a result segment containing a collection of blob items 
         /// in the virtual directory.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="BlobResultSegment"/>.</returns>
         [DoesServiceRequest]
         public Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken, CancellationToken cancellationToken)
         {
@@ -147,17 +147,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
         
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to return a result segment containing a collection of blob items 
+        /// Initiates an asynchronous operation to return a result segment containing a collection of blob items 
         /// in the virtual directory.
         /// </summary>
-        /// <param name="useFlatBlobListing">Specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
+        /// <param name="useFlatBlobListing">A boolean value that specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
         /// <param name="blobListingDetails">A <see cref="BlobListingDetails"/> enumeration describing which items to include in the listing.</param>
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
         /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>  
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="BlobResultSegment"/>.</returns>
         [DoesServiceRequest]
         public Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -165,10 +165,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
         
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to return a result segment containing a collection of blob items 
+        /// Initiates an asynchronous operation to return a result segment containing a collection of blob items 
         /// in the virtual directory.
         /// </summary>
-        /// <param name="useFlatBlobListing">Specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
+        /// <param name="useFlatBlobListing">A boolean value that specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
         /// <param name="blobListingDetails">A <see cref="BlobListingDetails"/> enumeration describing which items to include in the listing.</param>
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
         /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>  
@@ -176,7 +176,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="BlobResultSegment"/>.</returns>
         [DoesServiceRequest]
         public Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {

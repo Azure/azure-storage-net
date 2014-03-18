@@ -35,10 +35,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to create a new container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, OperationContext operationContext)
         {
             return ContainerHttpWebRequestFactory.Create(uri, timeout, operationContext, BlobContainerPublicAccessType.Off);
@@ -47,11 +47,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to create a new container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and the level of access.</param>                
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, OperationContext operationContext, BlobContainerPublicAccessType accessType)
         {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
@@ -68,11 +68,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to delete the container and all of the blobs within it.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Delete(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
@@ -84,11 +84,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to return the user-defined metadata for this container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
@@ -100,11 +100,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to return the properties and user-defined metadata for this container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
@@ -116,11 +116,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to set user-defined metadata for the container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
@@ -132,18 +132,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to use to acquire, renew, change, release or break the lease for the container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="action">The lease action to perform.</param>
-        /// <param name="proposedLeaseId">A lease ID to propose for the result of an acquire or change operation,
-        /// or null if no ID is proposed for an acquire operation. This should be null for renew, release, and break operations.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="action">A <see cref="LeaseAction"/> enumeration value indicating the lease action to perform.</param>
+        /// <param name="proposedLeaseId">A string specifying the lease ID to propose for the result of an acquire or change operation,
+        /// or <c>null</c> if no ID is proposed for an acquire operation. This parameter should be <c>null</c> for renew, release, and break operations.</param>
         /// <param name="leaseDuration">The lease duration, in seconds, for acquire operations.
-        /// If this is -1 then an infinite duration is specified. This should be null for renew, change, release, and break operations.</param>
+        /// If this is -1 then an infinite duration is specified. This should be <c>null</c> for renew, change, release, and break operations.</param>
         /// <param name="leaseBreakPeriod">The amount of time to wait, in seconds, after a break operation before the lease is broken.
-        /// If this is null then the default time is used. This should be null for acquire, renew, change, and release operations.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// If this is <c>null</c> then the default time is used. This should be <c>null</c> for acquire, renew, change, and release operations.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = GetContainerUriQueryBuilder();
@@ -164,8 +164,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Adds user-defined metadata to the request as one or more name-value pairs.
         /// </summary>
-        /// <param name="request">The web request.</param>
-        /// <param name="metadata">The user-defined metadata.</param>
+        /// <param name="request">A <see cref="System.Net.HttpWebRequest"/> object.</param>
+        /// <param name="metadata">A <see cref="Dictionary{TKey,TValue}"/> object containing the user-defined metadata.</param>
         public static void AddMetadata(HttpWebRequest request, IDictionary<string, string> metadata)
         {
             HttpWebRequestFactory.AddMetadata(request, metadata);
@@ -174,9 +174,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Adds user-defined metadata to the request as a single name-value pair.
         /// </summary>
-        /// <param name="request">The web request.</param>
-        /// <param name="name">The metadata name.</param>
-        /// <param name="value">The metadata value.</param>
+        /// <param name="request">A <see cref="System.Net.HttpWebRequest"/> object.</param>
+        /// <param name="name">A string containing the metadata name.</param>
+        /// <param name="value">A string containing the metadata value.</param>
         public static void AddMetadata(HttpWebRequest request, string name, string value)
         {
             HttpWebRequestFactory.AddMetadata(request, name, value);
@@ -185,11 +185,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to return a listing of all containers in this storage account.
         /// </summary>
-        /// <param name="uri">The absolute URI for the account.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="listingContext">A set of parameters for the listing operation.</param>
-        /// <param name="detailsIncluded">Additional details to return with the listing.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
+        /// <param name="detailsIncluded">A <see cref="ContainerListingDetails"/> enumeration value that indicates whether to return container metadata with the listing.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for the specified operation.</returns>
         public static HttpWebRequest List(Uri uri, int? timeout, ListingContext listingContext, ContainerListingDetails detailsIncluded, OperationContext operationContext)
         {
@@ -226,11 +226,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to return the ACL for a container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetAcl(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
             HttpWebRequest request = HttpWebRequestFactory.GetAcl(uri, GetContainerUriQueryBuilder(), timeout, operationContext);
@@ -241,12 +241,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to set the ACL for a container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="publicAccess">The type of public access to allow for the container.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.String.ToLower", Justification = "ToLower(CultureInfo) is not present in RT and ToLowerInvariant() also violates FxCop")]
         public static HttpWebRequest SetAcl(Uri uri, int? timeout, BlobContainerPublicAccessType publicAccess, AccessCondition accessCondition, OperationContext operationContext)
         {
@@ -264,11 +264,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to return a listing of all blobs in the container.
         /// </summary>
-        /// <param name="uri">The absolute URI to the container.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="listingContext">A set of parameters for the listing operation.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest ListBlobs(Uri uri, int? timeout, BlobListingContext listingContext, OperationContext operationContext)
         {
             UriQueryBuilder builder = ContainerHttpWebRequestFactory.GetContainerUriQueryBuilder();

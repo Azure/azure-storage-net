@@ -62,10 +62,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         #region RT FactoryMethods
 
         /// <summary>
-        /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="DateTime"/> offset value.
+        /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="DateTimeOffset"/> value.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the <see cref="DateTime"/> offset type.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         public static EntityProperty GeneratePropertyForDateTimeOffset(DateTimeOffset? input)
         {
             return new EntityProperty(input);
@@ -75,7 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new <see cref="EntityProperty"/> object that represents the specified byte array.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the byte array.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         public static EntityProperty GeneratePropertyForByteArray(
 #if WINDOWS_RT
             [ReadOnlyArray]
@@ -89,7 +89,7 @@ byte[] input)
         /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="Boolean"/> value.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the <see cref="Boolean"/> type.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         public static EntityProperty GeneratePropertyForBool(bool? input)
         {
             return new EntityProperty(input);
@@ -99,7 +99,7 @@ byte[] input)
         /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="Double"/> value.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the <see cref="Double"/> type.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         public static EntityProperty GeneratePropertyForDouble(double? input)
         {
             return new EntityProperty(input);
@@ -109,7 +109,7 @@ byte[] input)
         /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="Guid"/> value.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the <see cref="Guid"/> type.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         public static EntityProperty GeneratePropertyForGuid(Guid? input)
         {
             return new EntityProperty(input);
@@ -119,7 +119,7 @@ byte[] input)
         /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="Int32"/> value.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the <see cref="Int32"/> type.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ForInt", Justification = "Reviewed")]
         public static EntityProperty GeneratePropertyForInt(int? input)
         {
@@ -130,7 +130,7 @@ byte[] input)
         /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="Int64"/> value.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the <see cref="Int64"/> type.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         public static EntityProperty GeneratePropertyForLong(long? input)
         {
             return new EntityProperty(input);
@@ -140,7 +140,7 @@ byte[] input)
         /// Creates a new <see cref="EntityProperty"/> object that represents the specified <see cref="String"/> value.
         /// </summary>
         /// <param name="input">The value for the new <see cref="EntityProperty"/>.</param>
-        /// <returns>A new <see cref="EntityProperty"/> of the <see cref="String"/> type.</returns>
+        /// <returns>An <see cref="EntityProperty"/> object with the specified value.</returns>
         public static EntityProperty GeneratePropertyForString(string input)
         {
             return new EntityProperty(input);
@@ -326,9 +326,9 @@ byte[] input)
 
         /// <summary>
         /// Gets or sets the byte array value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than an byte array.
         /// </summary>
         /// <value>The byte array value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than a byte array.</remarks>
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays", Justification = "Reviewed.")]
         public byte[] BinaryValue
         {
@@ -354,10 +354,10 @@ byte[] input)
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Boolean"/> value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than an <see cref="Boolean"/> Object.
+        /// Gets or sets the boolean value of this <see cref="EntityProperty"/> object.
         /// </summary>
-        /// <value>The <see cref="Boolean"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <value>The boolean value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than a boolean value.</remarks>
         public bool? BooleanValue
         {
             get
@@ -395,10 +395,10 @@ byte[] input)
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="DateTimeOffset"/> offset value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than a <see cref="DateTimeOffset"/> object.
+        /// Gets or sets the <see cref="DateTimeOffset"/> value of this <see cref="EntityProperty"/> object.
         /// </summary>
-        /// <value>The <see cref="DateTimeOffset"/> offset value of this <see cref="EntityProperty"/> object.</value>
+        /// <value>The <see cref="DateTimeOffset"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than a <see cref="DateTimeOffset"/> value.</remarks>
         public DateTimeOffset? DateTimeOffsetValue
         {
             get
@@ -428,10 +428,10 @@ byte[] input)
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Double"/> value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than a <see cref="Double"/> object.
+        /// Gets or sets the double value of this <see cref="EntityProperty"/> object.
         /// </summary>
-        /// <value>The <see cref="Double"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <value>The double value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than a double value.</remarks>
         public double? DoubleValue
         {
             get
@@ -457,9 +457,9 @@ byte[] input)
 
         /// <summary>
         /// Gets or sets the <see cref="Guid"/> value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than a <see cref="Guid"/> object.
         /// </summary>
         /// <value>The <see cref="Guid"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than a <see cref="Guid"/> value.</remarks>
         public Guid? GuidValue
         {
             get
@@ -484,10 +484,10 @@ byte[] input)
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Int32"/> value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than an <see cref="Int32"/> Object.
+        /// Gets or sets the <see cref="int"/> value of this <see cref="EntityProperty"/> object.
         /// </summary>
-        /// <value>The <see cref="Int32"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <value>The <see cref="int"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than a <see cref="int"/> value.</remarks>
         public int? Int32Value
         {
             get
@@ -512,10 +512,10 @@ byte[] input)
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Int64"/> value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than an <see cref="Int64"/> Object.
+        /// Gets or sets the <see cref="long"/> value of this <see cref="EntityProperty"/> object.
         /// </summary>
-        /// <value>The <see cref="Int64"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <value>The <see cref="long"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than an <see cref="long"/> value.</remarks>
         public long? Int64Value
         {
             get
@@ -540,10 +540,10 @@ byte[] input)
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="String"/> value of this <see cref="EntityProperty"/> object.
-        /// An exception will be thrown if you attempt to set this property to anything other than a <see cref="String"/> object.
+        /// Gets or sets the string value of this <see cref="EntityProperty"/> object.
         /// </summary>
-        /// <value>The <see cref="String"/> value of this <see cref="EntityProperty"/> object.</value>
+        /// <value>The string value of this <see cref="EntityProperty"/> object.</value>
+        /// <remarks>An exception is thrown if this property is set to a value other than a string value.</remarks>
         public string StringValue
         {
             get
@@ -670,10 +670,10 @@ byte[] input)
         internal bool IsNull { get; set; }
 
         /// <summary>
-        /// Creates an <see cref="EntityProperty"/> from the object.
+        /// Creates an <see cref="EntityProperty"/> from the specified object.
         /// </summary>
-        /// <param name="entityValue">The value of the object.</param>
-        /// <returns>The reference to the <see cref="EntityProperty"/> object created.</returns>
+        /// <param name="entityValue">An object containing the value for the entity property.</param>
+        /// <returns>An <see cref="EntityProperty"/> object.</returns>
         public static EntityProperty CreateEntityPropertyFromObject(object entityValue)
         {
             return CreateEntityPropertyFromObject(entityValue, true);

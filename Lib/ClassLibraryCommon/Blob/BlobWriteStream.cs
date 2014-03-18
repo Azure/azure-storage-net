@@ -37,9 +37,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initializes a new instance of the BlobWriteStream class for a block blob.
         /// </summary>
         /// <param name="blockBlob">Blob reference to write to.</param>
-        /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         internal BlobWriteStream(CloudBlockBlob blockBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : base(blockBlob, accessCondition, options, operationContext)
         {
@@ -51,9 +51,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="pageBlob">Blob reference to write to.</param>
         /// <param name="pageBlobSize">Size of the page blob.</param>
         /// <param name="createNew">Use <c>true</c> if the page blob is newly created, <c>false</c> otherwise.</param>
-        /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         internal BlobWriteStream(CloudPageBlob pageBlob, long pageBlobSize, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : base(pageBlob, pageBlobSize, createNew, accessCondition, options, operationContext)
         {
@@ -279,10 +279,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if WINDOWS_PHONE
         /// <summary>
-        /// Returns a task that performs an asynchronous flush operation.
+        /// Initiates an asynchronous operation that performs an asynchronous flush operation.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginFlush, this.EndFlush, cancellationToken);

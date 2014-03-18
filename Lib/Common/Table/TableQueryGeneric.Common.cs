@@ -31,14 +31,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
 
     /// <summary>
-    /// Represents a query against a specified table.
+    /// Represents a query against a Windows Azure table.
     /// </summary>
     public sealed partial class TableQuery<TElement>
     {
         #region Filter Generation
 
         /// <summary>
-        /// Generates a property filter condition string for the string value.
+        /// Generates a property filter condition string for a string value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
@@ -51,7 +51,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the boolean value.
+        /// Generates a property filter condition string for a boolean value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
@@ -63,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the binary value.
+        /// Generates a property filter condition string for a binary value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
@@ -91,7 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="DateTimeOffset"/> value.
+        /// Generates a property filter condition string for a <see cref="DateTimeOffset"/> value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
@@ -103,7 +103,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="double"/> value.
+        /// Generates a property filter condition string for a <see cref="double"/> value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
@@ -115,11 +115,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="int"/> value.
+        /// Generates a property filter condition string for an <see cref="int"/> value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
-        /// <param name="value">A <see cref="int"/> containing the value to compare with the property.</param>
+        /// <param name="value">An <see cref="int"/> containing the value to compare with the property.</param>
         /// <returns>A string containing the formatted filter condition.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ForInt", Justification = "Reviewed")]
         public static string GenerateFilterConditionForInt(string propertyName, string operation, int value)
@@ -128,11 +128,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="long"/> value.
+        /// Generates a property filter condition string for an <see cref="long"/> value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
-        /// <param name="value">A <see cref="long"/> containing the value to compare with the property.</param>
+        /// <param name="value">An <see cref="long"/> containing the value to compare with the property.</param>
         /// <returns>A string containing the formatted filter condition.</returns>
         public static string GenerateFilterConditionForLong(string propertyName, string operation, long value)
         {
@@ -140,7 +140,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="Guid"/> value.
+        /// Generates a property filter condition string for a <see cref="Guid"/> value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
@@ -153,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="EdmType"/> value, formatted as the specified <see cref="EdmType"/>.
+        /// Generates a property filter condition string for a <see cref="EdmType"/> value, formatted as the specified <see cref="EdmType"/>.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
@@ -196,7 +196,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a filter condition using the specified logical operator on two filter conditions.
         /// </summary>
         /// <param name="filterA">A string containing the first formatted filter condition.</param>
-        /// <param name="operatorString">A string containing <c>Operators.AND</c> or <c>Operators.OR</c>.</param>
+        /// <param name="operatorString">A string containing the operator to use (AND, OR).</param>
         /// <param name="filterB">A string containing the second formatted filter condition.</param>
         /// <returns>A string containing the combined filter expression.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Back compatibility.")]
@@ -248,9 +248,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Defines the property names of the table entity properties to return when the table query is executed. 
         /// </summary>
-        /// <remarks>The select clause is optional on a table query, used to limit the table properties returned from the server. By default, a query will return all properties from the table entity.</remarks>
         /// <param name="columns">A list of string objects containing the property names of the table entity properties to return when the query is executed.</param>
         /// <returns>A <see cref="TableQuery"/> instance set with the table entity properties to return.</returns>
+        /// <remarks>The select clause is optional on a table query, and is used to limit the table properties returned from the server. 
+        /// By default, a query will return all properties from the table entity.</remarks>
         public TableQuery<TElement> Select(IList<string> columns)
         {
 #if WINDOWS_DESKTOP

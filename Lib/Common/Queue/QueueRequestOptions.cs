@@ -97,19 +97,19 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets or sets the retry policy for the request.
         /// </summary>
-        /// <value>The retry policy delegate.</value>
+        /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
         /// <summary>
         /// Gets or sets the location mode of the request.
         /// </summary>
-        /// <value>The location mode of the request.</value>
+        /// <value>A <see cref="LocationMode"/> object indicating the location mode of the request.</value>
         public LocationMode? LocationMode { get; set; }
 
         /// <summary>
-        /// Gets or sets the server timeout for the request. 
+        /// Gets or sets the server timeout interval for the request.
         /// </summary>
-        /// <value>The client and server timeout interval for the request.</value>
+        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval for the request.</value>
         public TimeSpan? ServerTimeout { get; set; }
 
         /// <summary>

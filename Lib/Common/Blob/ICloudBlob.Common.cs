@@ -26,15 +26,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     public partial interface ICloudBlob : IListBlobItem
     {
         /// <summary>
-        /// Gets the blob item's name.
+        /// Gets the blob's name.
         /// </summary>
-        /// <value>The blob item's name.</value>
+        /// <value>A string containing the name of the blob.</value>
         string Name { get; }
 
         /// <summary>
         /// Gets the <see cref="CloudBlobClient"/> object that represents the Blob service.
         /// </summary>
-        /// <value>A client object that specifies the Blob service endpoint.</value>
+        /// <value>A <see cref="CloudBlobClient"/> object.</value>
         CloudBlobClient ServiceClient { get; }
 
         /// <summary>
@@ -53,19 +53,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the blob's system properties.
         /// </summary>
-        /// <value>The blob's properties.</value>
+        /// <value>A <see cref="BlobProperties"/> object.</value>
         BlobProperties Properties { get; }
 
         /// <summary>
         /// Gets the user-defined metadata for the blob.
         /// </summary>
-        /// <value>The blob's metadata, as a collection of name-value pairs.</value>
+        /// <value>An <see cref="IDictionary{TKey,TValue}"/> object containing the blob's metadata as a collection of name-value pairs.</value>
         IDictionary<string, string> Metadata { get; }
 
         /// <summary>
         /// Gets the date and time that the blob snapshot was taken, if this blob is a snapshot.
         /// </summary>
-        /// <value>The blob's snapshot time if the blob is a snapshot; otherwise, <c>null</c>.</value>
+        /// <value>A <see cref="DateTimeOffset"/> containing the blob's snapshot time if the blob is a snapshot; otherwise, <c>null</c>.</value>
         /// <remarks>
         /// If the blob is not a snapshot, the value of this property is <c>null</c>.
         /// </remarks>
@@ -78,34 +78,34 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         bool IsSnapshot { get; }
 
         /// <summary>
-        /// Gets the absolute URI to the blob, including query string information if the blob is a snapshot, at the primary location.
+        /// Gets the absolute URI to the blob, including query string information if the blob is a snapshot.
         /// </summary>
-        /// <value>The absolute URI to the blob, including snapshot query information if the blob is a snapshot, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the blob, including snapshot query information if the blob is a snapshot.</value>
         Uri SnapshotQualifiedUri { get; }
 
         /// <summary>
-        /// Gets the blob's URI for all locations, including query string information if the blob is a snapshot.
+        /// Gets the blob's URI for both the primary and secondary locations, including query string information if the blob is a snapshot.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the blob's URIs for all locations, 
+        /// <value>An object of type <see cref="StorageUri"/> containing the blob's URIs for both the primary and secondary locations, 
         /// including snapshot query information if the blob is a snapshot.</value>
         StorageUri SnapshotQualifiedStorageUri { get; }
 
         /// <summary>
         /// Gets the state of the most recent or pending copy operation.
         /// </summary>
-        /// <value>A <see cref="CopyState"/> object containing the copy state, or null if no copy blob state exists for this blob.</value>
+        /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if there is no copy state for the blob.</value>
         CopyState CopyState { get; }
 
         /// <summary>
         /// Gets the type of the blob.
         /// </summary>
-        /// <value>The type of the blob.</value>
+        /// <value>A <see cref="BlobType"/> enumeration value.</value>
         BlobType BlobType { get; }
 
         /// <summary>
         /// Returns a shared access signature for the blob.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         string GetSharedAccessSignature(SharedAccessBlobPolicy policy);
@@ -113,8 +113,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Returns a shared access signature for the blob.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
-        /// <param name="groupPolicyIdentifier">A container-level access policy.</param>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
 #if WINDOWS_RT
@@ -125,18 +125,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Returns a shared access signature for the blob.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
-        /// <param name="headers">The optional header values to set for a blob accessed with this SAS.</param>
-        /// <returns>A shared access signature.</returns>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="headers">A <see cref="SharedAccessBlobHeaders"/> object specifying optional header values to set for a blob accessed with this SAS.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
         string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers);
 
         /// <summary>
         /// Returns a shared access signature for the blob.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
-        /// <param name="headers">The optional header values to set for a blob returned with this SAS.</param>
-        /// <param name="groupPolicyIdentifier">A stored access policy.</param>
-        /// <returns>A shared access signature.</returns>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="headers">A <see cref="SharedAccessBlobHeaders"/> object specifying optional header values to set for a blob accessed with this SAS.</param>
+        /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
         string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier);
+
+        /// <summary>
+        /// Returns a shared access signature for the blob.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="headers">A <see cref="SharedAccessBlobHeaders"/> object specifying optional header values to set for a blob accessed with this SAS.</param>
+        /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <returns>A shared access signature.</returns>
+        string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, string sasVersion);
     }
 }

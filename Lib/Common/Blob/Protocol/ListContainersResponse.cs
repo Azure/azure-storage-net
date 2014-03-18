@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Gets the listing context from the XML response.
         /// </summary>
-        /// <value>A set of parameters for the listing operation.</value>
+        /// <value>A <see cref="ListingContext"/> object.</value>
         public ListingContext ListingContext
         {
             get
@@ -112,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Gets the Prefix value provided for the listing operation from the XML response.
         /// </summary>
-        /// <value>The Prefix value.</value>
+        /// <value>A string containing the Prefix value.</value>
         public string Prefix
         {
             get
@@ -126,7 +126,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Gets the Marker value provided for the listing operation from the XML response.
         /// </summary>
-        /// <value>The Marker value.</value>
+        /// <value>A string containing the Marker value.</value>
         public string Marker
         {
             get
@@ -140,7 +140,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Gets the MaxResults value provided for the listing operation from the XML response.
         /// </summary>
-        /// <value>The MaxResults value.</value>
+        /// <value>An integer containing the MaxResults value.</value>
         public int MaxResults
         {
             get
@@ -152,9 +152,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         }
 
         /// <summary>
-        /// Gets the NextMarker value from the XML response, if the listing was not complete.
+        /// Gets or sets the NextMarker value from the XML response, if the listing was not complete.
         /// </summary>
-        /// <value>The NextMarker value.</value>
+        /// <value>A string containing the NextMarker value.</value>
         public string NextMarker
         {
             get

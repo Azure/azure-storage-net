@@ -51,7 +51,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets or sets the client request ID.
         /// </summary>
-        /// <value>The client request ID.</value>
+        /// <value>A string containing the client request ID.</value>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "ID", Justification = "Back compatibility.")]
         public string ClientRequestID { get; set; }
 
@@ -117,13 +117,13 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets or sets the start time of the operation.
         /// </summary>
-        /// <value>The start time of the operation.</value>
+        /// <value>A <see cref="DateTime"/> value indicating the start time of the operation.</value>
         public DateTime StartTime { get; set; }
 
         /// <summary>
         /// Gets or sets the end time of the operation.
         /// </summary>
-        /// <value>The end time of the operation.</value>
+        /// <value>A <see cref="DateTime"/> value indicating the end time of the operation.</value>
         public DateTime EndTime { get; set; }
 #endif
         #endregion

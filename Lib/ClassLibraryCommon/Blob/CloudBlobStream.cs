@@ -43,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Waits for the pending asynchronous commit to complete.
         /// </summary>
-        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> object containing a reference to the pending asynchronous request to finish.</param>
         public abstract void EndCommit(IAsyncResult asyncResult);
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Waits for the pending asynchronous flush to complete.
         /// </summary>
-        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> object containing a reference to the pending asynchronous request to finish.</param>
         public abstract void EndFlush(IAsyncResult asyncResult);
     }
 }

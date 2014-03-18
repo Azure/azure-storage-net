@@ -37,26 +37,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the start time for a shared access signature associated with this shared access policy.
         /// </summary>
-        /// <value>The shared access start time.</value>
+        /// <value>A <see cref="DateTimeOffset"/> specifying the shared access start time.</value>
         public DateTimeOffset? SharedAccessStartTime { get; set; }
 
         /// <summary>
         /// Gets or sets the expiry time for a shared access signature associated with this shared access policy.
         /// </summary>
-        /// <value>The shared access expiry time.</value>
+        /// <value>A <see cref="DateTimeOffset"/> specifying the shared access expiry time.</value>
         public DateTimeOffset? SharedAccessExpiryTime { get; set; }
 
         /// <summary>
         /// Gets or sets the permissions for a shared access signature associated with this shared access policy.
         /// </summary>
-        /// <value>The permissions.</value>
+        /// <value>A <see cref="SharedAccessBlobPermissions"/> object.</value>
         public SharedAccessBlobPermissions Permissions { get; set; }
 
         /// <summary>
         /// Converts the permissions specified for the shared access policy to a string.
         /// </summary>
-        /// <param name="permissions">The shared access permissions.</param>
-        /// <returns>The shared access permissions in string format.</returns>
+        /// <param name="permissions">A <see cref="SharedAccessBlobPermissions"/> object.</param>
+        /// <returns>The shared access permissions, in string format.</returns>
         public static string PermissionsToString(SharedAccessBlobPermissions permissions) 
         {
             // The service supports a fixed order => rwdl
@@ -88,8 +88,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Constructs a <see cref="SharedAccessBlobPermissions"/> object from a permissions string.
         /// </summary>
-        /// <param name="input">The shared access permissions in string format.</param>
-        /// <returns>A set of shared access permissions.</returns>
+        /// <param name="input">The shared access permissions, in string format.</param>
+        /// <returns>A <see cref="SharedAccessBlobPermissions"/> object.</returns>
         public static SharedAccessBlobPermissions PermissionsFromString(string input) 
         {
             CommonUtility.AssertNotNull("input", input);

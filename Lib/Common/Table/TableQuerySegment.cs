@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets a continuation token to use to retrieve the next set of results with a subsequent call to the operation.
         /// </summary>
-        /// <value>The continuation token.</value>
+        /// <value>A <see cref="TableContinuationToken"/> object.</value>
         public TableContinuationToken ContinuationToken
         {
             get

@@ -36,20 +36,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Stores the continuation token used to retrieve the next segment of <see cref="CloudTable"/> results or null if there are no more results.
+        /// Stores the continuation token used to retrieve the next segment of <see cref="CloudTable"/> results or <c>null</c> if there are no more results.
         /// </summary>
         private TableContinuationToken continuationToken;
 
         /// <summary>
         /// Gets an enumerable collection of <see cref="CloudTable"/> results.
         /// </summary>
-        /// <value>An enumerable collection of results.</value>
+        /// <value>An enumerable collection of <see cref="CloudTable"/> objects.</value>
         public IList<CloudTable> Results { get; internal set; }
 
         /// <summary>
         /// Gets the continuation token used to retrieve the next segment of <see cref="CloudTable"/> results. Returns null if there are no more results.
         /// </summary>
-        /// <value>The continuation token.</value>
+        /// <value>A <see cref="TableContinuationToken"/> object.</value>
         public TableContinuationToken ContinuationToken
         {
             get

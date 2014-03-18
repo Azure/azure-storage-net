@@ -204,7 +204,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// Extracts a <see cref="CopyState"/> object from the headers of a web response.
         /// </summary>
         /// <param name="response">The HTTP web response.</param>
-        /// <returns>A <see cref="CopyState"/> object, or null if the web response does not contain a copy status.</returns>
+        /// <returns>A <see cref="CopyState"/> object, or <c>null</c> if the web response does not include copy state.</returns>
         public static CopyState GetCopyAttributes(HttpWebResponse response)
         {
             CommonUtility.AssertNotNull("response", response);

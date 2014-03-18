@@ -41,8 +41,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Creates the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void Create(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -59,7 +59,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to create a queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -72,8 +72,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Begins an asynchronous operation to create a queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -101,9 +101,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to create a queue.
+        /// Initiates an asynchronous operation to create a queue.
         /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task CreateAsync()
         {
@@ -111,10 +111,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to create a queue.
+        /// Initiates an asynchronous operation to create a queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task CreateAsync(CancellationToken cancellationToken)
         {
@@ -122,11 +122,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to create a queue.
+        /// Initiates an asynchronous operation to create a queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task CreateAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -134,12 +134,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to create a queue.
+        /// Initiates an asynchronous operation to create a queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task CreateAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -151,8 +151,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Creates the queue if it does not already exist.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
         public bool CreateIfNotExists(QueueRequestOptions options = null, OperationContext operationContext = null)
@@ -199,9 +199,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #endif
 
         /// <summary>
-        /// Begins an asynchronous request to create the queue if it does not already exist.
+        /// Begins an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -211,11 +211,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Begins an asynchronous request to create the queue if it does not already exist.
+        /// Begins an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -319,7 +319,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns the result of an asynchronous request to create the queue if it does not already exist.
+        /// Returns the result of an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise, <c>false</c>.</returns>
@@ -333,9 +333,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous request to create the queue if it does not already exist.
+        /// Initiates an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> CreateIfNotExistsAsync()
         {
@@ -343,10 +343,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to create the queue if it does not already exist.
+        /// Initiates an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> CreateIfNotExistsAsync(CancellationToken cancellationToken)
         {
@@ -354,11 +354,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to create the queue if it does not already exist.
+        /// Initiates an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -366,12 +366,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to create the queue if it does not already exist.
+        /// Initiates an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -383,8 +383,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Deletes the queue if it already exists.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
         public bool DeleteIfExists(QueueRequestOptions options = null, OperationContext operationContext = null)
@@ -426,9 +426,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #endif
         /// <summary>
-        /// Begins an asynchronous request to delete the queue if it already exists.
+        /// Begins an asynchronous operation to delete the queue if it already exists.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -438,11 +438,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Begins an asynchronous request to delete the queue if it already exists.
+        /// Begins an asynchronous operation to delete the queue if it already exists.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -545,7 +545,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns the result of an asynchronous request to delete the queue if it already exists.
+        /// Returns the result of an asynchronous operation to delete the queue if it already exists.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise, <c>false</c>.</returns>
@@ -559,9 +559,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous request to delete the queue if it already exists.
+        /// Initiates an asynchronous operation to delete the queue if it already exists.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> DeleteIfExistsAsync()
         {
@@ -569,10 +569,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to delete the queue if it already exists.
+        /// Initiates an asynchronous operation to delete the queue if it already exists.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> DeleteIfExistsAsync(CancellationToken cancellationToken)
         {
@@ -580,11 +580,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to delete the queue if it already exists.
+        /// Initiates an asynchronous operation to delete the queue if it already exists.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> DeleteIfExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -592,12 +592,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to delete the queue if it already exists.
+        /// Initiates an asynchronous operation to delete the queue if it already exists.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> DeleteIfExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -609,8 +609,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Deletes the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void Delete(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -627,7 +627,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to delete a queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -641,7 +641,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>    
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -669,9 +669,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a queue.
+        /// Initiates an asynchronous operation to delete a queue.
         /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync()
         {
@@ -679,10 +679,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a queue.
+        /// Initiates an asynchronous operation to delete a queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(CancellationToken cancellationToken)
         {
@@ -690,11 +690,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a queue.
+        /// Initiates an asynchronous operation to delete a queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -702,12 +702,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a queue.
+        /// Initiates an asynchronous operation to delete a queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -719,9 +719,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Sets permissions for the queue.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the queue.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="permissions">A <see cref="QueuePermissions"/> object.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void SetPermissions(QueuePermissions permissions, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -736,10 +736,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #endif
 
         /// <summary>
-        /// Begins an asynchronous request to set permissions for the queue.
+        /// Begins an asynchronous operation to set permissions for the queue.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the queue.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="permissions">A <see cref="QueuePermissions"/> object.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -749,12 +749,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Begins an asynchronous request to set permissions for the queue.
+        /// Begins an asynchronous operation to set permissions for the queue.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the queue.</param>
+        /// <param name="permissions">A <see cref="QueuePermissions"/> object.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -772,7 +772,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns the result of an asynchronous request to set permissions for the queue.
+        /// Returns the result of an asynchronous operation to set permissions for the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public void EndSetPermissions(IAsyncResult asyncResult)
@@ -782,10 +782,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous request to set permissions for the queue.
+        /// Initiates an asynchronous operation to set permissions for the queue.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the queue.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <param name="permissions">A <see cref="QueuePermissions"/> object.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(QueuePermissions permissions)
         {
@@ -793,11 +793,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to set permissions for the queue.
+        /// Initiates an asynchronous operation to set permissions for the queue.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the queue.</param>
+        /// <param name="permissions">A <see cref="QueuePermissions"/> object.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(QueuePermissions permissions, CancellationToken cancellationToken)
         {
@@ -805,12 +805,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to set permissions for the queue.
+        /// Initiates an asynchronous operation to set permissions for the queue.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the queue.</param>
+        /// <param name="permissions">A <see cref="QueuePermissions"/> object.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(QueuePermissions permissions, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -818,13 +818,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to set permissions for the queue.
+        /// Initiates an asynchronous operation to set permissions for the queue.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the queue.</param>
+        /// <param name="permissions">A <see cref="QueuePermissions"/> object.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(QueuePermissions permissions, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -836,9 +836,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets the permissions settings for the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <returns>The queue's permissions.</returns>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="QueuePermissions"/> object.</returns>
         [DoesServiceRequest]
         public QueuePermissions GetPermissions(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -853,9 +853,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #endif
 
         /// <summary>
-        /// Begins an asynchronous request to get the permissions settings for the queue.
+        /// Begins an asynchronous operation to get the permissions settings for the queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -865,11 +865,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Begins an asynchronous request to get the permissions settings for the queue.
+        /// Begins an asynchronous operation to get the permissions settings for the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -890,7 +890,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Returns the asynchronous result of the request to get the permissions settings for the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>The queue's permissions.</returns>
+        /// <returns>A <see cref="QueuePermissions"/> object.</returns>
         public QueuePermissions EndGetPermissions(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<QueuePermissions>(asyncResult);
@@ -898,9 +898,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous request to get the permissions settings for the queue.
+        /// Initiates an asynchronous operation to get the permissions settings for the queue.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="QueuePermissions"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<QueuePermissions> GetPermissionsAsync()
         {
@@ -908,10 +908,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to get the permissions settings for the queue.
+        /// Initiates an asynchronous operation to get the permissions settings for the queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="QueuePermissions"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<QueuePermissions> GetPermissionsAsync(CancellationToken cancellationToken)
         {
@@ -919,11 +919,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to get the permissions settings for the queue.
+        /// Initiates an asynchronous operation to get the permissions settings for the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="QueuePermissions"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<QueuePermissions> GetPermissionsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -931,12 +931,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to get the permissions settings for the queue.
+        /// Initiates an asynchronous operation to get the permissions settings for the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="QueuePermissions"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<QueuePermissions> GetPermissionsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -948,8 +948,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Checks existence of the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue exists.</returns>
         [DoesServiceRequest]
         public bool Exists(QueueRequestOptions options = null, OperationContext operationContext = null)
@@ -962,7 +962,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue exists.</returns>
         private bool Exists(bool primaryOnly, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -977,9 +977,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #endif
 
         /// <summary>
-        /// Begins an asynchronous request to check existence of the queue.
+        /// Begins an asynchronous operation to check the existence of the queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -989,11 +989,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Begins an asynchronous request to check existence of the queue.
+        /// Begins an asynchronous operation to check the existence of the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1003,12 +1003,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Begins an asynchronous request to check existence of the queue.
+        /// Begins an asynchronous operation to check the existence of the queue.
         /// </summary>
         /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         private ICancellableAsyncResult BeginExists(bool primaryOnly, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
@@ -1025,7 +1025,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns the asynchronous result of the request to check existence of the queue.
+        /// Returns the asynchronous result of the request to check the existence of the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns><c>true</c> if the queue exists.</returns>
@@ -1036,9 +1036,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous request to check existence of the queue.
+        /// Initiates an asynchronous operation to check the existence of the queue.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> ExistsAsync()
         {
@@ -1046,10 +1046,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to check existence of the queue.
+        /// Initiates an asynchronous operation to check the existence of the queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> ExistsAsync(CancellationToken cancellationToken)
         {
@@ -1057,11 +1057,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to check existence of the queue.
+        /// Initiates an asynchronous operation to check the existence of the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> ExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1069,12 +1069,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous request to check existence of the queue.
+        /// Initiates an asynchronous operation to check the existence of the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<bool> ExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1086,8 +1086,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Sets the queue's user-defined metadata.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void SetMetadata(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1104,7 +1104,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to set user-defined metadata on the queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1116,9 +1116,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to set user-defined metadata on the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1136,7 +1136,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Ends an asynchronous request operation to set user-defined metadata on the queue.
+        /// Ends an asynchronous operation to set user-defined metadata on the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public void EndSetMetadata(IAsyncResult asyncResult)
@@ -1146,9 +1146,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to set user-defined metadata on the queue.
+        /// Initiates an asynchronous operation to set user-defined metadata on the queue.
         /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync()
         {
@@ -1156,10 +1156,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to set user-defined metadata on the queue.
+        /// Initiates an asynchronous operation to set user-defined metadata on the queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync(CancellationToken cancellationToken)
         {
@@ -1167,11 +1167,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to set user-defined metadata on the queue.
+        /// Initiates an asynchronous operation to set user-defined metadata on the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1179,12 +1179,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to set user-defined metadata on the queue.
+        /// Initiates an asynchronous operation to set user-defined metadata on the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1196,8 +1196,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Fetches the queue's attributes.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void FetchAttributes(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1214,7 +1214,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to fetch the queue's attributes.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1227,8 +1227,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Begins an asynchronous operation to fetch the queue's attributes.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1256,9 +1256,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to fetch the queue's attributes.
+        /// Initiates an asynchronous operation to fetch the queue's attributes.
         /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync()
         {
@@ -1266,10 +1266,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to fetch the queue's attributes.
+        /// Initiates an asynchronous operation to fetch the queue's attributes.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync(CancellationToken cancellationToken)
         {
@@ -1277,11 +1277,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to fetch the queue's attributes.
+        /// Initiates an asynchronous operation to fetch the queue's attributes.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1289,12 +1289,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to fetch the queue's attributes.
+        /// Initiates an asynchronous operation to fetch the queue's attributes.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1306,11 +1306,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Adds a message to the queue.
         /// </summary>
-        /// <param name="message">The message to add.</param>
-        /// <param name="timeToLive">The maximum time to allow the message to be in the queue, or null.</param>
-        /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="timeToLive">A <see cref="TimeSpan"/> specifying the maximum time to allow the message to be in the queue, or <c>null</c>.</param>
+        /// <param name="initialVisibilityDelay">A <see cref="TimeSpan"/> specifying the interval of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void AddMessage(CloudQueueMessage message, TimeSpan? timeToLive = null, TimeSpan? initialVisibilityDelay = null, QueueRequestOptions options = null, OperationContext operationContext = null)
@@ -1330,8 +1330,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to add a message to the queue.
         /// </summary>
-        /// <param name="message">The message to add.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1343,13 +1343,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to add a message to the queue.
         /// </summary>
-        /// <param name="message">The message to add.</param>
-        /// <param name="timeToLive">The maximum time to allow the message to be in the queue, or null.</param>
-        /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="timeToLive">A <see cref="TimeSpan"/> specifying the maximum time to allow the message to be in the queue, or <c>null</c>.</param>
+        /// <param name="initialVisibilityDelay">A <see cref="TimeSpan"/> specifying the interval of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>        
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1379,10 +1379,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to add a message to the queue.
+        /// Initiates an asynchronous operation to add a message to the queue.
         /// </summary>
-        /// <param name="message">The message to add.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task AddMessageAsync(CloudQueueMessage message)
         {
@@ -1390,11 +1390,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to add a message to the queue.
+        /// Initiates an asynchronous operation to add a message to the queue.
         /// </summary>
-        /// <param name="message">The message to add.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task AddMessageAsync(CloudQueueMessage message, CancellationToken cancellationToken)
         {
@@ -1402,15 +1402,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to add a message to the queue.
+        /// Initiates an asynchronous operation to add a message to the queue.
         /// </summary>
-        /// <param name="message">The message to add.</param>
-        /// <param name="timeToLive">The maximum time to allow the message to be in the queue, or null.</param>
-        /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="timeToLive">A <see cref="TimeSpan"/> specifying the maximum time to allow the message to be in the queue, or <c>null</c>.</param>
+        /// <param name="initialVisibilityDelay">A <see cref="TimeSpan"/> specifying the interval of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1418,16 +1418,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to add a message to the queue.
+        /// Initiates an asynchronous operation to add a message to the queue.
         /// </summary>
-        /// <param name="message">The message to add.</param>
-        /// <param name="timeToLive">The maximum time to allow the message to be in the queue, or null.</param>
-        /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="timeToLive">A <see cref="TimeSpan"/> specifying the maximum time to allow the message to be in the queue, or <c>null</c>.</param>
+        /// <param name="initialVisibilityDelay">A <see cref="TimeSpan"/> specifying the interval of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1439,10 +1439,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Updates the visibility timeout and optionally the content of a message.
         /// </summary>
-        /// <param name="message">The message to update.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="updateFields">Flags of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void UpdateMessage(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options = null, OperationContext operationContext = null)
@@ -1460,10 +1460,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to update the visibility timeout and optionally the content of a message.
         /// </summary>
-        /// <param name="message">The message to update.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="updateFields">An EnumSet of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="updateFields">A set of <see cref="MessageUpdateFields"/> values that specify which parts of the message are to be updated.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1475,12 +1475,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to update the visibility timeout and optionally the content of a message.
         /// </summary>
-        /// <param name="message">The message to update.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="updateFields">An EnumSet of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="updateFields">A set of <see cref="MessageUpdateFields"/> values that specify which parts of the message are to be updated.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1510,12 +1510,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to update the visibility timeout and optionally the content of a message.
+        /// Initiates an asynchronous operation to update the visibility timeout and optionally the content of a message.
         /// </summary>
-        /// <param name="message">The message to update.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="updateFields">An EnumSet of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="updateFields">A set of <see cref="MessageUpdateFields"/> values that specify which parts of the message are to be updated.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields)
         {
@@ -1523,13 +1523,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to update the visibility timeout and optionally the content of a message.
+        /// Initiates an asynchronous operation to update the visibility timeout and optionally the content of a message.
         /// </summary>
-        /// <param name="message">The message to update.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="updateFields">An EnumSet of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="updateFields">A set of <see cref="MessageUpdateFields"/> values that specify which parts of the message are to be updated.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, CancellationToken cancellationToken)
         {
@@ -1537,14 +1537,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to update the visibility timeout and optionally the content of a message.
+        /// Initiates an asynchronous operation to update the visibility timeout and optionally the content of a message.
         /// </summary>
-        /// <param name="message">The message to update.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="updateFields">An EnumSet of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="updateFields">A set of <see cref="MessageUpdateFields"/> values that specify which parts of the message are to be updated.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1552,15 +1552,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to update the visibility timeout and optionally the content of a message.
+        /// Initiates an asynchronous operation to update the visibility timeout and optionally the content of a message.
         /// </summary>
-        /// <param name="message">The message to update.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="updateFields">An EnumSet of <see cref="MessageUpdateFields"/> values that specifies which parts of the message are to be updated.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="updateFields">A set of <see cref="MessageUpdateFields"/> values that specify which parts of the message are to be updated.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1572,9 +1572,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Deletes a message.
         /// </summary>
-        /// <param name="message">A message.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void DeleteMessage(CloudQueueMessage message, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1586,10 +1586,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Deletes the specified message from the queue.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void DeleteMessage(string messageId, string popReceipt, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1609,8 +1609,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="message">A message.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1622,10 +1622,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="message">A message.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1639,9 +1639,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1653,11 +1653,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1688,10 +1688,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="message">A message.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(CloudQueueMessage message)
         {
@@ -1699,11 +1699,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="message">A message.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(CloudQueueMessage message, CancellationToken cancellationToken)
         {
@@ -1711,12 +1711,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="message">A message.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(CloudQueueMessage message, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1724,13 +1724,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="message">A message.</param>
+        /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(CloudQueueMessage message, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1738,11 +1738,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(string messageId, string popReceipt)
         {
@@ -1750,12 +1750,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(string messageId, string popReceipt, CancellationToken cancellationToken)
         {
@@ -1763,13 +1763,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(string messageId, string popReceipt, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1777,14 +1777,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to delete a message.
+        /// Initiates an asynchronous operation to delete a message.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(string messageId, string popReceipt, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1799,9 +1799,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// visibility timeout period. 
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of messages.</returns>
         [DoesServiceRequest]
         public IEnumerable<CloudQueueMessage> GetMessages(int messageCount, TimeSpan? visibilityTimeout = null, QueueRequestOptions options = null, OperationContext operationContext = null)
@@ -1820,7 +1820,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Begins an asynchronous operation to get messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1835,10 +1835,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// queue for the default visibility timeout period.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1867,10 +1867,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get messages from the queue.
+        /// Initiates an asynchronous operation to get messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount)
         {
@@ -1878,11 +1878,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get messages from the queue.
+        /// Initiates an asynchronous operation to get messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount, CancellationToken cancellationToken)
         {
@@ -1890,15 +1890,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get the specified number of messages from the queue using the 
+        /// Initiates an asynchronous operation to get the specified number of messages from the queue using the 
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1906,16 +1906,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get the specified number of messages from the queue using the 
+        /// Initiates an asynchronous operation to get the specified number of messages from the queue using the 
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1927,10 +1927,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets a message from the queue using the default request options. This operation marks the retrieved message as invisible in the queue for the default visibility timeout period. 
         /// </summary>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <returns>A message.</returns>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
         [DoesServiceRequest]
         public CloudQueueMessage GetMessage(TimeSpan? visibilityTimeout = null, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1941,7 +1941,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to get a single message from the queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1954,10 +1954,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Begins an asynchronous operation to get a single message from the queue, and specifies how long the message should be 
         /// reserved before it becomes visible, and therefore available for deletion.
         /// </summary>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1970,7 +1970,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Ends an asynchronous operation to get a single message from the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>A message.</returns>
+        /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
         public CloudQueueMessage EndGetMessage(IAsyncResult asyncResult)
         {
             IEnumerable<CloudQueueMessage> resultList = Executor.EndExecuteAsync<IEnumerable<CloudQueueMessage>>(asyncResult);
@@ -1980,9 +1980,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue.
+        /// Initiates an asynchronous operation to get a single message from the queue.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> GetMessageAsync()
         {
@@ -1990,10 +1990,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue.
+        /// Initiates an asynchronous operation to get a single message from the queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> GetMessageAsync(CancellationToken cancellationToken)
         {
@@ -2001,13 +2001,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue, and specifies how long the message should be 
+        /// Initiates an asynchronous operation to get a single message from the queue, and specifies how long the message should be 
         /// reserved before it becomes visible, and therefore available for deletion.
         /// </summary>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> GetMessageAsync(TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -2015,14 +2015,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue, and specifies how long the message should be 
+        /// Initiates an asynchronous operation to get a single message from the queue, and specifies how long the message should be 
         /// reserved before it becomes visible, and therefore available for deletion.
         /// </summary>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> GetMessageAsync(TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -2035,9 +2035,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Peeks a message from the queue, using the specified request options and operation context. A peek request retrieves a message from the queue without changing its visibility. 
         /// </summary>
         /// <param name="messageCount">The number of messages to peek.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <returns>An enumerable collection of messages.</returns>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of <see cref="CloudQueueMessage"/> objects.</returns>
         [DoesServiceRequest]
         public IEnumerable<CloudQueueMessage> PeekMessages(int messageCount, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -2055,7 +2055,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Begins an asynchronous operation to peek messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to peek.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -2068,9 +2068,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Begins an asynchronous operation to peek messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to peek.</param>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -2091,7 +2091,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Ends an asynchronous operation to peek messages from the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>An enumerable collection of messages.</returns>
+        /// <returns>An enumerable collection of <see cref="CloudQueueMessage"/> objects.</returns>
         public IEnumerable<CloudQueueMessage> EndPeekMessages(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<IEnumerable<CloudQueueMessage>>(asyncResult);
@@ -2099,10 +2099,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to peek messages from the queue.
+        /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to peek.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount)
         {
@@ -2110,11 +2110,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to peek messages from the queue.
+        /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to peek.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount, CancellationToken cancellationToken)
         {
@@ -2122,12 +2122,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to peek messages from the queue.
+        /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to peek.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -2135,13 +2135,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to peek messages from the queue.
+        /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to peek.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -2153,9 +2153,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Peeks a single message from the queue. A peek request retrieves a message from the queue without changing its visibility.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <returns>A message.</returns>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
         [DoesServiceRequest]
         public CloudQueueMessage PeekMessage(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -2166,7 +2166,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to get a single message from the queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -2178,9 +2178,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to peek a single message from the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -2193,7 +2193,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Ends an asynchronous operation to peek a single message from the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>A message.</returns>
+        /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
         public CloudQueueMessage EndPeekMessage(IAsyncResult asyncResult)
         {
             IEnumerable<CloudQueueMessage> resultList = Executor.EndExecuteAsync<IEnumerable<CloudQueueMessage>>(asyncResult);
@@ -2203,9 +2203,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue.
+        /// Initiates an asynchronous operation to get a single message from the queue.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> PeekMessageAsync()
         {
@@ -2213,10 +2213,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue.
+        /// Initiates an asynchronous operation to get a single message from the queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> PeekMessageAsync(CancellationToken cancellationToken)
         {
@@ -2224,11 +2224,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue.
+        /// Initiates an asynchronous operation to get a single message from the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> PeekMessageAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -2236,12 +2236,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to get a single message from the queue.
+        /// Initiates an asynchronous operation to get a single message from the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<CloudQueueMessage> PeekMessageAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -2253,8 +2253,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Clears all messages from the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
         public void Clear(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -2271,7 +2271,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to clear all messages from the queue.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -2283,9 +2283,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to clear all messages from the queue.
         /// </summary>
-        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. Specifying null will use the default request options from the associated service client (<see cref="CloudQueueClient"/>).</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests to the storage service, and to provide additional runtime information about the operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -2313,9 +2313,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to clear all messages from the queue.
+        /// Initiates an asynchronous operation to clear all messages from the queue.
         /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task ClearAsync()
         {
@@ -2323,10 +2323,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to clear all messages from the queue.
+        /// Initiates an asynchronous operation to clear all messages from the queue.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task ClearAsync(CancellationToken cancellationToken)
         {
@@ -2334,11 +2334,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to clear all messages from the queue.
+        /// Initiates an asynchronous operation to clear all messages from the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task ClearAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -2346,12 +2346,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Returns a task that performs an asynchronous operation to clear all messages from the queue.
+        /// Initiates an asynchronous operation to clear all messages from the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task ClearAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -2672,8 +2672,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Implementation for the DeleteMessage method.
         /// </summary>
-        /// <param name="messageId">The message ID.</param>
-        /// <param name="popReceipt">The pop receipt value.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt value.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that deletes the queue.</returns>
         private RESTCommand<NullType> DeleteMessageImpl(string messageId, string popReceipt, QueueRequestOptions options)
@@ -2693,7 +2693,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Implementation for the GetPermissions method.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that gets the permissions.</returns>
         private RESTCommand<IEnumerable<CloudQueueMessage>> GetMessagesImpl(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options)

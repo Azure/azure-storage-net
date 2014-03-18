@@ -35,13 +35,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Creates a web request to get the properties of the Blob service.
         /// </summary>
-        /// <param name="uri">The absolute URI to the Blob service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to get the Blob service properties.
-        /// </returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, operationContext);
@@ -50,13 +48,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Creates a web request to set the properties of the Blob service.
         /// </summary>
-        /// <param name="uri">The absolute URI to the Blob service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to set the Blob service properties.
-        /// </returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, operationContext);
@@ -65,13 +61,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Creates a web request to get the stats of the Blob service.
         /// </summary>
-        /// <param name="uri">The absolute URI to the Blob service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to get the Blob service stats.
-        /// </returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.GetServiceStats(uri, builder, timeout, operationContext);
@@ -80,8 +74,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Writes Blob service properties to a stream, formatted in XML.
         /// </summary>
-        /// <param name="properties">The service properties to format and write to the stream.</param>
-        /// <param name="outputStream">The stream to which the formatted properties are to be written.</param>
+        /// <param name="properties">A <see cref="ServiceProperties"/> object.</param>
+        /// <param name="outputStream">The <see cref="System.IO.Stream"/> object to which the formatted properties are to be written.</param>
         public static void WriteServiceProperties(ServiceProperties properties, Stream outputStream)
         {
             CommonUtility.AssertNotNull("properties", properties);
@@ -93,15 +87,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// Constructs a web request to create a new block blob or page blob, or to update the content 
         /// of an existing block blob. 
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="properties">The properties to set for the blob.</param>
-        /// <param name="blobType">The type of the blob.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="properties">A <see cref="BlobProperties"/> object.</param>
+        /// <param name="blobType">A <see cref="BlobType"/> enumeration value.</param>
         /// <param name="pageBlobSize">For a page blob, the size of the blob. This parameter is ignored
         /// for block blobs.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, AccessCondition accessCondition, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("properties", properties);
@@ -176,16 +170,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to return the list of valid page ranges for a page blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="offset">The starting offset of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
         /// <param name="count">The length of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to use to perform the operation.
-        /// </returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetPageRanges(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, AccessCondition accessCondition, OperationContext operationContext)
         {
             if (offset.HasValue)
@@ -234,12 +226,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to return the blob's system properties.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request for performing the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -253,12 +245,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to set system properties for a blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="properties">The blob's properties.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetProperties(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("properties", properties);
@@ -285,12 +277,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to resize a page blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="newBlobSize">The new blob size, if the blob is a page blob. Set this parameter to <c>null</c> to keep the existing blob size.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Resize(Uri uri, int? timeout, long newBlobSize, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -307,13 +299,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to set a page blob's sequence number.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="sequenceNumberAction">A value of type <see cref="SequenceNumberAction"/>, indicating the operation to perform on the sequence number.</param>
         /// <param name="sequenceNumber">The sequence number. Set this parameter to <c>null</c> if this operation is an increment action.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetSequenceNumber(Uri uri, int? timeout, SequenceNumberAction sequenceNumberAction, long? sequenceNumber, AccessCondition accessCondition, OperationContext operationContext)
         {
             CommonUtility.AssertInBounds("sequenceNumberAction", sequenceNumberAction, SequenceNumberAction.Max, SequenceNumberAction.Increment);
@@ -349,12 +341,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to return the user-defined metadata for the blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request for performing the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -368,11 +360,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to set user-defined metadata for the blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request for performing the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
             HttpWebRequest request = HttpWebRequestFactory.SetMetadata(uri, timeout, null /* builder */, operationContext);
@@ -383,8 +375,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Adds user-defined metadata to the request as one or more name-value pairs.
         /// </summary>
-        /// <param name="request">The web request.</param>
-        /// <param name="metadata">The user-defined metadata.</param>
+        /// <param name="request">A <see cref="System.Net.HttpWebRequest"/> object.</param>
+        /// <param name="metadata">A <see cref="Dictionary{TKey,TValue}"/> object containing the user-defined metadata.</param>
         public static void AddMetadata(HttpWebRequest request, IDictionary<string, string> metadata)
         {
             HttpWebRequestFactory.AddMetadata(request, metadata);
@@ -393,9 +385,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Adds user-defined metadata to the request as a single name-value pair.
         /// </summary>
-        /// <param name="request">The web request.</param>
-        /// <param name="name">The metadata name.</param>
-        /// <param name="value">The metadata value.</param>
+        /// <param name="request">A <see cref="System.Net.HttpWebRequest"/> object.</param>
+        /// <param name="name">A string containing the metadata name.</param>
+        /// <param name="value">A string containing the metadata value.</param>
         public static void AddMetadata(HttpWebRequest request, string name, string value)
         {
             HttpWebRequestFactory.AddMetadata(request, name, value);
@@ -404,13 +396,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to delete a blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="deleteSnapshotsOption">A set of options indicating whether to delete only blobs, only snapshots, or both.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         [SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "deleteSnapshotsOption", Justification = "Splitting the option name in this case could be confusing")]
         public static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, OperationContext operationContext)
         {
@@ -449,11 +441,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to create a snapshot of a blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Snapshot(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -467,18 +459,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to use to acquire, renew, change, release or break the lease for the blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="action">The lease action to perform.</param>
-        /// <param name="proposedLeaseId">A lease ID to propose for the result of an acquire or change operation,
-        /// or null if no ID is proposed for an acquire operation. This should be null for renew, release, and break operations.</param>
+        /// <param name="action">A <see cref="LeaseAction"/> enumeration value indicating the lease action to perform.</param>
+        /// <param name="proposedLeaseId">A string specifying the lease ID to propose for the result of an acquire or change operation,
+        /// or <c>null</c> if no ID is proposed for an acquire operation. This parameter should be <c>null</c> for renew, release, and break operations.</param>
         /// <param name="leaseDuration">The lease duration, in seconds, for acquire operations.
-        /// If this is -1 then an infinite duration is specified. This should be null for renew, change, release, and break operations.</param>
+        /// If this is -1 then an infinite duration is specified. This should be <c>null</c> for renew, change, release, and break operations.</param>
         /// <param name="leaseBreakPeriod">The amount of time to wait, in seconds, after a break operation before the lease is broken.
-        /// If this is null then the default time is used. This should be null for acquire, renew, change, and release operations.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// If this is <c>null</c> then the default time is used. This should be <c>null</c> for acquire, renew, change, and release operations.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -540,12 +532,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to write a block to a block blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="blockId">The block ID for this block.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="blockId">A string specifying the block ID for this block.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest PutBlock(Uri uri, int? timeout, string blockId, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -560,12 +552,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to create or update a blob by committing a block list.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="properties">The properties to set for the blob.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request for performing the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="properties">A <see cref="BlobProperties"/> object specifying the properties to set for the blob.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest PutBlockList(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("properties", properties);
@@ -592,13 +584,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to return the list of blocks for a block blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="typesOfBlocks">The types of blocks to include in the list: committed, uncommitted, or both.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="typesOfBlocks">A <see cref="BlockListingFilter"/> enumeration value.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetBlockList(Uri uri, int? timeout, DateTimeOffset? snapshot, BlockListingFilter typesOfBlocks, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -614,12 +606,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to write or clear a range of pages in a page blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="pageRange">The page range, defined by an object of type <see cref="PageRange"/>.</param>
-        /// <param name="pageWrite">A value of type <see cref="PageWrite"/>, indicating the operation to perform on the page blob.</param>
-        /// <param name="accessCondition">The <see cref="AccessCondition"/> to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="pageRange">A <see cref="PageRange"/> object.</param>
+        /// <param name="pageWrite">A <see cref="PageWrite"/> enumeration value indicating the operation to perform on the page blob.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to use to perform the operation.
         /// </returns>
@@ -643,13 +635,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to copy a blob.
         /// </summary>
-        /// <param name="uri">The absolute URI to the destination blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
-        /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
-        /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request to use to perform the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the destination blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="source">A <see cref="System.Uri"/> specifying the absolute URI to the source blob, including any necessary authentication parameters.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the source blob in order for the request to proceed.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the destination blob in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest", Justification = "Reviewed")]
         public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, OperationContext operationContext)
         {
@@ -667,12 +659,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Generates a web request to abort a copy operation.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="copyId">The ID string of the copy operation to be aborted.</param>
-        /// <param name="accessCondition">The access condition to apply to the request. Only lease conditions are supported for this operation.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request for performing the operation.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. Only lease conditions are supported for this operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest AbortCopy(Uri uri, int? timeout, string copyId, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -690,12 +682,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to get the blob's content, properties, and metadata.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="snapshot">The snapshot version, if the blob is a snapshot.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns>A web request for performing the operation.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot version, if the blob is a snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Get(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
@@ -712,14 +704,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Constructs a web request to return a specified range of the blob's content, together with its properties and metadata.
         /// </summary>
-        /// <param name="uri">The absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="snapshot">The snapshot version, if the blob is a snapshot.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot version, if the blob is a snapshot.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
-        /// <param name="count">The number of bytes to return, or null to return all bytes through the end of the blob.</param>
-        /// <param name="rangeContentMD5">If set to <c>true</c>, request an MD5 header for the specified range.</param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="rangeContentMD5">If set to <c>true</c>, an MD5 header is requested for the specified range.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to use to perform the operation.
         /// </returns>

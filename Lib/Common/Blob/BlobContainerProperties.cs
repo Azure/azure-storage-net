@@ -27,13 +27,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the ETag value for the container.
         /// </summary>
-        /// <value>The container's quoted ETag value.</value>
+        /// <value>A string containing the container's quoted ETag value.</value>
         public string ETag { get; internal set; }
 
         /// <summary>
         /// Gets the container's last-modified time.
         /// </summary>
-        /// <value>The container's last-modified time.</value>
+        /// <value>A <see cref="DateTimeOffset"/> containing the container's last-modified time, in UTC format.</value>
         public DateTimeOffset? LastModified { get; internal set; }
 
         /// <summary>

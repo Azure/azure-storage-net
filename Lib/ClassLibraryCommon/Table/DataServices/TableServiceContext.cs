@@ -241,9 +241,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <summary>
         /// Saves changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="options">Additional options for saving changes.</param>
-        /// <param name="requestOptions"> </param>
-        /// <param name="operationContext"> </param>
+        /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns> A <see cref="DataServiceResponse"/> that represents the result of the operation.</returns>
         [DoesServiceRequest]
         public DataServiceResponse SaveChangesWithRetries(SaveChangesOptions options, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
@@ -257,7 +257,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <summary>
         /// Begins an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -269,8 +269,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <summary>
         /// Begins an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="options">Additional options for saving changes.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -282,9 +282,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <summary>
         /// Begins an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="options">Additional options for saving changes.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <param name="requestOptions"> </param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
@@ -309,9 +309,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         
 #if TASK
         /// <summary>
-        /// Returns a <see cref="Task{T}"/> object that performs an asynchronous operation to save changes, using the retry policy specified for the service context.
+        /// Initiates an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync()
         {
@@ -319,10 +319,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         }
 
         /// <summary>
-        /// Returns a <see cref="Task{T}"/> object that performs an asynchronous operation to save changes, using the retry policy specified for the service context.
+        /// Initiates an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(CancellationToken cancellationToken)
         {
@@ -330,10 +330,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         }
         
         /// <summary>
-        /// Returns a <see cref="Task{T}"/> object that performs an asynchronous operation to save changes, using the retry policy specified for the service context.
+        /// Initiates an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="options">Additional options for saving changes.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options)
         {
@@ -341,11 +341,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         }
 
         /// <summary>
-        /// Returns a <see cref="Task{T}"/> object that performs an asynchronous operation to save changes, using the retry policy specified for the service context.
+        /// Initiates an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="options">Additional options for saving changes.</param>
+        /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options, CancellationToken cancellationToken)
         {
@@ -353,12 +353,12 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         }
         
         /// <summary>
-        /// Returns a <see cref="Task{T}"/> object that performs an asynchronous operation to save changes, using the retry policy specified for the service context.
+        /// Initiates an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="options">Additional options for saving changes.</param>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options, TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -366,13 +366,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         }
         
         /// <summary>
-        /// Returns a <see cref="Task{T}"/> object that performs an asynchronous operation to save changes, using the retry policy specified for the service context.
+        /// Initiates an asynchronous operation to save changes, using the retry policy specified for the service context.
         /// </summary>
-        /// <param name="options">Additional options for saving changes.</param>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {

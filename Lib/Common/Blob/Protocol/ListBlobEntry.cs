@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Initializes a new instance of the <see cref="ListBlobEntry"/> class.
         /// </summary>
-        /// <param name="name">The name of the blob.</param>
+        /// <param name="name">A string containing the name of the blob.</param>
         /// <param name="attributes">The blob's attributes.</param>
         internal ListBlobEntry(string name, BlobAttributes attributes)
         {
@@ -49,13 +49,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Gets the name of the blob item.
         /// </summary>
-        /// <value>The name of the blob item.</value>
+        /// <value>A string containing the name of the blob item.</value>
         public string Name { get; private set; }
 
         /// <summary>
         /// Gets the blob item's system properties.
         /// </summary>
-        /// <value>The blob item's properties.</value>
+        /// <value>A <see cref="BlobProperties"/> object.</value>
         public BlobProperties Properties
         {
             get
@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Gets the user-defined metadata for the blob item.
         /// </summary>
-        /// <value>The blob item's metadata, as a collection of name-value pairs.</value>
+        /// <value>An <see cref="IDictionary{TKey,TValue}"/> object containing the blob item's metadata as a collection of name-value pairs.</value>
         public IDictionary<string, string> Metadata
         {
             get
@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Gets the state of the most recent or pending copy operation.
         /// </summary>
-        /// <value>A <see cref="CopyState"/> object containing the copy state, or null if no copy blob state exists for this blob.</value>
+        /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if no copy blob state exists for this blob.</value>
         public CopyState CopyState
         {
             get

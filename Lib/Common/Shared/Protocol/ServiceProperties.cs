@@ -276,7 +276,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// Generates XML representing the given retention policy.
         /// </summary>
-        /// <param name="retentionDays">The number of days to retain, or null if the policy is disabled.</param>
+        /// <param name="retentionDays">The number of days to retain, or <c>null</c> if the policy is disabled.</param>
         /// <returns>An XML retention policy element.</returns>
         private static XElement GenerateRetentionPolicyXml(int? retentionDays)
         {
@@ -491,7 +491,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constructs a retention policy (number of days) from an XML element.
         /// </summary>
         /// <param name="element">The XML element.</param>
-        /// <returns>The number of days to retain, or null if retention is disabled.</returns>
+        /// <returns>The number of days to retain, or <c>null</c> if retention is disabled.</returns>
         private static int? ReadRetentionPolicyFromXml(XElement element)
         {
             if (!bool.Parse(element.Element(EnabledName).Value))

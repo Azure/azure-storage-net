@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Initializes a new instance of the <see cref="BlobProperties"/> class based on an existing instance.
         /// </summary>
-        /// <param name="other">The set of properties to clone.</param>
+        /// <param name="other">A <see cref="BlobProperties"/> object.</param>
         /// <remarks>Lease-related properties will not be cloned, because a lease associated with the base blob is not copied to the snapshot.</remarks>
         public BlobProperties(BlobProperties other)
         {
@@ -58,67 +58,67 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the cache-control value stored for the blob.
         /// </summary>
-        /// <value>The blob's cache-control value.</value>
+        /// <value>A string containing the blob's cache-control value.</value>
         public string CacheControl { get; set; }
 
         /// <summary>
         /// Gets or sets the content-disposition value stored for the blob.
         /// </summary>
-        /// <value>The blob's content-disposition value.</value>
+        /// <value>A string containing the blob's content-disposition value.</value>
         /// <remarks>
-        /// If this property has not been set for the blob, it returns null.
+        /// If this property has not been set for the blob, it returns <c>null</c>.
         /// </remarks>
         public string ContentDisposition { get; set; }
         
         /// <summary>
         /// Gets or sets the content-encoding value stored for the blob.
         /// </summary>
-        /// <value>The blob's content-encoding value.</value>
+        /// <value>A string containing the blob's content-encoding value.</value>
         /// <remarks>
-        /// If this property has not been set for the blob, it returns null.
+        /// If this property has not been set for the blob, it returns <c>null</c>.
         /// </remarks>
         public string ContentEncoding { get; set; }
 
         /// <summary>
         /// Gets or sets the content-language value stored for the blob.
         /// </summary>
-        /// <value>The blob's content-language value.</value>
+        /// <value>A string containing the blob's content-language value.</value>
         /// <remarks>
-        /// If this property has not been set for the blob, it returns null.
+        /// If this property has not been set for the blob, it returns <c>null</c>.
         /// </remarks>
         public string ContentLanguage { get; set; }
 
         /// <summary>
         /// Gets the size of the blob, in bytes.
         /// </summary>
-        /// <value>The blob's size in bytes.</value>
+        /// <value>A long value containing the blob's size in bytes.</value>
         public long Length { get; internal set; }
 
         /// <summary>
         /// Gets or sets the content-MD5 value stored for the blob.
         /// </summary>
-        /// <value>The blob's content-MD5 hash.</value>
+        /// <value>A string containing the blob's content-MD5 hash.</value>
         public string ContentMD5 { get; set; }
 
         /// <summary>
         /// Gets or sets the content-type value stored for the blob.
         /// </summary>
-        /// <value>The blob's content-type value.</value>
+        /// <value>A string containing the blob's content-type value.</value>
         /// <remarks>
-        /// If this property has not been set for the blob, it returns null.
+        /// If this property has not been set for the blob, it returns <c>null</c>.
         /// </remarks>
         public string ContentType { get; set; }
 
         /// <summary>
         /// Gets the blob's ETag value.
         /// </summary>
-        /// <value>The blob's ETag value.</value>
+        /// <value>A string containing the blob's ETag value.</value>
         public string ETag { get; internal set; }
 
         /// <summary>
         /// Gets the the last-modified time for the blob, expressed as a UTC value.
         /// </summary>
-        /// <value>The blob's last-modified time, in UTC format.</value>
+        /// <value>A <see cref="DateTimeOffset"/> containing the blob's last-modified time, in UTC format.</value>
         public DateTimeOffset? LastModified { get; internal set; }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// If the blob is a page blob, gets the blob's current sequence number.
         /// </summary>
-        /// <value>The blob's current sequence number.</value>
+        /// <value>A long containing the blob's current sequence number.</value>
         public long? PageBlobSequenceNumber { get; internal set; }
     }
 }

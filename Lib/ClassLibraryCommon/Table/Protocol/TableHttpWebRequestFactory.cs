@@ -32,13 +32,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <summary>
         /// Creates a web request to get the properties of the Table service.
         /// </summary>
-        /// <param name="uri">The absolute URI to the Table service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Table service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to get the Table service properties.
-        /// </returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, operationContext);
@@ -47,13 +45,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <summary>
         /// Creates a web request to set the properties of the Table service.
         /// </summary>
-        /// <param name="uri">The absolute URI to the Table service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Table service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to set the Table service properties.
-        /// </returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, operationContext);
@@ -62,13 +58,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <summary>
         /// Creates a web request to get the stats of the Table service.
         /// </summary>
-        /// <param name="uri">The absolute URI to the Table service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Table service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to get the Table service stats.
-        /// </returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.GetServiceStats(uri, builder, timeout, operationContext);
@@ -77,8 +71,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <summary>
         /// Writes Table service properties to a stream, formatted in XML.
         /// </summary>
-        /// <param name="properties">The service properties to format and write to the stream.</param>
-        /// <param name="outputStream">The stream to which the formatted properties are to be written.</param>
+        /// <param name="properties">A <see cref="ServiceProperties"/> object containing the service properties to format and write to the stream.</param>
+        /// <param name="outputStream">The <see cref="System.IO.Stream"/> object to which the formatted properties are to be written.</param>
         public static void WriteServiceProperties(ServiceProperties properties, Stream outputStream)
         {
             CommonUtility.AssertNotNull("properties", properties);
@@ -89,13 +83,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <summary>
         /// Constructs a web request to return the ACL for a table.
         /// </summary>
-        /// <param name="uri">The absolute URI to the table.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to use to perform the operation.
-        /// </returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI for the table.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.GetAcl(uri, builder, timeout, operationContext);
@@ -104,13 +96,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <summary>
         /// Constructs a web request to set the ACL for a table.
         /// </summary>
-        /// <param name="uri">The absolute URI to the table.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
-        /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
-        /// <returns>
-        /// A web request to use to perform the operation.
-        /// </returns>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI for the table.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
             return HttpWebRequestFactory.SetAcl(uri, builder, timeout, operationContext);

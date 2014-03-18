@@ -64,14 +64,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Populates the entity's properties from the <see cref="EntityProperty"/> data values in the <paramref name="properties"/> dictionary. 
         /// </summary>
         /// <param name="properties">The dictionary of string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext);
 
         /// <summary>
-        /// Serializes the <see cref="Dictionary{TKey,TValue}"/> of property names mapped to <see cref="EntityProperty"/> data values from the entity instance.
+        /// Serializes the <see cref="IDictionary{TKey,TValue}"/> of property names mapped to <see cref="EntityProperty"/> data values from the entity instance.
         /// </summary>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
-        /// <returns>A dictionary of property names to <see cref="EntityProperty"/> data typed values created by serializing this table entity instance.</returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object of property names to <see cref="EntityProperty"/> data typed values created by serializing this table entity instance.</returns>
         IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext);
     }
 }

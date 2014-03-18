@@ -26,10 +26,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// Returns a delegate for resolving entities.
     /// </summary>
     /// <typeparam name="T">The type into which the query results are projected.</typeparam>
-    /// <param name="partitionKey">The partition key.</param>
-    /// <param name="rowKey">The row key.</param>
-    /// <param name="timestamp">The timestamp.</param>
-    /// <param name="properties">A dictionary of properties.</param>
+    /// <param name="partitionKey">A string containing the partition key for the entity.</param>
+    /// <param name="rowKey">A string containing the row key for the entity.</param>
+    /// <param name="timestamp">A <see cref="DateTimeOffset"/> containing the timestamp for the entity.</param>
+    /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object containing the properties for the entity.</param>
     /// <param name="etag">The ETag.</param>
     /// <returns></returns>  
     [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "etag", Justification = "Reviewed: etag can be used for identifier names.")]

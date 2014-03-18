@@ -1454,6 +1454,70 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
+        [TestMethod]
+        [Description("Test SAS token Generation using the 2012-02-12 version")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueOldSASVersion()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+
+            try
+            {
+                queue.Create();
+                string messageContent = Guid.NewGuid().ToString();
+                CloudQueueMessage message = new CloudQueueMessage(messageContent);
+                queue.AddMessage(message);
+
+                // Prepare SAS authentication with full permissions
+                string id = Guid.NewGuid().ToString();
+                DateTime start = DateTime.UtcNow;
+                DateTime expiry = start.AddMinutes(30);
+                QueuePermissions permissions = new QueuePermissions();
+                SharedAccessQueuePermissions queuePerm = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read | SharedAccessQueuePermissions.Update;
+                permissions.SharedAccessPolicies.Add(id, new SharedAccessQueuePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = queuePerm
+                });
+
+                queue.SetPermissions(permissions);
+                Thread.Sleep(30 * 1000);
+
+                string sasTokenFromId = queue.GetSharedAccessSignature(null, id, Constants.VersionConstants.February2012);
+                StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
+
+                CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint));
+                CloudQueueClient sasClient = sasAcc.CreateCloudQueueClient();
+
+                CloudQueue sasQueueFromSasUri = new CloudQueue(sasClient.Credentials.TransformUri(queue.Uri));
+                CloudQueueMessage receivedMessage = sasQueueFromSasUri.PeekMessage();
+                Assert.AreEqual(messageContent, receivedMessage.AsString);
+
+                CloudQueue sasQueueFromSasUri1 = new CloudQueue(new Uri(queue.Uri.ToString() + sasTokenFromId));
+                CloudQueueMessage receivedMessage1 = sasQueueFromSasUri1.PeekMessage();
+                Assert.AreEqual(messageContent, receivedMessage1.AsString);
+
+                CloudQueue sasQueueFromId = new CloudQueue(queue.Uri, sasCredsFromId);
+                CloudQueueMessage receivedMessage2 = sasQueueFromId.PeekMessage();
+                Assert.AreEqual(messageContent, receivedMessage2.AsString);
+
+                string sasTokenFromPolicy = queue.GetSharedAccessSignature(permissions.SharedAccessPolicies[id], null);
+                StorageCredentials sasCredsFromPolicy = new StorageCredentials(sasTokenFromPolicy);
+                CloudQueue sasQueueFromPolicy = new CloudQueue(queue.Uri, sasCredsFromPolicy);
+                CloudQueueMessage receivedMessage3 = sasQueueFromPolicy.PeekMessage();
+                Assert.AreEqual(messageContent, receivedMessage3.AsString);
+            }
+            finally
+            {
+                queue.DeleteIfExists();
+            }
+        }
+
         #region Test Helpers
         internal static void AssertPermissionsEqual(QueuePermissions permissions1, QueuePermissions permissions2)
         {

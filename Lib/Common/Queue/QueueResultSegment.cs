@@ -34,13 +34,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets an enumerable collection of <see cref="CloudQueue"/> results.
         /// </summary>
-        /// <value>An enumerable collection of results.</value>
+        /// <value>An enumerable collection of <see cref="CloudQueue"/> objects.</value>
         public IEnumerable<CloudQueue> Results { get; private set; }
 
         /// <summary>
         /// Gets the continuation token used to retrieve the next segment of <see cref="CloudQueue"/> results. Returns null if there are no more results.
         /// </summary>
-        /// <value>The continuation token.</value>
+        /// <value>A <see cref="QueueContinuationToken"/> object.</value>
         public QueueContinuationToken ContinuationToken { get; private set; }
     }
 }

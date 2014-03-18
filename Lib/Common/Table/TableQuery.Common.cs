@@ -117,11 +117,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="int"/> value.
+        /// Generates a property filter condition string for an <see cref="int"/> value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
-        /// <param name="givenValue">A <see cref="int"/> containing the value to compare with the property.</param>
+        /// <param name="givenValue">An <see cref="int"/> containing the value to compare with the property.</param>
         /// <returns>A string containing the formatted filter condition.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ForInt", Justification = "Reviewed")]
         public static string GenerateFilterConditionForInt(string propertyName, string operation, int givenValue)
@@ -130,11 +130,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="long"/> value.
+        /// Generates a property filter condition string for an <see cref="long"/> value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
-        /// <param name="givenValue">A <see cref="long"/> containing the value to compare with the property.</param>
+        /// <param name="givenValue">An <see cref="long"/> containing the value to compare with the property.</param>
         /// <returns>A string containing the formatted filter condition.</returns>
         public static string GenerateFilterConditionForLong(string propertyName, string operation, long givenValue)
         {
@@ -199,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a filter condition using the specified logical operator on two filter conditions.
         /// </summary>
         /// <param name="filterA">A string containing the first formatted filter condition.</param>
-        /// <param name="operatorString">A string containing <c>Operators.AND</c> or <c>Operators.OR</c>.</param>
+        /// <param name="operatorString">A string containing the operator to use (AND, OR).</param>
         /// <param name="filterB">A string containing the second formatted filter condition.</param>
         /// <returns>A string containing the combined filter expression.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Back compatibility.")]

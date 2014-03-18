@@ -173,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <summary>
         /// Synchronizes Read and Write operations, and handles exceptions.
         /// </summary>
-        /// <param name="res">Read/Write operation or null if first run.</param>
+        /// <param name="res">Read/Write operation or <c>null</c> if first run.</param>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool thread.")]
         private void EndOpWithCatch(IAsyncResult res)
         {
@@ -218,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// Helper method for EndOpWithCatch(IAsyncResult). Begins/Ends Read and Write Stream operations.
         /// Should only be called by EndOpWithCatch(IAsyncResult) since it assumes we are inside the lock.
         /// </summary>
-        /// <param name="res">Read/Write operation or null if first run.</param>
+        /// <param name="res">Read/Write operation or <c>null</c> if first run.</param>
         private void EndOperation(IAsyncResult res)
         {
             // Check who made this callback

@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Adds the specified key and <see cref="SharedAccessQueuePolicy"/> value to the collection of shared access policies.
         /// </summary>
-        /// <param name="key">The key of the <see cref="SharedAccessQueuePolicy"/> value to add.</param>
+        /// <param name="key">A string containing the key of the <see cref="SharedAccessQueuePolicy"/> value to add.</param>
         /// <param name="value">The <see cref="SharedAccessQueuePolicy"/> value to add the collection of shared access policies.</param>
         public void Add(string key, SharedAccessQueuePolicy value)
         {
@@ -47,7 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Determines whether the collection of shared access policies contains the specified key.
         /// </summary>
-        /// <param name="key">The key to locate in the collection of shared access policies.</param>
+        /// <param name="key">A string containing the key to locate in the collection of shared access policies.</param>
         /// <returns><c>true</c> if the collection of shared access policies contains an element with the specified key; otherwise, <c>false</c>.</returns>
         public bool ContainsKey(string key)
         {
@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets a collection containing the keys in the shared access policies collection.
         /// </summary>
-        /// <value>A collection containing the keys in the of shared access policies collection.</value>
+        /// <value>A collection of strings containing the keys of the shared access policies collection.</value>
         public ICollection<string> Keys
         {
             get
@@ -69,7 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Removes the value with the specified key from the shared access policies collection.
         /// </summary>
-        /// <param name="key">The key of the <see cref="SharedAccessQueuePolicy"/> item to remove.</param>
+        /// <param name="key">A string containing the key of the <see cref="SharedAccessQueuePolicy"/> item to remove.</param>
         /// <returns><c>true</c> if the element is successfully found and removed; otherwise, <c>false</c>. This method returns <c>false</c> if the key is not found.</returns>
         public bool Remove(string key)
         {
@@ -79,7 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets the <see cref="SharedAccessQueuePolicy"/> item associated with the specified key. 
         /// </summary>
-        /// <param name="key">The key of the value to get.</param>
+        /// <param name="key">A string containing the key of the value to get.</param>
         /// <param name="value">The <see cref="SharedAccessQueuePolicy"/> item to get.</param>
         /// <returns>The <see cref="SharedAccessQueuePolicy"/> item associated with the specified key, if the key is found; otherwise, the default value for the <see cref="SharedAccessQueuePolicy"/> type.</returns>
         public bool TryGetValue(string key, out SharedAccessQueuePolicy value)
@@ -102,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets or sets the <see cref="SharedAccessQueuePolicy"/> item associated with the specified key.
         /// </summary>
-        /// <param name="key">The key of the value to get or set.</param>
+        /// <param name="key">A string containing the key of the value to get or set.</param>
         /// <returns>The <see cref="SharedAccessQueuePolicy"/> item associated with the specified key, or <c>null</c> if key is not in the shared access policies collection.</returns>
         public SharedAccessQueuePolicy this[string key]
         {

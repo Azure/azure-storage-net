@@ -36,25 +36,25 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// <summary>
         /// Gets the target location for the next retry.
         /// </summary>
-        /// <value>The target location for the next retry.</value>
+        /// <value>A <see cref="StorageLocation"/> enumeration value.</value>
         public StorageLocation NextLocation { get; private set; }
 
         /// <summary>
         /// Gets the location mode for subsequent retries.
         /// </summary>
-        /// <value>The location mode for subsequent retries.</value>
+        /// <value>A <see cref="LocationMode"/> object.</value>
         public LocationMode LocationMode { get; private set; }
 
         /// <summary>
         /// Gets the number of retries for the given operation.
         /// </summary>
-        /// <value>The number of retries for the given operation.</value>
+        /// <value>An integer specifying the number of retries for the given operation.</value>
         public int CurrentRetryCount { get; private set; }
 
         /// <summary>
         /// Gets the results of the last request.
         /// </summary>
-        /// <value>A <see cref="RequestResult"/> object that represents the results of the last request.</value>
+        /// <value>A <see cref="RequestResult"/> object.</value>
         public RequestResult LastRequestResult { get; private set; }
 
         /// <summary>
