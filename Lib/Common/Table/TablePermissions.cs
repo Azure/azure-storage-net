@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the set of shared access policies for the container.
         /// </summary>
-        /// <value>The set of shared access policies for the container.</value>
+        /// <value>A <see cref="SharedAccessTablePolicies"/> object.</value>
         public SharedAccessTablePolicies SharedAccessPolicies { get; private set; }
     }
 }

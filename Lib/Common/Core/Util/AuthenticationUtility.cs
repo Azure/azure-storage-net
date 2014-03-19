@@ -237,10 +237,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #endif
 
         /// <summary>
-        /// Gets the canonicalized header value to use for the specified date/time or null if it does not have a value.
+        /// Gets the canonicalized header value to use for the specified date/time or <c>null</c> if it does not have a value.
         /// </summary>
         /// <param name="value">The date/time.</param>
-        /// <returns>The canonicalized header value to use for the specified date/time or null if it does not have a value.</returns>
+        /// <returns>The canonicalized header value to use for the specified date/time or <c>null</c> if it does not have a value.</returns>
         public static string GetCanonicalizedHeaderValue(DateTimeOffset? value)
         {
             if (value.HasValue)
@@ -277,7 +277,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// </summary>
         /// <param name="uri">The resource URI.</param>
         /// <param name="accountName">The name of the storage account.</param>
-        /// <param name="isSharedKeyLiteOrTableService">true when using the Shared Key Lite authentication scheme or the table service; otherwise, false.</param>
+        /// <param name="isSharedKeyLiteOrTableService">true when using the Shared Key Lite authentication scheme or the Table service; otherwise, false.</param>
         /// <returns>The canonicalized resource string.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Reviewed.")]
         public static string GetCanonicalizedResourceString(Uri uri, string accountName, bool isSharedKeyLiteOrTableService = false)

@@ -47,11 +47,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Queryable
         }
 
         /// <summary>
-        /// Specifies a set of <see cref="TableRequestOptions"/> on the query.
+        /// Specifies a set of <see cref="TableRequestOptions"/> with which the query will be executed.
         /// </summary>
         /// <typeparam name="TElement">The entity type of the query.</typeparam>
         /// <param name="query">A query that implements <see cref="IQueryable{TElement}"/>.</param>
-        /// <param name="options">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="options">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="TableQuery"/> object with the specified request options set.</returns>
         /// <exception cref="System.NotSupportedException"></exception>
         public static TableQuery<TElement> WithOptions<TElement>(this IQueryable<TElement> query, TableRequestOptions options)
@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Queryable
         /// </summary>
         /// <typeparam name="TElement">The entity type of the query.</typeparam>
         /// <param name="query">A query that implements <see cref="IQueryable{TElement}"/>.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="TableQuery"/> object with the specified operation context.</returns>
         /// <exception cref="System.NotSupportedException"></exception>
         public static TableQuery<TElement> WithContext<TElement>(this IQueryable<TElement> query, OperationContext operationContext)

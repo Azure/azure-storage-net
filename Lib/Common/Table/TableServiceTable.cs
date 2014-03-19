@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Data.Services.Common;
 
     /// <summary>
-    /// Internal table service entity for creating tables.
+    /// Internal Table service entity for creating tables.
     /// </summary>
     [DataServiceKey("TableName")]
     internal class TableServiceTable

@@ -49,31 +49,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the cache-control header returned with the blob.
         /// </summary>
-        /// <value>The cache-control value.</value>
+        /// <value>A string containing the cache-control value.</value>
         public string CacheControl { get; set; }
 
         /// <summary>
         /// Gets or sets the content-disposition header returned with the blob.
         /// </summary>
-        /// <value>The content-disposition value.</value>
+        /// <value>A string containing the content-disposition value.</value>
         public string ContentDisposition { get; set; }
 
         /// <summary>
         /// Gets or sets the content-encoding header returned with the blob.
         /// </summary>
-        /// <value>The content-encoding value.</value>
+        /// <value>A string containing the content-encoding value.</value>
         public string ContentEncoding { get; set; }
 
         /// <summary>
         /// Gets or sets the content-language header returned with the blob.
         /// </summary>
-        /// <value>The content-language value.</value>
+        /// <value>A string containing the content-language value.</value>
         public string ContentLanguage { get; set; }
 
         /// <summary>
         /// Gets or sets the content-type header returned with the blob.
         /// </summary>
-        /// <value>The content-type value.</value>
+        /// <value>A string containing the content-type value.</value>
         public string ContentType { get; set; }
     }
 }

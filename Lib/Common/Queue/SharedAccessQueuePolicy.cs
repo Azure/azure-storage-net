@@ -37,29 +37,29 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets or sets the start time for a shared access signature associated with this shared access policy.
         /// </summary>
-        /// <value>The shared access start time.</value>
+        /// <value>A <see cref="DateTimeOffset"/> specifying the shared access start time.</value>
         public DateTimeOffset? SharedAccessStartTime { get; set; }
 
         /// <summary>
         /// Gets or sets the expiry time for a shared access signature associated with this shared access policy.
         /// </summary>
-        /// <value>The shared access expiry time.</value>
+        /// <value>A <see cref="DateTimeOffset"/> specifying the shared access expiry time.</value>
         public DateTimeOffset? SharedAccessExpiryTime { get; set; }
 
         /// <summary>
         /// Gets or sets the permissions for a shared access signature associated with this shared access policy.
         /// </summary>
-        /// <value>The permissions.</value>
+        /// <value>A <see cref="SharedAccessQueuePermissions"/> object.</value>
         public SharedAccessQueuePermissions Permissions { get; set; }
 
         /// <summary>
         /// Converts the permissions specified for the shared access policy to a string.
         /// </summary>
-        /// <param name="permissions">The shared access permissions.</param>
+        /// <param name="permissions">A <see cref="SharedAccessQueuePermissions"/> object.</param>
         /// <returns>The shared access permissions in string format.</returns>
         public static string PermissionsToString(SharedAccessQueuePermissions permissions)
         {
-            // The queue service supports a fixed order => raup
+            // The Queue service supports a fixed order => raup
             StringBuilder builder = new StringBuilder();
             if ((permissions & SharedAccessQueuePermissions.Read) == SharedAccessQueuePermissions.Read)
             {
@@ -88,7 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Constructs a <see cref="SharedAccessQueuePermissions"/> object from a permissions string.
         /// </summary>
         /// <param name="input">The shared access permissions in string format.</param>
-        /// <returns>A set of shared access permissions.</returns>
+        /// <returns>A <see cref="SharedAccessQueuePermissions"/> object.</returns>
         public static SharedAccessQueuePermissions PermissionsFromString(string input)
         {
             CommonUtility.AssertNotNull("input", input);

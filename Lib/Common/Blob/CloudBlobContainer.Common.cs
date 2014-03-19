@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlobContainer"/> class.
         /// </summary>
-        /// <param name="containerAddress">The absolute URI to the container.</param>
+        /// <param name="containerAddress">A <see cref="System.Uri"/> object specifying the absolute URI to the container.</param>
         public CloudBlobContainer(Uri containerAddress)
             : this(containerAddress, null /* credentials */)
         {
@@ -42,8 +42,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlobContainer"/> class.
         /// </summary>
-        /// <param name="containerAddress">The absolute URI to the container.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="containerAddress">A <see cref="System.Uri"/> object specifying the absolute URI to the container.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlobContainer(Uri containerAddress, StorageCredentials credentials)
             : this(new StorageUri(containerAddress), credentials)
         {
@@ -52,8 +52,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlobContainer"/> class.
         /// </summary>
-        /// <param name="containerAddress">The absolute URI to the container.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="containerAddress">A <see cref="System.Uri"/> object specifying the absolute URI to the container.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
         public static CloudBlobContainer Create(StorageUri containerAddress, StorageCredentials credentials)
@@ -77,15 +77,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlobContainer"/> class.
         /// </summary>
-        /// <param name="containerName">The container name.</param>
-        /// <param name="serviceClient">A client object that specifies the endpoint for the Blob service.</param>
+        /// <param name="containerName">A string specifying the container name.</param>
+        /// <param name="serviceClient">A <see cref="CloudBlobClient"/> object.</param>
         internal CloudBlobContainer(string containerName, CloudBlobClient serviceClient)
             : this(new BlobContainerProperties(), new Dictionary<string, string>(), containerName, serviceClient)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CloudBlobContainer" /> class.
+        /// Initializes a new instance of the <see cref="CloudBlobContainer"/> class.
         /// </summary>
         /// <param name="properties">The properties.</param>
         /// <param name="metadata">The metadata.</param>
@@ -101,15 +101,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets the service client for the container.
+        /// Gets the Blob service client for the container.
         /// </summary>
-        /// <value>A client object that specifies the endpoint for the Blob service.</value>
+        /// <value>A <see cref="CloudBlobClient"/> object.</value>
         public CloudBlobClient ServiceClient { get; private set; }
 
         /// <summary>
         /// Gets the container's URI for the primary location.
         /// </summary>
-        /// <value>The absolute URI to the container, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the container at the primary location.</value>
         public Uri Uri
         {
             get
@@ -119,27 +119,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets the container's URIs for all locations.
+        /// Gets the container's URIs for both the primary and secondary locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the container's URIs for all locations.</value>
+        /// <value>An object of type <see cref="StorageUri"/> containing the container's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
         /// Gets the name of the container.
         /// </summary>
-        /// <value>The container's name.</value>
+        /// <value>A string containing the container name.</value>
         public string Name { get; private set; }
 
         /// <summary>
         /// Gets the container's metadata.
         /// </summary>
-        /// <value>The container's metadata.</value>
+        /// <value>An <see cref="IDictionary{TKey,TValue}"/> object containing the container's metadata.</value>
         public IDictionary<string, string> Metadata { get; private set; }
 
         /// <summary>
         /// Gets the container's system properties.
         /// </summary>
-        /// <value>The container's properties.</value>
+        /// <value>A <see cref="BlobContainerProperties"/> object.</value>
         public BlobContainerProperties Properties { get; private set; }
 
         /// <summary>
@@ -178,22 +178,35 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Returns a shared access signature for the container.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy)
         {
-            return this.GetSharedAccessSignature(policy, null /* groupPolicyIdentifier */);
+            return this.GetSharedAccessSignature(policy, null /* groupPolicyIdentifier */, null /* sasVersion */);
         }
 
         /// <summary>
         /// Returns a shared access signature for the container.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <param name="groupPolicyIdentifier">A container-level access policy.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, string groupPolicyIdentifier)
+        {
+            return this.GetSharedAccessSignature(policy, groupPolicyIdentifier, null /* sasVersion */);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the container.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="groupPolicyIdentifier">A container-level access policy.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, string groupPolicyIdentifier, string sasVersion)
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
@@ -203,11 +216,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             string resourceName = this.GetSharedAccessCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, accountKey.KeyValue);
+            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
+            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, validatedSASVersion, accountKey.KeyValue);
             string accountKeyName = accountKey.KeyName;
 
             // Future resource type changes from "c" => "container"
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "c", signature, accountKeyName);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "c", signature, accountKeyName, validatedSASVersion);
 
             return builder.ToString();
         }
@@ -215,8 +229,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a reference to a page blob in this container.
         /// </summary>
-        /// <param name="blobName">The name of the blob.</param>
-        /// <returns>A reference to a page blob.</returns>
+        /// <param name="blobName">A string containing the name of the page blob.</param>
+        /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
         public CloudPageBlob GetPageBlobReference(string blobName)
         {
             return this.GetPageBlobReference(blobName, null /* snapshotTime */);
@@ -225,9 +239,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Returns a reference to a page blob in this virtual directory.
         /// </summary>
-        /// <param name="blobName">The name of the page blob.</param>
-        /// <param name="snapshotTime">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <returns>A reference to a page blob.</returns>
+        /// <param name="blobName">A string containing the name of the page blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
         public CloudPageBlob GetPageBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
@@ -237,8 +251,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a reference to a block blob in this container.
         /// </summary>
-        /// <param name="blobName">The name of the blob.</param>
-        /// <returns>A reference to a block blob.</returns>
+        /// <param name="blobName">A string containing the name of the block blob.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
         public CloudBlockBlob GetBlockBlobReference(string blobName)
         {
             return this.GetBlockBlobReference(blobName, null /* snapshotTime */);
@@ -247,9 +261,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a reference to a block blob in this container.
         /// </summary>
-        /// <param name="blobName">The name of the blob.</param>
-        /// <param name="snapshotTime">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <returns>A reference to a block blob.</returns>
+        /// <param name="blobName">A string containing the name of the block blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
         public CloudBlockBlob GetBlockBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
@@ -259,8 +273,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a reference to a virtual blob directory beneath this container.
         /// </summary>
-        /// <param name="relativeAddress">The name of the virtual blob directory.</param>
-        /// <returns>A reference to a virtual blob directory.</returns>
+        /// <param name="relativeAddress">A string containing the name of the virtual blob directory.</param>
+        /// <returns>A <see cref="CloudBlobDirectory"/> object.</returns>
         public CloudBlobDirectory GetDirectoryReference(string relativeAddress)
         {
             CommonUtility.AssertNotNull("relativeAddress", relativeAddress);

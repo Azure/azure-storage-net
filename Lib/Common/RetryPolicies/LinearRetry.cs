@@ -48,8 +48,8 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// <summary>
         /// Initializes a new instance of the <see cref="LinearRetry"/> class using the specified delta and maximum number of retries.
         /// </summary>
-        /// <param name="deltaBackoff">The back off interval between retries.</param>
-        /// <param name="maxAttempts">The maximum number of retry attempts.</param>
+        /// <param name="deltaBackoff">A <see cref="TimeSpan"/> specifying the back-off interval between retries.</param>
+        /// <param name="maxAttempts">An integer specifying the maximum number of retry attempts.</param>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Backoff", Justification = "Reviewed: Backoff is allowed.")]
         public LinearRetry(TimeSpan deltaBackoff, int maxAttempts)
         {
@@ -60,11 +60,11 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// <summary>
         /// Determines whether the operation should be retried and the interval until the next retry.
         /// </summary>
-        /// <param name="currentRetryCount">The number of retries for the given operation. A value of zero signifies this is the first error encountered.</param>
-        /// <param name="statusCode">The status code for the last operation.</param>
+        /// <param name="currentRetryCount">An integer specifying the number of retries for the given operation. A value of zero signifies this is the first error encountered.</param>
+        /// <param name="statusCode">An integer containing the status code for the last operation.</param>
         /// <param name="lastException">An <see cref="Exception"/> object that represents the last exception encountered.</param>
-        /// <param name="retryInterval">The interval to wait until the next retry.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="retryInterval">A <see cref="TimeSpan"/> indicating the interval to wait until the next retry.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the operation should be retried; otherwise, <c>false</c>.</returns>
         public bool ShouldRetry(int currentRetryCount, int statusCode, Exception lastException, out TimeSpan retryInterval, OperationContext operationContext)
         {
@@ -91,7 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// Determines whether the operation should be retried and the interval until the next retry.
         /// </summary>
         /// <param name="retryContext">A <see cref="RetryContext"/> object that indicates the number of retries, the results of the last request, and whether the next retry should happen in the primary or secondary location, and specifies the location mode.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="RetryInfo"/> object that indicates the location mode, and whether the next retry should happen in the primary or secondary location. If <c>null</c>, the operation will not be retried.</returns>
         public RetryInfo Evaluate(RetryContext retryContext, OperationContext operationContext)
         {

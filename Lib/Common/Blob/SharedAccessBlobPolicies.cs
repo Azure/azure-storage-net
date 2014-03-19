@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a collection containing the keys in the shared access policies collection.
         /// </summary>
-        /// <value>A collection containing the keys in the of shared access policies collection.</value>
+        /// <value>A collection of strings containing the keys of the shared access policies collection.</value>
         public ICollection<string> Keys
         {
             get
@@ -69,7 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Removes the value with the specified key from the shared access policies collection.
         /// </summary>
-        /// <param name="key">The key of the <see cref="SharedAccessBlobPolicy"/> item to remove.</param>
+        /// <param name="key">A string containing the key of the <see cref="SharedAccessBlobPolicy"/> item to remove.</param>
         /// <returns><c>true</c> if the element is successfully found and removed; otherwise, <c>false</c>. This method returns <c>false</c> if the key is not found.</returns>
         public bool Remove(string key)
         {
@@ -79,7 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the <see cref="SharedAccessBlobPolicy"/> item associated with the specified key. 
         /// </summary>
-        /// <param name="key">The key of the value to get.</param>
+        /// <param name="key">A string containing the key of the value to get.</param>
         /// <param name="value">The <see cref="SharedAccessBlobPolicy"/> item to get.</param>
         /// <returns>The <see cref="SharedAccessBlobPolicy"/> item associated with the specified key, if the key is found; otherwise, the default value for the <see cref="SharedAccessBlobPolicy"/> type.</returns>
         public bool TryGetValue(string key, out SharedAccessBlobPolicy value)
@@ -102,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the <see cref="SharedAccessBlobPolicy"/> item associated with the specified key.
         /// </summary>
-        /// <param name="key">The key of the <see cref="SharedAccessBlobPolicy"/> value to get or set.</param>
+        /// <param name="key">A string containing the key of the <see cref="SharedAccessBlobPolicy"/> value to get or set.</param>
         /// <returns>The <see cref="SharedAccessBlobPolicy"/> item associated with the specified key, or <c>null</c> if key is not in the shared access policies collection.</returns>
         public SharedAccessBlobPolicy this[string key]
         {
@@ -157,7 +157,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Copies each key/<see cref="SharedAccessBlobPolicy"/> value pair in the shared access policies collection to a compatible one-dimensional array, starting at the specified index of the target array.
+        /// Copies each key in the key/<see cref="SharedAccessBlobPolicy"/> value pair to a compatible one-dimensional array, starting at the specified index
+        /// of the target array.
         /// </summary>
         /// <param name="array">The one-dimensional array of <see cref="SharedAccessBlobPolicy"/> objects that is the destination of the elements copied from the shared access policies collection.</param>
         /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>

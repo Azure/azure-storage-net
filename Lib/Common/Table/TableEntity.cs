@@ -63,8 +63,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="TableEntity"/> class with the specified partition key and row key.
         /// </summary>
-        /// <param name="partitionKey">The partition key of the <see cref="TableEntity"/> to be initialized.</param>
-        /// <param name="rowKey">The row key of the <see cref="TableEntity"/> to be initialized.</param>
+        /// <param name="partitionKey">A string containing the partition key of the <see cref="TableEntity"/> to be initialized.</param>
+        /// <param name="rowKey">A string containing the row key of the <see cref="TableEntity"/> to be initialized.</param>
         public TableEntity(string partitionKey, string rowKey)
         {
             this.PartitionKey = partitionKey;
@@ -76,32 +76,32 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the entity's partition key.
         /// </summary>
-        /// <value>The partition key of the entity.</value>
+        /// <value>A string containing the partition key for the entity.</value>
         public string PartitionKey { get; set; }
 
         /// <summary>
         /// Gets or sets the entity's row key.
         /// </summary>
-        /// <value>The row key of the entity.</value>
+        /// <value>A string containing the row key for the entity.</value>
         public string RowKey { get; set; }
 
         /// <summary>
         /// Gets or sets the entity's timestamp.
         /// </summary>
-        /// <value>The timestamp of the entity.</value>
+        /// <value>A <see cref="DateTimeOffset"/> containing the timestamp of the entity.</value>
         public DateTimeOffset Timestamp { get; set; }
 
         /// <summary>
         /// Gets or sets the entity's current ETag.  Set this value to '*' in order to blindly overwrite an entity as part of an update operation.
         /// </summary>
-        /// <value>The ETag of the entity.</value>
+        /// <value>A string containing the ETag for the entity.</value>
         public string ETag { get; set; }
 
         /// <summary>
-        /// Deserializes this <see cref="TableEntity"/> instance using the specified <see cref="Dictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values. 
+        /// Deserializes this <see cref="TableEntity"/> instance using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values. 
         /// </summary>
-        /// <param name="properties">The map of string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         public virtual void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
@@ -120,11 +120,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Deserializes a custom entity instance using the specified <see cref="Dictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values. 
+        /// Deserializes a custom entity instance using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values. 
         /// </summary>
-        /// <param name="entity">Custom entity instance being deserialized.</param>
-        /// <param name="properties">The map of string property names to <see cref="EntityProperty"/> data values to deserialize and store in this entity instance.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>       
+        /// <param name="entity">The custom entity instance being deserialized.</param>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>       
         public static void ReadUserObject(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("entity", entity);
@@ -254,10 +254,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Serializes the <see cref="Dictionary{TKey,TValue}"/> of property names mapped to <see cref="EntityProperty"/> data values from this <see cref="TableEntity"/> instance.
+        /// Serializes the <see cref="IDictionary{TKey,TValue}"/> of property names mapped to <see cref="EntityProperty"/> data values from this <see cref="TableEntity"/> instance.
         /// </summary>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
-        /// <returns>A map of property names to <see cref="EntityProperty"/> data typed values created by serializing this table entity instance.</returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> typed values created by serializing this table entity instance.</returns>
         public virtual IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
@@ -275,11 +275,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Create a <see cref="Dictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.
+        /// Create a <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.
         /// </summary>
         /// <param name="entity">The entity object to serialize.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
-        /// <returns>A <see cref="Dictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.</returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.</returns>
         public static IDictionary<string, EntityProperty> WriteUserObject(object entity, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("entity", entity);
@@ -330,7 +330,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Determines if the given property should be skipped based on its name, if it exposes a public getter and setter, and if the IgnoreAttribute is not defined.
         /// </summary>
         /// <param name="property">The PropertyInfo of the property to check</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>True if the property should be skipped, false otherwise. </returns>
         internal static bool ShouldSkipProperty(PropertyInfo property, OperationContext operationContext)
         {
@@ -774,10 +774,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         /// <summary>
         /// Gets or sets the status of the property resolver cache for the <see cref="TableEntity"/>. 
-        /// <remarks>
-        /// The property resolver cache caches known entity types and their respective property resolver dictionaries when entities are deserialized and the payload does not include JSON metadata. For most scenarios, disabling the property resolver cache is not recommended due to its effect on performance. 
-        /// </remarks>
         /// </summary>
+        /// <remarks>
+        /// The property resolver cache caches known entity types and their respective property resolver dictionaries when entities are deserialized 
+        /// and the payload does not include JSON metadata. For most scenarios, disabling the property resolver cache is not recommended due to its 
+        /// effect on performance. 
+        /// </remarks>
         public static bool DisablePropertyResolverCache
         {
             get

@@ -17,6 +17,8 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Linq;
 using System.Net;
@@ -166,6 +168,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private static void TestBlobSAS(ICloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers)
         {
+            TestBlobSAS(testBlob, permissions, headers, null);
+        }
+
+        private static void TestBlobSAS(ICloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, string sasVersion)
+        {
             UploadText(testBlob, "blob", Encoding.UTF8);
 
             SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
@@ -175,7 +182,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Permissions = permissions,
             };
 
-            string sasToken = testBlob.GetSharedAccessSignature(policy, headers);
+            string sasToken = testBlob.GetSharedAccessSignature(policy, headers, null, sasVersion);
             TestAccess(sasToken, permissions, headers, null, testBlob);
         }
 
@@ -400,6 +407,153 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 };
 
                 TestBlobSAS(testBlob, permissions, headers);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test access of container with generation of 2012-02-12 SAS token.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainer20120212SASVersion()
+        {
+            // Create a policy with read/write access and get SAS.
+            SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+            };
+
+            string sasToken = this.testContainer.GetSharedAccessSignature(policy, null, Constants.VersionConstants.February2012);
+            CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob");
+            UploadText(testBlockBlob, "blob", Encoding.UTF8);
+            TestAccess(sasToken, SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write, null, this.testContainer, testBlockBlob);
+        }
+
+        [TestMethod]
+        [Description("Test all combinations of permissions using generation of 2012-02-12 SAS tokens for block blobs.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlob20120212SASVersion()
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                CloudBlockBlob testBlob = this.testContainer.GetBlockBlobReference("blob" + i);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
+                TestBlobSAS(testBlob, permissions, null, Constants.VersionConstants.February2012);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test all combinations of permissions using generation of 2012-02-12 SAS tokens for page blobs.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlob20120212SASVersion()
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + i);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
+                TestBlobSAS(testBlob, permissions, null, Constants.VersionConstants.February2012);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test invalid SAS Version for page blobs.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobInvalidSASVersion()
+        {
+            try
+            {
+                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + 1);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
+                TestBlobSAS(testBlob, permissions, null, "2012-02-29");
+                Assert.Fail();
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test invalid SAS Version for block blobs.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobInvalidSASVersion()
+        {
+            try
+            {
+                CloudBlockBlob testBlob = this.testContainer.GetBlockBlobReference("blob" + 1);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
+                TestBlobSAS(testBlob, permissions, null, "2012-02-29");
+                Assert.Fail();
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
+            }
+        }
+
+        [TestMethod]
+        [Description("Negative test for empty SAS Version.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobEmptySASVersion()
+        {
+            try
+            {
+                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + 1);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
+                TestBlobSAS(testBlob, permissions, null, "");
+                Assert.Fail();
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test 2012-02-12 SAS Version with header values. Should fail.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobHeaders20120212SASVersion()
+        {
+            SharedAccessBlobHeaders headers = new SharedAccessBlobHeaders()
+            {
+                CacheControl = "no-transform",
+                ContentDisposition = "attachment",
+                ContentEncoding = "gzip",
+                ContentLanguage = "tr,en",
+                ContentType = "text/html"
+            };
+
+            try
+            {
+                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + 1);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
+                TestBlobSAS(testBlob, permissions, headers, Constants.VersionConstants.February2012);
+                Assert.Fail();
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(SR.InvalidHeaders, e.Message);
             }
         }
     }

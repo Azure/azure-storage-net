@@ -27,25 +27,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the URI to the blob item, at the primary location.
         /// </summary>
-        /// <value>The blob item's URI.</value>
+        /// <value>The <see cref="System.Uri"/> for the blob item.</value>
         Uri Uri { get; }
 
         /// <summary>
-        /// Gets the blob item's URIs for all locations.
+        /// Gets the blob item's URIs for both the primary and secondary locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the blob item's URIs for all locations.</value>
+        /// <value>An object of type <see cref="StorageUri"/> containing the blob item's URIs for both the primary and secondary locations.</value>
         StorageUri StorageUri { get; }
 
         /// <summary>
         /// Gets the blob item's parent virtual directory.
         /// </summary>
-        /// <value>The blob item's parent virtual directory.</value>
+        /// <value>A <see cref="CloudBlobDirectory"/> object.</value>
         CloudBlobDirectory Parent { get; }
 
         /// <summary>
         /// Gets the blob item's container.
         /// </summary>
-        /// <value>The blob item's container.</value>
+        /// <value>A <see cref="CloudBlobContainer"/> object.</value>
         CloudBlobContainer Container { get; }
     }
 }

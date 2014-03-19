@@ -41,9 +41,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// The endpoint for the primary location for the storage account.
         /// </summary>
-        /// <value>
-        /// The URI for the primary endpoint.
-        /// </value>
+        /// <value>The <see cref="System.Uri"/> for the primary endpoint.</value>
         public Uri PrimaryUri
         {
             get
@@ -61,9 +59,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// The endpoint for the secondary location for the storage account.
         /// </summary>
-        /// <value>
-        /// The URI for the secondary endpoint.
-        /// </value>
+        /// <value>The <see cref="System.Uri"/> for the secondary endpoint.</value>
         public Uri SecondaryUri
         {
             get
@@ -81,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageUri"/> class using the primary endpoint for the storage account.
         /// </summary>
-        /// <param name="primaryUri">The URI for the primary endpoint.</param>
+        /// <param name="primaryUri">The <see cref="System.Uri"/> for the primary endpoint.</param>
         public StorageUri(Uri primaryUri)
             : this(primaryUri, null /* secondaryUri */)
         {
@@ -90,8 +86,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageUri"/> class using the primary and secondary endpoints for the storage account.
         /// </summary>
-        /// <param name="primaryUri">The URI for the primary endpoint.</param>
-        /// <param name="secondaryUri">The URI for the secondary endpoint.</param>
+        /// <param name="primaryUri">The <see cref="System.Uri"/> for the primary endpoint.</param>
+        /// <param name="secondaryUri">The <see cref="System.Uri"/> for the secondary endpoint.</param>
         public StorageUri(Uri primaryUri, Uri secondaryUri)
         {
             if ((primaryUri != null) && (secondaryUri != null) &&
@@ -107,8 +103,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Returns the URI for the storage account endpoint at the specified location.
         /// </summary>
-        /// <param name="location">The primary or secondary location for the storage account.</param>
-        /// <returns>The <see cref="System.Uri"/> of the specified location.</returns>
+        /// <param name="location">A <see cref="StorageLocation"/> enumeration value.</param>
+        /// <returns>The <see cref="System.Uri"/> for the endpoint at the the specified location.</returns>
         public Uri GetUri(StorageLocation location)
         {
             switch (location)
@@ -141,10 +137,10 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="System.String"/> that represents this instance.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
+        /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
         public override string ToString()
         {
@@ -172,10 +168,10 @@ namespace Microsoft.WindowsAzure.Storage
         [DefaultOverload]
 #endif
         /// <summary>
-        /// Determines whether the specified <see cref="System.Object" /> is equal to this instance.
+        /// Determines whether the specified <see cref="System.Object"/> is equal to this instance.
         /// </summary>
-        /// <param name="obj">The <see cref="System.Object" /> to compare with this instance.</param>
-        /// <returns><c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.</returns>
+        /// <param name="obj">The <see cref="System.Object"/> to compare with this instance.</param>
+        /// <returns><c>true</c> if the specified <see cref="System.Object"/> is equal to this instance; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
         {
             return this.Equals(obj as StorageUri);
@@ -185,7 +181,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Indicates whether the current object is equal to another object of the same type.
         /// </summary>
         /// <param name="other">An object to compare with this object.</param>
-        /// <returns><c>true</c> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <c>false</c>.</returns>
+        /// <returns><c>true</c> if the current object is equal to the <paramref name="other"/> parameter; otherwise, <c>false</c>.</returns>
         public bool Equals(StorageUri other)
         {
             return (other != null) &&

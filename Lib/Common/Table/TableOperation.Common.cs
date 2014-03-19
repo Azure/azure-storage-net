@@ -116,7 +116,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new table operation that deletes the given entity
         /// from a table.
         /// </summary>
-        /// <param name="entity">The entity to be deleted from the table.</param>
+        /// <param name="entity">The <see cref="ITableEntity"/> object to be deleted from the table.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         public static TableOperation Delete(ITableEntity entity)
         {
@@ -137,7 +137,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new table operation that inserts the given entity
         /// into a table.
         /// </summary>
-        /// <param name="entity">The entity to be inserted into the table.</param>
+        /// <param name="entity">The <see cref="ITableEntity"/> object to be inserted into the table.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         public static TableOperation Insert(ITableEntity entity)
         {
@@ -148,9 +148,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new table operation that inserts the given entity
         /// into a table.
         /// </summary>
-        /// <param name="entity">The entity to be inserted into the table.</param>
+        /// <param name="entity">The <see cref="ITableEntity"/> object to be inserted into the table.</param>
         /// <param name="echoContent"><c>true</c> if the message payload should be returned in the response to the insert operation. <c>false</c> otherwise.</param>
-        /// <returns>The table operation.</returns>
+        /// <returns>The <see cref="TableOperation"/> object.</returns>
         public static TableOperation Insert(ITableEntity entity, bool echoContent)
         {
             // Validate the arguments.
@@ -165,8 +165,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// into a table if the entity does not exist; if the entity does
         /// exist then its contents are merged with the provided entity.
         /// </summary>
-        /// <param name="entity">The entity whose contents are being inserted
-        /// or merged.</param>
+        /// <param name="entity">The <see cref="ITableEntity"/> object to be inserted or merged.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         public static TableOperation InsertOrMerge(ITableEntity entity)
         {
@@ -182,8 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// into a table if the entity does not exist; if the entity does
         /// exist then its contents are replaced with the provided entity.
         /// </summary>
-        /// <param name="entity">The entity whose contents are being inserted
-        /// or replaced.</param>
+        /// <param name="entity">The <see cref="ITableEntity"/> object to be inserted or replaced.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         public static TableOperation InsertOrReplace(ITableEntity entity)
         {
@@ -198,7 +196,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new table operation that merges the contents of
         /// the given entity with the existing entity in a table.
         /// </summary>
-        /// <param name="entity">The entity whose contents are being merged.</param>
+        /// <param name="entity">The <see cref="ITableEntity"/> object to be merged.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         public static TableOperation Merge(ITableEntity entity)
         {
@@ -219,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new table operation that replaces the contents of
         /// the given entity in a table.
         /// </summary>
-        /// <param name="entity">The entity whose contents are being replaced.</param>
+        /// <param name="entity">The <see cref="ITableEntity"/> object to be replaced.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         public static TableOperation Replace(ITableEntity entity)
         {
@@ -240,8 +238,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new table operation that replaces the contents of
         /// the given entity in a table.
         /// </summary>
-        /// <param name="partitionKey">The partition key of the entity to be replaced.</param>
-        /// <param name="rowkey">The row key of the entity to be replaced.</param>
+        /// <param name="partitionKey">A string containing the partition key of the entity to be replaced.</param>
+        /// <param name="rowkey">A string containing the row key of the entity to be replaced.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "rowkey", Justification = "Reviewed : rowkey is allowed.")]
         public static TableOperation Retrieve(string partitionKey, string rowkey)

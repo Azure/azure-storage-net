@@ -33,8 +33,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="method">The HTTP method.</param>
         /// <param name="uri">The request URI.</param>
         /// <param name="timeout">The timeout.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request for performing the operation.
         /// </returns>
@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The URI to create.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
         internal static HttpWebRequest Create(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
         {
@@ -107,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the resource.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="builder">An optional query builder to use.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         internal static HttpWebRequest GetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
@@ -133,7 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the resource.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="builder">An optional query builder to use.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         internal static HttpWebRequest SetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
@@ -159,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The URI to query.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
         internal static HttpWebRequest GetProperties(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
         {
@@ -173,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The blob Uri.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
         internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
         {
@@ -194,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The blob Uri.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
         internal static HttpWebRequest SetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
         {
@@ -243,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The URI of the resource to delete.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
         internal static HttpWebRequest Delete(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
@@ -255,9 +255,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Creates a web request to get the properties of the service.
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to get the service properties.
         /// </returns>
@@ -280,7 +280,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="builder">The builder.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to set the service properties.
         /// </returns>
@@ -301,9 +301,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Creates a web request to get the stats of the service.
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/>, containing additional parameters to add to the URI query string.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to get the service stats.
         /// </returns>

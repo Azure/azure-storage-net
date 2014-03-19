@@ -95,25 +95,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the next partition key for <see cref="ITableEntity"/> enumeration operations.
         /// </summary>
-        /// <value>The next partition key.</value>
+        /// <value>A string containing the next partition key.</value>
         public string NextPartitionKey { get; set; }
 
         /// <summary>
         /// Gets or sets the next row key for <see cref="ITableEntity"/> enumeration operations.
         /// </summary>
-        /// <value>The next row key.</value>
+        /// <value>A string containing the next row key.</value>
         public string NextRowKey { get; set; }
 
         /// <summary>
         /// Gets or sets the next table name for <see cref="ITableEntity"/> enumeration operations.
         /// </summary>
-        /// <value>The name of the next table.</value>
+        /// <value>A string containing the name of the next table.</value>
         public string NextTableName { get; set; }
 
         /// <summary>
         /// Gets or sets the storage location that the continuation token applies to.
         /// </summary>
-        /// <value>The storage location that the continuation token applies to.</value>
+        /// <value>A <see cref="StorageLocation"/> enumeration value.</value>
         public StorageLocation? TargetLocation { get; set; }
 
 #if WINDOWS_DESKTOP

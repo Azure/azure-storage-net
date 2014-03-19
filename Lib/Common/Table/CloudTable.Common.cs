@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudTable"/> class.
         /// </summary>
-        /// <param name="tableAddress">The absolute URI to the table.</param>
+        /// <param name="tableAddress">A <see cref="System.Uri"/> specifying the absolute URI to the table.</param>
         public CloudTable(Uri tableAddress)
             : this(tableAddress, null /* credentials */)
         {
@@ -42,8 +42,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudTable"/> class.
         /// </summary>
-        /// <param name="tableAbsoluteUri">The absolute URI to the table.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="tableAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the table.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudTable(Uri tableAbsoluteUri, StorageCredentials credentials)
             : this(new StorageUri(tableAbsoluteUri), credentials)
         {
@@ -52,8 +52,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudTable"/> class.
         /// </summary>
-        /// <param name="tableAddress">The absolute URI to the table.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="tableAddress">A <see cref="StorageUri"/> containing the absolute URI to the table at both the primary and secondary locations.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudTable"/> object.</returns>
         public static CloudTable Create(StorageUri tableAddress, StorageCredentials credentials)
@@ -86,19 +86,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the <see cref="CloudTableClient"/> object that represents the Table service.
         /// </summary>
-        /// <value>A client object that specifies the Table service endpoint.</value>
+        /// <value>A <see cref="CloudTableClient"/> object .</value>
         public CloudTableClient ServiceClient { get; private set; }
 
         /// <summary>
-        /// Gets the table name.
+        /// Gets the name of the table.
         /// </summary>
-        /// <value>The table name.</value>
+        /// <value>A string containing the name of the table.</value>
         public string Name { get; private set; }
 
         /// <summary>
-        /// Gets the table's URI for the primary location.
+        /// Gets the table URI for the primary location.
         /// </summary>
-        /// <value>The absolute URI to the table, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the table at the primary location.</value>
         public Uri Uri
         {
             get
@@ -108,20 +108,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Gets the table's URIs for all locations.
+        /// Gets the table's URIs for both the primary and secondary locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the table's URIs for all locations.</value>
+        /// <value>An object of type <see cref="StorageUri"/> containing the table's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
         /// Returns a shared access signature for the table.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
-        /// <param name="accessPolicyIdentifier">An access policy identifier.</param>
-        /// <param name="startPartitionKey">The start partition key, or null.</param>
-        /// <param name="startRowKey">The start row key, or null.</param>
-        /// <param name="endPartitionKey">The end partition key, or null.</param>
-        /// <param name="endRowKey">The end row key, or null.</param>
+        /// <param name="policy">A <see cref="SharedAccessTablePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="accessPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <param name="startPartitionKey">A string specifying the start partition key, or <c>null</c>.</param>
+        /// <param name="startRowKey">A string specifying the start row key, or <c>null</c>.</param>
+        /// <param name="endPartitionKey">A string specifying the end partition key, or <c>null</c>.</param>
+        /// <param name="endRowKey">A string specifying the end row key, or <c>null</c>.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         /// <exception cref="InvalidOperationException">Thrown if the current credentials don't support creating a shared access signature.</exception>
@@ -133,6 +133,38 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string endPartitionKey,
             string endRowKey)
         {
+            return this.GetSharedAccessSignature(
+                policy,
+                accessPolicyIdentifier,
+                startPartitionKey,
+                startRowKey,
+                endPartitionKey,
+                endRowKey,
+                null /* sasVersion */);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the table.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessTablePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="accessPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <param name="startPartitionKey">A string specifying the start partition key, or <c>null</c>.</param>
+        /// <param name="startRowKey">A string specifying the start row key, or <c>null</c>.</param>
+        /// <param name="endPartitionKey">A string specifying the end partition key, or <c>null</c>.</param>
+        /// <param name="endRowKey">A string specifying the end row key, or <c>null</c>.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if the current credentials don't support creating a shared access signature.</exception>
+        public string GetSharedAccessSignature(
+            SharedAccessTablePolicy policy,
+            string accessPolicyIdentifier,
+            string startPartitionKey,
+            string startRowKey,
+            string endPartitionKey,
+            string endRowKey,
+            string sasVersion)
+        {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
                 string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
@@ -141,7 +173,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-
+            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
+         
             string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
                 accessPolicyIdentifier,
@@ -150,6 +183,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 endPartitionKey,
                 endRowKey,
                 resourceName,
+                validatedSASVersion,
                 accountKey.KeyValue);
 
             UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
@@ -161,7 +195,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 endPartitionKey,
                 endRowKey,
                 signature,
-                accountKey.KeyName);
+                accountKey.KeyName,
+                validatedSASVersion);
 
             return builder.ToString();
         }
@@ -169,7 +204,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Returns the name of the table.
         /// </summary>
-        /// <returns>The name of the table.</returns>
+        /// <returns>A string containing the name of the table.</returns>
         public override string ToString()
         {
             return this.Name;

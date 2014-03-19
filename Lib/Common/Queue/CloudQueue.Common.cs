@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudQueue"/> class.
         /// </summary>
-        /// <param name="queueAddress">The absolute URI to the queue.</param>
+        /// <param name="queueAddress">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         public CloudQueue(Uri queueAddress)
             : this(queueAddress, null)
         {
@@ -46,8 +46,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudQueue"/> class.
         /// </summary>
-        /// <param name="queueAddress">The absolute URI to the queue.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="queueAddress">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudQueue(Uri queueAddress, StorageCredentials credentials)
             : this(new StorageUri(queueAddress), credentials)
         {
@@ -56,8 +56,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudQueue"/> class.
         /// </summary>
-        /// <param name="queueAddress">The absolute URI to the queue.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="queueAddress">A <see cref="StorageUri"/> containing the absolute URI to the queue at both the primary and secondary locations.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudQueue"/> object.</returns>
         public static CloudQueue Create(StorageUri queueAddress, StorageCredentials credentials)
@@ -79,7 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Initializes a new instance of the <see cref="CloudQueue"/> class.
         /// </summary>
         /// <param name="queueName">The queue name.</param>
-        /// <param name="serviceClient">A client object that specifies the endpoint for the queue service.</param>
+        /// <param name="serviceClient">A client object that specifies the endpoint for the Queue service.</param>
         internal CloudQueue(string queueName, CloudQueueClient serviceClient)
         {
             this.StorageUri = NavigationHelper.AppendPathToUri(serviceClient.StorageUri, queueName);
@@ -90,15 +90,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Gets the service client for the queue.
+        /// Gets the <see cref="CloudQueueClient"/> object that represents the Queue service.
         /// </summary>
-        /// <value>A client object that specifies the endpoint for the queue service.</value>
+        /// <value>A <see cref="CloudQueueClient"/> object.</value>
         public CloudQueueClient ServiceClient { get; private set; }
 
         /// <summary>
-        /// Gets the queue's URI for the primary location.
+        /// Gets the queue URI for the primary location.
         /// </summary>
-        /// <value>The absolute URI to the queue, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the queue at the primary location.</value>
         public Uri Uri
         {
             get
@@ -108,15 +108,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Gets the queue's URIs for all locations.
+        /// Gets the queue URIs for both the primary and secondary locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the queue's URIs for all locations.</value>
+        /// <value>An object of type <see cref="StorageUri"/> containing the queue's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
         /// Gets the name of the queue.
         /// </summary>
-        /// <value>The queue's name.</value>
+        /// <value>A string containing the name of the queue.</value>
         public string Name { get; private set; }
 
         /// <summary>
@@ -128,13 +128,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets or sets a value indicating whether to apply base64 encoding when adding or retrieving messages.
         /// </summary>
-        /// <value><c>True</c> to encode messages; otherwise, <c>false</c>. The default value is <c>true</c>.</value>
+        /// <value><c>true</c> to encode messages; otherwise, <c>false</c>. The default value is <c>true</c>.</value>
         public bool EncodeMessage { get; set; }
 
         /// <summary>
         /// Gets the queue's metadata.
         /// </summary>
-        /// <value>The queue's metadata.</value>
+        /// <value>An <see cref="IDictionary{TKey,TValue}"/> object containing the queue's metadata.</value>
         public IDictionary<string, string> Metadata { get; private set; }
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets the individual message address.
         /// </summary>
-        /// <param name="messageId">The message id.</param>
+        /// <param name="messageId">A string specifying the message ID.</param>
         /// <returns>The URI of the message.</returns>
         internal StorageUri GetIndividualMessageAddress(string messageId)
         {
@@ -247,11 +247,24 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Returns a shared access signature for the queue.
         /// </summary>
-        /// <param name="policy">The access policy for the shared access signature.</param>
-        /// <param name="accessPolicyIdentifier">A queue-level access policy.</param>
+        /// <param name="policy">A <see cref="SharedAccessQueuePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="accessPolicyIdentifier">A string identifying a stored access policy.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessQueuePolicy policy, string accessPolicyIdentifier)
+        {
+            return this.GetSharedAccessSignature(policy, accessPolicyIdentifier, null /* sasVersion */);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the queue.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessQueuePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="accessPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        public string GetSharedAccessSignature(SharedAccessQueuePolicy policy, string accessPolicyIdentifier, string sasVersion)
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
@@ -261,11 +274,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
+            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
 
             string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
                 accessPolicyIdentifier,
                 resourceName,
+                validatedSASVersion,
                 accountKey.KeyValue);
 
             string accountKeyName = accountKey.KeyName;
@@ -274,7 +289,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 policy,
                 accessPolicyIdentifier,
                 signature,
-                accountKeyName);
+                accountKeyName,
+                validatedSASVersion);
 
             return builder.ToString();
         }

@@ -23,7 +23,7 @@ namespace Microsoft.WindowsAzure.Storage
     /// <summary>
     /// Represents a result segment that was retrieved from the total set of possible results.
     /// </summary>
-    /// <typeparam name="TElement">The type of the element.</typeparam>
+    /// <typeparam name="TElement">The type of the element returned in the result segment.</typeparam>
     [SuppressMessage(
         "Microsoft.StyleCop.CSharp.MaintainabilityRules",
         "SA1402:FileMayOnlyContainASingleClass",
@@ -52,14 +52,14 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets an enumerable collection of results.
         /// </summary>
-        /// <value>An enumerable collection of results.</value>
+        /// <value>An enumerable collection of results of type <c>TElement</c>.</value>
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists", Justification = "Reviewed.")]
         public List<TElement> Results { get; internal set; }
 
         /// <summary>
         /// Gets a continuation token to use to retrieve the next set of results with a subsequent call to the operation.
         /// </summary>
-        /// <value>The continuation token.</value>
+        /// <value>An object of type <see cref="IContinuationToken"/>.</value>
         public IContinuationToken ContinuationToken
         {
             get

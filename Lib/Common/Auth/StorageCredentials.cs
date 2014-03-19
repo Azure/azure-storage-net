@@ -259,8 +259,8 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         /// <summary>
         /// Transforms a resource URI into a shared access signature URI, by appending a shared access token.
         /// </summary>
-        /// <param name="resourceUri">A <see cref="Uri"/> object that represents the resource URI to be transformed.</param>
-        /// <returns>A <see cref="Uri"/> object that represents the signature, including the resource URI and the shared access token.</returns>
+        /// <param name="resourceUri">A <see cref="System.Uri"/> object that represents the resource URI to be transformed.</param>
+        /// <returns>A <see cref="System.Uri"/> object that represents the signature, including the resource URI and the shared access token.</returns>
 #if WINDOWS_RT
         [DefaultOverload]
 #endif

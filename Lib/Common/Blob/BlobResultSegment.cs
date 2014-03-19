@@ -33,13 +33,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets an enumerable collection of <see cref="IListBlobItem"/> results.
         /// </summary>
-        /// <value>An enumerable collection of results.</value>
+        /// <value>An enumerable collection of <see cref="IListBlobItem"/> objects.</value>
         public IEnumerable<IListBlobItem> Results { get; private set; }
 
         /// <summary>
         /// Gets the continuation token used to retrieve the next segment of <see cref="IListBlobItem"/> results. Returns <c>null</c> if there are no more results.
         /// </summary>
-        /// <value>The continuation token.</value>
+        /// <value>A <see cref="BlobContinuationToken"/> object.</value>
         public BlobContinuationToken ContinuationToken { get; private set; }
     }
 }

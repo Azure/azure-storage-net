@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the source URI of a copy operation.
         /// </summary>
-        /// <value>A <see cref="Uri"/> indicating the source of a copy operation, or null.</value>
+        /// <value>A <see cref="System.Uri"/> indicating the source of a copy operation, or <c>null</c>.</value>
         public Uri Source
         {
             get;
@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the number of bytes copied in the operation so far.
         /// </summary>
-        /// <value>The number of bytes copied in the operation so far, or null.</value>
+        /// <value>The number of bytes copied in the operation so far, or <c>null</c>.</value>
         public long? BytesCopied
         {
             get;
@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the total number of bytes in the source of the copy.
         /// </summary>
-        /// <value>The number of bytes in the source, or null.</value>
+        /// <value>The number of bytes in the source, or <c>null</c>.</value>
         public long? TotalBytes
         {
             get;
@@ -87,7 +87,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the description of the current status, if any.
         /// </summary>
-        /// <value>A status description string, or null.</value>
+        /// <value>A status description string, or <c>null</c>.</value>
         public string StatusDescription
         {
             get;

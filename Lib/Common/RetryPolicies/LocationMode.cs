@@ -23,22 +23,22 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
     public enum LocationMode
     {
         /// <summary>
-        /// Requests should always be sent to the primary location.
+        /// Requests are always sent to the primary location.
         /// </summary>
         PrimaryOnly,
 
         /// <summary>
-        /// Requests should always be sent to the primary location first. If the request fails, it should be sent to the secondary location.
+        /// Requests are always sent to the primary location first. If a request fails, it is sent to the secondary location.
         /// </summary>
         PrimaryThenSecondary,
 
         /// <summary>
-        /// Requests should always be sent to the secondary location.
+        /// Requests are always sent to the secondary location.
         /// </summary>
         SecondaryOnly,
 
         /// <summary>
-        /// Requests should always be sent to the secondary location first. If the request fails, it should be sent to the primary location.
+        /// Requests are always sent to the secondary location first. If a request fails, it is sent to the primary location.
         /// </summary>
         SecondaryThenPrimary,
     }

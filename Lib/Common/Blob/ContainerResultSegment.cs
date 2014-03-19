@@ -33,13 +33,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets an enumerable collection of <see cref="CloudBlobContainer"/> results.
         /// </summary>
-        /// <value>An enumerable collection of results.</value>
+        /// <value>An enumerable collection of <see cref="CloudBlobContainer"/> objects.</value>
         public IEnumerable<CloudBlobContainer> Results { get; private set; }
 
         /// <summary>
         /// Gets the continuation token used to retrieve the next segment of <see cref="CloudBlobContainer"/> results.
         /// </summary>
-        /// <value>The continuation token.</value>
+        /// <value>A <see cref="BlobContinuationToken"/> object.</value>
         public BlobContinuationToken ContinuationToken { get; private set; }
     }
 }

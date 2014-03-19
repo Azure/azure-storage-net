@@ -214,12 +214,12 @@ namespace Microsoft.WindowsAzure.Storage
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
-        /// account credentials and service endpoints.
+        /// credentials and service endpoints.
         /// </summary>
-        /// <param name="storageCredentials">The account credentials.</param>
-        /// <param name="blobEndpoint">The Blob service endpoint.</param>
-        /// <param name="queueEndpoint">The Queue service endpoint.</param>
-        /// <param name="tableEndpoint">The Table service endpoint.</param>
+        /// <param name="storageCredentials">A <see cref="StorageCredentials"/> object.</param>
+        /// <param name="blobEndpoint">A <see cref="System.Uri"/> specifying the primary Blob service endpoint.</param>
+        /// <param name="queueEndpoint">A <see cref="System.Uri"/> specifying the primary Queue service endpoint.</param>
+        /// <param name="tableEndpoint">A <see cref="System.Uri"/> specifying the primary Table service endpoint.</param>
         public CloudStorageAccount(StorageCredentials storageCredentials, Uri blobEndpoint, Uri queueEndpoint, Uri tableEndpoint)
             : this(storageCredentials, new StorageUri(blobEndpoint), new StorageUri(queueEndpoint), new StorageUri(tableEndpoint))
         {
@@ -229,10 +229,10 @@ namespace Microsoft.WindowsAzure.Storage
         /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
         /// account credentials and service endpoints.
         /// </summary>
-        /// <param name="storageCredentials">The account credentials.</param>
-        /// <param name="blobStorageUri">The Blob service endpoint.</param>
-        /// <param name="queueStorageUri">The Queue service endpoint.</param>
-        /// <param name="tableStorageUri">The Table service endpoint.</param>
+        /// <param name="storageCredentials">A <see cref="StorageCredentials"/> object.</param>
+        /// <param name="blobStorageUri">A <see cref="StorageUri"/> specifying the Blob service endpoint or endpoints.</param>
+        /// <param name="queueStorageUri">A <see cref="StorageUri"/> specifying the Queue service endpoint or endpoints.</param>
+        /// <param name="tableStorageUri">A <see cref="StorageUri"/> specifying the Table service endpoint or endpoints.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudStorageAccount"/> instance for the specific credentials and service endpoints.</returns>
         public static CloudStorageAccount Create(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri)
@@ -254,11 +254,11 @@ namespace Microsoft.WindowsAzure.Storage
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
-        /// account credentials and the default service endpoints. 
+        /// credentials, and specifies whether to use HTTP or HTTPS to connect to the storage services. 
         /// </summary>
-        /// <param name="storageCredentials">An object of type <see cref="StorageCredentials"/> that 
-        /// specifies the account name and account key for the storage account.</param>
-        /// <param name="useHttps"><c>True</c> to use HTTPS to connect to storage service endpoints; otherwise, <c>false</c>.</param>
+        /// <param name="storageCredentials">A <see cref="StorageCredentials"/> object.</param>
+        /// <param name="useHttps"><c>true</c> to use HTTPS to connect to storage service endpoints; otherwise, <c>false</c>.</param>
+        /// <remarks>Using HTTPS to connect to the storage services is recommended.</remarks>
         public CloudStorageAccount(StorageCredentials storageCredentials, bool useHttps)
             : this(storageCredentials, null /* endpointSuffix */, useHttps)
         {
@@ -266,12 +266,12 @@ namespace Microsoft.WindowsAzure.Storage
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
-        /// account credentials and the default service endpoints. 
+        /// credentials and endpoint suffix, and specifies whether to use HTTP or HTTPS to connect to the storage services.
         /// </summary>
-        /// <param name="storageCredentials">An object of type <see cref="StorageCredentials"/> that 
-        /// specifies the account name and account key for the storage account.</param>
+        /// <param name="storageCredentials">A <see cref="StorageCredentials"/> object.</param>
         /// <param name="endpointSuffix">The DNS endpoint suffix for all storage services, e.g. "core.windows.net".</param>
-        /// <param name="useHttps"><c>True</c> to use HTTPS to connect to storage service endpoints; otherwise, <c>false</c>.</param>
+        /// <param name="useHttps"><c>true</c> to use HTTPS to connect to storage service endpoints; otherwise, <c>false</c>.</param>
+        /// <remarks>Using HTTPS to connect to the storage services is recommended.</remarks>
         public CloudStorageAccount(StorageCredentials storageCredentials, string endpointSuffix, bool useHttps)
         {
             CommonUtility.AssertNotNull("storageCredentials", storageCredentials);
@@ -286,9 +286,9 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets a <see cref="CloudStorageAccount"/> object that references the development storage account.
+        /// Gets a <see cref="CloudStorageAccount"/> object that references the well-known development storage account.
         /// </summary>
-        /// <value>A reference to the development storage account.</value>
+        /// <value>A <see cref="CloudStorageAccount"/> object representing the development storage account.</value>
         public static CloudStorageAccount DevelopmentStorageAccount
         {
             get
@@ -325,7 +325,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets the primary endpoint for the Blob service, as configured for the storage account.
         /// </summary>
-        /// <value>The primary Blob service endpoint.</value>
+        /// <value>A <see cref="System.Uri"/> containing the primary Blob service endpoint.</value>
         public Uri BlobEndpoint
         {
             get
@@ -337,7 +337,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets the primary endpoint for the Queue service, as configured for the storage account.
         /// </summary>
-        /// <value>The primary Queue service endpoint.</value>
+        /// <value>A <see cref="System.Uri"/> containing the primary Queue service endpoint.</value>
         public Uri QueueEndpoint
         {
             get
@@ -349,7 +349,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets the primary endpoint for the Table service, as configured for the storage account.
         /// </summary>
-        /// <value>The primary Table service endpoint.</value>
+        /// <value>A <see cref="System.Uri"/> containing the primary Table service endpoint.</value>
         public Uri TableEndpoint
         {
             get
@@ -359,27 +359,27 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets the endpoints for the Blob service, as configured for the storage account.
+        /// Gets the endpoints for the Blob service at the primary and secondary location, as configured for the storage account.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the endpoints for the Blob service.</value>
+        /// <value>A <see cref="StorageUri"/> containing the Blob service endpoints.</value>
         public StorageUri BlobStorageUri { get; private set; }
 
         /// <summary>
-        /// Gets the endpoints for the Queue service, as configured for the storage account.
+        /// Gets the endpoints for the Queue service at the primary and secondary location, as configured for the storage account.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the endpoints for the Queue service.</value>
+        /// <value>A <see cref="StorageUri"/> containing the Queue service endpoints.</value>
         public StorageUri QueueStorageUri { get; private set; }
 
         /// <summary>
-        /// Gets the endpoints for the Table service, as configured for the storage account.
+        /// Gets the endpoints for the Table service at the primary and secondary location, as configured for the storage account.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the endpoints for the Table service.</value>
+        /// <value>A <see cref="StorageUri"/> containing the Table service endpoints.</value>
         public StorageUri TableStorageUri { get; private set; }
 
         /// <summary>
         /// Gets the credentials used to create this <see cref="CloudStorageAccount"/> object.
         /// </summary>
-        /// <value>The credentials used to create the <see cref="CloudStorageAccount"/> object.</value>
+        /// <value>A <see cref="StorageCredentials"/> object.</value>
         public StorageCredentials Credentials { get; private set; }
 
         /// <summary>
@@ -437,7 +437,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Creates the Table service client.
         /// </summary>
-        /// <returns>A client object that specifies the Table service endpoint.</returns>
+        /// <returns>A <see cref="CloudTableClient"/> object.</returns>
         public CloudTableClient CreateCloudTableClient()
         {
             if (this.TableEndpoint == null)
@@ -456,7 +456,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Creates the Queue service client.
         /// </summary>
-        /// <returns>A client object that specifies the Queue service endpoint.</returns>
+        /// <returns>A <see cref="CloudQueueClient"/> object.</returns>
         public CloudQueueClient CreateCloudQueueClient()
         {
             if (this.QueueEndpoint == null)
@@ -475,7 +475,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Creates the Blob service client.
         /// </summary>
-        /// <returns>A client object that specifies the Blob service endpoint.</returns>
+        /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
         public CloudBlobClient CreateCloudBlobClient()
         {
             if (this.BlobEndpoint == null)
@@ -788,7 +788,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Settings filter that requires all specified settings be present and valid.
         /// </summary>
         /// <param name="requiredSettings">A list of settings that must be present.</param>
-        /// <returns>The remaining settings or null if the filter's requirement is not satisfied.</returns>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
         private static Func<IDictionary<string, string>, IDictionary<string, string>> AllRequired(params AccountSetting[] requiredSettings)
         {
             return (settings) =>
@@ -816,7 +816,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Settings filter that removes optional values.
         /// </summary>
         /// <param name="optionalSettings">A list of settings that are optional.</param>
-        /// <returns>The remaining settings or null if the filter's requirement is not satisfied.</returns>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
         private static Func<IDictionary<string, string>, IDictionary<string, string>> Optional(params AccountSetting[] optionalSettings)
         {
             return (settings) =>
@@ -840,7 +840,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Settings filter that ensures that at least one setting is present.
         /// </summary>
         /// <param name="atLeastOneSettings">A list of settings of which one must be present.</param>
-        /// <returns>The remaining settings or null if the filter's requirement is not satisfied.</returns>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
         [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1305:FieldNamesMustNotUseHungarianNotation", Justification = "Reviewed.")]
         private static Func<IDictionary<string, string>, IDictionary<string, string>> AtLeastOne(params AccountSetting[] atLeastOneSettings)
         {
@@ -866,7 +866,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Settings filter that ensures that a valid combination of credentials is present.
         /// </summary>
-        /// <returns>The remaining settings or null if the filter's requirement is not satisfied.</returns>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
         private static IDictionary<string, string> ValidCredentials(IDictionary<string, string> settings)
         {
             string accountName;

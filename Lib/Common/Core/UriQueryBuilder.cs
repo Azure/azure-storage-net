@@ -57,10 +57,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
         private Dictionary<string, string> parameters;
 
         /// <summary>
-        /// Add the value with URI escaping.
+        /// Add the query string value with URI escaping.
         /// </summary>
-        /// <param name="name">The query name.</param>
-        /// <param name="value">The query value.</param>
+        /// <param name="name">The query string name.</param>
+        /// <param name="value">The query string value.</param>
         public void Add(string name, string value)
         {
             if (value != null)
@@ -108,8 +108,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <summary>
         /// Adds a query parameter to a URI.
         /// </summary>
-        /// <param name="storageUri">The original URI, including any existing query parameters.</param>
-        /// <returns>The URI with the new query parameter appended.</returns>
+        /// <param name="storageUri">A <see cref="StorageUri"/> containing the original URI, including any existing query parameters.</param>
+        /// <returns>A <see cref="StorageUri"/> object with the new query parameter appended.</returns>
         public StorageUri AddToUri(StorageUri storageUri)
         {
             CommonUtility.AssertNotNull("storageUri", storageUri);
@@ -122,8 +122,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <summary>
         /// Adds a query parameter to a URI.
         /// </summary>
-        /// <param name="uri">The original URI, including any existing query parameters.</param>
-        /// <returns>The URI with the new query parameter appended.</returns>
+        /// <param name="uri">A <see cref="System.Uri"/> object containing the original URI, including any existing query parameters.</param>
+        /// <returns>A <see cref="System.Uri"/> object with the new query parameter appended.</returns>
         public Uri AddToUri(Uri uri)
         {
             if (uri == null)

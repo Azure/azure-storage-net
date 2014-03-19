@@ -89,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// </summary>
         /// <param name="blobAddress">The blob address.</param>
         /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
-        /// <returns>The name of the blob.</returns>
+        /// <returns>A string containing the name of the blob.</returns>
         internal static string GetBlobName(Uri blobAddress, bool? usePathStyleUris)
         {
             string containerName;

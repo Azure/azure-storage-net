@@ -128,21 +128,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         internal DateTime? OperationExpiryTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the retry policy.
+        /// Gets or sets the retry policy for the request.
         /// </summary>
-        /// <value>The retry policy.</value>
+        /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
         /// <summary>
         /// Gets or sets the location mode of the request.
         /// </summary>
-        /// <value>The location mode of the request.</value>
+        /// <value>A <see cref="LocationMode"/> object indicating the location mode of the request.</value>
         public LocationMode? LocationMode { get; set; }
 
         /// <summary>
         /// Gets or sets the server timeout interval for the request.
         /// </summary>
-        /// <value>The server timeout interval for the request.</value>
+        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval for the request.</value>
         public TimeSpan? ServerTimeout { get; set; }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets the number of blocks that may be simultaneously uploaded when uploading a blob that is greater than 
         /// the value specified by the <see cref="SingleBlobUploadThresholdInBytes"/> property in size.
         /// </summary>
-        /// <value>The number of parallel operations that may proceed.</value>
+        /// <value>An integer value indicating the number of parallel blob upload operations that may proceed.</value>
         public int? ParallelOperationThreadCount
         {
             get
@@ -177,7 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the maximum size of a blob in bytes that may be uploaded as a single blob. 
         /// </summary>
-        /// <value>The maximum size of a blob, in bytes, that may be uploaded as a single blob,
+        /// <value>A long indicating the maximum size of a blob, in bytes, that may be uploaded as a single blob,
         /// ranging from between 1 and 64 MB inclusive.</value>
         public long? SingleBlobUploadThresholdInBytes
         {

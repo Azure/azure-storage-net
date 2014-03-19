@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage
         private DateTimeOffset? ifNotModifiedSinceDateTime;
 
         /// <summary>
-        /// Gets or sets an ETag value that must match the ETag of the specified resource.
+        /// Gets or sets an ETag value for a condition specifying that the given ETag must match the ETag of the specified resource.
         /// </summary>
         /// <value>A string containing an ETag value, or <c>"*"</c> to match any ETag. If <c>null</c>, no condition exists.</value>
         public string IfMatchETag
@@ -46,7 +46,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets or sets an ETag value that must not match the ETag of the specified resource.
+        /// Gets or sets an ETag value for a condition specifying that the given ETag must not match the ETag of the specified resource.
         /// </summary>
         /// <value>A string containing an ETag value, or <c>"*"</c> to match any ETag. If <c>null</c>, no condition exists.</value>
         public string IfNoneMatchETag
@@ -56,9 +56,9 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets or sets a time that must be before the last modification of a resource.
+        /// Gets or sets a <see cref="DateTimeOffset"/> value for a condition specifying a time since which a resource has been modified.
         /// </summary>
-        /// <value>A <c>DateTimeOffset</c> in UTC, or <c>null</c> if no condition exists.</value>
+        /// <value>A <see cref="DateTimeOffset"/> value specified in UTC, or <c>null</c> if no condition exists.</value>
         public DateTimeOffset? IfModifiedSinceTime
         {
             get
@@ -73,9 +73,9 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets or sets a time that must not be before the last modification of a resource.
+        /// Gets or sets a <see cref="DateTimeOffset"/> value for a condition specifying a time since which a resource has not been modified.
         /// </summary>
-        /// <value>A <c>DateTimeOffset</c> in UTC, or <c>null</c> if no condition exists.</value>
+        /// <value>A <see cref="DateTimeOffset"/> value specified in UTC, or <c>null</c> if no condition exists.</value>
         public DateTimeOffset? IfNotModifiedSinceTime
         {
             get
@@ -90,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets or sets a sequence number that the current sequence number of a page blob must be less than or equal to in order for the operation to proceed.
+        /// Gets or sets a value for a condition specifying that the current sequence number must be less than or equal to the specified value.
         /// </summary>
         /// <value>A sequence number, or <c>null</c> if no condition exists.</value>
         /// <remarks>This condition only applies to page blobs.</remarks>
@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets or sets a sequence number that the current sequence number of a page blob must be less than in order for the operation to proceed.
+        /// Gets or sets a value for a condition specifying that the current sequence number must be less than the specified value.
         /// </summary>
         /// <value>A sequence number, or <c>null</c> if no condition exists.</value>
         /// <remarks>This condition only applies to page blobs.</remarks>
@@ -112,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Gets or sets a sequence number that the current sequence number of a page blob must be equal to in order for the operation to proceed.
+        /// Gets or sets a value for a condition specifying that the current sequence number must be equal to the specified value.
         /// </summary>
         /// <value>A sequence number, or <c>null</c> if no condition exists.</value>
         /// <remarks>This condition only applies to page blobs.</remarks>
@@ -125,7 +125,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets or sets a lease ID that must match the lease on a resource.
         /// </summary>
-        /// <value>A lease ID, or <c>null</c> if no condition exists.</value>
+        /// <value>A string containing a lease ID, or <c>null</c> if no condition exists.</value>
         public string LeaseId
         {
             get;
@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Constructs an empty access condition.
         /// </summary>
-        /// <returns>An empty access condition.</returns>
+        /// <returns>An empty <see cref="AccessCondition"/> object.</returns>
         public static AccessCondition GenerateEmptyCondition()
         {
             return new AccessCondition();
@@ -160,8 +160,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if the resource's ETag value
         /// matches the specified ETag value.
         /// </summary>
-        /// <param name="etag">The ETag value that must be matched.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-Match condition.</returns>
+        /// <param name="etag">The ETag value to check against the resource's ETag.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-Match condition.</returns>
         public static AccessCondition GenerateIfMatchCondition(string etag)
         {
             return new AccessCondition { IfMatchETag = etag };
@@ -171,8 +171,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if the resource has been
         /// modified since the specified time.
         /// </summary>
-        /// <param name="modifiedTime">The time since which the resource must have been modified in order for the operation to proceed.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-Modified-Since condition.</returns>
+        /// <param name="modifiedTime">A <see cref="DateTimeOffset"/> value specifying the time since which the resource must have been modified.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-Modified-Since condition.</returns>
         public static AccessCondition GenerateIfModifiedSinceCondition(DateTimeOffset modifiedTime)
         {
             return new AccessCondition { IfModifiedSinceTime = modifiedTime };
@@ -182,10 +182,10 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if the resource's ETag value
         /// does not match the specified ETag value.
         /// </summary>
-        /// <param name="etag">The ETag value that must be matched, or <c>"*"</c>.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-None-Match condition.</returns>
+        /// <param name="etag">The ETag value to check against the resource's ETag, or <c>"*"</c> to require that the resource does not exist.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-None-Match condition.</returns>
         /// <remarks>
-        /// If <c>"*"</c> is specified as the parameter then this condition requires that the resource does not exist.
+        /// If <c>"*"</c> is specified for the <paramref name="etag"/> parameter, then this condition requires that the resource does not exist.
         /// </remarks>        
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "etag", Justification = "Reviewed: etag can be used for identifier names.")]
         public static AccessCondition GenerateIfNoneMatchCondition(string etag)
@@ -197,8 +197,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if the resource has not been
         /// modified since the specified time.
         /// </summary>
-        /// <param name="modifiedTime">The time since which the resource must not have been modified in order for the operation to proceed.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-Unmodified-Since condition.</returns>
+        /// <param name="modifiedTime">A <see cref="DateTimeOffset"/> value specifying the time since which the resource must not have been modified.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-Unmodified-Since condition.</returns>
         public static AccessCondition GenerateIfNotModifiedSinceCondition(DateTimeOffset modifiedTime)
         {
             return new AccessCondition { IfNotModifiedSinceTime = modifiedTime };
@@ -208,8 +208,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if resource's current sequence
         /// number is less than or equal to the specified value.
         /// </summary>
-        /// <param name="sequenceNumber">The value that the current sequence number of the resource must be less than or equal to.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-Sequence-Number-LE condition.</returns>
+        /// <param name="sequenceNumber">The value to compare to the current sequence number.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-Sequence-Number-LE condition.</returns>
         public static AccessCondition GenerateIfSequenceNumberLessThanOrEqualCondition(long sequenceNumber)
         {
             return new AccessCondition { IfSequenceNumberLessThanOrEqual = sequenceNumber };
@@ -219,8 +219,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if resource's current sequence
         /// number is less than the specified value.
         /// </summary>
-        /// <param name="sequenceNumber">The value that the current sequence number of the resource must be less than.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-Sequence-Number-LT condition.</returns>
+        /// <param name="sequenceNumber">The value to compare to the current sequence number.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-Sequence-Number-LT condition.</returns>
         public static AccessCondition GenerateIfSequenceNumberLessThanCondition(long sequenceNumber)
         {
             return new AccessCondition { IfSequenceNumberLessThan = sequenceNumber };
@@ -230,8 +230,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if resource's current sequence
         /// number is equal to the specified value.
         /// </summary>
-        /// <param name="sequenceNumber">The value that the current sequence number of the resource must be equal to.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-Sequence-Number-EQ condition.</returns>
+        /// <param name="sequenceNumber">The value to compare to the current sequence number.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-Sequence-Number-EQ condition.</returns>
         public static AccessCondition GenerateIfSequenceNumberEqualCondition(long sequenceNumber)
         {
             return new AccessCondition { IfSequenceNumberEqual = sequenceNumber };
@@ -241,8 +241,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// Constructs an access condition such that an operation will be performed only if the lease ID on the
         /// resource matches the specified lease ID.
         /// </summary>
-        /// <param name="leaseId">The lease ID that must match the lease ID of the resource.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the lease condition.</returns>
+        /// <param name="leaseId">The lease ID to compare to the lease ID of the resource.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the lease condition.</returns>
         public static AccessCondition GenerateLeaseCondition(string leaseId)
         {
             return new AccessCondition { LeaseId = leaseId };
@@ -253,9 +253,9 @@ namespace Microsoft.WindowsAzure.Storage
         /// matches the specified ETag value and the lease ID on the resource matches the lease ID specified in
         /// the given access condition.
         /// </summary>
-        /// <param name="accessCondition">An <c>AccessCondition</c> object that represents the lease condition.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="etag">The ETag value that must be matched.</param>
-        /// <returns>An <c>AccessCondition</c> object that represents the If-Match and the lease conditions.</returns>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the If-Match and the lease conditions.</returns>
         internal static AccessCondition CloneConditionWithETag(AccessCondition accessCondition, string etag)
         {
             return new AccessCondition

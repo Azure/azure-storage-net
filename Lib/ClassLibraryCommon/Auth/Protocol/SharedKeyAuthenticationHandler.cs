@@ -53,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
         /// Signs the specified HTTP request with a shared key.
         /// </summary>
         /// <param name="request">The HTTP request to sign.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         public void SignRequest(HttpWebRequest request, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("request", request);

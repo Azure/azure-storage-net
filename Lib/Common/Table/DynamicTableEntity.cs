@@ -22,7 +22,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
 
     /// <summary>
-    /// A <see cref="ITableEntity"/> type which allows callers direct access to the property map of the entity. This class eliminates the use of reflection for serialization and deserialization.
+    /// A <see cref="ITableEntity"/> type which allows callers direct access to the property map of the entity. 
+    /// This class eliminates the use of reflection for serialization and deserialization.
     /// </summary>    
     public sealed class DynamicTableEntity : ITableEntity
     {
@@ -37,8 +38,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="DynamicTableEntity"/> class with the specified partition key and row key.
         /// </summary>
-        /// <param name="partitionKey">The partition key value for the entity.</param>
-        /// <param name="rowKey">The row key value for the entity.</param>
+        /// <param name="partitionKey">A string containing the partition key value for the entity.</param>
+        /// <param name="rowKey">A string containing the row key value for the entity.</param>
         public DynamicTableEntity(string partitionKey, string rowKey)
             : this(partitionKey, rowKey, DateTimeOffset.MinValue, null /* timestamp */, new Dictionary<string, EntityProperty>())
         {
@@ -47,10 +48,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="DynamicTableEntity"/> class with the entity's partition key, row key, ETag (if available/required), and properties.
         /// </summary>
-        /// <param name="partitionKey">The entity's partition key.</param>
-        /// <param name="rowKey">The entity's row key.</param>
-        /// <param name="etag">The entity's current ETag.</param>
-        /// <param name="properties">The entity's properties, indexed by property name.</param>
+        /// <param name="partitionKey">A string containing the partition key value for the entity.</param>
+        /// <param name="rowKey">A string containing the row key value for the entity.</param>
+        /// <param name="etag">A string containing the ETag for the entity.</param>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object containing the entity's properties, indexed by property name.</param>
         public DynamicTableEntity(string partitionKey, string rowKey, string etag, IDictionary<string, EntityProperty> properties)
             : this(partitionKey, rowKey, DateTimeOffset.MinValue, etag, properties)
         {
@@ -59,11 +60,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="DynamicTableEntity"/> class with the entity's partition key, row key, timestamp, ETag (if available/required), and properties.
         /// </summary>
-        /// <param name="partitionKey">The entity's partition key.</param>
-        /// <param name="rowKey">The entity's row key.</param>
-        /// <param name="timestamp">The timestamp for this entity as returned by Windows Azure.</param>
-        /// <param name="etag">The entity's current ETag; set to null to ignore the ETag during subsequent update operations.</param>
-        /// <param name="properties">An <see cref="IDictionary{TKey,TElement}"/> containing a map of <see cref="string"/> property names to <see cref="EntityProperty"/> data typed values to store in the new <see cref="DynamicTableEntity"/>.</param>
+        /// <param name="partitionKey">A string containing the partition key value for the entity.</param>
+        /// <param name="rowKey">A string containing the row key value for the entity.</param>
+        /// <param name="timestamp">A <see cref="DateTimeOffset"/> value containing the timestamp for this entity.</param>
+        /// <param name="etag">A string containing the ETag for the entity.</param>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object containing the entity's properties, indexed by property name.</param>
         internal DynamicTableEntity(string partitionKey, string rowKey, DateTimeOffset timestamp, string etag, IDictionary<string, EntityProperty> properties)
         {
             CommonUtility.AssertNotNull("partitionKey", partitionKey);
@@ -84,39 +85,40 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the properties in the table entity, indexed by property name.
         /// </summary>
-        /// <value>The entity properties.</value>
+        /// <value>An <see cref="IDictionary{TKey,TValue}"/> object containing the entity's properties.</value>
         public IDictionary<string, EntityProperty> Properties { get; set; }
 
         /// <summary>
         /// Gets or sets the entity's partition key.
         /// </summary>
-        /// <value>The entity partition key.</value>
+        /// <value>A string containing the partition key value for the entity.</value>
         public string PartitionKey { get; set; }
 
         /// <summary>
         /// Gets or sets the entity's row key.
         /// </summary>
-        /// <value>The entity row key.</value>
+        /// <value>A string containing the row key value for the entity.</value>
         public string RowKey { get; set; }
 
         /// <summary>
         /// Gets or sets the entity's timestamp.
         /// </summary>
-        /// <value>The entity timestamp.</value>
+        /// <value>A <see cref="DateTimeOffset"/> containing the timestamp for the entity.</value>
         public DateTimeOffset Timestamp { get; set; }
 
         /// <summary>
-        /// Gets or sets the entity's current ETag. Set this value to '*' to blindly overwrite an entity as part of an update operation.
+        /// Gets or sets the entity's current ETag.
         /// </summary>
-        /// <value>The entity ETag.</value>
+        /// <value>A string containing the ETag for the entity.</value>
+        /// <remarks>Set this value to '*' to blindly overwrite an entity as part of an update operation.</remarks>
         public string ETag { get; set; }
 
 #if !WINDOWS_RT
         /// <summary>
         /// Gets or sets the entity's property, given the name of the property.
         /// </summary>
-        /// <param name="key">The name of the property.</param>
-        /// <returns>The property.</returns>
+        /// <param name="key">A string containing the name of the property.</param>
+        /// <returns>An <see cref="EntityProperty"/> object.</returns>
         public EntityProperty this[string key]
         {
             get { return this.Properties[key]; }
@@ -125,20 +127,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
 
         /// <summary>
-        /// Deserializes this <see cref="DynamicTableEntity"/> instance using the specified <see cref="Dictionary{TKey,TValue}"/> of property names to values of type <see cref="EntityProperty"/>.
+        /// Deserializes this <see cref="DynamicTableEntity"/> instance using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to values of type <see cref="EntityProperty"/>.
         /// </summary>
-        /// <param name="properties">A collection containing the <see cref="Dictionary{TKey,TValue}"/> of string property names mapped to values of type <see cref="EntityProperty"/> to store in this <see cref="DynamicTableEntity"/> instance.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
+        /// <param name="properties">A collection containing the <see cref="IDictionary{TKey,TValue}"/> of string property names mapped to values of type <see cref="EntityProperty"/> to store in this <see cref="DynamicTableEntity"/> instance.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
             this.Properties = properties;
         }
 
         /// <summary>
-        /// Serializes the <see cref="Dictionary{TKey,TValue}"/> of property names mapped to values of type <see cref="EntityProperty"/> from this <see cref="DynamicTableEntity"/> instance.
+        /// Serializes the <see cref="IDictionary{TKey,TValue}"/> of property names mapped to values of type <see cref="EntityProperty"/> from this <see cref="DynamicTableEntity"/> instance.
         /// </summary>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object used to track the execution of the operation.</param>
-        /// <returns>A collection containing the map of string property names to values of type <see cref="EntityProperty"/> stored in this <see cref="DynamicTableEntity"/> instance.</returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object containing the map of string property names to values of type <see cref="EntityProperty"/> stored in this <see cref="DynamicTableEntity"/> instance.</returns>
         public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
             return this.Properties;

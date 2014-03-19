@@ -120,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// Look for an inner exception of type T. 
         /// </summary>
         /// <param name="exception">The exception.</param>
-        /// <returns>The found exception or null.</returns>
+        /// <returns>The found exception or <c>null</c>.</returns>
         internal static T FindInnerExceptionOfType<T>(Exception exception) where T : Exception
         {
             T dsce = null;

@@ -87,10 +87,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         #region Public Execution Methods
 
         /// <summary>
-        /// Executes a query on a table, using the specified <see cref="TableRequestOptions"/> and <see cref="OperationContext"/>.
+        /// Executes a query on a table.
         /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection, specialized for type <c>TElement</c>, of the results of executing the query.</returns>       
         [DoesServiceRequest]
         public IEnumerable<TElement> Execute(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
@@ -118,8 +118,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Begins an asynchronous operation to execute a query and return the results as a result segment.
         /// </summary>
-        /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="currentToken">A <see cref="TableContinuationToken"/> object returned by a previous listing operation. May be <c>null</c>.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -131,11 +131,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Begins an asynchronous operation to execute a query and return the results as a result segment.
         /// </summary>
-        /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="currentToken">A <see cref="TableContinuationToken"/> object returned by a previous listing operation. May be <c>null</c>.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginExecuteSegmented(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
@@ -179,7 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Ends an asynchronous operation to execute a query and return the results as a result segment.
         /// </summary>
         /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
-        /// <returns>A result segment containing objects of type <typeparamref name="TElement"/>.</returns>
+        /// <returns>A <see cref="TableQuerySegment{TElement}"/> object of type <typeparamref name="TElement"/>.</returns>
         public TableQuerySegment<TElement> EndExecuteSegmented(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<TableQuerySegment<TElement>>(asyncResult);
@@ -187,10 +187,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
 #if TASK
         /// <summary>
-        /// Begins an asynchronous operation to execute a query and return the results as a result segment.
+        /// Initiates an asynchronous operation to execute a query and return the results as a result segment.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>
-        /// <returns>A <see cref="Task{T}"/> of <see cref="TableQuerySegment{TElement}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken)
         {
@@ -198,10 +198,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to execute a query and return the results as a result segment.
+        /// Initiates an asynchronous operation to execute a query and return the results as a result segment.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>/// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> of <see cref="TableQuerySegment{TElement}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, CancellationToken cancellationToken)
         {
@@ -209,12 +209,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to execute a query and return the results as a result segment.
+        /// Initiates an asynchronous operation to execute a query and return the results as a result segment.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
-        /// <returns>A <see cref="Task{T}"/> of <see cref="TableQuerySegment{TElement}"/> object that represents the current operation.</returns>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -222,13 +222,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to execute a query and return the results as a result segment.
+        /// Initiates an asynchronous operation to execute a query and return the results as a result segment.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> of <see cref="TableQuerySegment{TElement}"/> object that represents the current operation.</returns>
+        /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -238,11 +238,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
 #if SYNC
         /// <summary>
-        /// Queries a table in segmented mode using the specified <see cref="TableContinuationToken"/> continuation token, <see cref="TableRequestOptions"/>, and <see cref="OperationContext"/>.
+        /// Executes a segmented query against a table.
         /// </summary>
         /// <param name="continuationToken">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="TableQuerySegment{TElement}"/>, specialized for type <c>TElement</c>, containing the results of executing the query.</returns>
         [DoesServiceRequest]
         public TableQuerySegment<TElement> ExecuteSegmented(TableContinuationToken continuationToken, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
@@ -309,6 +309,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the type of the element(s) that are returned when the expression tree is executed.
         /// </summary>
+        /// <returns>A <see cref="T:System.Type"/> that represents the type of the element(s) that are returned when the expression tree associated with this object is executed.</returns>
         public Type ElementType
         {
             get { return typeof(TElement); }
@@ -317,6 +318,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the expression tree.
         /// </summary>
+        /// <returns>The <see cref="T:System.Linq.Expressions.Expression"/> that is associated with this instance of <see cref="T:System.Linq.IQueryable"/>.</returns>
         public Expression Expression
         {
             get { return this.queryExpression; }
@@ -325,6 +327,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the query provider that is associated with this data source.
         /// </summary>
+        /// <returns>The <see cref="T:System.Linq.IQueryProvider"/> that is associated with this data source.</returns>
         public IQueryProvider Provider
         {
             get { return this.queryProvider; }

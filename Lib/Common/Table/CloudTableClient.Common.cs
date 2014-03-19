@@ -56,7 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Initializes a new instance of the <see cref="CloudTableClient"/> class using the specified Table service endpoint
         /// and anonymous credentials.
         /// </summary>
-        /// <param name="baseUri">The Table service endpoint to use to create the client.</param>
+        /// <param name="baseUri">A <see cref="System.Uri"/> object containing the Table service endpoint to use to create the client.</param>
         public CloudTableClient(Uri baseUri)
             : this(baseUri, null)
         {
@@ -64,21 +64,21 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudTableClient"/> class using the specified Table service endpoint
-        /// and storage account credentials.
+        /// and account credentials.
         /// </summary>
-        /// <param name="baseUri">The Table service endpoint to use to create the client.</param>
-        /// <param name="credentials">The storage account credentials.</param>
+        /// <param name="baseUri">A <see cref="System.Uri"/> object containing the Table service endpoint to use to create the client.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudTableClient(Uri baseUri, StorageCredentials credentials)
             : this(new StorageUri(baseUri), credentials)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CloudTableClient"/> class using the specified Blob service endpoint
+        /// Initializes a new instance of the <see cref="CloudTableClient"/> class using the specified Table service endpoint
         /// and account credentials.
         /// </summary>
-        /// <param name="storageUri">The Table service endpoint to use to create the client.</param>
-        /// <param name="credentials">The storage account credentials.</param>
+        /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Table service endpoint to use to create the client.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudTableClient"/> object.</returns>
         public static CloudTableClient Create(StorageUri storageUri, StorageCredentials credentials)
@@ -109,18 +109,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Gets or sets a buffer manager that implements the <see cref="IBufferManager"/> interface, 
         /// specifying a buffer pool for use with operations against the Table service client.
         /// </summary>
+        /// <value>An object of type <see cref="IBufferManager"/>.</value>
         public IBufferManager BufferManager { get; set; }
 
         /// <summary>
-        /// Gets the storage account credentials used to create the Table service client.
+        /// Gets the account credentials used to create the Table service client.
         /// </summary>
-        /// <value>The storage account credentials.</value>
+        /// <value>A <see cref="StorageCredentials"/> object.</value>
         public StorageCredentials Credentials { get; private set; }
 
         /// <summary>
-        /// Gets the base URI for the Table service client, at the primary location.
+        /// Gets the base URI for the Table service client at the primary location.
         /// </summary>
-        /// <value>The base URI used to construct the Table service client, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> object containing the base URI used to construct the Table service client at the primary location.</value>
         public Uri BaseUri
         {
             get
@@ -130,27 +131,27 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Gets the Table service endpoints for all locations.
+        /// Gets the Table service endpoints for both the primary and secondary locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing Table service URIs for all locations.</value>
+        /// <value>An object of type <see cref="StorageUri"/> containing Table service URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
         /// Gets or sets the default retry policy for requests made via the Table service client.
         /// </summary>
-        /// <value>The retry policy.</value>
+        /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
         /// <summary>
         /// Gets or sets the default location mode for requests made via the Table service client.
         /// </summary>
-        /// <value>The location mode.</value>
+        /// <value>A <see cref="LocationMode"/> object.</value>
         public LocationMode LocationMode { get; set; }
 
         /// <summary>
-        /// Gets or sets the default server and client timeout for requests.
+        /// Gets or sets the default server timeout for requests made via the Table service client.
         /// </summary>
-        /// <value>The server and client timeout interval.</value>
+        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval.</value>
         public TimeSpan? ServerTimeout
         {
             get
@@ -172,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the maximum execution time across all potential retries.
         /// </summary>
-        /// <value>The maximum execution time across all potential retries.</value>
+        /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
         public TimeSpan? MaximumExecutionTime
         {
             get
@@ -192,9 +193,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Gets and sets the <see cref="TablePayloadFormat"/> that is used for any table accessed with this <see cref="CloudTableClient"/> object.
+        /// Gets and sets the table payload format for requests against any table accessed with this <see cref="CloudTableClient"/> object.
         /// </summary>
-        /// <value>The TablePayloadFormat to use.</value>
+        /// <value>A <see cref="TablePayloadFormat"/> enumeration value.</value>
+        /// <remarks>By default, this property is set to <see cref="TablePayloadFormat.Json"/> for .NET and Windows Phone. For Windows Runtime,
+        /// it is set to <see cref="TablePayloadFormat.AtomPub"/>.</remarks>
         public TablePayloadFormat PayloadFormat
         {
             get
@@ -240,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets a reference to the specified table.
         /// </summary>
-        /// <param name="tableName">The name of the table.</param>
+        /// <param name="tableName">A string containing the name of the table.</param>
         /// <returns>A <see cref="CloudTable"/> object.</returns>
         public CloudTable GetTableReference(string tableName)
         {

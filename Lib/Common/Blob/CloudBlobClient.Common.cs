@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Provides a client-side logical representation of the Windows Azure Blob service. This client is used to configure and execute requests against the Blob service.
     /// </summary>
-    /// <remarks>The service client encapsulates the base URI for the Blob service. If the service client will be used for authenticated access, it also encapsulates 
+    /// <remarks>The service client encapsulates the endpoint or endpoints for the Blob service. If the service client will be used for authenticated access, it also encapsulates 
     /// the credentials for accessing the storage account.</remarks>
     public sealed partial class CloudBlobClient
     {
@@ -63,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initializes a new instance of the <see cref="CloudBlobClient"/> class using the specified Blob service endpoint
         /// and anonymous credentials.
         /// </summary>
-        /// <param name="baseUri">The Blob service endpoint to use to create the client.</param>
+        /// <param name="baseUri">A <see cref="System.Uri"/> object containing the Blob service endpoint to use to create the client.</param>
         public CloudBlobClient(Uri baseUri)
             : this(baseUri, null /* credentials */)
         {
@@ -73,8 +73,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initializes a new instance of the <see cref="CloudBlobClient"/> class using the specified Blob service endpoint
         /// and account credentials.
         /// </summary>
-        /// <param name="baseUri">The Blob service endpoint to use to create the client.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="baseUri">A <see cref="System.Uri"/> object containing the Blob service endpoint to use to create the client.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlobClient(Uri baseUri, StorageCredentials credentials)
             : this(new StorageUri(baseUri), credentials)
         {
@@ -84,8 +84,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initializes a new instance of the <see cref="CloudBlobClient"/> class using the specified Blob service endpoint
         /// and account credentials.
         /// </summary>
-        /// <param name="storageUri">The Blob service endpoint to use to create the client.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Blob service endpoint to use to create the client.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
         public static CloudBlobClient Create(StorageUri storageUri, StorageCredentials credentials)
@@ -109,21 +109,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets or sets a buffer manager that implements the <see cref="IBufferManager"/> interface, 
+        /// Gets or sets a buffer manager that implements the <see cref="IBufferManager"/> interface,
         /// specifying a buffer pool for use with operations against the Blob service client.
         /// </summary>
+        /// <value>An object of type <see cref="IBufferManager"/>.</value>
         public IBufferManager BufferManager { get; set; }
 
         /// <summary>
         /// Gets the account credentials used to create the Blob service client.
         /// </summary>
-        /// <value>The account credentials.</value>
+        /// <value>A <see cref="StorageCredentials"/> object.</value>
         public StorageCredentials Credentials { get; private set; }
 
         /// <summary>
-        /// Gets the base URI for the Blob service client, at the primary location.
+        /// Gets the base URI for the Blob service client at the primary location.
         /// </summary>
-        /// <value>The base URI used to construct the Blob service client, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> object containing the base URI used to construct the Blob service client at the primary location.</value>
         public Uri BaseUri
         {
             get
@@ -133,27 +134,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets the Blob service endpoints for all locations.
+        /// Gets the Blob service endpoints for both the primary and secondary locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing Blob service URIs for all locations.</value>
+        /// <value>An object of type <see cref="StorageUri"/> containing Blob service URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
         /// Gets or sets the default retry policy for requests made via the Blob service client.
         /// </summary>
-        /// <value>The retry policy.</value>
+        /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
         /// <summary>
         /// Gets or sets the default location mode for requests made via the Blob service client.
         /// </summary>
-        /// <value>The location mode.</value>
+        /// <value>A <see cref="LocationMode"/> object.</value>
         public LocationMode LocationMode { get; set; }
 
         /// <summary>
-        /// Gets or sets the default server and client timeout for requests made via the Blob service client.
+        /// Gets or sets the default server timeout for requests made via the Blob service client.
         /// </summary>
-        /// <value>The server and client timeout interval.</value>
+        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval.</value>
         public TimeSpan? ServerTimeout
         {
             get
@@ -175,7 +176,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the maximum execution time across all potential retries.
         /// </summary>
-        /// <value>The maximum execution time across all potential retries.</value>
+        /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
         public TimeSpan? MaximumExecutionTime
         {
             get
@@ -197,7 +198,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the default delimiter that may be used to create a virtual directory structure of blobs.
         /// </summary>
-        /// <value>The default delimiter.</value>
+        /// <value>A string containing the default delimiter for the Blob service.</value>
         public string DefaultDelimiter
         {
             get
@@ -215,7 +216,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the maximum size of a blob in bytes that may be uploaded as a single blob. 
         /// </summary>
-        /// <value>The maximum size of a blob, in bytes, that may be uploaded as a single blob,
+        /// <value>A long containing the maximum size of a blob, in bytes, that may be uploaded as a single blob,
         /// ranging from between 1 and 64 MB inclusive.</value>
         public long SingleBlobUploadThresholdInBytes
         {
@@ -235,7 +236,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets the number of blocks that may be simultaneously uploaded when uploading a blob that is greater than 
         /// the value specified by the <see cref="SingleBlobUploadThresholdInBytes"/> property in size.
         /// </summary>
-        /// <value>The number of parallel operations that may proceed.</value>
+        /// <value>An int indicating the number of parallel operations that may proceed.</value>
         public int ParallelOperationThreadCount
         {
             get
@@ -257,9 +258,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         internal bool UsePathStyleUris { get; private set; }
 
         /// <summary>
-        /// Returns a reference to the root container for this service client.
+        /// Returns a reference to the root container.
         /// </summary>
-        /// <returns>A reference to the root container.</returns>
+        /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Reviewed")]
         public CloudBlobContainer GetRootContainerReference()
         {
@@ -269,8 +270,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Returns a reference to a <see cref="CloudBlobContainer"/> object with the specified name.
         /// </summary>
-        /// <param name="containerName">The name of the container, or an absolute URI to the container.</param>
-        /// <returns>A reference to a container.</returns>
+        /// <param name="containerName">A string containing the name of the container, or an absolute URI to the container.</param>
+        /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
         public CloudBlobContainer GetContainerReference(string containerName)
         {
             CommonUtility.AssertNotNullOrEmpty("containerName", containerName);

@@ -37,11 +37,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// Get the complete query builder for creating the Shared Access Signature query.
         /// </summary>
         /// <param name="policy">The shared access policy to hash.</param>
-        /// <param name="headers">The optional header values to set for a blob returned with this SAS.</param>
+        /// <param name="headers">The optional header values to set for a blob returned with this SAS. Not valid for the 2012-02-12 version.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
         /// <param name="resourceType">Either "b" for blobs or "c" for containers.</param>
         /// <param name="signature">The signature to use.</param>
-        /// <param name="accountKeyName">The name of the key used to create the signature, or null if the key is implicit.</param>
+        /// <param name="accountKeyName">The name of the key used to create the signature, or <c>null</c> if the key is implicit.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
         /// <returns>The finished query builder.</returns>
         internal static UriQueryBuilder GetSignature(
             SharedAccessBlobPolicy policy,
@@ -49,13 +50,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string accessPolicyIdentifier,
             string resourceType,
             string signature,
-            string accountKeyName)
+            string accountKeyName,
+            string sasVersion)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceType", resourceType);
 
             UriQueryBuilder builder = new UriQueryBuilder();
 
-            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, Constants.HeaderConstants.TargetStorageVersion);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, sasVersion);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedResource, resourceType);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIdentifier, accessPolicyIdentifier);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, accountKeyName);
@@ -91,19 +93,21 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="policy">The shared access policy to hash.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
         /// <param name="signature">The signature to use.</param>
-        /// <param name="accountKeyName">The name of the key used to create the signature, or null if the key is implicit.</param>
+        /// <param name="accountKeyName">The name of the key used to create the signature, or <c>null</c> if the key is implicit.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
         /// <returns>The finished query builder.</returns>
         internal static UriQueryBuilder GetSignature(
             SharedAccessQueuePolicy policy,
             string accessPolicyIdentifier,
             string signature,
-            string accountKeyName)
+            string accountKeyName,
+            string sasVersion)
         {
             CommonUtility.AssertNotNull("signature", signature);
 
             UriQueryBuilder builder = new UriQueryBuilder();
 
-            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, Constants.HeaderConstants.TargetStorageVersion);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, sasVersion);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIdentifier, accessPolicyIdentifier);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, accountKeyName);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.Signature, signature);
@@ -129,12 +133,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="policy">The shared access policy to hash.</param>
         /// <param name="tableName">The name of the table associated with this shared access signature.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
-        /// <param name="startPartitionKey">The start partition key, or null.</param>
-        /// <param name="startRowKey">The start row key, or null.</param>
-        /// <param name="endPartitionKey">The end partition key, or null.</param>
-        /// <param name="endRowKey">The end row key, or null.</param>
+        /// <param name="startPartitionKey">The start partition key, or <c>null</c>.</param>
+        /// <param name="startRowKey">The start row key, or <c>null</c>.</param>
+        /// <param name="endPartitionKey">The end partition key, or <c>null</c>.</param>
+        /// <param name="endRowKey">The end row key, or <c>null</c>.</param>
         /// <param name="signature">The signature to use.</param>
-        /// <param name="accountKeyName">The name of the key used to create the signature, or null if the key is implicit.</param>
+        /// <param name="accountKeyName">The name of the key used to create the signature, or <c>null</c> if the key is implicit.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
         /// <returns>The finished query builder.</returns>
         internal static UriQueryBuilder GetSignature(
             SharedAccessTablePolicy policy,
@@ -145,13 +150,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string endPartitionKey,
             string endRowKey,
             string signature,
-            string accountKeyName)
+            string accountKeyName,
+            string sasVersion)
         {          
             CommonUtility.AssertNotNull("signature", signature);
 
             UriQueryBuilder builder = new UriQueryBuilder();
-
-            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, Constants.HeaderConstants.TargetStorageVersion);
+ 
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, sasVersion);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SasTableName, tableName);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.StartPartitionKey, startPartitionKey);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.StartRowKey, startRowKey);
@@ -349,6 +355,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="policy">The shared access policy to hash.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
         /// <param name="resourceName">The canonical resource string, unescaped.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
         /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
         /// <returns>The signed hash.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "Microsoft.WindowsAzure.Storage.Core.Util.CryptoUtility.ComputeHmac256(System.Byte[],System.String)", Justification = "Reviewed")]
@@ -356,10 +363,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             SharedAccessQueuePolicy policy,
             string accessPolicyIdentifier,
             string resourceName,
+            string sasVersion,
             byte[] keyValue)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
             CommonUtility.AssertNotNull("keyValue", keyValue);
+            CommonUtility.AssertNotNullOrEmpty("sasVersion", sasVersion);
 
             string permissions = null;
             DateTimeOffset? startTime = null;
@@ -388,7 +397,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                                      GetDateTimeOrEmpty(expiryTime),
                                      resourceName,
                                      accessPolicyIdentifier,
-                                     Constants.HeaderConstants.TargetStorageVersion);
+                                     sasVersion);
 
             return CryptoUtility.ComputeHmac256(keyValue, stringToSign);
         }
@@ -398,11 +407,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// </summary>
         /// <param name="policy">The shared access policy to hash.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
-        /// <param name="startPartitionKey">The start partition key, or null.</param>
-        /// <param name="startRowKey">The start row key, or null.</param>
-        /// <param name="endPartitionKey">The end partition key, or null.</param>
-        /// <param name="endRowKey">The end row key, or null.</param>
+        /// <param name="startPartitionKey">The start partition key, or <c>null</c>.</param>
+        /// <param name="startRowKey">The start row key, or <c>null</c>.</param>
+        /// <param name="endPartitionKey">The end partition key, or <c>null</c>.</param>
+        /// <param name="endRowKey">The end row key, or <c>null</c>.</param>
         /// <param name="resourceName">The canonical resource string, unescaped.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
         /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
         /// <returns>The signed hash.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "Microsoft.WindowsAzure.Storage.Core.Util.CryptoUtility.ComputeHmac256(System.Byte[],System.String)", Justification = "Reviewed")]
@@ -414,10 +424,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string endPartitionKey,
             string endRowKey,
             string resourceName,
+            string sasVersion,
             byte[] keyValue)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
             CommonUtility.AssertNotNull("keyValue", keyValue);
+            CommonUtility.AssertNotNullOrEmpty("sasVersion", sasVersion);
 
             string permissions = null;
             DateTimeOffset? startTime = null;
@@ -450,7 +462,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                                      GetDateTimeOrEmpty(expiryTime),
                                      resourceName,
                                      accessPolicyIdentifier,
-                                     Constants.HeaderConstants.TargetStorageVersion,
+                                     sasVersion,
                                      startPartitionKey,
                                      startRowKey,
                                      endPartitionKey,
@@ -463,9 +475,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// Get the signature hash embedded inside the Shared Access Signature.
         /// </summary>
         /// <param name="policy">The shared access policy to hash.</param>
-        /// <param name="headers">The optional header values to set for a blob returned with this SAS.</param>
+        /// <param name="headers">The optional header values to set for a blob returned with this SAS. Not valid for the 2012-02-12 version.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
         /// <param name="resourceName">The canonical resource string, unescaped.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
         /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
         /// <returns>The signed hash.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "Microsoft.WindowsAzure.Storage.Core.Util.CryptoUtility.ComputeHmac256(System.Byte[],System.String)", Justification = "Reviewed")]
@@ -474,10 +487,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             SharedAccessBlobHeaders headers,
             string accessPolicyIdentifier,
             string resourceName,
+            string sasVersion,
             byte[] keyValue)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
             CommonUtility.AssertNotNull("keyValue", keyValue);
+            CommonUtility.AssertNotNullOrEmpty("sasVersion", sasVersion);
 
             string permissions = null;
             DateTimeOffset? startTime = null;
@@ -487,20 +502,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                 permissions = SharedAccessBlobPolicy.PermissionsToString(policy.Permissions);
                 startTime = policy.SharedAccessStartTime;
                 expiryTime = policy.SharedAccessExpiryTime;
-            }
-
-            string cacheControl = null;
-            string contentDisposition = null;
-            string contentEncoding = null;
-            string contentLanguage = null;
-            string contentType = null;
-            if (headers != null)
-            {
-                cacheControl = headers.CacheControl;
-                contentDisposition = headers.ContentDisposition;
-                contentEncoding = headers.ContentEncoding;
-                contentLanguage = headers.ContentLanguage;
-                contentType = headers.ContentType;
             }
             
             //// StringToSign =      signedpermissions + "\n" +
@@ -516,23 +517,80 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             ////                     contenttype 
             ////
             //// HMAC-SHA256(UTF8.Encode(StringToSign))
+            ////
+            //// Note that the final five headers are invalid for the 2012-02-12 version.
 
             string stringToSign = string.Format(
-                                     CultureInfo.InvariantCulture,
-                                     "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}",
-                                     permissions,
-                                     GetDateTimeOrEmpty(startTime),
-                                     GetDateTimeOrEmpty(expiryTime),
-                                     resourceName,
-                                     accessPolicyIdentifier,
-                                     Constants.HeaderConstants.TargetStorageVersion,
-                                     cacheControl,
-                                     contentDisposition,
-                                     contentEncoding,
-                                     contentLanguage,
-                                     contentType);
+                                    CultureInfo.InvariantCulture,
+                                    "{0}\n{1}\n{2}\n{3}\n{4}\n{5}",
+                                    permissions,
+                                    GetDateTimeOrEmpty(startTime),
+                                    GetDateTimeOrEmpty(expiryTime),
+                                    resourceName,
+                                    accessPolicyIdentifier,
+                                    sasVersion);
+
+            if (string.Equals(sasVersion, Constants.VersionConstants.February2012))
+            {
+                if (headers != null)
+                {
+                    string errorString = string.Format(CultureInfo.CurrentCulture, SR.InvalidHeaders);
+                    throw new ArgumentException(errorString);
+                }
+            }
+            else
+            {
+                string cacheControl = null;
+                string contentDisposition = null;
+                string contentEncoding = null;
+                string contentLanguage = null;
+                string contentType = null;
+                if (headers != null)
+                {
+                    cacheControl = headers.CacheControl;
+                    contentDisposition = headers.ContentDisposition;
+                    contentEncoding = headers.ContentEncoding;
+                    contentLanguage = headers.ContentLanguage;
+                    contentType = headers.ContentType;
+                }
+
+                stringToSign = stringToSign + string.Format(
+                                                CultureInfo.InvariantCulture,
+                                                "\n{0}\n{1}\n{2}\n{3}\n{4}",
+                                                cacheControl,
+                                                contentDisposition,
+                                                contentEncoding,
+                                                contentLanguage,
+                                                contentType);
+            }
 
             return CryptoUtility.ComputeHmac256(keyValue, stringToSign);
+        }
+
+        /// <summary>
+        /// Check to see if the SAS Version string provided is valid.
+        /// </summary>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <returns>The valid SAS version string or the default (storage version) if given was null/invalid.</returns>
+        internal static string ValidateSASVersionString(string sasVersion)
+        {
+            if (sasVersion == null)
+            {
+                return Constants.HeaderConstants.TargetStorageVersion;
+            }
+            else if (string.Equals(sasVersion, Constants.VersionConstants.August2013))
+            {
+                return Constants.VersionConstants.August2013;
+            }
+            else if (string.Equals(sasVersion, Constants.VersionConstants.February2012))
+            {
+                return Constants.VersionConstants.February2012;
+            }
+            else
+            {
+                string errorString = string.Format(CultureInfo.CurrentCulture, SR.InvalidSASVersion);
+                throw new ArgumentException(errorString);
+            }
         }
     }
 }

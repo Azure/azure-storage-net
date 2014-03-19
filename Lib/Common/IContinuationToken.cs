@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets the location that the token applies to.
         /// </summary>
-        /// <value>The location that the token applies to.</value>
+        /// <value>A <see cref="StorageLocation"/> enumeration value.</value>
         StorageLocation? TargetLocation { get; set; }
     }
 }

@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <summary>
     /// Represents the result of a table operation.
     /// </summary>
-    /// <remarks>The <see cref="TableResult"/> class encapsulates the HTTP response and any table entity results returned by the Storage Service REST API operation called for a particular <see cref="TableOperation"/>.</remarks>
+    /// <remarks>The <see cref="TableResult"/> class encapsulates the HTTP response and any entities returned for a particular <see cref="TableOperation"/>.</remarks>
     public sealed class TableResult
     {
         /// <summary>

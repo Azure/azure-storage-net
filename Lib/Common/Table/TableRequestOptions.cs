@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Initializes a new instance of the <see cref="TableRequestOptions"/> class with the specified <see cref="TableRequestOptions"/>.
         /// </summary>
-        /// <param name="other">The request options used to initialize this instance of the <see cref="TableRequestOptions"/> class.</param>
+        /// <param name="other">The <see cref="TableRequestOptions"/> object used to initialize a new instance of the <see cref="TableRequestOptions"/> class.</param>
         public TableRequestOptions(TableRequestOptions other)
         {
             if (other != null)
@@ -122,19 +122,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the retry policy for the request.
         /// </summary>
-        /// <value>The retry policy delegate.</value>
+        /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
         /// <summary>
         /// Gets or sets the location mode of the request.
         /// </summary>
-        /// <value>The location mode of the request.</value>
+        /// <value>A <see cref="LocationMode"/> object indicating the location mode of the request.</value>
         public LocationMode? LocationMode { get; set; }
 
         /// <summary>
-        /// Gets or sets the server timeout for the request. 
+        /// Gets or sets the server timeout interval for the request.
         /// </summary>
-        /// <value>The client and server timeout interval for the request.</value>
+        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval for the request.</value>
         public TimeSpan? ServerTimeout { get; set; }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the <see cref="TablePayloadFormat"/> that will be used for the request.
         /// </summary>
-        /// <value>The TablePayloadFormat to use.</value>
+        /// <value>A <see cref="TablePayloadFormat"/> enumeration value.</value>
         public TablePayloadFormat? PayloadFormat
         {
             get

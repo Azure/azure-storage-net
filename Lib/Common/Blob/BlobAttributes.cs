@@ -33,19 +33,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the blob's system properties.
         /// </summary>
-        /// <value>The blob's properties.</value>
+        /// <value>A <see cref="BlobProperties"/> object.</value>
         public BlobProperties Properties { get; internal set; }
 
         /// <summary>
         /// Gets the user-defined metadata for the blob.
         /// </summary>
-        /// <value>The blob's metadata, as a collection of name-value pairs.</value>
+        /// <value>An <see cref="IDictionary{TKey,TValue}"/> object containing the blob's metadata as a collection of name-value pairs.</value>
         public IDictionary<string, string> Metadata { get; internal set; }
 
         /// <summary>
         /// Gets the blob's URI for the primary location.
         /// </summary>
-        /// <value>The absolute URI to the blob, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the blob at the primary location.</value>
         public Uri Uri
         {
             get
@@ -55,15 +55,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets the list of URIs for all locations.
+        /// Gets the blob's URIs for both the primary and secondary locations.
         /// </summary>
-        /// <value>The list of URIs for all locations.</value>
+        /// <value>A <see cref="StorageUri"/> object.</value>
         public StorageUri StorageUri { get; internal set; }
 
         /// <summary>
         /// Gets the date and time that the blob snapshot was taken, if this blob is a snapshot.
         /// </summary>
-        /// <value>The blob's snapshot time if the blob is a snapshot; otherwise, <c>null</c>.</value>
+        /// <value>A <see cref="DateTimeOffset"/> containing the blob's snapshot time if the blob is a snapshot; otherwise, <c>null</c>.</value>
         /// <remarks>
         /// If the blob is not a snapshot, the value of this property is <c>null</c>.
         /// </remarks>
@@ -72,7 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the state of the most recent or pending copy operation.
         /// </summary>
-        /// <value>A <see cref="CopyState"/> object containing the copy state, or null if no copy blob state exists for this blob.</value>
+        /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if no copy blob state exists for this blob.</value>
         public CopyState CopyState { get; internal set; }
 
         /// <summary>

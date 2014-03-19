@@ -53,19 +53,19 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets the storage service error code.
         /// </summary>
-        /// <value>The storage service error code.</value>
+        /// <value>A string containing the storage service error code.</value>
         public string ErrorCode { get; internal set; }
 
         /// <summary>
         /// Gets the storage service error message.
         /// </summary>
-        /// <value>The storage service error message.</value>
+        /// <value>A string containing the storage service error message.</value>
         public string ErrorMessage { get; internal set; }
 
         /// <summary>
         /// Gets additional error details.
         /// </summary>
-        /// <value>The additional error details.</value>
+        /// <value>An <see cref="IDictionary{TKey,TValue}"/> containing the additional error details.</value>
         public IDictionary<string, string> AdditionalDetails { get; internal set; }
 
 #if WINDOWS_RT

@@ -310,7 +310,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Returns an <see cref="System.Collections.Generic.IEnumerator{T}"/> for the <see cref="TableBatchOperation"/>.
         /// </summary>
-        /// <returns>An enumerable collection of <see cref="TableOperation"/> items.</returns>
+        /// <returns>An <see cref="System.Collections.IEnumerator"/> for <see cref="TableOperation"/> items.</returns>
         public IEnumerator<TableOperation> GetEnumerator()
         {
             return this.operations.GetEnumerator();

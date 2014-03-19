@@ -51,22 +51,22 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         public const string TableServiceNextTableName = "NextTableName";
 
         /// <summary>
-        /// Stores the maximum results the table service can return.
+        /// Stores the maximum results the Table service can return.
         /// </summary>
         public const int TableServiceMaxResults = 1000;
 
         /// <summary>
-        /// The maximum size of a string property for the table service in bytes.
+        /// The maximum size of a string property for the Table service in bytes.
         /// </summary>
         public const int TableServiceMaxStringPropertySizeInBytes = 64 * 1024;
 
         /// <summary>
-        /// The maximum size of a string property for the table service in bytes.
+        /// The maximum size of a string property for the Table service in bytes.
         /// </summary>
         public const long TableServiceMaxPayload = 20 * Constants.MB;
 
         /// <summary>
-        /// The maximum size of a string property for the table service in chars.
+        /// The maximum size of a string property for the Table service in chars.
         /// </summary>
         public const int TableServiceMaxStringPropertySizeInChars = TableServiceMaxStringPropertySizeInBytes / 2;
 
