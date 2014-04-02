@@ -1105,7 +1105,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     Permissions = SharedAccessTablePermissions.Delete,
                 };
 
-                string sasToken = table.GetSharedAccessSignature(policy, null, null, null, null, null);
+                string sasToken = table.GetSharedAccessSignature(policy);
                 StorageCredentials creds = new StorageCredentials(sasToken);
                 CloudTable sasTable = new CloudTable(table.Uri, creds);
                 TestHelper.ExpectedException(
@@ -1122,7 +1122,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     Permissions = SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Add,
                 };
 
-                string sasToken2 = table.GetSharedAccessSignature(policy2, null, null, null, null, null);
+                string sasToken2 = table.GetSharedAccessSignature(policy2);
                 creds.UpdateSASToken(sasToken2);
 
                 sasTable = new CloudTable(table.Uri, creds);
@@ -1165,7 +1165,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     Permissions = SharedAccessTablePermissions.Delete,
                 };
 
-                string sasToken = table.GetSharedAccessSignature(policy, null, null, null, null, null);
+                string sasToken = table.GetSharedAccessSignature(policy);
                 StorageCredentials creds = new StorageCredentials(sasToken);
                 CloudStorageAccount sasAcc = new CloudStorageAccount(creds, new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint));
                 CloudTableClient client = sasAcc.CreateCloudTableClient();
@@ -1181,6 +1181,44 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 table.DeleteIfExists();
             }
         }
+
+        [TestMethod]
+        [Description("Test SAS with absolute Uri")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableSASWithAbsoluteUri()
+        {
+            CloudTableClient tableClient = GenerateCloudTableClient();
+
+            CloudTable table = tableClient.GetTableReference(tableClient.BaseUri + GenerateRandomTableName());
+            try
+            {
+                table.CreateIfNotExists();
+
+                BaseEntity entity = new BaseEntity("PK", "RK");
+                table.Execute(TableOperation.Insert(entity));
+
+                SharedAccessTablePolicy policy = new SharedAccessTablePolicy()
+                {
+                    Permissions = SharedAccessTablePermissions.Delete,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                };
+
+                string sasToken = table.GetSharedAccessSignature(policy);
+                StorageCredentials creds = new StorageCredentials(sasToken);
+
+                CloudTable sasTable = new CloudTable(table.Uri, creds);
+                sasTable.Execute(TableOperation.Delete(entity));
+            }
+            finally
+            {
+                table.DeleteIfExists();
+            }
+        }
+
         #endregion
 
         #region Test Helpers

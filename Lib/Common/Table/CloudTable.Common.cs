@@ -78,9 +78,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CommonUtility.AssertNotNull("tableName", tableName);
             CommonUtility.AssertNotNull("client", client);
-            this.Name = tableName;
             this.StorageUri = NavigationHelper.AppendPathToUri(client.StorageUri, tableName);
             this.ServiceClient = client;
+
+            // Set the relativized name from the URI.
+            this.Name = NavigationHelper.GetTableNameFromUri(this.Uri, this.ServiceClient.UsePathStyleUris);
         }
 
         /// <summary>
@@ -112,6 +114,45 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <value>An object of type <see cref="StorageUri"/> containing the table's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
+
+        /// <summary>
+        /// Returns a shared access signature for the table.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessTablePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if the current credentials don't support creating a shared access signature.</exception>
+        public string GetSharedAccessSignature(SharedAccessTablePolicy policy)
+        {
+            return this.GetSharedAccessSignature(
+                policy,
+                null /* accessPolicyIdentifier */,
+                null /* startPartitionKey */,
+                null /* startRowKey */,
+                null /* endPartitionKey */,
+                null /* endRowKey */,
+                null /* sasVersion */);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the table.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessTablePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="accessPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if the current credentials don't support creating a shared access signature.</exception>
+        public string GetSharedAccessSignature(SharedAccessTablePolicy policy, string accessPolicyIdentifier)
+        {
+            return this.GetSharedAccessSignature(
+                policy,
+                accessPolicyIdentifier,
+                null /* startPartitionKey */,
+                null /* startRowKey */,
+                null /* endPartitionKey */,
+                null /* endRowKey */,
+                null /* sasVersion */);
+        }
 
         /// <summary>
         /// Returns a shared access signature for the table.

@@ -95,7 +95,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             this.StorageUri = NavigationHelper.AppendPathToUri(serviceClient.StorageUri, containerName);
             this.ServiceClient = serviceClient;
-            this.Name = containerName;
+
+            // Set the relativized name from the URI.
+            this.Name = NavigationHelper.GetContainerNameFromContainerAddress(this.Uri, this.ServiceClient.UsePathStyleUris);
             this.Metadata = metadata;
             this.Properties = properties;
         }

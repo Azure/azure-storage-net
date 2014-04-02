@@ -187,6 +187,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test SAS with absolute Uri")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerSASWithAbsoluteUri()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+
+            CloudBlobContainer container = blobClient.GetContainerReference(blobClient.BaseUri + GetRandomContainerName());
+            try
+            {
+                container.CreateIfNotExists();
+
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                };
+
+                string sasToken = container.GetSharedAccessSignature(policy);
+                StorageCredentials creds = new StorageCredentials(sasToken);
+
+                CloudBlobContainer sasContainer = new CloudBlobContainer(container.Uri, creds);
+                CloudBlockBlob testBlockBlob = sasContainer.GetBlockBlobReference("blockblob");
+                UploadText(testBlockBlob, "blob", Encoding.UTF8);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("Test updateSASToken")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -554,6 +589,80 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             catch (ArgumentException e)
             {
                 Assert.AreEqual(SR.InvalidHeaders, e.Message);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test SAS with absolute Uri")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobSASWithAbsoluteUri()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.CreateIfNotExists();
+
+                CloudBlockBlob testBlockBlob = container.GetBlockBlobReference(container.Uri + "/" + "blockblob");
+                UploadText(testBlockBlob, "text", Encoding.UTF8);
+
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                };
+
+                string sasToken = testBlockBlob.GetSharedAccessSignature(policy);
+                StorageCredentials creds = new StorageCredentials(sasToken);
+
+                CloudBlockBlob sasBlockBlob = new CloudBlockBlob(testBlockBlob.Uri, creds);
+                UploadText(sasBlockBlob, "new text", Encoding.UTF8);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test SAS with absolute Uri")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobSASWithAbsoluteUri()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.CreateIfNotExists();
+
+                CloudPageBlob testPageBlob = container.GetPageBlobReference(container.Uri + "/" + "pageblob");
+                UploadText(testPageBlob, "text", Encoding.UTF8);
+
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                };
+
+                string sasToken = testPageBlob.GetSharedAccessSignature(policy);
+                StorageCredentials creds = new StorageCredentials(sasToken);
+
+                CloudPageBlob sasPageBlob = new CloudPageBlob(testPageBlob.Uri, creds);
+                UploadText(sasPageBlob, "new text", Encoding.UTF8);
+            }
+            finally
+            {
+                container.DeleteIfExists();
             }
         }
     }

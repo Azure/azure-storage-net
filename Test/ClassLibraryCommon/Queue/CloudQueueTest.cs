@@ -1518,6 +1518,40 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
+        [TestMethod]
+        [Description("Test SAS with absolute Uri")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueSASWithAbsoluteUri()
+        {
+            CloudQueueClient queueClient = GenerateCloudQueueClient();
+
+            CloudQueue queue = queueClient.GetQueueReference(queueClient.BaseUri + GenerateNewQueueName());
+            try
+            {
+                queue.CreateIfNotExists();
+
+                SharedAccessQueuePolicy policy = new SharedAccessQueuePolicy()
+                {
+                    Permissions = SharedAccessQueuePermissions.Read,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                };
+
+                string sasToken = queue.GetSharedAccessSignature(policy);
+                StorageCredentials creds = new StorageCredentials(sasToken);
+
+                CloudQueue sasQueue = new CloudQueue(queue.Uri, creds);
+                sasQueue.PeekMessage();
+            }
+            finally
+            {
+                queue.DeleteIfExists();
+            }
+        }
+
         #region Test Helpers
         internal static void AssertPermissionsEqual(QueuePermissions permissions1, QueuePermissions permissions2)
         {

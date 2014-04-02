@@ -84,7 +84,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         {
             this.StorageUri = NavigationHelper.AppendPathToUri(serviceClient.StorageUri, queueName);
             this.ServiceClient = serviceClient;
-            this.Name = queueName;
+
+            // Set the relativized name from the URI.
+            this.Name = NavigationHelper.GetQueueNameFromUri(this.Uri, this.ServiceClient.UsePathStyleUris); ;
             this.Metadata = new Dictionary<string, string>();
             this.EncodeMessage = true;
         }
@@ -242,6 +244,17 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             // PopReceipt and TimeNextVisible are not returned during peek
             return message;
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the queue.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessQueuePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        public string GetSharedAccessSignature(SharedAccessQueuePolicy policy)
+        {
+            return this.GetSharedAccessSignature(policy, null /* accessPolicyIdentifier */, null /* sasVersion */);
         }
 
         /// <summary>

@@ -111,8 +111,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             this.attributes = new BlobAttributes();
             this.attributes.StorageUri = NavigationHelper.AppendPathToUri(container.StorageUri, blobName);
-            this.Name = blobName;
             this.ServiceClient = container.ServiceClient;
+
+            // Set the relativized name from the URI.
+            this.Name = NavigationHelper.GetBlobName(this.attributes.Uri, this.ServiceClient.UsePathStyleUris);
             this.container = container;
             this.SnapshotTime = snapshotTime;
             this.Properties.BlobType = BlobType.PageBlob;
