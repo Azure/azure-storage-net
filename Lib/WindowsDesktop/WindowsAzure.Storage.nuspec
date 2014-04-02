@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>WindowsAzure.Storage</id>
-    <version>3.1.0.0</version>
+    <version>3.1.0.1</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -25,7 +25,6 @@ Windows Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/
       <frameworkAssembly assemblyName="System.Data" targetFramework="" />
       <frameworkAssembly assemblyName="System.Xml" targetFramework="" />
       <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework="" />
-      <frameworkAssembly assemblyName="System.Data.Services.Client" targetFramework="" />
     </frameworkAssemblies>
     <references>
       <reference file="Microsoft.WindowsAzure.Storage.dll" />

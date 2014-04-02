@@ -201,3 +201,10 @@ Issues fixed in 3.0.3.0 :
 Issues fixed in 3.1.0.0 : 
 
   - All: Added the ability to choose which SAS Version to use when generating Shared Access Signatures (either the 2012-02-12 or 2013-08-15 versions).
+
+Issues fixed in 3.1.0.1 :
+
+  - All: Fixed an issue that was causing the Cloud{BlobContainer|Queue|Table|BlockBlob|PageBlob} names to be set incorrectly when the absolute Uri was passed to the Get{Container|Queue|Table|BlockBlob|PageBlob}Reference methods. This also ensures that the SharedAccessSignature which includes the canonicalized names of these resources is calculated correctly.
+  - All: Removed the System.Data.Services.Client dependency from the Nuget package.
+  - Queues: Added an overload to GetSharedAccessSignature that takes only the SharedAccessQueuePolicy in CloudQueue.
+  - Tables: Added an overload to GetSharedAccessSignature that takes only the SharedAccessTablePolicy and an overload that takes the SharedAccessTablePolicy and an accessPolicyIndentifier string in CloudTable.
