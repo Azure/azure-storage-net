@@ -109,7 +109,7 @@ Once installed:
 ## Code Samples
 
 > Note:
-> How-Tos focused around accomplishing specific tasks are available on the [http://azure.microsoft.com/en-us/documentation/services/storage/](Windows Azure .NET Developer Center).
+> How-Tos focused around accomplishing specific tasks are available on the [Windows Azure .NET Developer Center](http://azure.microsoft.com/en-us/documentation/services/storage/).
 
 ### Creating a Table
 
