@@ -99,7 +99,7 @@ FiddlerCore is required by:
 - Test\FaultInjection\AzureStoreMangler
 - Test\WindowsDesktop
 
-This dependency is not included and must be downloaded from [http://www.fiddler2.com/Fiddler/Core/](http://www.fiddler2.com/Fiddler/Core/).
+This dependency is not included and must be downloaded from [Fiddler Core](http://www.telerik.com/fiddler/fiddlercore).
 
 Once installed:
 
@@ -109,7 +109,7 @@ Once installed:
 ## Code Samples
 
 > Note:
-> How-Tos focused around accomplishing specific tasks are available on the [http://www.windowsazure.com/en-us/develop/net/](Windows Azure .NET Developer Center).
+> How-Tos focused around accomplishing specific tasks are available on the [Windows Azure .NET Developer Center](http://azure.microsoft.com/en-us/documentation/services/storage/).
 
 ### Creating a Table
 
