@@ -47,9 +47,9 @@ namespace Microsoft.WindowsAzure.Storage
 #if WINDOWS_PHONE
         internal
 #else
-        public 
-#endif 
-            static bool UseV1MD5
+        public
+#endif
+ static bool UseV1MD5
         {
             get { return version1MD5; }
             set { version1MD5 = value; }
@@ -119,13 +119,6 @@ namespace Microsoft.WindowsAzure.Storage
         /// The default account key for the development storage.
         /// </summary>
         private const string DevstoreAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
-
-        /// <summary>
-        /// The credentials string used to test for the development storage credentials.
-        /// </summary>
-        private const string DevstoreCredentialInString =
-            CloudStorageAccount.AccountNameSettingString + "=" + DevstoreAccountName + ";" +
-            CloudStorageAccount.AccountKeySettingString + "=" + DevstoreAccountKey;
 
         /// <summary>
         /// The suffix appended to account in order to access secondary location for read only access.
@@ -330,6 +323,11 @@ namespace Microsoft.WindowsAzure.Storage
         {
             get
             {
+                if (this.BlobStorageUri == null)
+                {
+                    return null;
+                }
+
                 return this.BlobStorageUri.PrimaryUri;
             }
         }
@@ -342,6 +340,11 @@ namespace Microsoft.WindowsAzure.Storage
         {
             get
             {
+                if (this.QueueStorageUri == null)
+                {
+                    return null;
+                }
+
                 return this.QueueStorageUri.PrimaryUri;
             }
         }
@@ -354,6 +357,11 @@ namespace Microsoft.WindowsAzure.Storage
         {
             get
             {
+                if (this.TableStorageUri == null)
+                {
+                    return null;
+                }
+
                 return this.TableStorageUri.PrimaryUri;
             }
         }
@@ -510,7 +518,7 @@ namespace Microsoft.WindowsAzure.Storage
             if (this.Settings == null)
             {
                 this.Settings = new Dictionary<string, string>();
-                
+
                 if (this.DefaultEndpoints)
                 {
                     this.Settings.Add(DefaultEndpointsProtocolSettingString, this.BlobEndpoint.Scheme);
@@ -540,7 +548,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
 
             List<string> listOfSettings = this.Settings.Select(pair => string.Format(CultureInfo.InvariantCulture, "{0}={1}", pair.Key, pair.Value)).ToList();
-            
+
             if (this.Credentials != null && !this.IsDevStoreAccount)
             {
                 listOfSettings.Add(this.Credentials.ToString(exportSecrets));
@@ -559,7 +567,7 @@ namespace Microsoft.WindowsAzure.Storage
             UriBuilder builder = proxyUri != null ?
                 new UriBuilder(proxyUri.Scheme, proxyUri.Host) :
                 new UriBuilder("http", "127.0.0.1");
-            
+
             builder.Path = DevstoreAccountName;
 
             builder.Port = 10000;
@@ -571,8 +579,22 @@ namespace Microsoft.WindowsAzure.Storage
             builder.Port = 10002;
             Uri tableEndpoint = builder.Uri;
 
+            builder.Path = DevstoreAccountName + SecondaryLocationAccountSuffix;
+
+            builder.Port = 10000;
+            Uri blobSecondaryEndpoint = builder.Uri;
+
+            builder.Port = 10001;
+            Uri queueSecondaryEndpoint = builder.Uri;
+
+            builder.Port = 10002;
+            Uri tableSecondaryEndpoint = builder.Uri;
+
             StorageCredentials credentials = new StorageCredentials(DevstoreAccountName, DevstoreAccountKey);
-            CloudStorageAccount account = new CloudStorageAccount(credentials, blobEndpoint, queueEndpoint, tableEndpoint);
+            CloudStorageAccount account = new CloudStorageAccount(credentials,
+                new StorageUri(blobEndpoint, blobSecondaryEndpoint),
+                new StorageUri(queueEndpoint, queueSecondaryEndpoint),
+                new StorageUri(tableEndpoint, tableSecondaryEndpoint));
 
             account.Settings = new Dictionary<string, string>();
             account.Settings.Add(UseDevelopmentStorageSettingString, "true");
@@ -1074,7 +1096,7 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 throw new ArgumentNullException("scheme");
             }
-            
+
             if (string.IsNullOrEmpty(accountName))
             {
                 throw new ArgumentNullException("accountName");
@@ -1130,8 +1152,8 @@ namespace Microsoft.WindowsAzure.Storage
             if (string.IsNullOrEmpty(scheme))
             {
                 throw new ArgumentNullException("scheme");
-            } 
-            
+            }
+
             if (string.IsNullOrEmpty(accountName))
             {
                 throw new ArgumentNullException("accountName");

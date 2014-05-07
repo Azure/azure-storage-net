@@ -328,9 +328,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             Assert.AreEqual(devstoreAccount.BlobEndpoint, new Uri("http://127.0.0.1:10000/devstoreaccount1"));
             Assert.AreEqual(devstoreAccount.QueueEndpoint, new Uri("http://127.0.0.1:10001/devstoreaccount1"));
             Assert.AreEqual(devstoreAccount.TableEndpoint, new Uri("http://127.0.0.1:10002/devstoreaccount1"));
-            Assert.IsNull(devstoreAccount.BlobStorageUri.SecondaryUri);
-            Assert.IsNull(devstoreAccount.QueueStorageUri.SecondaryUri);
-            Assert.IsNull(devstoreAccount.TableStorageUri.SecondaryUri);
+            Assert.AreEqual(devstoreAccount.BlobStorageUri.SecondaryUri, new Uri("http://127.0.0.1:10000/devstoreaccount1-secondary"));
+            Assert.AreEqual(devstoreAccount.QueueStorageUri.SecondaryUri, new Uri("http://127.0.0.1:10001/devstoreaccount1-secondary"));
+            Assert.AreEqual(devstoreAccount.TableStorageUri.SecondaryUri, new Uri("http://127.0.0.1:10002/devstoreaccount1-secondary"));
 
             string devstoreAccountToStringWithSecrets = devstoreAccount.ToString(true);
             CloudStorageAccount testAccount = CloudStorageAccount.Parse(devstoreAccountToStringWithSecrets);
@@ -686,9 +686,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             Assert.AreEqual(new Uri("http://ipv4.fiddler:10000/devstoreaccount1"), account.BlobEndpoint);
             Assert.AreEqual(new Uri("http://ipv4.fiddler:10001/devstoreaccount1"), account.QueueEndpoint);
             Assert.AreEqual(new Uri("http://ipv4.fiddler:10002/devstoreaccount1"), account.TableEndpoint);
-            Assert.IsNull(account.BlobStorageUri.SecondaryUri);
-            Assert.IsNull(account.QueueStorageUri.SecondaryUri);
-            Assert.IsNull(account.TableStorageUri.SecondaryUri);
+            Assert.AreEqual(new Uri("http://ipv4.fiddler:10000/devstoreaccount1-secondary"), account.BlobStorageUri.SecondaryUri);
+            Assert.AreEqual(new Uri("http://ipv4.fiddler:10001/devstoreaccount1-secondary"), account.QueueStorageUri.SecondaryUri);
+            Assert.AreEqual(new Uri("http://ipv4.fiddler:10002/devstoreaccount1-secondary"), account.TableStorageUri.SecondaryUri);
         }
 
         [TestMethod]

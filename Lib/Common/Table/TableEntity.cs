@@ -92,15 +92,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public DateTimeOffset Timestamp { get; set; }
 
         /// <summary>
-        /// Gets or sets the entity's current ETag.  Set this value to '*' in order to blindly overwrite an entity as part of an update operation.
+        /// Gets or sets the entity's ETag. Set this value to '*' in order to force an overwrite to an entity as part of an update operation.
         /// </summary>
-        /// <value>A string containing the ETag for the entity.</value>
+        /// <value>A string containing the ETag value for the entity.</value>
         public string ETag { get; set; }
 
         /// <summary>
-        /// Deserializes this <see cref="TableEntity"/> instance using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values. 
+        /// Deserializes the entity using the specified <see cref="IDictionary{TKey,TValue}"/> that maps property names to typed <see cref="EntityProperty"/> values. 
         /// </summary>
-        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps property names to typed <see cref="EntityProperty"/> values.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         public virtual void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {

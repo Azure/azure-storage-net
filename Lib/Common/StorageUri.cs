@@ -21,7 +21,9 @@ namespace Microsoft.WindowsAzure.Storage
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
 
 #if WINDOWS_RT
     using Windows.Foundation.Metadata;
@@ -32,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage
     /// </summary>
     public sealed class StorageUri
 #if !WINDOWS_RT
- : IEquatable<StorageUri>
+        : IEquatable<StorageUri>
 #endif
     {
         private Uri primaryUri;
@@ -90,10 +92,28 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="secondaryUri">The <see cref="System.Uri"/> for the secondary endpoint.</param>
         public StorageUri(Uri primaryUri, Uri secondaryUri)
         {
-            if ((primaryUri != null) && (secondaryUri != null) &&
-                (primaryUri.PathAndQuery != secondaryUri.PathAndQuery))
+            if ((primaryUri != null) && (secondaryUri != null))
             {
-                throw new ArgumentException(SR.StorageUriMustMatch, "secondaryUri");
+                bool primaryUriPathStyle = CommonUtility.UsePathStyleAddressing(primaryUri);
+                bool secondaryUriPathStyle = CommonUtility.UsePathStyleAddressing(secondaryUri);
+
+                if (!primaryUriPathStyle && !secondaryUriPathStyle)
+                {
+                    if (primaryUri.PathAndQuery != secondaryUri.PathAndQuery)
+                    {
+                        throw new ArgumentException(SR.StorageUriMustMatch, "secondaryUri");
+                    }
+                }
+                else
+                {
+                    IEnumerable<string> primaryUriSegments = primaryUri.Segments.Skip(primaryUriPathStyle ? 2 : 0);
+                    IEnumerable<string> secondaryUriSegments = secondaryUri.Segments.Skip(secondaryUriPathStyle ? 2 : 0);
+
+                    if (!primaryUriSegments.SequenceEqual(secondaryUriSegments) || (primaryUri.Query != secondaryUri.Query))
+                    {
+                        throw new ArgumentException(SR.StorageUriMustMatch, "secondaryUri");
+                    }
+                }
             }
 
             this.PrimaryUri = primaryUri;
