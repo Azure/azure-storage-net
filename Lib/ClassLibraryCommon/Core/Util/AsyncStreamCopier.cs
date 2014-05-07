@@ -314,24 +314,28 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
         private static void ForceAbort(AsyncStreamCopier<T> copier, bool timedOut)
         {
-            if (copier.state.Req != null)
+            ExecutionState<T> state = copier.state;
+            if (state != null)
             {
-                try
+                if (state.Req != null)
                 {
-                    copier.state.ReqTimedOut = timedOut;
+                    try
+                    {
+                        state.ReqTimedOut = timedOut;
 #if !WINDOWS_PHONE
-                    copier.state.Req.Abort();
+                        state.Req.Abort();
 #endif
+                    }
+                    catch (Exception)
+                    {
+                        // no op
+                    }
                 }
-                catch (Exception)
-                {
-                    // no op
-                }
-            }
 
-            copier.exceptionRef = timedOut ?
-                Exceptions.GenerateTimeoutException(copier.state.Cmd != null ? copier.state.Cmd.CurrentResult : null, null) :
-                Exceptions.GenerateCancellationException(copier.state.Cmd != null ? copier.state.Cmd.CurrentResult : null, null);
+                copier.exceptionRef = timedOut ?
+                    Exceptions.GenerateTimeoutException(state.Cmd != null ? state.Cmd.CurrentResult : null, null) :
+                    Exceptions.GenerateCancellationException(state.Cmd != null ? state.Cmd.CurrentResult : null, null);
+            }
         }
 
         /// <summary>

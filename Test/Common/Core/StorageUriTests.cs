@@ -50,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public void StorageUriWithTwoUris()
         {
             Uri primaryClientUri = new Uri("http://" + AccountName + BlobService + EndpointSuffix);
-            Uri primaryContainerUri = new Uri(primaryClientUri + "container");
+            Uri primaryContainerUri = new Uri(primaryClientUri, "container");
             Uri secondaryClientUri = new Uri("http://" + AccountName + SecondarySuffix + BlobService + EndpointSuffix);
             Uri dummyClientUri = new Uri("http://" + AccountName + "-dummy" + BlobService + EndpointSuffix);
 
@@ -84,6 +84,45 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             StorageUri multiUri5 = new StorageUri(secondaryClientUri, primaryClientUri);
             Assert.IsFalse(multiUri.Equals(multiUri5));
+        }
+
+        [TestMethod]
+        [Description("StorageUri should contain 2 URIs")]
+        [TestCategory(ComponentCategory.Core)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.Smoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void DevelopmentStorageWithTwoUris()
+        {
+            CloudStorageAccount account = CloudStorageAccount.DevelopmentStorageAccount;
+            Uri primaryClientUri = account.BlobStorageUri.PrimaryUri;
+            Uri primaryContainerUri = new Uri(primaryClientUri + "/container");
+            Uri secondaryClientUri = account.BlobStorageUri.SecondaryUri;
+
+            StorageUri singleUri = new StorageUri(primaryClientUri);
+            Assert.IsTrue(primaryClientUri.Equals(singleUri.PrimaryUri));
+            Assert.IsNull(singleUri.SecondaryUri);
+
+            StorageUri singleUri2 = new StorageUri(primaryClientUri);
+            Assert.IsTrue(singleUri.Equals(singleUri2));
+
+            StorageUri singleUri3 = new StorageUri(secondaryClientUri);
+            Assert.IsFalse(singleUri.Equals(singleUri3));
+
+            StorageUri multiUri = new StorageUri(primaryClientUri, secondaryClientUri);
+            Assert.IsTrue(primaryClientUri.Equals(multiUri.PrimaryUri));
+            Assert.IsTrue(secondaryClientUri.Equals(multiUri.SecondaryUri));
+            Assert.IsFalse(multiUri.Equals(singleUri));
+
+            StorageUri multiUri2 = new StorageUri(primaryClientUri, secondaryClientUri);
+            Assert.IsTrue(multiUri.Equals(multiUri2));
+
+            TestHelper.ExpectedException<ArgumentException>(
+                () => new StorageUri(primaryClientUri, primaryContainerUri),
+                "StorageUri constructor should fail if both URIs do not point to the same resource");
+
+            StorageUri multiUri3 = new StorageUri(secondaryClientUri, primaryClientUri);
+            Assert.IsFalse(multiUri.Equals(multiUri3));
         }
 
         [TestMethod]

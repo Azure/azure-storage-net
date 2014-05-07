@@ -58,7 +58,7 @@ Issues fixed in 2.0.5.1 :
 
   - All: Make sure the response stream is drained to prevent socket exhaustion.
 	
-Issues fixed in 2.0.6.0 :
+Issues fixed in 2.0.6 :
 	
   - All: Default RetryPolicy filters updated to not retry 100-407, 409-499, 501, and 505
   - All: Support for all flavors of SharedKey and SharedKeyLite message signing through AuthenticationScheme property on client classes.
@@ -163,7 +163,7 @@ Issues fixed in 2.1.0.4 :
  
   - Tables: Do not send the cast operator in the table query filter string.
 
-Changes in 3.0.0.0 :
+Changes in 3.0.0 :
 
   - All: Support for 2013-08-15 REST version - see here for additional details: http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/27/windows-azure-storage-release-introducing-cors-json-minute-metrics-and-more.aspx.
   - All: Suppress warning for FiddlerCore EntensionAttribute conflict.
@@ -173,7 +173,7 @@ Changes in 3.0.0.0 :
   - Tables: JsonMinimalMetadata is now the default payload format (rather than AtomPub). Payload format can be specified for all table requests by using CloudTableClient.TablePayloadFormat or for an individual table request by using TableRequestOptions.TablePayloadFormat.
   - Tables (RT): Fixed error parsing for tables.
 
-Issues fixed in 3.0.1.0 :
+Issues fixed in 3.0.1 :
 
   - All (WP): Set the Accept type to application/xml explicitly for Get/SetACL.
   - Blobs: LastModified and ETag properties are populated after Lease operations.
@@ -181,14 +181,14 @@ Issues fixed in 3.0.1.0 :
   - Tables: Fixed an issue caused by a Json .NET bug that resulted in an error being thrown while parsing a table query response. More details on the bug can be found here: http://james.newtonking.com/archive/2013/11/29/fixing-jarray-getenumerator-method-not-found-bug
   - Tables (RT): Fixed continuation tokens for queries and listing operations.
 
-Issues fixed in 3.0.2.0 :
+Issues fixed in 3.0.2 :
 
   - All (WP): Fixed an issue causing ArgumentOutOfRangeException in many APIs.
   - Queues: Fixed an issue causing NullReferenceException when trying to re-create an existing queue.
   - Tables: Fixed an issue with TableServiceContext causing NullReferenceException when the error response cannot be parsed.
   - Tables (RT): Do not allow users to set JsonFullMetadata format on RequestOptions in RT, because JSON is not supported on the RT library yet.
 
-Issues fixed in 3.0.3.0 :
+Issues fixed in 3.0.3 :
 
   - All: Fixed an issue that was causing a deadlock because the cancellation registration was being de-registered while holding on to a lock that the cancellation callback was waiting on.
   - All: Fixed an issue where parsing exception information out of the response stream while using async was blocking on IO calls.
@@ -198,7 +198,7 @@ Issues fixed in 3.0.3.0 :
   - Tables (Perf): Fixed an issue where the entity properties were being enumerated twice during table write operations while using JSON.
   - Tables (Perf): Parse the URI for the account name only once in the client constructor and store it so that all table operations can use the stored value.
 
-Issues fixed in 3.1.0.0 : 
+Issues fixed in 3.1.0 : 
 
   - All: Added the ability to choose which SAS Version to use when generating Shared Access Signatures (either the 2012-02-12 or 2013-08-15 versions).
 
@@ -208,3 +208,8 @@ Issues fixed in 3.1.0.1 :
   - All: Removed the System.Data.Services.Client dependency from the Nuget package.
   - Queues: Added an overload to GetSharedAccessSignature that takes only the SharedAccessQueuePolicy in CloudQueue.
   - Tables: Added an overload to GetSharedAccessSignature that takes only the SharedAccessTablePolicy and an overload that takes the SharedAccessTablePolicy and an accessPolicyIndentifier string in CloudTable.
+  
+Issues fixed in 3.2.0 :
+
+  - All: Added support for secondary location access in Azure Storage Emulator
+  - All: Fixed a race condition that was causing NullReferenceException during asynchronous upload/download.

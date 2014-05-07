@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>WindowsAzure.Storage-Preview</id>
-    <version>3.1.0.1-preview</version>
+    <version>3.2.0-preview</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>

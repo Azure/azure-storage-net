@@ -181,6 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // Insert Entity
                 DynamicTableEntity insertEntity = new DynamicTableEntity("insert test", m.ToString());
+                insertEntity.Properties.Add("prop" + m.ToString(), new EntityProperty(new byte[1 * 1024]));
                 batch.Insert(insertEntity);
 
                 if ((m + 1) % 100 == 0)
