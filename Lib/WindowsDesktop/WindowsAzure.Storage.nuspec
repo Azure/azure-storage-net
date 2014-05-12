@@ -31,7 +31,7 @@ Windows Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/
       </group> 
     </dependencies>
     <frameworkAssemblies>
-      <frameworkAssembly assemblyName="System.Data" targetFramework="" />
+      <frameworkAssembly assemblyName="System.Data" targetFramework="net40-client" />
       <frameworkAssembly assemblyName="System.Xml" targetFramework="" />
       <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework="" />
     </frameworkAssemblies>
