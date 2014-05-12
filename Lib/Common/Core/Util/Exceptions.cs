@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
 
 #if WINDOWS_RT
@@ -25,6 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.IO;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #endif
 
     internal class Exceptions

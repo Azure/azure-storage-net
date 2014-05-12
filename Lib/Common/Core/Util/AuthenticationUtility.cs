@@ -131,14 +131,19 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 canonicalizedElement.Clear();
                 canonicalizedElement.Append(header.Key);
                 canonicalizedElement.Append(HeaderNameValueSeparator);
+                int keyLength = canonicalizedElement.Length;
 
                 foreach (string value in header.Value)
                 {
                     canonicalizedElement.Append(value.TrimStart().Replace("\r\n", string.Empty));
                     canonicalizedElement.Append(HeaderValueDelimiter);
                 }
-
-                canonicalizedString.AppendCanonicalizedElement(canonicalizedElement.ToString(0, canonicalizedElement.Length - 1));
+                
+                // If the delta is 0 or 1, then the metadata value was null or empty so we should not include it.
+                if (canonicalizedElement.Length - keyLength > 1)
+                {
+                    canonicalizedString.AppendCanonicalizedElement(canonicalizedElement.ToString(0, canonicalizedElement.Length - 1));
+                }
             }
         }
 #else

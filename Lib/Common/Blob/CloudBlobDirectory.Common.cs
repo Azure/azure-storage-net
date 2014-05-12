@@ -88,16 +88,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (this.parent == null)
                 {
-                    string parentName = NavigationHelper.GetParentName(this.StorageUri, this.ServiceClient.DefaultDelimiter, this.ServiceClient.UsePathStyleUris);
-
-                    if (parentName != null)
+                    string parentName;
+                    StorageUri parentUri;
+                    if (NavigationHelper.GetBlobParentNameAndAddress(this.StorageUri, this.ServiceClient.DefaultDelimiter, this.ServiceClient.UsePathStyleUris, out parentName, out parentUri))
                     {
-                        StorageUri parentUri = NavigationHelper.AppendPathToUri(this.Container.StorageUri, parentName);
-
-                        this.parent = new CloudBlobDirectory(
-                            parentUri,
-                            parentName,
-                            this.Container);
+                        this.parent = new CloudBlobDirectory(parentUri, parentName, this.Container);
                     }
                 }
 
@@ -164,16 +159,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="itemName">The name of the virtual subdirectory.</param>
         /// <returns>A <see cref="CloudBlobDirectory"/> object representing the virtual subdirectory.</returns>
-        public CloudBlobDirectory GetSubdirectoryReference(string itemName)
+        public CloudBlobDirectory GetDirectoryReference(string itemName)
         {
-            CommonUtility.AssertNotNull("itemName", itemName);
-            if (!string.IsNullOrEmpty(itemName) && !itemName.EndsWith(this.ServiceClient.DefaultDelimiter, StringComparison.Ordinal))
+            CommonUtility.AssertNotNullOrEmpty("itemName", itemName);
+            if (!itemName.EndsWith(this.ServiceClient.DefaultDelimiter, StringComparison.Ordinal))
             {
                 itemName = itemName + this.ServiceClient.DefaultDelimiter;
             }
 
             StorageUri subdirectoryUri = NavigationHelper.AppendPathToUri(this.StorageUri, itemName, this.ServiceClient.DefaultDelimiter);
             return new CloudBlobDirectory(subdirectoryUri, this.Prefix + itemName, this.Container);
+        }
+
+        /// <summary>
+        /// Returns a virtual subdirectory within this virtual directory.
+        /// </summary>
+        /// <param name="itemName">The name of the virtual subdirectory.</param>
+        /// <returns>A <see cref="CloudBlobDirectory"/> object representing the virtual subdirectory.</returns>
+        [Obsolete("GetSubdirectoryReference has been renamed to GetDirectoryReference.")]
+        public CloudBlobDirectory GetSubdirectoryReference(string itemName)
+        {
+            return this.GetDirectoryReference(itemName);
         }
     }
 }

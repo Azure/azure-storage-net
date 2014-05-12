@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
@@ -863,7 +864,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             AssertSecondaryEndpoint();
 
             CloudQueueClient client = GenerateCloudQueueClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(client.GetServiceStats());
         }
 
@@ -878,7 +879,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             AssertSecondaryEndpoint();
 
             CloudQueueClient client = GenerateCloudQueueClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             using (AutoResetEvent waitHandle = new AutoResetEvent(false))
             {
                 IAsyncResult result = client.BeginGetServiceStats(
@@ -909,9 +910,56 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             AssertSecondaryEndpoint();
 
             CloudQueueClient client = GenerateCloudQueueClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(client.GetServiceStatsAsync().Result);
         }
 #endif
+
+
+        [TestMethod]
+        [Description("Server timeout query parameter")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientServerTimeout()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+
+            string timeout = null;
+            OperationContext context = new OperationContext();
+            context.SendingRequest += (sender, e) =>
+            {
+                IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.Request.RequestUri.Query);
+                if (!query.TryGetValue("timeout", out timeout))
+                {
+                    timeout = null;
+                }
+            };
+
+            QueueRequestOptions options = new QueueRequestOptions();
+            client.GetServiceProperties(null, context);
+            Assert.IsNull(timeout);
+            client.GetServiceProperties(options, context);
+            Assert.IsNull(timeout);
+
+            options.ServerTimeout = TimeSpan.FromSeconds(100);
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("100", timeout);
+
+            client.DefaultRequestOptions.ServerTimeout = TimeSpan.FromSeconds(90);
+            client.GetServiceProperties(null, context);
+            Assert.AreEqual("90", timeout);
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("100", timeout);
+
+            options.ServerTimeout = null;
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("90", timeout);
+
+            options.ServerTimeout = TimeSpan.Zero;
+            client.GetServiceProperties(options, context);
+            Assert.IsNull(timeout);
+        }
     }
 }

@@ -138,7 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 // SAS via account constructor
                 sasCreds = new StorageCredentials(sasToken);
-                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri);
+                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri, null);
                 sasClient = sasAccount.CreateCloudTableClient();
                 sasTable = sasClient.GetTableReference(table.Name);
                 Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableSASConstructorsOldVersion()
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = TablePayloadFormat.AtomPub;
+            tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
             CloudTable table = tableClient.GetTableReference("T" + Guid.NewGuid().ToString("N"));
             try
             {
@@ -201,23 +201,23 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // SAS via connection string parse
                 sasAccount = CloudStorageAccount.Parse(string.Format("TableEndpoint={0};SharedAccessSignature={1}", baseUri.AbsoluteUri, sasToken));
                 sasClient = sasAccount.CreateCloudTableClient();
-                sasClient.PayloadFormat = TablePayloadFormat.AtomPub;
+                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
                 sasTable = sasClient.GetTableReference(table.Name);
 
                 Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
 
                 // SAS via account constructor
                 sasCreds = new StorageCredentials(sasToken);
-                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri);
+                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri, null);
                 sasClient = sasAccount.CreateCloudTableClient();
-                sasClient.PayloadFormat = TablePayloadFormat.AtomPub;
+                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
                 sasTable = sasClient.GetTableReference(table.Name);
                 Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
 
                 // SAS via client constructor URI + Creds
                 sasCreds = new StorageCredentials(sasToken);
                 sasClient = new CloudTableClient(baseUri, sasCreds);
-                sasClient.PayloadFormat = TablePayloadFormat.AtomPub;
+                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
                 sasTable = sasClient.GetTableReference(table.Name);
                 Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
 
@@ -225,7 +225,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 sasCreds = new StorageCredentials(sasToken);
                 sasTable = new CloudTable(table.Uri, tableClient.Credentials);
                 sasClient = sasTable.ServiceClient;
-                sasClient.PayloadFormat = TablePayloadFormat.AtomPub;
+                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
                 Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
             }
             finally
@@ -1167,9 +1167,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 string sasToken = table.GetSharedAccessSignature(policy);
                 StorageCredentials creds = new StorageCredentials(sasToken);
-                CloudStorageAccount sasAcc = new CloudStorageAccount(creds, new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint));
+                CloudStorageAccount sasAcc = new CloudStorageAccount(creds, null /* blobEndpoint */, null /* queueEndpoint */, new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint), null /* fileEndpoint */);
                 CloudTableClient client = sasAcc.CreateCloudTableClient();
-                
+
                 CloudTable sasTable = new CloudTable(client.Credentials.TransformUri(table.Uri));
                 sasTable.Execute(TableOperation.Delete(entity));
 
@@ -1183,35 +1183,67 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
-        [Description("Test SAS with absolute Uri")]
-        [TestCategory(ComponentCategory.Blob)]
+        [Description("Use table SasUri.")]
+        [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudTableSASWithAbsoluteUri()
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableSasUriPkRkTestSync()
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference("T" + Guid.NewGuid().ToString("N"));
 
-            CloudTable table = tableClient.GetTableReference(tableClient.BaseUri + GenerateRandomTableName());
             try
             {
-                table.CreateIfNotExists();
-
-                BaseEntity entity = new BaseEntity("PK", "RK");
-                table.Execute(TableOperation.Insert(entity));
+                table.Create();
 
                 SharedAccessTablePolicy policy = new SharedAccessTablePolicy()
                 {
-                    Permissions = SharedAccessTablePermissions.Delete,
                     SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
-                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessTablePermissions.Add,
                 };
 
-                string sasToken = table.GetSharedAccessSignature(policy);
-                StorageCredentials creds = new StorageCredentials(sasToken);
+                string sasTokenPkRk = table.GetSharedAccessSignature(policy, null, "tables_batch_0", "00",
+                    "tables_batch_1", "04");
+                StorageCredentials credsPkRk = new StorageCredentials(sasTokenPkRk);
 
-                CloudTable sasTable = new CloudTable(table.Uri, creds);
-                sasTable.Execute(TableOperation.Delete(entity));
+                // transform uri from credentials
+                CloudTable sasTableTransformed = new CloudTable(credsPkRk.TransformUri(table.Uri));
+
+                // create uri by appending sas
+                CloudTable sasTableDirect = new CloudTable(new Uri(table.Uri.ToString() + sasTokenPkRk));
+
+                BaseEntity pkrkEnt = new BaseEntity("tables_batch_0", "00");
+                sasTableTransformed.Execute(TableOperation.Insert(pkrkEnt));
+
+                pkrkEnt = new BaseEntity("tables_batch_0", "01");
+                sasTableDirect.Execute(TableOperation.Insert(pkrkEnt));
+
+                Action<BaseEntity, CloudTable, OperationContext> insertDelegate = (tableEntity, sasTable1, ctx) =>
+                {
+                    sasTable1.Execute(TableOperation.Insert(tableEntity), null, ctx);
+                };
+
+                pkrkEnt = new BaseEntity("tables_batch_2", "00");
+                TestHelper.ExpectedException(
+                    (ctx) => insertDelegate(pkrkEnt, sasTableTransformed, ctx),
+                    string.Format("Inserted entity without appropriate SAS permissions."),
+                    (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException(
+                     (ctx) => insertDelegate(pkrkEnt, sasTableDirect, ctx),
+                    string.Format("Inserted entity without appropriate SAS permissions."),
+                     (int)HttpStatusCode.NotFound);
+
+                pkrkEnt = new BaseEntity("tables_batch_1", "05");
+                TestHelper.ExpectedException(
+                    (ctx) => insertDelegate(pkrkEnt, sasTableTransformed, ctx),
+                    string.Format("Inserted entity without appropriate SAS permissions."),
+                    (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException(
+                     (ctx) => insertDelegate(pkrkEnt, sasTableDirect, ctx),
+                    string.Format("Inserted entity without appropriate SAS permissions."),
+                     (int)HttpStatusCode.NotFound);
             }
             finally
             {

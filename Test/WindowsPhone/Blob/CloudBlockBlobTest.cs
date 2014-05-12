@@ -347,6 +347,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     "Metadata keys should have a non-empty value");
                 Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
 
+                blob.Metadata["key1"] = " ";
+                Assert.ThrowsException<AggregateException>(
+                    () => blob.SetMetadataAsync(null, null, operationContext).Wait(),
+                    "Metadata keys should have a non-whitespace only value");
+                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+
                 blob.Metadata["key1"] = "value1";
                 await blob.SetMetadataAsync();
 
@@ -476,6 +482,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.IsTrue(extraBlocks.Remove(blockItem.Name));
                 }
                 Assert.AreEqual(0, extraBlocks.Count);
+
+                // Check with 0 length
+                blocks = GetBlockIdList(0);
+                await blob.PutBlockListAsync(blocks);
+
+                await blob.DownloadBlockListAsync();
+                Assert.AreEqual(0, blob.Properties.Length);
             }
             finally
             {
@@ -697,7 +710,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudBlockBlobParallelUploadFromStreamAsync()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 8;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 8;
             await container.CreateAsync();
             try
             {
@@ -715,7 +728,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             byte[] buffer = GetRandomBuffer(size);
 
             CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-            blob.ServiceClient.SingleBlobUploadThresholdInBytes = allowSinglePut ? buffer.Length : buffer.Length / 2;
+            blob.ServiceClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = allowSinglePut ? buffer.Length : buffer.Length / 2;
             blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
 
             using (MemoryStream originalBlobStream = new MemoryStream())

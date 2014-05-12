@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-    using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Threading.Tasks;

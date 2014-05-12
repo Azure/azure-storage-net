@@ -87,13 +87,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
         public static void ContentDispositionHeader(HttpWebRequest request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers[Constants.HeaderConstants.ContentDispositionRequestHeader] == null));
-            if (request.Headers[Constants.HeaderConstants.ContentDispositionRequestHeader] != null)
+            Assert.IsFalse((expectedValue != null) && (request.Headers[Constants.HeaderConstants.BlobContentDispositionRequestHeader] == null));
+            if (request.Headers[Constants.HeaderConstants.BlobContentDispositionRequestHeader] != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers[Constants.HeaderConstants.ContentDispositionRequestHeader]);
+                Assert.AreEqual(expectedValue, request.Headers[Constants.HeaderConstants.BlobContentDispositionRequestHeader]);
             }
         }
-        
+
         public static void ContentEncodingHeader(HttpWebRequest request, string expectedValue)
         {
             Assert.IsFalse((expectedValue != null) && (request.Headers[HttpRequestHeader.ContentEncoding] == null));

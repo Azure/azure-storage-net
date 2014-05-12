@@ -205,13 +205,40 @@ namespace Microsoft.WindowsAzure.Storage
         public bool Equals(StorageUri other)
         {
             return (other != null) &&
-                StorageUri.AreUrisEqual(this.PrimaryUri, other.PrimaryUri) &&
-                StorageUri.AreUrisEqual(this.SecondaryUri, other.SecondaryUri);
+                (this.PrimaryUri == other.PrimaryUri) &&
+                (this.SecondaryUri == other.SecondaryUri);
         }
 
-        private static bool AreUrisEqual(Uri uri1, Uri uri2)
+        /// <summary>
+        /// Determines whether two <see cref="StorageUri"/> instances have the same value.
+        /// </summary>
+        /// <param name="uri1">A <see cref="StorageUri"/> instance to compare with uri2.</param>
+        /// <param name="uri2">A <see cref="StorageUri"/> instance to compare with uri1.</param>
+        /// <returns><c>true</c> if the <see cref="StorageUri"/> instances are equivalent; otherwise, <c>false</c>.</returns>
+        public static bool operator ==(StorageUri uri1, StorageUri uri2)
         {
-            return uri1 == null ? uri2 == null : uri1.Equals(uri2);
+            if (object.ReferenceEquals(uri1, uri2))
+            {
+                return true;
+            }
+
+            if (object.ReferenceEquals(uri1, null))
+            {
+                return false;
+            }
+
+            return uri1.Equals(uri2);
+        }
+
+        /// <summary>
+        /// Determines whether two <see cref="StorageUri"/> instances do not have the same value.
+        /// </summary>
+        /// <param name="uri1">A <see cref="StorageUri"/> instance to compare with uri2.</param>
+        /// <param name="uri2">A <see cref="StorageUri"/> instance to compare with uri1.</param>
+        /// <returns><c>true</c> if the <see cref="StorageUri"/> instances are not equal; otherwise, <c>false</c>.</returns>
+        public static bool operator !=(StorageUri uri1, StorageUri uri2)
+        {
+            return !(uri1 == uri2);
         }
 
         private static void AssertAbsoluteUri(Uri uri)

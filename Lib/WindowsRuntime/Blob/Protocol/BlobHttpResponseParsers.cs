@@ -17,11 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     internal static partial class BlobHttpResponseParsers
     {

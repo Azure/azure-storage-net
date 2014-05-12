@@ -22,9 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Globalization;
     using System.Linq;
 
-#if WINDOWS_RT
-    using System.Net.Http;
-#else
+#if WINDOWS_DESKTOP
     using System.Net;
 #endif
 

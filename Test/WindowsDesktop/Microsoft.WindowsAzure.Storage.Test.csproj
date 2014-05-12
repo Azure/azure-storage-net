@@ -76,6 +76,9 @@
     <Compile Include="..\Common\Blob\*.cs">
       <Link>Blob\Blob</Link>
     </Compile>
+    <Compile Include="..\Common\File\*.cs">
+      <Link>File\File</Link>
+    </Compile>
     <Compile Include="..\Common\Core\*.cs">
       <Link>Core\Core</Link>
     </Compile>
@@ -94,17 +97,26 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\ClassLibraryCommon\*.cs" />
-    <Compile Include="..\ClassLibraryCommon\Blob\*.cs">
+	<Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
+      <Link>Analytics\Analytics</Link>
+    </Compile>
+	<Compile Include="..\ClassLibraryCommon\Blob\*.cs">
       <Link>Blob\Blob</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Core\*.cs">
       <Link>Core\Core</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\*.cs">
+      <Link>File\File</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Properties\*.cs">
       <Link>Properties\Properties</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Blob\Protocol\*.cs">
       <Link>Blob\Protocol\Protocol</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\Protocol\*.cs">
+      <Link>File\Protocol\Protocol</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Queue\*.cs">
       <Link>Queue\Queue</Link>

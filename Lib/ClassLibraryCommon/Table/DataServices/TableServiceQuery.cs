@@ -37,6 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     /// A class for constructing a query against the Table service.
     /// </summary>
     /// <typeparam name="TElement">The type of the element.</typeparam>    
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     [SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Justification = "Reviewed")]
     public class TableServiceQuery<TElement> : IQueryable<TElement>
     {
@@ -45,6 +46,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// </summary>
         /// <param name="query">An object that implements <see cref="IQueryable"/>.</param>
         /// <param name="context">A <see cref="TableServiceContext"/> object.</param>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public TableServiceQuery(IQueryable<TElement> query, TableServiceContext context)
         {
             this.Query = query as DataServiceQuery<TElement>;
@@ -58,6 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <value>
         /// An object of type <see cref="TableServiceContext"/>.
         /// </value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public TableServiceContext Context { get; private set; }
 
         /// <summary>
@@ -74,6 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <value>
         /// A <see cref="T:System.Type"/> that represents the type of the element(s) that are returned when the expression tree associated with this object is executed.
         /// </value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Type ElementType
         {
             get { return this.Query.ElementType; }
@@ -85,6 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <value>
         /// The <see cref="T:System.Linq.Expressions.Expression"/> that is associated with this instance of <see cref="T:System.Linq.IQueryable"/>.
         /// </value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Expression Expression
         {
             get { return this.Query.Expression; }
@@ -96,6 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <value>
         /// The <see cref="T:System.Linq.IQueryProvider"/> that is associated with this data source.
         /// </value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public IQueryProvider Provider
         {
             get { return this.Query.Provider; }
@@ -106,6 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// </summary>
         /// <param name="path">The path to expand.</param>
         /// <returns>A new query with the expanded path.</returns>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public TableServiceQuery<TElement> Expand(string path)
         {
             return new TableServiceQuery<TElement>(this.Query.Expand(path), this.Context);
@@ -117,6 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <returns>
         /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
         /// </returns>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public IEnumerator<TElement> GetEnumerator()
         {
             return this.Execute(null /* RequestOptions */, null /* OperationContext */).GetEnumerator();
@@ -134,6 +142,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection, specialized for type <c>TElement</c>, of the results of executing the query.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public IEnumerable<TElement> Execute(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.Context.ServiceClient);
@@ -152,6 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment containing objects of type <typeparamref name="TElement"/>.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public TableQuerySegment<TElement> ExecuteSegmented(TableContinuationToken continuationToken, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.Context.ServiceClient);
@@ -167,6 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public ICancellableAsyncResult BeginExecuteSegmented(TableContinuationToken currentToken, AsyncCallback callback, object state)
         {
             return this.BeginExecuteSegmented(currentToken, null /* RequestOptions */, null /* OperationContext */, callback, state);
@@ -182,6 +193,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public ICancellableAsyncResult BeginExecuteSegmented(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.Context.ServiceClient);
@@ -196,6 +208,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// </summary>
         /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
         /// <returns>A result segment containing objects of type <typeparamref name="TElement"/>.</returns>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public TableQuerySegment<TElement> EndExecuteSegmented(IAsyncResult asyncResult)
         {
             return new TableQuerySegment<TElement>(TableExecutor.EndExecuteAsync<ResultSegment<TElement>, IEnumerable<TElement>>(asyncResult));
@@ -208,6 +221,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken)
         {
             return this.ExecuteSegmentedAsync(currentToken, CancellationToken.None);
@@ -220,6 +234,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginExecuteSegmented, this.EndExecuteSegmented, currentToken, cancellationToken);
@@ -233,6 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteSegmentedAsync(currentToken, requestOptions, operationContext, CancellationToken.None);
@@ -247,6 +263,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginExecuteSegmented, this.EndExecuteSegmented, currentToken, requestOptions, operationContext, cancellationToken);

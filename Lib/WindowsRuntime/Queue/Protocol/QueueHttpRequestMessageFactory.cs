@@ -17,14 +17,12 @@
 
 namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
-    using System.Text;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     internal static class QueueHttpRequestMessageFactory
     {
@@ -121,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
                     builder.Add("marker", listingContext.Marker);
                 }
 
-                if (listingContext.MaxResults != null)
+                if (listingContext.MaxResults.HasValue)
                 {
                     builder.Add("maxresults", listingContext.MaxResults.ToString());
                 }

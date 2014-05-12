@@ -27,6 +27,8 @@ namespace Microsoft.WindowsAzure.Storage
 
         public const string Blob = "Blob";
 
+        public const string File = "File";
+
         public const string Queue = "Queue";
 
         public const string Table = "Table";

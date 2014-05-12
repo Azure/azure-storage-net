@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Test.Network;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -110,6 +111,55 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             receivedMessage1.SetMessageContent(Guid.NewGuid().ToString("N"));
 
             queue.UpdateMessage(receivedMessage1, TimeSpan.FromSeconds(1), MessageUpdateFields.Content | MessageUpdateFields.Visibility);
+
+            queue.DeleteMessage(receivedMessage1);
+
+            queue.Delete();
+        }
+
+        [TestMethod]
+        [Description("Ingress Egress Counters for Queue")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueIngressEgress()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            string name = GenerateNewQueueName();
+            CloudQueue queue = client.GetQueueReference(name);
+            queue.Create();
+
+            string msgContent = Guid.NewGuid().ToString("N");
+            CloudQueueMessage message = new CloudQueueMessage(msgContent);
+
+            // Add
+            TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(queue.Uri.ToString()), () =>
+            {
+                OperationContext opContext = new OperationContext();
+                queue.AddMessage(message, null, null, new QueueRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                return opContext.LastResult;
+            });
+
+            // Retrieve
+            CloudQueueMessage receivedMessage1 = null;
+            TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(queue.Uri.ToString()), () =>
+            {
+                OperationContext opContext = new OperationContext();
+                receivedMessage1 = queue.GetMessage(null,new QueueRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+
+                Assert.IsTrue(receivedMessage1.AsString == message.AsString);
+                return opContext.LastResult;
+            });
+
+            // Update
+            TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(queue.Uri.ToString()), () =>
+            {
+                OperationContext opContext = new OperationContext();
+                receivedMessage1.SetMessageContent(Guid.NewGuid().ToString("N"));
+                queue.UpdateMessage(receivedMessage1, TimeSpan.FromSeconds(1), MessageUpdateFields.Content | MessageUpdateFields.Visibility, new QueueRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                return opContext.LastResult;
+            });
 
             queue.DeleteMessage(receivedMessage1);
 
@@ -489,11 +539,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             queue.Create();
 
             const int messageCount = 30;
-            
+
             using (AutoResetEvent waitHandle = new AutoResetEvent(false))
             {
                 IAsyncResult result;
-                
+
                 // Create messages to add to queue
                 List<string> messageContentList = new List<string>();
                 for (int i = 0; i < messageCount; i++)
@@ -524,7 +574,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 {
                     Assert.IsTrue(messageContentList.Contains(receivedMessages[i].AsString));
                 }
-                
+
                 // Wait for the timeout to expire
                 Thread.Sleep(TimeSpan.FromSeconds(1));
 
@@ -635,7 +685,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 // Add message to Queue
                 queue.AddMessageAsync(message).Wait();
-                
+
                 // Add message to list to compare
                 messageContentList.Add(messageContent);
             }
@@ -649,7 +699,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 Assert.IsTrue(messageContentList.Contains(receivedMessages[i].AsString));
             }
-           
+
             queue.DeleteAsync().Wait();
         }
 
@@ -667,7 +717,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             queue.CreateAsync().Wait();
 
             const int messageCount = 30;
-            
+
             // Create messages to add to queue
             List<string> messageContentList = new List<string>();
             for (int i = 0; i < messageCount; i++)
@@ -692,7 +742,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 Assert.IsTrue(messageContentList.Contains(receivedMessages[i].AsString));
             }
-                
+
             // Wait for the timeout to expire
             Thread.Sleep(TimeSpan.FromSeconds(1));
 
@@ -2324,7 +2374,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             // Delete the message
             queue.DeleteMessageAsync(message.Id, message.PopReceipt, null, null).Wait();
-            
+
             queue.DeleteAsync().Wait();
         }
 #endif

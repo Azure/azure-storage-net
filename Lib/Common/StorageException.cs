@@ -18,23 +18,19 @@
 namespace Microsoft.WindowsAzure.Storage
 {
     using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using Microsoft.WindowsAzure.Storage.Table.Protocol;
     using System;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Globalization;
+    using System.IO;
     using System.Net;
     using System.Text;
 
 #if WINDOWS_DESKTOP
-    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Table.Protocol;
+    using System.Collections.Generic;
+    using System.Globalization;
     using System.Runtime.Serialization;
-    using System.IO;
-    using System.Collections.Generic;
 #elif WINDOWS_RT
-    using System.IO;
     using System.Runtime.InteropServices;
-    using System.Collections.Generic;
 #endif
 
     /// <summary>

@@ -19,6 +19,7 @@ using System;
 
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices.Entities
 {
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     class UnionEnitity : TableServiceEntity
     {
         public UnionEnitity()

@@ -17,17 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Linq;
     using System.Net.Http;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
 
     internal static class HttpRequestMessageFactory
     {
@@ -188,7 +182,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="value">The metadata value.</param>
         internal static void AddMetadata(HttpRequestMessage request, string name, string value)
         {
-            CommonUtility.AssertNotNullOrEmpty("value", value);
+            CommonUtility.AssertNotNull("value", value);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException(SR.ArgumentEmptyError, value);
+            }
+
             request.Headers.Add("x-ms-meta-" + name, value);
         }
 

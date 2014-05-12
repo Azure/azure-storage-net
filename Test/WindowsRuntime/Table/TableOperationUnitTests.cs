@@ -643,7 +643,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             EntityResolver<string> resolver = (pk, rk, ts, props, etag) => pk + rk + props["foo"].StringValue + props.Count;
 
             // not found
-            TableResult result = await currentTable.ExecuteAsync(TableOperationFactory.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, resolver));
+            TableResult result = await currentTable.ExecuteAsync(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, resolver));
 
             Assert.AreEqual(result.HttpStatusCode, (int)HttpStatusCode.NotFound);
             Assert.IsNull(result.Result);
@@ -653,7 +653,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await currentTable.ExecuteAsync(TableOperation.Insert(sendEnt));
 
             // Success
-            result = await currentTable.ExecuteAsync(TableOperationFactory.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, resolver));
+            result = await currentTable.ExecuteAsync(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, resolver));
 
             Assert.AreEqual(result.HttpStatusCode, (int)HttpStatusCode.OK);
             // Since there are properties in ComplexEntity set to null, we do not receive those from the server. Hence we need to check for non null values.

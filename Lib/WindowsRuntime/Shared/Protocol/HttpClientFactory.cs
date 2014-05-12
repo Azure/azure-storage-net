@@ -23,14 +23,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
     internal static class HttpClientFactory
     {
-        public static HttpClient BuildHttpClient<T>(RESTCommand<T> cmd, HttpMessageHandler handler, OperationContext operationContext)
+        public static HttpClient BuildHttpClient<T>(RESTCommand<T> cmd, HttpMessageHandler handler, bool useVersionHeader, OperationContext operationContext)
         {
             HttpClient client = handler != null ? new HttpClient(handler, false) : new HttpClient();
             client.DefaultRequestHeaders.ExpectContinue = false;
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
 
-            client.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
+            if (useVersionHeader)
+            {
+                client.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
+            }
 
             if (operationContext != null && operationContext.UserHeaders != null)
             {

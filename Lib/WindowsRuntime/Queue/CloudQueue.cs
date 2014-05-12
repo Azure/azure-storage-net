@@ -17,6 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -26,12 +31,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Runtime.InteropServices.WindowsRuntime;
     using System.Threading.Tasks;
     using Windows.Foundation;
-    using Microsoft.WindowsAzure.Storage.Queue.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     /// <summary>
     /// This class represents a queue in the Windows Azure Queue service.

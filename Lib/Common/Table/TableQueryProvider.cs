@@ -15,6 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if !WINDOWS_RT
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     using Microsoft.WindowsAzure.Storage.Core;
@@ -92,12 +93,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         return query.AsEnumerable().First();
                     case SequenceMethod.FirstOrDefault:
                         return query.AsEnumerable().FirstOrDefault();
-/*
-if !ASTORIA_LIGHT
+
+                    /*
+if !ASTORIA_LIGHT && !WINDOWS_RT
                     case SequenceMethod.LongCount:
                     case SequenceMethod.Count:
                         return (TElement)Convert.ChangeType(((TableQuery<TElement>)query).GetQuerySetCount(this.Context), typeof(TElement), System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
-#endif                   
+//#endif                   
 */
                 }
             }
@@ -135,3 +137,4 @@ if !ASTORIA_LIGHT
         }
     }
 }
+#endif

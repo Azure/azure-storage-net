@@ -187,41 +187,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Test SAS with absolute Uri")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerSASWithAbsoluteUri()
-        {
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
-
-            CloudBlobContainer container = blobClient.GetContainerReference(blobClient.BaseUri + GetRandomContainerName());
-            try
-            {
-                container.CreateIfNotExists();
-
-                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
-                {
-                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
-                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
-                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
-                };
-
-                string sasToken = container.GetSharedAccessSignature(policy);
-                StorageCredentials creds = new StorageCredentials(sasToken);
-
-                CloudBlobContainer sasContainer = new CloudBlobContainer(container.Uri, creds);
-                CloudBlockBlob testBlockBlob = sasContainer.GetBlockBlobReference("blockblob");
-                UploadText(testBlockBlob, "blob", Encoding.UTF8);
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
-        }
-
-        [TestMethod]
         [Description("Test updateSASToken")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -593,72 +558,66 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Test SAS with absolute Uri")]
+        [Description("Perform a SAS request and ensure that the api-version query param exists and the x-ms-version header does not.")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobSASWithAbsoluteUri()
+        public void CloudBlobSASApiVersionQueryParam()
         {
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
-
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateIfNotExists();
-
-                CloudBlockBlob testBlockBlob = container.GetBlockBlobReference(container.Uri + "/" + "blockblob");
-                UploadText(testBlockBlob, "text", Encoding.UTF8);
+                container.Create();
+                ICloudBlob blob;
 
                 SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
                 {
-                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                    Permissions = SharedAccessBlobPermissions.Read,
                     SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
-                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
                 };
 
-                string sasToken = testBlockBlob.GetSharedAccessSignature(policy);
-                StorageCredentials creds = new StorageCredentials(sasToken);
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference("bb");
+                blockBlob.PutBlockList(new string[] { });
 
-                CloudBlockBlob sasBlockBlob = new CloudBlockBlob(testBlockBlob.Uri, creds);
-                UploadText(sasBlockBlob, "new text", Encoding.UTF8);
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
-        }
+                CloudPageBlob pageBlob = container.GetPageBlobReference("pb");
+                pageBlob.Create(0);
 
-        [TestMethod]
-        [Description("Test SAS with absolute Uri")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobSASWithAbsoluteUri()
-        {
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
+                string blockBlobToken = blockBlob.GetSharedAccessSignature(policy);
+                StorageCredentials blockBlobSAS = new StorageCredentials(blockBlobToken);
+                Uri blockBlobSASUri = blockBlobSAS.TransformUri(blockBlob.Uri);
+                StorageUri blockBlobSASStorageUri = blockBlobSAS.TransformUri(blockBlob.StorageUri);
 
-            CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.CreateIfNotExists();
+                string pageBlobToken = pageBlob.GetSharedAccessSignature(policy);
+                StorageCredentials pageBlobSAS = new StorageCredentials(pageBlobToken);
+                Uri pageBlobSASUri = pageBlobSAS.TransformUri(pageBlob.Uri);
+                StorageUri pageBlobSASStorageUri = pageBlobSAS.TransformUri(pageBlob.StorageUri);
 
-                CloudPageBlob testPageBlob = container.GetPageBlobReference(container.Uri + "/" + "pageblob");
-                UploadText(testPageBlob, "text", Encoding.UTF8);
-
-                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                OperationContext apiVersionCheckContext = new OperationContext();
+                apiVersionCheckContext.SendingRequest += (sender, e) =>
                 {
-                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
-                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
-                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+                    Assert.IsNull(e.Request.Headers.Get("x-ms-version"));
+                    Assert.IsTrue(e.Request.RequestUri.Query.Contains("api-version"));
                 };
 
-                string sasToken = testPageBlob.GetSharedAccessSignature(policy);
-                StorageCredentials creds = new StorageCredentials(sasToken);
+                blob = container.ServiceClient.GetBlobReferenceFromServer(blockBlobSASUri, operationContext: apiVersionCheckContext);
+                Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
+                Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(blockBlob.Uri));
+                Assert.IsNull(blob.StorageUri.SecondaryUri);
 
-                CloudPageBlob sasPageBlob = new CloudPageBlob(testPageBlob.Uri, creds);
-                UploadText(sasPageBlob, "new text", Encoding.UTF8);
+                blob = container.ServiceClient.GetBlobReferenceFromServer(pageBlobSASUri, operationContext: apiVersionCheckContext);
+                Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
+                Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(pageBlob.Uri));
+                Assert.IsNull(blob.StorageUri.SecondaryUri);
+
+                blob = container.ServiceClient.GetBlobReferenceFromServer(blockBlobSASStorageUri, operationContext: apiVersionCheckContext);
+                Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
+                Assert.IsTrue(blob.StorageUri.Equals(blockBlob.StorageUri));
+
+                blob = container.ServiceClient.GetBlobReferenceFromServer(pageBlobSASStorageUri, operationContext: apiVersionCheckContext);
+                Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
+                Assert.IsTrue(blob.StorageUri.Equals(pageBlob.StorageUri));
             }
             finally
             {

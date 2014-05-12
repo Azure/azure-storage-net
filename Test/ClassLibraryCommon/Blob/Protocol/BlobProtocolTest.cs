@@ -381,6 +381,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 cloudSetup.DeleteBlob(cloudSetup.ContainerName, "newblob2");
             }
         }
+
+        [TestMethod]
+        [Description("Ensure that the parameters passed into ListingContexts are validated correctly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void BlobProtocolListingContextValidation()
+        {
+            BlobListingContext listingContext1 = new BlobListingContext("correct", 1, null, BlobListingDetails.All);
+            try
+            {
+                BlobListingContext listingContext2 = new BlobListingContext("below min", 0, null, BlobListingDetails.All);
+                Assert.Fail();
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                Assert.IsTrue(e.ToString().Contains("System.ArgumentOutOfRangeException: The argument 'maxResults' is smaller than minimum of '1'"));
+            }
+            BlobListingContext listingContext3 = new BlobListingContext("not limited", 6000, null, BlobListingDetails.All);
+        }
+
         #endregion
 
         #region ListContainers

@@ -36,6 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     /// Represents a <see cref="DataServiceContext"/> object for use with the Windows Azure Table service.
     /// </summary>
     /// <remarks>The <see cref="TableServiceContext"/> class does not support concurrent queries or requests.</remarks>
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public class TableServiceContext : DataServiceContext, IDisposable
     {
         private IAuthenticationHandler authenticationHandler;
@@ -49,6 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <summary>
         /// Initializes a new instance of the <see cref="TableServiceContext"/> class.
         /// </summary>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public TableServiceContext(CloudTableClient client)
             : base(client.BaseUri, DataServiceProtocolVersion.V3)
         {
@@ -179,10 +181,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
                 this.currentRequest = request;
             }
 
-            // SAS will be handled directly by the queries themselves prior to transformation
-            request.Headers.Add(
-                Constants.HeaderConstants.StorageVersionHeader,
-                Constants.HeaderConstants.TargetStorageVersion);
+            if (!this.ServiceClient.Credentials.IsSAS)
+            {
+                // SAS will be handled directly by the queries themselves prior to transformation
+                request.Headers.Add(
+                    Constants.HeaderConstants.StorageVersionHeader,
+                    Constants.HeaderConstants.TargetStorageVersion);
+            }
 
             CommonUtility.ApplyRequestOptimizations(request, -1);
 
@@ -197,6 +202,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// Gets the <see cref="CloudTableClient"/> object that represents the Table service.
         /// </summary>
         /// <value>A client object that specifies the Table service endpoint.</value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public CloudTableClient ServiceClient { get; private set; }
 
         /// <summary>
@@ -233,6 +239,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// </summary>
         /// <returns>A <see cref="DataServiceResponse"/> that represents the result of the operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public DataServiceResponse SaveChangesWithRetries()
         {
             return this.SaveChangesWithRetries(this.SaveChangesDefaultOptions);
@@ -246,6 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns> A <see cref="DataServiceResponse"/> that represents the result of the operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public DataServiceResponse SaveChangesWithRetries(SaveChangesOptions options, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
@@ -261,6 +269,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public ICancellableAsyncResult BeginSaveChangesWithRetries(AsyncCallback callback, object state)
         {
             return this.BeginSaveChangesWithRetries(this.SaveChangesDefaultOptions, callback, state);
@@ -274,6 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public ICancellableAsyncResult BeginSaveChangesWithRetries(SaveChangesOptions options, AsyncCallback callback, object state)
         {
             return this.BeginSaveChangesWithRetries(options, null /* RequestOptions */, null /* OperationContext */, callback, state);
@@ -289,6 +299,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="requestOptions"> </param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public ICancellableAsyncResult BeginSaveChangesWithRetries(SaveChangesOptions options, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
@@ -302,6 +313,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns> A <see cref="DataServiceResponse"/> that represents the result of the operation.</returns>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public DataServiceResponse EndSaveChangesWithRetries(IAsyncResult asyncResult)
         {
             return TableExecutor.EndExecuteAsync<DataServiceResponse, DataServiceResponse>(asyncResult);
@@ -313,6 +325,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync()
         {
             return this.SaveChangesWithRetriesAsync(CancellationToken.None);
@@ -324,6 +337,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginSaveChangesWithRetries, this.EndSaveChangesWithRetries, cancellationToken);
@@ -335,6 +349,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="options">A <see cref="System.Data.Services.Client.SaveChangesOptions"/> enumeration value.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options)
         {
             return this.SaveChangesWithRetriesAsync(options, CancellationToken.None);
@@ -347,6 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginSaveChangesWithRetries, this.EndSaveChangesWithRetries, options, cancellationToken);
@@ -360,6 +376,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SaveChangesWithRetriesAsync(options, requestOptions, operationContext, CancellationToken.None);
@@ -374,6 +391,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public Task<DataServiceResponse> SaveChangesWithRetriesAsync(SaveChangesOptions options, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginSaveChangesWithRetries, this.EndSaveChangesWithRetries, options, requestOptions, operationContext, cancellationToken);

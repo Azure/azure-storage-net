@@ -25,18 +25,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using System;
-#if !WINDOWS_PHONE
-    using System.Collections.Concurrent;
-#endif
     using System.Collections.Generic;
-    using System.Data;
     using System.Globalization;
     using System.IO;
     using System.Net;
     using System.Reflection;
-    using System.Xml;
 
-    internal class TableOperationHttpResponseParsers
+    internal static class TableOperationHttpResponseParsers
     {
         internal static TableResult TableOperationPreProcess(TableResult result, TableOperation operation, HttpWebResponse resp, Exception ex)
         {

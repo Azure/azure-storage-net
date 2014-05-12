@@ -2867,90 +2867,85 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
         private void DeleteIfExistsHandler(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                    true,
-                    options,
-                    operationContext,
-                    existsResult =>
+            ICancellableAsyncResult savedExistsResult = this.BeginExists(
+                true,
+                options,
+                operationContext,
+                existsResult =>
+                {
+                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
+                    lock (storageAsyncResult.CancellationLockerObject)
                     {
-                        storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                        lock (storageAsyncResult.CancellationLockerObject)
+                        storageAsyncResult.CancelDelegate = null;
+                        try
                         {
-                            storageAsyncResult.CancelDelegate = null;
-                            try
+                            bool exists = this.EndExists(existsResult);
+                            if (!exists)
                             {
-                                bool exists = this.EndExists(existsResult);
-                                if (!exists)
-                                {
-                                    storageAsyncResult.Result = false;
-                                    storageAsyncResult.OnComplete();
-                                    return;
-                                }
+                                storageAsyncResult.Result = false;
+                                storageAsyncResult.OnComplete();
+                                return;
+                            }
 
-                                ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                                    deleteSnapshotsOption,
-                                    accessCondition,
-                                    options,
-                                    operationContext,
-                                    deleteResult =>
+                            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
+                                deleteSnapshotsOption,
+                                accessCondition,
+                                options,
+                                operationContext,
+                                deleteResult =>
+                                {
+                                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
+                                    storageAsyncResult.CancelDelegate = null;
+                                    try
                                     {
-                                        storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                                        storageAsyncResult.CancelDelegate = null;
-                                        try
+                                        this.EndDelete(deleteResult);
+                                        storageAsyncResult.Result = true;
+                                        storageAsyncResult.OnComplete();
+                                    }
+                                    catch (StorageException e)
+                                    {
+                                        if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                                         {
-                                            this.EndDelete(deleteResult);
-                                            storageAsyncResult.Result = true;
-                                            storageAsyncResult.OnComplete();
-                                        }
-                                        catch (StorageException e)
-                                        {
-                                            if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                                            if ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                                                (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
                                             {
-                                                if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
-                                                {
-                                                    storageAsyncResult.Result = false;
-                                                    storageAsyncResult.OnComplete();
-                                                }
-                                                else
-                                                {
-                                                    storageAsyncResult.OnComplete(e);
-                                                }
+                                                storageAsyncResult.Result = false;
+                                                storageAsyncResult.OnComplete();
                                             }
                                             else
                                             {
                                                 storageAsyncResult.OnComplete(e);
                                             }
                                         }
-                                        catch (Exception e)
+                                        else
                                         {
                                             storageAsyncResult.OnComplete(e);
                                         }
-                                    },
-                                    null /* state */);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        storageAsyncResult.OnComplete(e);
+                                    }
+                                },
+                                null /* state */);
 
-                                storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
-                                if (storageAsyncResult.CancelRequested)
-                                {
-                                    storageAsyncResult.Cancel();
-                                }
-                            }
-                            catch (Exception e)
+                            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
+                            if (storageAsyncResult.CancelRequested)
                             {
-                                storageAsyncResult.OnComplete(e);
+                                storageAsyncResult.Cancel();
                             }
                         }
-                    },
-                    null /* state */);
+                        catch (Exception e)
+                        {
+                            storageAsyncResult.OnComplete(e);
+                        }
+                    }
+                },
+                null /* state */);
 
-                storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.Cancel();
-                }
-            }
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
         }
 
         /// <summary>
@@ -4668,7 +4663,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<CloudBlockBlob> putCmd = new RESTCommand<CloudBlockBlob>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Snapshot(uri, serverTimeout, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Snapshot(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) =>
             {
                 if (metadata != null)
@@ -4684,7 +4679,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob snapshot = new CloudBlockBlob(this.Name, snapshotTime, this.Container);
                 snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata);
                 snapshot.attributes.Properties = new BlobProperties(this.Properties);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(snapshot.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
                 return snapshot;
             };
 
@@ -4706,18 +4701,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.Properties.ContentMD5 = contentMD5;
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
-            
+
             options.ApplyToStorageCommand(putCmd);
             putCmd.SendStream = stream;
             putCmd.SendStreamLength = length ?? stream.Length - offset;
             putCmd.RecoveryAction = (cmd, ex, ctx) => RecoveryActions.SeekStream(cmd, offset);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 this.Properties.Length = putCmd.SendStreamLength.Value;
                 return NullType.Value;
             };
@@ -4743,7 +4738,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.SendStream = source;
             putCmd.RecoveryAction = (cmd, ex, ctx) => RecoveryActions.SeekStream(cmd, offset);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.PutBlock(uri, serverTimeout, blockId, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.PutBlock(uri, serverTimeout, blockId, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) =>
             {
                 if (!string.IsNullOrEmpty(contentMD5))
@@ -4777,7 +4772,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.PutBlockList(uri, serverTimeout, this.Properties, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.PutBlockList(uri, serverTimeout, this.Properties, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) =>
             {
 #if !WINDOWS_PHONE
@@ -4791,7 +4786,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };
@@ -4813,12 +4808,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.GetBlockList(uri, serverTimeout, this.SnapshotTime, typesOfBlocks, accessCondition, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.GetBlockList(uri, serverTimeout, this.SnapshotTime, typesOfBlocks, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
                 GetBlockListResponse responseParser = new GetBlockListResponse(cmd.ResponseStream);
                 IEnumerable<ListBlockItem> blocks = new List<ListBlockItem>(responseParser.Blocks);
                 return blocks;

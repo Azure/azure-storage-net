@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
@@ -572,6 +571,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         {
             ExecutionState<T> executionState = (ExecutionState<T>)state;
             Logger.LogInformational(executionState.OperationContext, SR.TraceRetry);
+            Executor.FireRetrying(executionState);
             Executor.InitRequest(executionState);
         }
         #endregion
@@ -829,6 +829,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
                         Logger.LogInformational(executionState.OperationContext, SR.TraceRetry);
                     }
+
+                    Executor.FireRetrying(executionState);
                 }
                 while (shouldRetry);
             }
@@ -849,7 +851,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             Uri transformedUri = executionState.RestCMD.Credentials.TransformUri(uri);
             Logger.LogInformational(executionState.OperationContext, startLogMessage, transformedUri);
             UriQueryBuilder builder = new UriQueryBuilder(executionState.RestCMD.Builder);
-            executionState.Req = executionState.RestCMD.BuildRequestDelegate(transformedUri, builder, executionState.Cmd.ServerTimeoutInSeconds, executionState.OperationContext);
+            executionState.Req = executionState.RestCMD.BuildRequestDelegate(transformedUri, builder, executionState.Cmd.ServerTimeoutInSeconds, !executionState.RestCMD.Credentials.IsSAS, executionState.OperationContext);
             executionState.CancelDelegate = executionState.Req.Abort;
 
             // 2. Set Headers

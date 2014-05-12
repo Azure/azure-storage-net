@@ -41,7 +41,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, operationContext);
+            return QueueHttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to get the properties of the Queue service.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Queue service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -54,7 +68,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, operationContext);
+            return QueueHttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to set the properties of the Queue service.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Queue service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -67,7 +95,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.GetServiceStats(uri, builder, timeout, operationContext);
+            return QueueHttpWebRequestFactory.GetServiceStats(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to get Queue service stats.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Queue service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.GetServiceStats(uri, builder, timeout, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -91,7 +133,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.Create(uri, timeout, null, operationContext);
+            return QueueHttpWebRequestFactory.Create(uri, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to create a new queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest Create(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.Create(uri, timeout, null, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -103,7 +158,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Delete(Uri uri, int? timeout, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, null, timeout, operationContext);
+            return QueueHttpWebRequestFactory.Delete(uri, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to delete the queue and all of the messages within it.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest Delete(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, null, timeout, useVersionHeader, operationContext);
             return request;
         }
 
@@ -116,7 +184,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest ClearMessages(Uri uri, int? timeout, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, null, timeout, operationContext);
+            return QueueHttpWebRequestFactory.ClearMessages(uri, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to clear all messages in the queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest ClearMessages(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, null, timeout, useVersionHeader, operationContext);
             return request;
         }
 
@@ -129,7 +210,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, null, operationContext);
+            return QueueHttpWebRequestFactory.GetMetadata(uri, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to return the user-defined metadata for this queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetMetadata(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, null, useVersionHeader, operationContext);
             return request;
         }
 
@@ -142,7 +236,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetMetadata(Uri uri, int? timeout, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.SetMetadata(uri, timeout, null, operationContext);
+            return QueueHttpWebRequestFactory.SetMetadata(uri, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to set user-defined metadata for the queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest SetMetadata(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.SetMetadata(uri, timeout, null, useVersionHeader, operationContext);
             return request;
         }
 
@@ -178,6 +285,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest List(Uri uri, int? timeout, ListingContext listingContext, QueueListingDetails detailsIncluded, OperationContext operationContext)
         {
+            return QueueHttpWebRequestFactory.List(uri, timeout, listingContext, detailsIncluded, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return a listing of all queues in this storage account.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Queue service endpoint.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
+        /// <param name="detailsIncluded">A <see cref="QueueListingDetails"/> enumeration value that indicates whether to return queue metadata with the listing.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest List(Uri uri, int? timeout, ListingContext listingContext, QueueListingDetails detailsIncluded, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "list");
 
@@ -193,7 +315,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
                     builder.Add("marker", listingContext.Marker);
                 }
 
-                if (listingContext.MaxResults != null)
+                if (listingContext.MaxResults.HasValue)
                 {
                     builder.Add("maxresults", listingContext.MaxResults.ToString());
                 }
@@ -204,7 +326,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
                 builder.Add("include", "metadata");
             }
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -217,11 +339,24 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetAcl(Uri uri, int? timeout, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.GetAcl(uri, null, timeout, operationContext);
-            return request;
+            return QueueHttpWebRequestFactory.GetAcl(uri, timeout, true /* useVersionHeader */, operationContext);
         }
 
         /// <summary>
+        /// Constructs a web request to return the ACL for a queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetAcl(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.GetAcl(uri, null, timeout, useVersionHeader, operationContext);
+            return request;
+        }
+
+                /// <summary>
         /// Constructs a web request to set the ACL for a queue.
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
@@ -230,7 +365,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetAcl(Uri uri, int? timeout, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.SetAcl(uri, null, timeout, operationContext);
+            return QueueHttpWebRequestFactory.SetAcl(uri, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to set the ACL for a queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest SetAcl(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.SetAcl(uri, null, timeout, useVersionHeader, operationContext);
             return request;
         }
 
@@ -245,6 +393,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest AddMessage(Uri uri, int? timeout, int? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, OperationContext operationContext)
         {
+            return QueueHttpWebRequestFactory.AddMessage(uri, timeout, timeToLiveInSeconds, visibilityTimeoutInSeconds, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to add a message for a queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="timeToLiveInSeconds">The message time-to-live, in seconds.</param>
+        /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest AddMessage(Uri uri, int? timeout, int? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
 
             if (timeToLiveInSeconds != null)
@@ -257,7 +420,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
                 builder.Add(Constants.QueryConstants.VisibilityTimeout, visibilityTimeoutInSeconds.ToString());
             }
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Post, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Post, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -272,12 +435,27 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest UpdateMessage(Uri uri, int? timeout, string popReceipt, int visibilityTimeoutInSeconds, OperationContext operationContext)
         {
+            return QueueHttpWebRequestFactory.UpdateMessage(uri, timeout, popReceipt, visibilityTimeoutInSeconds, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to update a message.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the message to update.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt of the message.</param>
+        /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest UpdateMessage(Uri uri, int? timeout, string popReceipt, int visibilityTimeoutInSeconds, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
 
             builder.Add(Constants.QueryConstants.PopReceipt, popReceipt);
             builder.Add(Constants.QueryConstants.VisibilityTimeout, visibilityTimeoutInSeconds.ToString(CultureInfo.InvariantCulture));
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -291,10 +469,24 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest DeleteMessage(Uri uri, int? timeout, string popReceipt, OperationContext operationContext)
         {
+            return QueueHttpWebRequestFactory.DeleteMessage(uri, timeout, popReceipt, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to update a message.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the message to update.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="popReceipt">A string specifying the pop receipt of the message.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest DeleteMessage(Uri uri, int? timeout, string popReceipt, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.PopReceipt, popReceipt);
 
-            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, builder, timeout, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, builder, timeout, useVersionHeader, operationContext);
             return request;
         }
 
@@ -309,6 +501,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMessages(Uri uri, int? timeout, int numberOfMessages, TimeSpan? visibilityTimeout, OperationContext operationContext)
         {
+            return QueueHttpWebRequestFactory.GetMessages(uri, timeout, numberOfMessages, visibilityTimeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to get messages from a queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to get.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> value specifying the visibility timeout.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetMessages(Uri uri, int? timeout, int numberOfMessages, TimeSpan? visibilityTimeout, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
 
             builder.Add(Constants.QueryConstants.NumOfMessages, numberOfMessages.ToString(CultureInfo.InvariantCulture));
@@ -318,7 +525,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
                 builder.Add(Constants.QueryConstants.VisibilityTimeout, visibilityTimeout.Value.RoundUpToSeconds().ToString(CultureInfo.InvariantCulture));
             }
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -332,12 +539,26 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest PeekMessages(Uri uri, int? timeout, int numberOfMessages, OperationContext operationContext)
         {
+            return QueueHttpWebRequestFactory.PeekMessages(uri, timeout, numberOfMessages, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to peek messages from a queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to peek.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest PeekMessages(Uri uri, int? timeout, int numberOfMessages, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.HeaderConstants.PeekOnly, Constants.HeaderConstants.TrueHeader);
 
             builder.Add(Constants.QueryConstants.NumOfMessages, numberOfMessages.ToString(CultureInfo.InvariantCulture));
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
     }

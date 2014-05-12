@@ -39,7 +39,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, operationContext);
+            return TableHttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to get the properties of the Table service.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Table service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.GetServiceProperties(uri, builder, timeout, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -52,7 +66,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, operationContext);
+            return TableHttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to set the properties of the Table service.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Table service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.SetServiceProperties(uri, builder, timeout, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -65,7 +93,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.GetServiceStats(uri, builder, timeout, operationContext);
+            return TableHttpWebRequestFactory.GetServiceStats(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to get the stats of the Table service.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Table service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.GetServiceStats(uri, builder, timeout, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -90,7 +132,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.GetAcl(uri, builder, timeout, operationContext);
+            return TableHttpWebRequestFactory.GetAcl(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return the ACL for a table.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI for the table.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetAcl(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.GetAcl(uri, builder, timeout, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -103,7 +159,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
         {
-            return HttpWebRequestFactory.SetAcl(uri, builder, timeout, operationContext);
+            return TableHttpWebRequestFactory.SetAcl(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to set the ACL for a table.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI for the table.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest SetAcl(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.SetAcl(uri, builder, timeout, useVersionHeader, operationContext);
         }       
     }
 }

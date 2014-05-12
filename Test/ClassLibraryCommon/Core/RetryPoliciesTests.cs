@@ -131,7 +131,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public void NullRetryPolicyTest()
         {
             CloudBlobContainer container = BlobTestBase.GetRandomContainerReference();
-            container.ServiceClient.RetryPolicy = null;
+            container.ServiceClient.DefaultRequestOptions.RetryPolicy = null;
             container.Exists();
         }
 

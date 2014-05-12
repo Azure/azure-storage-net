@@ -79,6 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// Default server side timeout for all service clients.
         /// </summary>
+        [Obsolete("Server side timeout is not needed by default.")]
         public static readonly TimeSpan DefaultServerSideTimeout = TimeSpan.FromSeconds(90);
 
         /// <summary>
@@ -105,22 +106,22 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// The size of a page in a PageBlob.
         /// </summary>
-        internal const int PageSize = 512;
+        public const int PageSize = 512;
 
         /// <summary>
         /// A constant representing a kilo-byte (Non-SI version).
         /// </summary>
-        internal const long KB = 1024;
+        public const long KB = 1024;
 
         /// <summary>
         /// A constant representing a megabyte (Non-SI version).
         /// </summary>
-        internal const long MB = 1024 * KB;
+        public const long MB = 1024 * KB;
 
         /// <summary>
         /// A constant representing a megabyte (Non-SI version).
         /// </summary>
-        internal const long GB = 1024 * MB;
+        public const long GB = 1024 * MB;
 
         /// <summary>
         /// XML element for committed blocks.
@@ -271,6 +272,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for container name.
         /// </summary>
         public const string ContainerNameElement = "ContainerName";
+
+        /// <summary>
+        /// XML element for share name.
+        /// </summary>
+        public const string ShareNameElement = "ShareName";
+
+        /// <summary>
+        /// XML element for directory path.
+        /// </summary>
+        public const string DirectoryPathElement = "DirectoryPath";
 
         /// <summary>
         /// XML element for blobs.
@@ -471,6 +482,41 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for a container.
         /// </summary>
         public const string ContainerElement = "Container";
+
+        /// <summary>
+        /// XML element for shares.
+        /// </summary>
+        public const string SharesElement = "Shares";
+
+        /// <summary>
+        /// XML element for a share.
+        /// </summary>
+        public const string ShareElement = "Share";
+
+        /// <summary>
+        /// XML element for file ranges.
+        /// </summary>
+        public const string FileRangeElement = "Range";
+
+        /// <summary>
+        /// XML element for file list elements.
+        /// </summary>
+        public const string FileRangeListElement = "Ranges";
+
+        /// <summary>
+        /// XML element for files.
+        /// </summary>
+        public const string EntriesElement = "Entries";
+
+        /// <summary>
+        /// XML element for files.
+        /// </summary>
+        public const string FileElement = "File";
+
+        /// <summary>
+        /// XML element for directory.
+        /// </summary>
+        public const string FileDirectoryElement = "Directory";
 
         /// <summary>
         /// XML element for queues.
@@ -709,12 +755,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "3.2.0";
+            public const string UserAgentProductVersion = "4.0.0";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.
             /// </summary>
-            internal const string PrefixForStorageHeader = "x-ms-";
+            public const string PrefixForStorageHeader = "x-ms-";
 
             /// <summary>
             /// True Header.
@@ -729,22 +775,27 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Header prefix for properties.
             /// </summary>
-            internal const string PrefixForStorageProperties = "x-ms-prop-";
+            public const string PrefixForStorageProperties = "x-ms-prop-";
 
             /// <summary>
             /// Header prefix for metadata.
             /// </summary>
-            internal const string PrefixForStorageMetadata = "x-ms-meta-";
+            public const string PrefixForStorageMetadata = "x-ms-meta-";
+
+            /// <summary>
+            /// Header that specifies content disposition.
+            /// </summary>
+            public const string ContentDispositionResponseHeader = "Content-Disposition";
 
             /// <summary>
             /// Header that specifies content length.
             /// </summary>
-            public const string ContentLengthHeader = "content-length";
+            public const string ContentLengthHeader = "Content-Length";
 
             /// <summary>
             /// Header that specifies content language.
             /// </summary>
-            public const string ContentLanguageHeader = "content-language";
+            public const string ContentLanguageHeader = "Content-Language";
 
             /// <summary>
             /// Header that specifies the ETag value for the resource.
@@ -792,19 +843,49 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string SourceIfUnmodifiedSinceHeader = PrefixForStorageHeader + "source-if-unmodified-since";
 
             /// <summary>
-            /// Header for the If-Sequence-Number-LE condition.
+            /// Header for the file type.
             /// </summary>
-            public const string IfSequenceNumberLEHeader = PrefixForStorageHeader + "if-sequence-number-le";
+            public const string FileType = PrefixForStorageHeader + "type";
 
             /// <summary>
-            /// Header for the If-Sequence-Number-LT condition.
+            /// Header that specifies file caching control.
             /// </summary>
-            public const string IfSequenceNumberLTHeader = PrefixForStorageHeader + "if-sequence-number-lt";
+            public const string FileCacheControlHeader = PrefixForStorageHeader + "cache-control";
 
             /// <summary>
-            /// Header for the If-Sequence-Number-EQ condition.
+            /// Request header that specifies the file content disposition.
             /// </summary>
-            public const string IfSequenceNumberEqHeader = PrefixForStorageHeader + "if-sequence-number-eq";
+            public const string FileContentDispositionRequestHeader = PrefixForStorageHeader + "content-disposition";
+
+            /// <summary>
+            /// Header that specifies file content encoding.
+            /// </summary>
+            public const string FileContentEncodingHeader = PrefixForStorageHeader + "content-encoding";
+
+            /// <summary>
+            /// Header that specifies file content language.
+            /// </summary>
+            public const string FileContentLanguageHeader = PrefixForStorageHeader + "content-language";
+
+            /// <summary>
+            /// Header that specifies file content MD5.
+            /// </summary>
+            public const string FileContentMD5Header = PrefixForStorageHeader + "content-md5";
+
+            /// <summary>
+            /// Header that specifies file content type.
+            /// </summary>
+            public const string FileContentTypeHeader = PrefixForStorageHeader + "content-type";
+
+            /// <summary>
+            /// Header that specifies file content length.
+            /// </summary>
+            public const string FileContentLengthHeader = PrefixForStorageHeader + "content-length";
+
+            /// <summary>
+            /// Header that specifies the file write mode.
+            /// </summary>
+            public const string FileRangeWrite = PrefixForStorageHeader + "write";
 
             /// <summary>
             /// Header for the blob type.
@@ -822,29 +903,19 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string DeleteSnapshotHeader = PrefixForStorageHeader + "delete-snapshots";
 
             /// <summary>
-            /// Header that specifies approximate message count of a queue.
-            /// </summary>
-            public const string ApproximateMessagesCount = PrefixForStorageHeader + "approximate-messages-count";
-
-            /// <summary>
             /// Header that specifies blob caching control.
             /// </summary>
-            public const string CacheControlHeader = PrefixForStorageHeader + "blob-cache-control";
-
-            /// <summary>
-            /// Response header that specifies the blob content disposition.
-            /// </summary>
-            public const string ContentDispositionResponseHeader = "Content-Disposition";
+            public const string BlobCacheControlHeader = PrefixForStorageHeader + "blob-cache-control";
 
             /// <summary>
             /// Request header that specifies the blob content disposition.
             /// </summary>
-            public const string ContentDispositionRequestHeader = PrefixForStorageHeader + "blob-content-disposition";
+            public const string BlobContentDispositionRequestHeader = PrefixForStorageHeader + "blob-content-disposition";
 
             /// <summary>
             /// Header that specifies blob content encoding.
             /// </summary>
-            public const string ContentEncodingHeader = PrefixForStorageHeader + "blob-content-encoding";
+            public const string BlobContentEncodingHeader = PrefixForStorageHeader + "blob-content-encoding";
 
             /// <summary>
             /// Header that specifies blob content language.
@@ -859,7 +930,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Header that specifies blob content type.
             /// </summary>
-            public const string ContentTypeHeader = PrefixForStorageHeader + "blob-content-type";
+            public const string BlobContentTypeHeader = PrefixForStorageHeader + "blob-content-type";
 
             /// <summary>
             /// Header that specifies blob content length.
@@ -875,6 +946,21 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies sequence number action.
             /// </summary>
             public const string SequenceNumberAction = PrefixForStorageHeader + "sequence-number-action";
+
+            /// <summary>
+            /// Header for the If-Sequence-Number-LE condition.
+            /// </summary>
+            public const string IfSequenceNumberLEHeader = PrefixForStorageHeader + "if-sequence-number-le";
+
+            /// <summary>
+            /// Header for the If-Sequence-Number-LT condition.
+            /// </summary>
+            public const string IfSequenceNumberLTHeader = PrefixForStorageHeader + "if-sequence-number-lt";
+
+            /// <summary>
+            /// Header for the If-Sequence-Number-EQ condition.
+            /// </summary>
+            public const string IfSequenceNumberEqHeader = PrefixForStorageHeader + "if-sequence-number-eq";
 
             /// <summary>
             /// Header that specifies lease ID.
@@ -895,6 +981,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies page write mode.
             /// </summary>
             public const string PageWrite = PrefixForStorageHeader + "page-write";
+
+            /// <summary>
+            /// Header that specifies approximate message count of a queue.
+            /// </summary>
+            public const string ApproximateMessagesCount = PrefixForStorageHeader + "approximate-messages-count";
 
             /// <summary>
             /// Header that specifies the date.
@@ -925,7 +1016,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            internal const string TargetStorageVersion = "2013-08-15";
+            public const string TargetStorageVersion = "2014-02-14";
+
+            /// <summary>
+            /// Specifies the file type.
+            /// </summary>
+            public const string File = "File";
 
             /// <summary>
             /// Specifies the page blob type.
@@ -1146,6 +1242,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string ContentDisposition = "rscd";
 
             /// <summary>
+            /// Query component for SAS API version.
+            /// </summary>
+            public const string ApiVersion = "api-version";
+
+            /// <summary>
             /// Query component for message time-to-live.
             /// </summary>
             public const string MessageTimeToLive = "messagettl";
@@ -1247,6 +1348,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the table continuation token type.
             /// </summary>
             public const string TableType = "Table";
+
+            /// <summary>
+            /// Specifies the file continuation token type.
+            /// </summary>
+            public const string FileType = "File";
         }
 
         /// <summary>
@@ -1264,6 +1370,83 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Constant for the 2012-02-12 version.
             /// </summary>
             public const string February2012 = "2012-02-12";
+        }
+
+        /// <summary>
+        /// Constants for analytics client
+        /// </summary>
+        [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Justification = "Reviewed.")]
+        public static class AnalyticsConstants
+        {
+            /// <summary>
+            /// Constant for the logs container.
+            /// </summary>
+            public const string LogsContainer = "$logs";
+
+            /// <summary>
+            /// Constant for the blob capacity metrics table.
+            /// </summary>
+            public const string MetricsCapacityBlob = "$MetricsCapacityBlob";
+
+            /// <summary>
+            /// Constant for the blob service primary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourPrimaryTransactionsBlob = "$MetricsHourPrimaryTransactionsBlob";
+
+            /// <summary>
+            /// Constant for the table service primary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourPrimaryTransactionsTable = "$MetricsHourPrimaryTransactionsTable";
+
+            /// <summary>
+            /// Constant for the queue service primary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourPrimaryTransactionsQueue = "$MetricsHourPrimaryTransactionsQueue";
+
+            /// <summary>
+            /// Constant for the blob service primary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinutePrimaryTransactionsBlob = "$MetricsMinutePrimaryTransactionsBlob";
+
+            /// <summary>
+            /// Constant for the table service primary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinutePrimaryTransactionsTable = "$MetricsMinutePrimaryTransactionsTable";
+
+            /// <summary>
+            /// Constant for the queue service primary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinutePrimaryTransactionsQueue = "$MetricsMinutePrimaryTransactionsQueue";
+
+            /// <summary>
+            /// Constant for the blob service secondary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourSecondaryTransactionsBlob = "$MetricsHourSecondaryTransactionsBlob";
+
+            /// <summary>
+            /// Constant for the table service secondary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourSecondaryTransactionsTable = "$MetricsHourSecondaryTransactionsTable";
+
+            /// <summary>
+            /// Constant for the queue service secondary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourSecondaryTransactionsQueue = "$MetricsHourSecondaryTransactionsQueue";
+
+            /// <summary>
+            /// Constant for the blob service secondary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinuteSecondaryTransactionsBlob = "$MetricsMinuteSecondaryTransactionsBlob";
+
+            /// <summary>
+            /// Constant for the table service secondary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinuteSecondaryTransactionsTable = "$MetricsMinuteSecondaryTransactionsTable";
+
+            /// <summary>
+            /// Constant for the queue service secondary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinuteSecondaryTransactionsQueue = "$MetricsMinuteSecondaryTransactionsQueue";
         }
     }
 }

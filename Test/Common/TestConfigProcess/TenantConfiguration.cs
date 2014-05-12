@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage
         public string AccountName { get; internal set; }
         public string AccountKey { get; internal set; }
         public string BlobServiceEndpoint { get; internal set; }
+        public string FileServiceEndpoint { get; internal set; }
         public string QueueServiceEndpoint { get; internal set; }
         public string TableServiceEndpoint { get; internal set; }
         public string BlobServiceSecondaryEndpoint { get; internal set; }

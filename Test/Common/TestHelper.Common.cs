@@ -122,7 +122,7 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     Assert.Fail("Multiple exceptions {0} for operation: {1}", ex.GetType(), operationDescription);
                 }
-                
+
                 T e = ex.InnerException as T; // Test framework changes the value under debugger
                 if (e != null)
                 {
@@ -307,6 +307,26 @@ namespace Microsoft.WindowsAzure.Storage
 
                 Assert.IsTrue(errorMessageBeginsWith.Where((s) => message.StartsWith(s)).Count() > 0, opContext.LastResult.ExtendedErrorInformation.ErrorMessage);
             }
+        }
+
+        internal static void SeekRandomly(Stream stream, long offset)
+        {
+            Random random = new Random();
+            int randomOrigin = random.Next(3);
+            SeekOrigin origin = SeekOrigin.Begin;
+            switch (randomOrigin)
+            {
+                case 1:
+                    origin = SeekOrigin.Current;
+                    offset = offset - stream.Position;
+                    break;
+
+                case 2:
+                    origin = SeekOrigin.End;
+                    offset = offset - stream.Length;
+                    break;
+            }
+            stream.Seek(offset, origin);
         }
 
         internal static void VerifyServiceStats(ServiceStats stats)

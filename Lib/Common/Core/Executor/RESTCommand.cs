@@ -18,6 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
     using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -61,7 +62,25 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         public UriQueryBuilder Builder;
 
         // Reference to hold stream from webresponse
-        public Stream ResponseStream = null;
+        private Stream responseStream;
+
+        public Stream ResponseStream
+        {
+            get
+            {
+                return this.responseStream;
+            }
+
+            set
+            {
+                this.responseStream =
+#if WINDOWS_RT
+                    value;
+#else
+                    value == null ? null : value.WrapWithByteCountingStream(this.CurrentResult);
+#endif
+            }
+        }
 
         // Stream to potentially copy response into
         public Stream DestinationStream = null;
@@ -78,7 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         public Stream StreamToDispose { get; set; }
 
 #if WINDOWS_RT
-        public Func<RESTCommand<T>, HttpMessageHandler, OperationContext, HttpClient> BuildClient;
+        public Func<RESTCommand<T>, HttpMessageHandler, bool, OperationContext, HttpClient> BuildClient;
 
         public Func<RESTCommand<T>, OperationContext, HttpContent> BuildContent;
 
@@ -116,7 +135,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         public long? SendStreamLength = null;
 
         // Func to construct the request
-        public Func<Uri, UriQueryBuilder, int?, OperationContext, HttpWebRequest> BuildRequestDelegate = null;
+        public Func<Uri, UriQueryBuilder, int?, bool, OperationContext, HttpWebRequest> BuildRequestDelegate = null;
 
         // Delegate to Set custom headers
         public Action<HttpWebRequest, OperationContext> SetHeaders = null;

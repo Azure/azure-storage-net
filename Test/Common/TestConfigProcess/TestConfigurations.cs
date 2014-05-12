@@ -46,6 +46,7 @@ namespace Microsoft.WindowsAzure.Storage
                 config.AccountName = (string)tenantConfigurationElement.Element("AccountName");
                 config.AccountKey = (string)tenantConfigurationElement.Element("AccountKey");
                 config.BlobServiceEndpoint = (string)tenantConfigurationElement.Element("BlobServiceEndpoint");
+                config.FileServiceEndpoint = (string)tenantConfigurationElement.Element("FileServiceEndpoint");
                 config.QueueServiceEndpoint = (string)tenantConfigurationElement.Element("QueueServiceEndpoint");
                 config.TableServiceEndpoint = (string)tenantConfigurationElement.Element("TableServiceEndpoint");
                 config.BlobServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("BlobServiceSecondaryEndpoint");

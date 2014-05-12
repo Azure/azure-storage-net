@@ -27,6 +27,7 @@ using Microsoft.WindowsAzure.Storage.Table.DataServices.Entities;
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 {
     [TestClass]
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public class TableEntityUnitTests : TableTestBase
     {
         #region Locals + Ctors

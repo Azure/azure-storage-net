@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public async Task NullRetryPolicyTestAsync()
         {
             CloudBlobClient blobClient = TestBase.GenerateCloudBlobClient();
-            blobClient.RetryPolicy = null;
+            blobClient.DefaultRequestOptions.RetryPolicy = null;
 
             CloudBlobContainer container = blobClient.GetContainerReference("test");
             await container.ExistsAsync();

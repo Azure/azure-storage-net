@@ -81,13 +81,22 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="queueName">The queue name.</param>
         /// <param name="serviceClient">A client object that specifies the endpoint for the Queue service.</param>
         internal CloudQueue(string queueName, CloudQueueClient serviceClient)
+            : this(new Dictionary<string, string>(), queueName, serviceClient)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudQueue"/> class.
+        /// </summary>
+        /// <param name="metadata">The metadata.</param>
+        /// <param name="queueName">The queue name.</param>
+        /// <param name="serviceClient">A client object that specifies the endpoint for the Queue service.</param>
+        internal CloudQueue(IDictionary<string, string> metadata, string queueName, CloudQueueClient serviceClient)
         {
             this.StorageUri = NavigationHelper.AppendPathToUri(serviceClient.StorageUri, queueName);
             this.ServiceClient = serviceClient;
-
-            // Set the relativized name from the URI.
-            this.Name = NavigationHelper.GetQueueNameFromUri(this.Uri, this.ServiceClient.UsePathStyleUris); ;
-            this.Metadata = new Dictionary<string, string>();
+            this.Name = queueName;
+            this.Metadata = metadata;
             this.EncodeMessage = true;
         }
 

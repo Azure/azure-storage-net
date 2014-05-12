@@ -17,12 +17,14 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 {
+    using System;
     using System.Data.Services.Client;
     using System.Linq;
 
     /// <summary>
     /// Provides a set of extensions for the Table service.
     /// </summary>
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public static class TableServiceExtensions
     {
         /// <summary>
@@ -33,6 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// <param name="query">The query.</param>
         /// <param name="context">A <see cref="TableServiceContext"/> object that represents the runtime context of the Table service.</param>
         /// <returns>The converted query.</returns>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public static TableServiceQuery<TElement> AsTableServiceQuery<TElement>(this IQueryable<TElement> query, TableServiceContext context)
         {
             return new TableServiceQuery<TElement>(query as DataServiceQuery<TElement>, context);

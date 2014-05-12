@@ -23,15 +23,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Microsoft.WindowsAzure.Storage.Table.DataServices;
     using System;
-    using System.Collections.Generic;
     using System.Data.Services.Client;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
     using System.Net;
     using System.Threading;
-    using System.Web;
 
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     internal class TableExecutor : ExecutorBase
     {
         #region Async

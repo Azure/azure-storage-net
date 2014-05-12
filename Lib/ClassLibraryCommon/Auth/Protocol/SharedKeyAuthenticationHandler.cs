@@ -24,6 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
+    using System.Linq;
     using System.Net;
 
     /// <summary>
@@ -58,8 +59,11 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
         {
             CommonUtility.AssertNotNull("request", request);
 
-            string dateString = HttpWebUtility.ConvertDateTimeToHttpString(DateTime.UtcNow);
-            request.Headers.Add(Constants.HeaderConstants.Date, dateString);
+            if (!request.Headers.AllKeys.Contains(Constants.HeaderConstants.Date, StringComparer.Ordinal))
+            {
+                string dateString = HttpWebUtility.ConvertDateTimeToHttpString(DateTime.UtcNow);
+                request.Headers.Add(Constants.HeaderConstants.Date, dateString);
+            }
 
             if (this.credentials.IsSharedKey)
             {

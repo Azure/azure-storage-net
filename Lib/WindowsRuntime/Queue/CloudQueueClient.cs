@@ -19,14 +19,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 {
     using Microsoft.WindowsAzure.Storage.Auth.Protocol;
     using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Queue.Protocol;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Net.Http;
@@ -123,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 ResultSegment<CloudQueue> resultSegment = await Executor.ExecuteAsync(
                     this.ListQueuesImpl(prefix, maxResults, detailsIncluded, modifiedOptions, currentToken),
-                    this.RetryPolicy,
+                    modifiedOptions.RetryPolicy,
                     operationContext,
                     token);
 
@@ -162,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 {
                     ListQueuesResponse listQueuesResponse = new ListQueuesResponse(cmd.ResponseStream);
 
-                    List<CloudQueue> queuesList = listQueuesResponse.Queues.Select(item => new CloudQueue(item.Name, this)).ToList();
+                    List<CloudQueue> queuesList = listQueuesResponse.Queues.Select(item => new CloudQueue(item.Metadata, item.Name, this)).ToList();
 
                     QueueContinuationToken continuationToken = null;
                     if (listQueuesResponse.NextMarker != null)

@@ -21,10 +21,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 using System;
+using System.Runtime.Serialization;
 
 namespace Microsoft.WindowsAzure.Storage.Table.Entities
 {
-    public class ComplexEntity : TableEntity
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
+    [Serializable]
+#endif
+    public class ComplexEntity : TableEntity 
     {
         public const int NumberOfNonNullProperties = 26;
 
@@ -37,6 +41,20 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
             : base(pk, rk)
         {
         }
+
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
+        protected ComplexEntity(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            base.ReadEntity(info, context);
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            base.WriteEntity(info, context);
+        }
+#endif
 
         public CloudStorageAccount UnSupportedProperty { get; set; }
 

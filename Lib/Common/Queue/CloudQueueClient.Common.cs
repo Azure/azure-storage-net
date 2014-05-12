@@ -21,7 +21,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
 
     /// <summary>
@@ -30,27 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// <remarks>The service client encapsulates the endpoint or endpoints for the Queue service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>
     public sealed partial class CloudQueueClient
     {
-        /// <summary>
-        /// The default server and client timeout interval.
-        /// </summary>
-        private TimeSpan? timeout;
-
-        /// <summary>
-        /// Max execution time across all potential retries.
-        /// </summary>
-        private TimeSpan? maximumExecutionTime;
-
         private AuthenticationScheme authenticationScheme;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CloudQueueClient"/> class using the specified Queue service endpoint
-        /// and anonymous credentials.
-        /// </summary>
-        /// <param name="baseUri">The <see cref="System.Uri"/> containing the Queue service endpoint to use to create the client.</param>
-        public CloudQueueClient(Uri baseUri)
-            : this(baseUri, null)
-        {
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudQueueClient"/> class using the specified Queue service endpoint
@@ -83,9 +62,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         {
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
-            this.RetryPolicy = new ExponentialRetry();
-            this.LocationMode = LocationMode.PrimaryOnly;
-            this.ServerTimeout = Constants.DefaultServerSideTimeout;
+            this.DefaultRequestOptions = new QueueRequestOptions();
+            this.DefaultRequestOptions.RetryPolicy = new ExponentialRetry();
+            this.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryOnly;
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
         }
@@ -122,36 +101,62 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
+        /// Gets and sets the default request options for requests made via the Queue service client.
+        /// </summary>
+        /// <value>A <see cref="QueueRequestOptions"/> object.</value>
+        public QueueRequestOptions DefaultRequestOptions { get; set; }
+
+        /// <summary>
         /// Gets or sets the default retry policy for requests made via the Queue service client.
         /// </summary>
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
-        public IRetryPolicy RetryPolicy { get; set; }
+        [Obsolete("Use DefaultRequestOptions.RetryPolicy.")]
+        public IRetryPolicy RetryPolicy
+        {
+            get
+            {
+                return this.DefaultRequestOptions.RetryPolicy;
+            }
+
+            set
+            {
+                this.DefaultRequestOptions.RetryPolicy = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the default location mode for requests made via the Queue service client.
         /// </summary>
         /// <value>A <see cref="LocationMode"/> object.</value>
-        public LocationMode LocationMode { get; set; }
+        [Obsolete("Use DefaultRequestOptions.LocationMode.")]
+        public LocationMode? LocationMode
+        {
+            get
+            {
+                return this.DefaultRequestOptions.LocationMode;
+            }
+
+            set
+            {
+                this.DefaultRequestOptions.LocationMode = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the default server timeout for requests made via the Queue service client.
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> containing the server timeout interval.</value>
+        [Obsolete("Use DefaultRequestOptions.ServerTimeout.")]
         public TimeSpan? ServerTimeout
         {
             get
             {
-                return this.timeout;
+                return this.DefaultRequestOptions.ServerTimeout;
             }
 
             set
             {
-                if (value.HasValue)
-                {
-                    CommonUtility.CheckTimeoutBounds(value.Value);
-                }
-
-                this.timeout = value;
+                this.DefaultRequestOptions.ServerTimeout = value;
             }
         }
 
@@ -159,21 +164,17 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Gets or sets the maximum execution time across all potential retries.
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
+        [Obsolete("Use DefaultRequestOptions.MaximumExecutionTime.")]
         public TimeSpan? MaximumExecutionTime
         {
             get
             {
-                return this.maximumExecutionTime;
+                return this.DefaultRequestOptions.MaximumExecutionTime;
             }
 
             set
             {
-                if (value.HasValue)
-                {
-                    CommonUtility.CheckTimeoutBounds(value.Value);
-                }
-
-                this.maximumExecutionTime = value;
+                this.DefaultRequestOptions.MaximumExecutionTime = value;
             }
         }
 
@@ -186,7 +187,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Returns a reference to a <see cref="CloudQueue"/> object with the specified name.
         /// </summary>
-        /// <param name="queueName">A string containing the name of the queue, or an absolute URI to the queue.</param>
+        /// <param name="queueName">A string containing the name of the queue.</param>
         /// <returns>A <see cref="CloudQueue"/> object.</returns>
         public CloudQueue GetQueueReference(string queueName)
         {

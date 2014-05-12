@@ -20,7 +20,6 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Net;
 

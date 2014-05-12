@@ -53,6 +53,9 @@
     <Compile Include="..\Common\Blob\*.cs">
       <Link>Blob\Blob</Link>
     </Compile>
+    <Compile Include="..\Common\File\*.cs">
+      <Link>File\File</Link>
+    </Compile>
     <Compile Include="..\Common\Core\*.cs">
       <Link>Core\Core</Link>
     </Compile>
@@ -83,6 +86,17 @@
     <Compile Include="Blob\MemoryOutputStream.cs" />
     <Compile Include="Blob\SASTests.cs" />
     <Compile Include="Blob\ExceptionHResultTest.cs" />
+    <Compile Include="File\FileStreamTests.cs" />
+    <Compile Include="File\FileUploadDownloadTest.cs" />
+    <Compile Include="File\FileExceptionHResultTest.cs" />
+    <Compile Include="File\FileReadStreamTest.cs" />
+    <Compile Include="File\FileWriteStreamTest.cs" />
+    <Compile Include="File\CloudFileClientTest.cs" />
+    <Compile Include="File\CloudFileDirectoryTest.cs" />
+    <Compile Include="File\CloudFileShareTest.cs" />
+    <Compile Include="File\CloudFileTest.cs" />
+    <Compile Include="File\FileTestBase.cs" />
+    <Compile Include="File\FileMD5FlagsTest.cs" />
     <Compile Include="Core\LoggingTests.cs" />
     <Compile Include="Core\MultiBufferMemoryStreamTests.cs" />
     <Compile Include="Core\OperationContextUnitTests.cs" />
@@ -146,10 +160,6 @@
     <ProjectReference Include="..\..\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj">
       <Project>{42cb7861-70bb-4f34-a815-4355e6ea2589}</Project>
       <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage%29</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Lib\WindowsRuntimeTable\Microsoft.WindowsAzure.Storage.Table.csproj">
-      <Project>{91930f51-683b-4933-a452-7d8ddfdbb1ac}</Project>
-      <Name>Microsoft.WindowsAzure.Storage.Table</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />

@@ -17,14 +17,14 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Net.Http;
     using System.Net.Http.Headers;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     internal static class BlobHttpRequestMessageFactory
     {
@@ -200,12 +200,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             if (properties != null)
             {
-                request.AddOptionalHeader(Constants.HeaderConstants.CacheControlHeader, properties.CacheControl);
-                request.AddOptionalHeader(Constants.HeaderConstants.ContentDispositionRequestHeader, properties.ContentDisposition);
-                request.AddOptionalHeader(Constants.HeaderConstants.ContentEncodingHeader, properties.ContentEncoding);
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobCacheControlHeader, properties.CacheControl);
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentDispositionRequestHeader, properties.ContentDisposition);
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentEncodingHeader, properties.ContentEncoding);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentLanguageHeader, properties.ContentLanguage);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentMD5Header, properties.ContentMD5);
-                request.AddOptionalHeader(Constants.HeaderConstants.ContentTypeHeader, properties.ContentType); 
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentTypeHeader, properties.ContentType); 
             }
 
             request.ApplyAccessCondition(accessCondition);
@@ -494,12 +494,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             if (properties != null)
             {
-                request.AddOptionalHeader(Constants.HeaderConstants.CacheControlHeader, properties.CacheControl);
-                request.AddOptionalHeader(Constants.HeaderConstants.ContentTypeHeader, properties.ContentType);
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobCacheControlHeader, properties.CacheControl);
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentTypeHeader, properties.ContentType);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentMD5Header, properties.ContentMD5);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentLanguageHeader, properties.ContentLanguage);
-                request.AddOptionalHeader(Constants.HeaderConstants.ContentEncodingHeader, properties.ContentEncoding);
-                request.AddOptionalHeader(Constants.HeaderConstants.ContentDispositionRequestHeader, properties.ContentDisposition); 
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentEncodingHeader, properties.ContentEncoding);
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentDispositionRequestHeader, properties.ContentDisposition); 
             }
 
             request.ApplyAccessCondition(accessCondition);
@@ -631,7 +631,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             {
                 CommonUtility.ArgumentOutOfRange("offset", offset);
             }
-            
+
             if (offset.HasValue && rangeContentMD5)
             {
                 CommonUtility.AssertNotNull("count", count);

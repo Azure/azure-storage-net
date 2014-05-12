@@ -29,6 +29,7 @@ using System.Threading;
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 {
     [TestClass]
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public class TableSasUnitTests : TableTestBase
     {
         #region Locals + Ctors
@@ -131,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 
                 // SAS via account constructor
                 sasCreds = new StorageCredentials(sasToken);
-                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri);
+                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri, null);
                 sasClient = sasAccount.CreateCloudTableClient();
                 sasTable = sasClient.GetTableReference(table.Name);
                 sasContext = sasClient.GetTableServiceContext();
@@ -1472,6 +1473,63 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
             }
         }
 
+        [TestMethod]
+        [Description("Verify that api-version query param and not x-ms-version header is used for WCF SAS requests.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableSasApiVersionQueryParam()
+        {
+            CloudTableClient tableClient = GenerateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference("T" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                table.Create();
+
+                TableServiceContext context = tableClient.GetTableServiceContext();
+                context.AddObject(table.Name, new BaseEntity("PK", "RK"));
+                context.SaveChangesWithRetries();
+
+                // Prepare SAS authentication with full permissions
+                string sasToken = table.GetSharedAccessSignature(
+                    new SharedAccessTablePolicy
+                    {
+                        Permissions = SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query,
+                        SharedAccessExpiryTime = DateTimeOffset.Now.AddMinutes(30)
+                    },
+                    null /* accessPolicyIdentifier */,
+                    null /* startPk */,
+                    null /* startRk */,
+                    null /* endPk */,
+                    null /* endRk */);
+
+                CloudStorageAccount sasAccount;
+                CloudTableClient sasClient;
+                CloudTable sasTable;
+                TableServiceContext sasContext;
+                Uri baseUri = new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint);
+                int count;
+
+                sasAccount = CloudStorageAccount.Parse(string.Format("TableEndpoint={0};SharedAccessSignature={1}", baseUri.AbsoluteUri, sasToken));
+                sasClient = sasAccount.CreateCloudTableClient();
+                sasTable = sasClient.GetTableReference(table.Name);
+                sasContext = sasClient.GetTableServiceContext();
+
+                sasContext.SendingRequest += (sender, e) =>
+                {
+                    Assert.IsNull(e.Request.Headers.Get("x-ms-version"));
+                    Assert.IsTrue(e.Request.RequestUri.Query.Contains("api-version"));
+                };
+
+                count = sasContext.CreateQuery<BaseEntity>(sasTable.Name).AsTableServiceQuery(sasContext).Execute().Count();
+                Assert.AreEqual(1, count);
+            }
+            finally
+            {
+                table.DeleteIfExists();
+            }
+        }   
         #endregion
 
         #region Test Helpers

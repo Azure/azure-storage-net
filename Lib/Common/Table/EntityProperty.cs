@@ -18,7 +18,6 @@
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     using System;
-    using System.Collections;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
@@ -381,15 +380,35 @@ byte[] input)
             }
         }
 
-        internal DateTime? DateTime
+        /// <summary>
+        /// Gets or sets the <see cref="DateTime"/> value of this <see cref="EntityProperty"/> object.
+        /// An exception will be thrown if you attempt to set this property to anything other than a <see cref="DateTime"/> object.
+        /// </summary>
+        /// <value>The <see cref="DateTime"/> value of this <see cref="EntityProperty"/> object.</value>
+#if WINDOWS_RT
+        internal
+#else
+        public
+#endif
+ DateTime? DateTime
         {
             get
             {
+                if (!this.IsNull)
+                {
+                    this.EnforceType(EdmType.DateTime);
+                }
+
                 return (DateTime?)this.PropertyAsObject;
             }
 
             set
             {
+                if (value.HasValue)
+                {
+                    this.EnforceType(EdmType.DateTime);
+                }
+
                 this.PropertyAsObject = value;
             }
         }

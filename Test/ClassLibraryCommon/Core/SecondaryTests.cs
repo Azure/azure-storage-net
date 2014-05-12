@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using Microsoft.WindowsAzure.Storage.Table;
@@ -283,7 +284,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudBlobContainer container = BlobTestBase.GetRandomContainerReference();
             using (MultiLocationTestHelper helper = new MultiLocationTestHelper(container.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
             {
-                container.ServiceClient.LocationMode = clientLocationMode;
+                container.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
                 BlobRequestOptions options = new BlobRequestOptions()
                 {
                     LocationMode = optionsLocationMode,
@@ -302,7 +303,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudQueue queue = GenerateCloudQueueClient().GetQueueReference(QueueTestBase.GenerateNewQueueName());
             using (MultiLocationTestHelper helper = new MultiLocationTestHelper(queue.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
             {
-                queue.ServiceClient.LocationMode = clientLocationMode;
+                queue.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
                 QueueRequestOptions options = new QueueRequestOptions()
                 {
                     LocationMode = optionsLocationMode,
@@ -321,7 +322,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudTable table = GenerateCloudTableClient().GetTableReference(TableTestBase.GenerateRandomTableName());
             using (MultiLocationTestHelper helper = new MultiLocationTestHelper(table.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
             {
-                table.ServiceClient.LocationMode = clientLocationMode;
+                table.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
                 TableRequestOptions options = new TableRequestOptions()
                 {
                     LocationMode = optionsLocationMode,
@@ -331,6 +332,25 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 TestHelper.ExpectedException(
                     () => table.GetPermissions(options, helper.OperationContext),
                     "GetPermissions on a non-existing table should fail",
+                    HttpStatusCode.NotFound);
+            }
+        }
+
+        private static void TestShareFetchAttributes(LocationMode? optionsLocationMode, LocationMode clientLocationMode, StorageLocation initialLocation, IList<RetryContext> retryContextList, IList<RetryInfo> retryInfoList)
+        {
+            CloudFileShare share = FileTestBase.GetRandomShareReference();
+            using (MultiLocationTestHelper helper = new MultiLocationTestHelper(share.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
+            {
+                share.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
+                FileRequestOptions options = new FileRequestOptions()
+                {
+                    LocationMode = optionsLocationMode,
+                    RetryPolicy = helper.RetryPolicy,
+                };
+
+                TestHelper.ExpectedException(
+                    () => share.FetchAttributes(null, options, helper.OperationContext),
+                    "FetchAttributes on a non-existing share should fail",
                     HttpStatusCode.NotFound);
             }
         }
@@ -386,7 +406,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
                     Assert.AreEqual(this.retryInfoList[i].TargetLocation, this.OperationContext.RequestResults[i + 1].TargetLocation);
 
                     TimeSpan retryInterval = this.OperationContext.RequestResults[i + 1].StartTime - this.OperationContext.RequestResults[i].EndTime;
-                    Assert.IsTrue(this.retryInfoList[i].RetryInterval <= retryInterval);
+                    string error = string.Format("{0} <= {1}", this.retryInfoList[i].RetryInterval, retryInterval);
+                    Assert.IsTrue(this.retryInfoList[i].RetryInterval <= retryInterval, error);
                 }
             }
         }

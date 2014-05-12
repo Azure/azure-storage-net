@@ -18,9 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
     using System;
-    using System.Text;
     using System.Runtime.InteropServices.WindowsRuntime;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     /// <summary>
     /// Represents a message in the Windows Azure Queue service.

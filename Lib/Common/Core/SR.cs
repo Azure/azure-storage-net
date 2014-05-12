@@ -57,6 +57,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string ETagMissingForReplace = "Replace requires an ETag (which may be the '*' wildcard).";
         public const string ExceptionOccurred = "An exception has occurred. For more information please deserialize this message via RequestResult.TranslateFromExceptionMessage.";
         public const string ExtendedErrorUnavailable = "An unknown error has occurred, extended error information not available.";
+        public const string FileDataCorrupted = "File data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
+        public const string FileEndPointNotConfigured = "No file endpoint configured.";
+        public const string FileStreamAlreadyCommitted = "File stream has already been committed once.";
+        public const string FileStreamReadPending = "File stream has a pending read operation. Please call EndRead first.";
         public const string FailParseProperty = "Failed to parse property '{0}' with value '{1}' as type '{2}'";
         public const string IncorrectNumberOfBytes = "Incorrect number of bytes received. Expected '{0}', received '{1}'";
         public const string InternalStorageError = "Unexpected internal storage client error.";
@@ -66,16 +70,19 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidContainerName = "Container name is invalid. Valid names start and end with a lower case letter or a number and has in between a lower case letter, number or dash with no consecutive dashes and is 3 through 63 characters long";
         public const string InvalidCorsRule = "A CORS rule must contain at least one allowed origin and allowed method, and MaxAgeInSeconds cannot have a value less than zero.";
         public const string InvalidDirectoryName = "Directory name is invalid. Valid names should be 1 through 1024 characters long and should not end with a . or /";
+        public const string InvalidFileListItem = "Invalid file list item returned";
         public const string InvalidGeoReplicationStatus = "Invalid geo-replication status in response: '{0}'";
         public const string InvalidHeaders = "Headers are not supported in the 2012-02-12 version.";
         public const string InvalidLeaseStatus = "Invalid lease status in response: '{0}'";
         public const string InvalidLeaseState = "Invalid lease state in response: '{0}'";
         public const string InvalidLeaseDuration = "Invalid lease duration in response: '{0}'";
+        public const string InvalidListingDetails = "Invalid blob listing details specified.";
         public const string InvalidLoggingLevel = "Invalid logging operations specified.";
         public const string InvalidMetricsLevel = "Invalid metrics level specified.";
         public const string InvalidPageSize = "Page data must be a multiple of 512 bytes.";
         public const string InvalidQueueName = "Queue name is invalid. Valid names start and end with a lower case letter or a number and has in between a lower case letter, number or dash with no consecutive dashes and is 3 through 63 characters long";
         public const string InvalidSASVersion = "SAS Version invalid. Valid versions include 2012-02-12 and 2013-08-15.";
+        public const string InvalidStorageService = "Invalid storage service specified.";
         public const string InvalidTableName = "Table name is invalid. Valid names are case insensitive, start with a letter and is followed by letters or numbers and is 3 through 63 characters long";
         public const string IQueryableExtensionObjectMustBeTableQuery = "Query must be a TableQuery<T>";
         public const string JsonNotSupportedOnRT = "JSON payloads are not supported in Windows Runtime.";
@@ -97,6 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string MissingLeaseIDReleasing = "A lease ID must be specified when releasing a lease.";
         public const string MissingLeaseIDRenewing = "A lease ID must be specified when renewing a lease.";
         public const string MissingMandatoryParametersForSAS = "Missing mandatory parameters for valid Shared Access Signature";
+        public const string MissingShareInformation = "Invalid file address '{0}', missing share information";
         public const string StorageUriMustMatch = "Primary and secondary location URIs in a StorageUri must point to the same resource.";
         public const string MultipleCredentialsProvided = "Cannot provide credentials as part of the address and as constructor parameter. Either pass in the address or use a different constructor.";
         public const string MultipleSnapshotTimesProvided = "Multiple different snapshot times provided as part of query '{0}' and as constructor parameter '{1}'.";
@@ -108,6 +116,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string PartitionKey = "All entities in a given batch must have the same partition key.";
         public const string PathStyleUriMissingAccountNameInformation = "Missing account name information inside path style uri. Path style uris should be of the form http://<IPAddressPlusPort>/<accountName>";
         public const string PayloadFormat = "Setting payload format for the request to '{0}'.";
+        public const string PreconditionFailed = "The condition specified using HTTP conditional header(s) is not met.";
         public const string PrimaryOnlyCommand = "This operation can only be executed against the primary storage location.";
         public const string PropertyResolverCacheDisabled = "Property resolver cache is disabled.";
         public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details";
@@ -117,6 +126,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string RetrieveWithContinuationToken = "Retrieved '{0}' results with continuation token '{1}'.";
         public const string ResourceConsumed = "Resource consumed";
         public const string SecondaryOnlyCommand = "This operation can only be executed against the secondary storage location.";
+        public const string StartTimeExceedsEndTime = "StartTime invalid. The start time '{0}' occurs after the end time '{1}'.";
         public const string StorageUriMissingLocation = "The Uri for the target storage location is not specified. Please consider changing the request's location mode.";
         public const string StreamLengthError = "The length of the stream exceeds the permitted length.";
         public const string StreamLengthMismatch = "Cannot specify both copyLength and maxLength.";

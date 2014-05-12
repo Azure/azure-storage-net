@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.WindowsAzure.Storage.File;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -40,6 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         private const string BlobService = ".blob";
         private const string QueueService = ".queue";
         private const string TableService = ".table";
+        private const string FileService = ".file";
 
         [TestMethod]
         [Description("StorageUri should contain 2 URIs")]
@@ -145,32 +147,41 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new Uri("http://" + AccountName + TableService + EndpointSuffix),
                 new Uri("http://" + AccountName + SecondarySuffix + TableService + EndpointSuffix));
 
+            StorageUri fileEndpoint = new StorageUri(
+                new Uri("http://" + AccountName + FileService + EndpointSuffix),
+                new Uri("http://" + AccountName + SecondarySuffix + FileService + EndpointSuffix));
+
 #if WINDOWS_RT
-            CloudStorageAccount account = CloudStorageAccount.Create(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint);
+            CloudStorageAccount account = CloudStorageAccount.Create(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);
 #else
-            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint);
+            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);
 #endif
             Assert.IsTrue(blobEndpoint.Equals(account.BlobStorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.QueueStorageUri));
             Assert.IsTrue(tableEndpoint.Equals(account.TableStorageUri));
+            Assert.IsTrue(fileEndpoint.Equals(account.FileStorageUri));
 
             account = new CloudStorageAccount(new StorageCredentials(AccountName, TestBase.StorageCredentials.ExportBase64EncodedKey()), false);
             Assert.IsTrue(blobEndpoint.Equals(account.BlobStorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.QueueStorageUri));
             Assert.IsTrue(tableEndpoint.Equals(account.TableStorageUri));
+            Assert.IsTrue(fileEndpoint.Equals(account.FileStorageUri));
 
             account = CloudStorageAccount.Parse(string.Format("DefaultEndpointsProtocol=http;AccountName={0};AccountKey=", AccountName));
             Assert.IsTrue(blobEndpoint.Equals(account.BlobStorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.QueueStorageUri));
             Assert.IsTrue(tableEndpoint.Equals(account.TableStorageUri));
+            Assert.IsTrue(fileEndpoint.Equals(account.FileStorageUri));
 
             Assert.IsTrue(blobEndpoint.Equals(account.CreateCloudBlobClient().StorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.CreateCloudQueueClient().StorageUri));
             Assert.IsTrue(tableEndpoint.Equals(account.CreateCloudTableClient().StorageUri));
+            Assert.IsTrue(fileEndpoint.Equals(account.CreateCloudFileClient().StorageUri));
 
             Assert.IsTrue(blobEndpoint.PrimaryUri.Equals(account.BlobEndpoint));
             Assert.IsTrue(queueEndpoint.PrimaryUri.Equals(account.QueueEndpoint));
             Assert.IsTrue(tableEndpoint.PrimaryUri.Equals(account.TableEndpoint));
+            Assert.IsTrue(fileEndpoint.PrimaryUri.Equals(account.FileEndpoint));
         }
 
         [TestMethod]
@@ -218,7 +229,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             Assert.IsTrue(containerUri.Equals(directory.Container.StorageUri));
             Assert.IsTrue(endpoint.Equals(directory.ServiceClient.StorageUri));
 
-            CloudBlobDirectory subdirectory = directory.GetSubdirectoryReference("subdirectory");
+            CloudBlobDirectory subdirectory = directory.GetDirectoryReference("subdirectory");
             Assert.IsTrue(subdirectoryUri.Equals(subdirectory.StorageUri));
             Assert.IsTrue(subdirectoryUri.PrimaryUri.Equals(subdirectory.Uri));
             Assert.IsTrue(directoryUri.Equals(subdirectory.Parent.StorageUri));
@@ -318,6 +329,77 @@ namespace Microsoft.WindowsAzure.Storage.Core
             Assert.IsTrue(tableUri.Equals(table.StorageUri));
             Assert.IsTrue(tableUri.PrimaryUri.Equals(table.Uri));
             Assert.IsTrue(endpoint.Equals(table.ServiceClient.StorageUri));
+        }
+
+        [TestMethod]
+        [Description("File types should work with StorageUri")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.Smoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void FileTypesWithStorageUri()
+        {
+            StorageUri endpoint = new StorageUri(
+                new Uri("http://" + AccountName + FileService + EndpointSuffix),
+                new Uri("http://" + AccountName + SecondarySuffix + FileService + EndpointSuffix));
+
+            CloudFileClient client = new CloudFileClient(endpoint, new StorageCredentials());
+            Assert.IsTrue(endpoint.Equals(client.StorageUri));
+            Assert.IsTrue(endpoint.PrimaryUri.Equals(client.BaseUri));
+
+            StorageUri shareUri = new StorageUri(
+                new Uri(endpoint.PrimaryUri + "share"),
+                new Uri(endpoint.SecondaryUri + "share"));
+
+            CloudFileShare share = client.GetShareReference("share");
+            Assert.IsTrue(shareUri.Equals(share.StorageUri));
+            Assert.IsTrue(shareUri.PrimaryUri.Equals(share.Uri));
+            Assert.IsTrue(endpoint.Equals(share.ServiceClient.StorageUri));
+
+            share = new CloudFileShare(shareUri, client.Credentials);
+            Assert.IsTrue(shareUri.Equals(share.StorageUri));
+            Assert.IsTrue(shareUri.PrimaryUri.Equals(share.Uri));
+            Assert.IsTrue(endpoint.Equals(share.ServiceClient.StorageUri));
+
+            StorageUri directoryUri = new StorageUri(
+                new Uri(shareUri.PrimaryUri + "/directory"),
+                new Uri(shareUri.SecondaryUri + "/directory"));
+
+            StorageUri subdirectoryUri = new StorageUri(
+                new Uri(directoryUri.PrimaryUri + "/subdirectory"),
+                new Uri(directoryUri.SecondaryUri + "/subdirectory"));
+
+            CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory");
+            Assert.IsTrue(directoryUri.Equals(directory.StorageUri));
+            Assert.IsTrue(directoryUri.PrimaryUri.Equals(directory.Uri));
+            Assert.IsNotNull(directory.Parent);
+            Assert.IsTrue(shareUri.Equals(directory.Share.StorageUri));
+            Assert.IsTrue(endpoint.Equals(directory.ServiceClient.StorageUri));
+
+            CloudFileDirectory subdirectory = directory.GetDirectoryReference("subdirectory");
+            Assert.IsTrue(subdirectoryUri.Equals(subdirectory.StorageUri));
+            Assert.IsTrue(subdirectoryUri.PrimaryUri.Equals(subdirectory.Uri));
+            Assert.IsTrue(directoryUri.Equals(subdirectory.Parent.StorageUri));
+            Assert.IsTrue(shareUri.Equals(subdirectory.Share.StorageUri));
+            Assert.IsTrue(endpoint.Equals(subdirectory.ServiceClient.StorageUri));
+
+            StorageUri fileUri = new StorageUri(
+                new Uri(subdirectoryUri.PrimaryUri + "/file"),
+                new Uri(subdirectoryUri.SecondaryUri + "/file"));
+
+            CloudFile file = subdirectory.GetFileReference("file");
+            Assert.IsTrue(fileUri.Equals(file.StorageUri));
+            Assert.IsTrue(fileUri.PrimaryUri.Equals(file.Uri));
+            Assert.IsTrue(subdirectoryUri.Equals(file.Parent.StorageUri));
+            Assert.IsTrue(shareUri.Equals(file.Share.StorageUri));
+            Assert.IsTrue(endpoint.Equals(file.ServiceClient.StorageUri));
+
+            file = new CloudFile(fileUri, client.Credentials);
+            Assert.IsTrue(fileUri.Equals(file.StorageUri));
+            Assert.IsTrue(fileUri.PrimaryUri.Equals(file.Uri));
+            Assert.IsTrue(subdirectoryUri.Equals(file.Parent.StorageUri));
+            Assert.IsTrue(shareUri.Equals(file.Share.StorageUri));
+            Assert.IsTrue(endpoint.Equals(file.ServiceClient.StorageUri));
         }
     }
 }

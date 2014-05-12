@@ -120,20 +120,34 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         {
             executionState.Cmd.CurrentResult.EndTime = DateTime.Now;
             executionState.OperationContext.EndTime = DateTime.Now;
+            Executor.FireRequestCompleted(executionState);
         }
 
         protected static void FireSendingRequest<T>(ExecutionState<T> executionState)
         {
-            RequestEventArgs args = new RequestEventArgs(executionState.Cmd.CurrentResult);
-#if WINDOWS_RT
-            args.RequestUri = executionState.Req.RequestUri;
-#else
-            args.Request = executionState.Req;
-#endif
+            RequestEventArgs args = GenerateRequestEventArgs<T>(executionState);
             executionState.OperationContext.FireSendingRequest(args);
         }
 
         protected static void FireResponseReceived<T>(ExecutionState<T> executionState)
+        {
+            RequestEventArgs args = GenerateRequestEventArgs<T>(executionState);
+            executionState.OperationContext.FireResponseReceived(args);
+        }
+
+        protected static void FireRequestCompleted<T>(ExecutionState<T> executionState)
+        {
+            RequestEventArgs args = GenerateRequestEventArgs<T>(executionState);
+            executionState.OperationContext.FireRequestCompleted(args);
+        }
+
+        protected static void FireRetrying<T>(ExecutionState<T> executionState)
+        {
+            RequestEventArgs args = GenerateRequestEventArgs<T>(executionState);
+            executionState.OperationContext.FireRetrying(args);
+        }
+
+        private static RequestEventArgs GenerateRequestEventArgs<T>(ExecutionState<T> executionState)
         {
             RequestEventArgs args = new RequestEventArgs(executionState.Cmd.CurrentResult);
 #if WINDOWS_RT
@@ -142,7 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             args.Request = executionState.Req;
             args.Response = executionState.Resp;
 #endif
-            executionState.OperationContext.FireResponseReceived(args);
+            return args;
         }
 
         protected static bool CheckTimeout<T>(ExecutionState<T> executionState, bool throwOnTimeout)

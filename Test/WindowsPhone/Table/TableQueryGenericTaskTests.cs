@@ -118,7 +118,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableGenericQueryBasicAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
 
@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableGenericQueryWithContinuationAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
 
             OperationContext opContext = new OperationContext();
@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryWithFilter(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}')", "tables_batch_1", "0050"));
 
             OperationContext opContext = new OperationContext();
@@ -225,7 +225,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryProjection(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "C" });
 
@@ -259,7 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericWithResolver(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<TableEntity> query = new TableQuery<TableEntity>().Select(new List<string>() { "A", "C", "E" });
 
@@ -305,7 +305,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryResolverWithDynamic(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableRequestOptions options = new TableRequestOptions()
             {
@@ -349,7 +349,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat format)
         {
             CloudTableClient client = GenerateCloudTableClient();
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             await table.CreateAsync();
@@ -489,7 +489,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryWithInvalidTakeCount(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             try
             {
                 TableQuery<ComplexEntity> query = new TableQuery<ComplexEntity>().Take(0);
@@ -535,7 +535,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableGenericQueryWithInvalidQuery(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<ComplexEntity> query = new TableQuery<ComplexEntity>().Where(string.Format("(PartitionKey ) and (RowKey ge '{1}')", "tables_batch_1", "000050"));
 
             OperationContext opContext = new OperationContext();

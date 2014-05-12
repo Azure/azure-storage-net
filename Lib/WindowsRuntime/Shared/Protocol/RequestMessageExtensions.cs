@@ -17,11 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
 
     internal static class RequestMessageExtensions
     {

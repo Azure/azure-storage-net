@@ -283,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             client.SetServiceProperties(props);
 
             // Check that the default service properties set in the Test Initialization were uploaded correctly
-            TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties()); ;
+            TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties());
         }
 
         [TestMethod]

@@ -343,14 +343,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.List(uri, serverTimeout, listingContext, queueListingDetails, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.List(uri, serverTimeout, listingContext, queueListingDetails, useVersionHeader, ctx);
             getCmd.SignRequest = this.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 ListQueuesResponse listQueuesResponse = new ListQueuesResponse(cmd.ResponseStream);
 
-                List<CloudQueue> queuesList = listQueuesResponse.Queues.Select(item => new CloudQueue(item.Name, this)).ToList();
+                List<CloudQueue> queuesList = listQueuesResponse.Queues.Select(item => new CloudQueue(item.Metadata, item.Name, this)).ToList();
 
                 QueueContinuationToken continuationToken = null;
                 if (listQueuesResponse.NextMarker != null)

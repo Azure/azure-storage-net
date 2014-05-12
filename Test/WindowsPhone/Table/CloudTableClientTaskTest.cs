@@ -145,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoListTablesSegmentedBasicAsync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
 
@@ -201,7 +201,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoListTablesSegmentedWithPrefixAsync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();

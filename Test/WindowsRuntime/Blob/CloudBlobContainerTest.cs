@@ -111,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlockBlob blockBlob = container.GetBlockBlobReference("directory1/blob1");
             CloudPageBlob pageBlob = container.GetPageBlobReference("directory2/blob2");
             CloudBlobDirectory directory = container.GetDirectoryReference("directory3");
-            CloudBlobDirectory directory2 = directory.GetSubdirectoryReference("directory4");
+            CloudBlobDirectory directory2 = directory.GetDirectoryReference("directory4");
 
             Assert.AreEqual(container, blockBlob.Container);
             Assert.AreEqual(container, pageBlob.Container);

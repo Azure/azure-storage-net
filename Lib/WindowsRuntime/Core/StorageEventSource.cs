@@ -18,7 +18,6 @@
 namespace Microsoft.WindowsAzure.Storage.Core
 {
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using System;
     using System.Diagnostics.Tracing;
 
     [EventSource(Name = Constants.LogSourceName)]

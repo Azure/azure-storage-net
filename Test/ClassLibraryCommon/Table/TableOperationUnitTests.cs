@@ -20,7 +20,10 @@ using Microsoft.WindowsAzure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Net;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.Table
@@ -117,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationInsertSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -174,7 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationInsertWithEchoContentSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -208,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationInsertSingleQuoteSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = "partition'key", RowKey = "row'key" };
             ent.Properties.Add("stringprop", new EntityProperty("string'value"));
             currentTable.Execute(TableOperation.InsertOrReplace(ent));
@@ -272,7 +275,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationInsertConflictSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -315,23 +318,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
             CloudTable table = client.GetTableReference("TestTable");
             table.CreateIfNotExists();
 
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
-            TestHelper.ExpectedException<ArgumentException>(
-                () =>
-                { client.MaximumExecutionTime = TimeSpan.Zero; },
-                "The argument is smaller than the minimum");
+            client.DefaultRequestOptions.MaximumExecutionTime = null;
+            Assert.IsTrue(client.DefaultRequestOptions.MaximumExecutionTime.Equals(null));
 
-            TestHelper.ExpectedException<ArgumentException>(
-                () =>
-                { client.MaximumExecutionTime = TimeSpan.FromSeconds((double)int.MaxValue + 1); },
-                "The argument is larger than the maximum");
-
-            client.MaximumExecutionTime = null;
-            Assert.IsTrue(client.MaximumExecutionTime.Equals(null));
-
-            client.MaximumExecutionTime = TimeSpan.FromSeconds(1);
-            Assert.IsTrue(client.MaximumExecutionTime.Equals(TimeSpan.FromSeconds(1)));
+            client.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(1);
+            Assert.IsTrue(client.DefaultRequestOptions.MaximumExecutionTime.Equals(TimeSpan.FromSeconds(1)));
 
             // Try an operation taking longer than 1 second
             TableBatchOperation batch = new TableBatchOperation();
@@ -522,7 +515,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationInsertOrMergeSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Merge with no pre-existing entity
             DynamicTableEntity insertOrMergeEntity = new DynamicTableEntity("insertOrMerge entity", "foo" + format.ToString());
@@ -635,7 +628,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationInsertOrReplaceSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Replace with no pre-existing entity
             DynamicTableEntity insertOrReplaceEntity = new DynamicTableEntity("insertOrReplace entity", "foo");
@@ -742,7 +735,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationDeleteSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -778,7 +771,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationDeleteFailSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             OperationContext opContext = new OperationContext();
 
@@ -954,7 +947,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationMergeSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -992,7 +985,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationMergeFailSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
@@ -1195,7 +1188,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationReplaceSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -1232,7 +1225,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationReplaceFailSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
@@ -1559,7 +1552,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableRetrieveSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
             
@@ -1645,7 +1638,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableRetrieveSyncWithReflection(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string pk = Guid.NewGuid().ToString();
             string rk = Guid.NewGuid().ToString();
 
@@ -1814,7 +1807,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableRetrieveWithResolverSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             DynamicTableEntity sendEnt = new DynamicTableEntity();
             sendEnt.PartitionKey = Guid.NewGuid().ToString();
             sendEnt.RowKey = Guid.NewGuid().ToString();
@@ -1860,7 +1853,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableRetrieveWithIgnoreAttributeWrite(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
             string rk = Guid.NewGuid().ToString();
@@ -1918,7 +1911,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableRetrieveWithIgnoreAttributeRead(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -2308,7 +2301,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationsWithEmptyKeys(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = "", RowKey = "" };
@@ -2390,7 +2383,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableOperationRetrieveJsonNoMetadataFail()
         {
-            tableClient.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
+            tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -2429,7 +2422,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableOperationRetrieveJsonNoMetadataResolverFail()
         {
-            tableClient.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
+            tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -2480,7 +2473,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableOperationInsertOver1MBSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -2551,7 +2544,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoSimpleTableEntitySerilization(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableEntity testEnt = new TableEntity(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
             currentTable.Execute(TableOperation.Insert(testEnt));
@@ -2564,6 +2557,88 @@ namespace Microsoft.WindowsAzure.Storage.Table
             currentTable.Execute(TableOperation.Insert(testEnt2));
             TableEntity retrievedEnt2 = currentTable.Execute(TableOperation.Retrieve<TableEntity>(testEnt2.PartitionKey, testEnt2.RowKey)).Result as TableEntity;
             Assert.IsNotNull(retrievedEnt2);
+        }
+
+        [TestMethod]
+        [Description("Test for TableEntity Serializable attribute -- serialize/deserialize and a roundtrip, with and without CompiledSerializers")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableEntitySerializationAttribute()
+        {
+            DoTableEntitySerializationAttribute(TablePayloadFormat.Json);
+            DoTableEntitySerializationAttribute(TablePayloadFormat.JsonNoMetadata);
+            DoTableEntitySerializationAttribute(TablePayloadFormat.JsonFullMetadata);
+            DoTableEntitySerializationAttribute(TablePayloadFormat.AtomPub);
+        }
+
+        private void DoTableEntitySerializationAttribute(TablePayloadFormat format)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+
+                tableClient.DefaultRequestOptions.PayloadFormat = format;
+                BinaryFormatter formatter = new BinaryFormatter();
+
+                // Create an entity and change the default values.
+                ComplexEntity testEnt = new ComplexEntity(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
+                testEnt.Binary = new Byte[] { 5, 6, 7, 8 };
+                testEnt.BinaryNull = null;
+                testEnt.BinaryPrimitive = new byte[] { 5, 6, 7, 8 };
+                testEnt.Bool = true;
+                testEnt.BoolN = true;
+                testEnt.BoolNull = null;
+                testEnt.BoolPrimitive = true;
+                testEnt.BoolPrimitiveN = true;
+                testEnt.BoolPrimitiveNull = null;
+                testEnt.DateTime = DateTime.UtcNow.AddMinutes(1);
+                testEnt.DateTimeN = DateTime.UtcNow.AddMinutes(1);
+                testEnt.DateTimeNull = null;
+                testEnt.DateTimeOffset = DateTimeOffset.Now.AddMinutes(1);
+                testEnt.DateTimeOffsetN = DateTimeOffset.Now.AddMinutes(1);
+                testEnt.DateTimeOffsetNull = null;
+                testEnt.Double = (Double)5678.5678;
+                testEnt.DoubleN = (Double)5678.5678;
+                testEnt.DoubleNull = null;
+                testEnt.DoublePrimitive = (double)5678.5678;
+                testEnt.DoublePrimitiveN = (double)5678.5678;
+                testEnt.DoublePrimitiveNull = null;
+                testEnt.Guid = Guid.NewGuid();
+                testEnt.GuidN = Guid.NewGuid();
+                testEnt.GuidNull = null;
+                testEnt.Int32 = 5678;
+                testEnt.Int32N = 5678;
+                testEnt.Int32Null = null;
+                testEnt.Int64 = (long)5678;
+                testEnt.Int64N = (long)5678;
+                testEnt.Int64Null = null;
+                testEnt.IntegerPrimitive = 5678;
+                testEnt.IntegerPrimitiveN = 5678;
+                testEnt.IntegerPrimitiveNull = null;
+                testEnt.LongPrimitive = 5678;
+                testEnt.LongPrimitiveN = 5678;
+                testEnt.LongPrimitiveNull = null;
+                testEnt.String = "ResetTestTotested";
+
+                // Serialize and deserialize the entity and make sure they're still equal.
+                formatter.Serialize(stream, testEnt);
+                stream.Seek(0, SeekOrigin.Begin);
+                ComplexEntity testEntRehydrate = (ComplexEntity)formatter.Deserialize(stream);
+                ComplexEntity.AssertEquality(testEnt, testEntRehydrate);
+
+                // Do a round trip with the entity and make sure they're still equal.
+                currentTable.Execute(TableOperation.Insert(testEntRehydrate));
+                ComplexEntity retrievedEnt = currentTable.Execute(TableOperation.Retrieve<ComplexEntity>(testEntRehydrate.PartitionKey, testEntRehydrate.RowKey)).Result as ComplexEntity;
+                ComplexEntity.AssertEquality(testEnt, retrievedEnt);
+
+                // Serialize and deserialize the retrieved entity and make sure they're still equal. 
+                stream.Seek(0, SeekOrigin.Begin);
+                formatter.Serialize(stream, retrievedEnt);
+                stream.Seek(0, SeekOrigin.Begin);
+                ComplexEntity retrievedEntRehydrate = (ComplexEntity)formatter.Deserialize(stream);
+                ComplexEntity.AssertEquality(retrievedEnt, retrievedEntRehydrate);
+            }
         }
 
         #endregion

@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using System;
     using Windows.Foundation;
 
     /// <summary>

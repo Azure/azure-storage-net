@@ -78,11 +78,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CommonUtility.AssertNotNull("tableName", tableName);
             CommonUtility.AssertNotNull("client", client);
+            this.Name = tableName;
             this.StorageUri = NavigationHelper.AppendPathToUri(client.StorageUri, tableName);
             this.ServiceClient = client;
-
-            // Set the relativized name from the URI.
-            this.Name = NavigationHelper.GetTableNameFromUri(this.Uri, this.ServiceClient.UsePathStyleUris);
         }
 
         /// <summary>

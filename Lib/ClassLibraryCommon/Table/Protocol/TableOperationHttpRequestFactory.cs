@@ -23,16 +23,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Net;
 
     internal static class TableOperationHttpWebRequestFactory
     {
-        internal static HttpWebRequest BuildRequestCore(Uri uri, UriQueryBuilder builder, string method, int? timeout, OperationContext ctx)
+        internal static HttpWebRequest BuildRequestCore(Uri uri, UriQueryBuilder builder, string method, int? timeout, bool useVersionHeader, OperationContext ctx)
         {
-            HttpWebRequest msg = HttpWebRequestFactory.CreateWebRequest(method, uri, timeout, builder, ctx);
+            HttpWebRequest msg = HttpWebRequestFactory.CreateWebRequest(method, uri, timeout, builder, useVersionHeader, ctx);
 
             msg.Headers.Add("Accept-Charset", "UTF-8");
             msg.Headers.Add("MaxDataServiceVersion", "3.0;NetFx");
@@ -40,17 +39,17 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return msg;
         }
 
-        internal static HttpWebRequest BuildRequestForTableQuery(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext ctx, TablePayloadFormat payloadFormat)
+        internal static HttpWebRequest BuildRequestForTableQuery(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext ctx, TablePayloadFormat payloadFormat)
         {
-            HttpWebRequest msg = BuildRequestCore(uri, builder, "GET", timeout, ctx);
+            HttpWebRequest msg = BuildRequestCore(uri, builder, "GET", timeout, useVersionHeader, ctx);
             SetAcceptHeaderForHttpWebRequest(msg, payloadFormat);
             Logger.LogInformational(ctx, SR.PayloadFormat, payloadFormat);
             return msg;
         }
 
-        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableOperation(Uri uri, UriQueryBuilder builder, IBufferManager bufferManager, int? timeout, TableOperation operation, OperationContext ctx, TablePayloadFormat payloadFormat, string accountName)
+        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableOperation(Uri uri, UriQueryBuilder builder, IBufferManager bufferManager, int? timeout, TableOperation operation, bool useVersionHeader, OperationContext ctx, TablePayloadFormat payloadFormat, string accountName)
         {
-            HttpWebRequest msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, ctx);
+            HttpWebRequest msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, useVersionHeader, ctx);
 
             // Set Accept and Content-Type based on the payload format.
             SetAcceptHeaderForHttpWebRequest(msg, payloadFormat);
@@ -114,9 +113,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return new Tuple<HttpWebRequest, Stream>(msg, null);
         }
 
-        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableBatchOperation(Uri uri, UriQueryBuilder builder, IBufferManager bufferManager, int? timeout, string tableName, TableBatchOperation batch, OperationContext ctx, TablePayloadFormat payloadFormat, string accountName)
+        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableBatchOperation(Uri uri, UriQueryBuilder builder, IBufferManager bufferManager, int? timeout, string tableName, TableBatchOperation batch, bool useVersionHeader, OperationContext ctx, TablePayloadFormat payloadFormat, string accountName)
         {
-            HttpWebRequest msg = BuildRequestCore(NavigationHelper.AppendPathToSingleUri(uri, "$batch"), builder, "POST", timeout, ctx);
+            HttpWebRequest msg = BuildRequestCore(NavigationHelper.AppendPathToSingleUri(uri, "$batch"), builder, "POST", timeout, useVersionHeader, ctx);
             Logger.LogInformational(ctx, SR.PayloadFormat, payloadFormat);
 
             // create the writer, indent for readability of the examples.  

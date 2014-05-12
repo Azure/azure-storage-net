@@ -15,19 +15,18 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Threading;
-
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Net;
+    using System.Threading;
+
     [TestClass]
     public class BlobUploadDownloadTest : BlobTestBase
     {
-
         private CloudBlobContainer testContainer;
 
         [TestInitialize]

@@ -105,7 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationInsertAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
    
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -143,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationInsertWithEchoContentAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -176,7 +176,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationInsertConflictAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -219,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationInsertOrMerge(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Merge with no pre-existing entity
             DynamicTableEntity insertOrMergeEntity = new DynamicTableEntity("insertOrMerge entity", "foo" + format.ToString());
@@ -267,7 +267,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationInsertOrReplace(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Replace with no pre-existing entity
             DynamicTableEntity insertOrReplaceEntity = new DynamicTableEntity("insertOrReplace entity", "foo");
@@ -312,7 +312,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationDeleteAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -348,7 +348,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationDeleteFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             OperationContext opContext = new OperationContext();
 
             // Insert Entity
@@ -414,7 +414,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationMergeAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -452,7 +452,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationMergeFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -524,7 +524,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationReplaceAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -561,7 +561,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationReplaceFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -632,7 +632,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchRetrieveAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -710,7 +710,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             DynamicTableEntity sendEnt = new DynamicTableEntity();
             sendEnt.PartitionKey = Guid.NewGuid().ToString();
@@ -757,7 +757,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableRetrieveWithIgnoreAttributeWriteAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
             string rk = Guid.NewGuid().ToString();
@@ -815,7 +815,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableRetrieveWithIgnoreAttributeReadAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -877,7 +877,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableRetrieveSyncWithIgnoreAttributesAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
             string rk = Guid.NewGuid().ToString();
@@ -938,7 +938,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationsWithEmptyKeysAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = "", RowKey = "" };
@@ -1023,7 +1023,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableOperationRetrieveJsonNoMetadataFailAsync()
         {
-            tableClient.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
+            tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -1062,7 +1062,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableOperationRetrieveJsonNoMetadataResolverFailAsync()
         {
-            tableClient.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
+            tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
@@ -1113,7 +1113,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableOperationInsertOver1MBAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };

@@ -60,16 +60,30 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             TableRequestOptions modifiedOptions = new TableRequestOptions(requestOptions);
             
-            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.RetryPolicy;
-            modifiedOptions.LocationMode = modifiedOptions.LocationMode ?? serviceClient.LocationMode;
-            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.ServerTimeout;
-            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.MaximumExecutionTime;
-            modifiedOptions.PayloadFormat = modifiedOptions.PayloadFormat ?? serviceClient.PayloadFormat;
-           
+            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+            modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
+                                            ?? serviceClient.DefaultRequestOptions.LocationMode)
+                                            ?? RetryPolicies.LocationMode.PrimaryOnly;
+            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
+            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
+#if WINDOWS_DESKTOP || WINDOWS_PHONE
+            modifiedOptions.PayloadFormat = (modifiedOptions.PayloadFormat 
+                                                ?? serviceClient.DefaultRequestOptions.PayloadFormat)
+                                                ?? TablePayloadFormat.Json;
+#else
+            modifiedOptions.PayloadFormat = (modifiedOptions.PayloadFormat 
+                                                ?? serviceClient.DefaultRequestOptions.PayloadFormat)
+                                                ?? TablePayloadFormat.AtomPub;
+#endif
+
             if (!modifiedOptions.OperationExpiryTime.HasValue && modifiedOptions.MaximumExecutionTime.HasValue)
             {
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
+
+#if !WINDOWS_RT
+            modifiedOptions.PropertyResolver = modifiedOptions.PropertyResolver ?? serviceClient.DefaultRequestOptions.PropertyResolver;
+#endif
 
             return modifiedOptions;
         }
@@ -85,6 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         internal void ApplyToStorageCommand<T, INTERMEDIATE_TYPE>(TableCommand<T, INTERMEDIATE_TYPE> cmd)
         {
             if (this.LocationMode.HasValue &&

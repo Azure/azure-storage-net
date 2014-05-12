@@ -147,21 +147,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudPageBlobConstructor()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.Create();
-
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.Create(0);
-
-                CloudPageBlob blob2 = new CloudPageBlob(blob.Uri);
-                Assert.AreEqual(blob.Uri, blob2.Uri);
-                Assert.AreEqual(blob.Name, blob2.Name);
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
+            CloudPageBlob blob = container.GetPageBlobReference("blob1");
+            CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, null);
+            Assert.AreEqual(blob.Name, blob2.Name);
+            Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
+            Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);
+            Assert.AreEqual(blob.ServiceClient.StorageUri, blob2.ServiceClient.StorageUri);
         }
 
         [TestMethod]
@@ -192,6 +183,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual("text/plain", blob.Properties.ContentType);
                 blob2.FetchAttributes();
                 Assert.AreEqual(2048, blob2.Properties.Length);
+
+                // Resize to 0 length
+                blob.Resize(0);
+                Assert.AreEqual(0, blob.Properties.Length);
+                blob.FetchAttributes();
+                Assert.AreEqual("text/plain", blob.Properties.ContentType);
+                blob2.FetchAttributes();
+                Assert.AreEqual(0, blob2.Properties.Length);
             }
             finally
             {
@@ -253,6 +252,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     waitHandle.WaitOne();
                     blob2.EndFetchAttributes(result);
                     Assert.AreEqual(2048, blob2.Properties.Length);
+
+                    // Resize to 0 length
+                    result = blob.BeginResize(0,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob.EndResize(result);
+                    Assert.AreEqual(0, blob.Properties.Length);
+                    result = blob.BeginFetchAttributes(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob.EndFetchAttributes(result);
+                    Assert.AreEqual("text/plain", blob.Properties.ContentType);
+                    result = blob2.BeginFetchAttributes(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob2.EndFetchAttributes(result);
+                    Assert.AreEqual(0, blob2.Properties.Length);
                 }
             }
             finally
@@ -290,6 +309,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual("text/plain", blob.Properties.ContentType);
                 blob2.FetchAttributesAsync().Wait();
                 Assert.AreEqual(2048, blob2.Properties.Length);
+
+                // Resize to 0 length
+                blob.ResizeAsync(0).Wait();
+                Assert.AreEqual(0, blob.Properties.Length);
+                blob.FetchAttributesAsync().Wait();
+                Assert.AreEqual("text/plain", blob.Properties.ContentType);
+                blob2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(0, blob2.Properties.Length);
             }
             finally
             {
@@ -880,7 +907,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync();
+                container.CreateAsync().Wait();
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
@@ -1420,6 +1447,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Verify that empty metadata on a page blob can be retrieved.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobGetEmptyMetadata()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                blob.Create(1024);
+                blob.Metadata["key1"] = "value1";
+
+                OperationContext context = new OperationContext();
+                context.SendingRequest += (sender, e) =>
+                {
+                    e.Request.Headers["x-ms-meta-key1"] = string.Empty;
+                };
+
+                blob.SetMetadata(operationContext: context);
+                blob2.FetchAttributes();
+                Assert.AreEqual(1, blob2.Metadata.Count);
+                Assert.AreEqual(string.Empty, blob2.Metadata["key1"]);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("Verify that a page blob's metadata can be updated")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1449,6 +1511,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 e = TestHelper.ExpectedException<StorageException>(
                     () => blob.SetMetadata(),
                     "Metadata keys should have a non-empty value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                blob.Metadata["key1"] = " ";
+                e = TestHelper.ExpectedException<StorageException>(
+                    () => blob.SetMetadata(),
+                    "Metadata keys should have a non-whitespace only value");
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "value1";
@@ -1518,6 +1586,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     e = TestHelper.ExpectedException<StorageException>(
                         () => blob.EndSetMetadata(result),
                         "Metadata keys should have a non-empty value");
+                    Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                    blob.Metadata["key1"] = " ";
+                    result = blob.BeginSetMetadata(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    e = TestHelper.ExpectedException<StorageException>(
+                        () => blob.EndSetMetadata(result),
+                        "Metadata keys should have a non-whitespace only value");
                     Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                     blob.Metadata["key1"] = "value1";
@@ -1596,6 +1674,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 e = TestHelper.ExpectedExceptionTask<StorageException>(
                     blob.SetMetadataAsync(),
                     "Metadata keys should have a non-empty value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                blob.Metadata["key1"] = " ";
+                e = TestHelper.ExpectedExceptionTask<StorageException>(
+                    blob.SetMetadataAsync(),
+                    "Metadata keys should have a non-whitespace only value");
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "value1";

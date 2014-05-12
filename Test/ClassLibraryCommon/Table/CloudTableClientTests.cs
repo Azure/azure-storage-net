@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
@@ -146,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(TestBase.StorageCredentials, tableClient.Credentials);
             Assert.AreEqual(AuthenticationScheme.SharedKey, tableClient.AuthenticationScheme);
 
-            CloudTableClient tableClient2 = new CloudTableClient(baseAddressUri);
+            CloudTableClient tableClient2 = new CloudTableClient(baseAddressUri, null);
             Assert.IsTrue(tableClient2.BaseUri.ToString().Contains(TestBase.TargetTenantConfig.TableServiceEndpoint));
             Assert.AreEqual(AuthenticationScheme.SharedKey, tableClient2.AuthenticationScheme);
         }
@@ -172,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoListTablesNoPrefix(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Check each created table is present
             List<CloudTable> retrievedTables = tableClient.ListTables().ToList();
@@ -199,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoListTablesWithPrefixBasic(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Check each created table is present
             List<CloudTable> retrievedTables = tableClient.ListTables(prefixTablesPrefix).ToList();
@@ -228,7 +229,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoListTablesWithPrefixExtended(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             int NumTables = 50;
             int TableNameLength = 8;
@@ -393,7 +394,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
             tableClient.AuthenticationScheme = AuthenticationScheme.SharedKeyLite;
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             IEnumerable<CloudTable> actual = tableClient.ListTables();
             Assert.IsNotNull(actual);
@@ -595,7 +596,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoListTablesSegmentedBasicSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
@@ -627,7 +628,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoListTablesSegmentedMaxResultsSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
@@ -662,7 +663,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoListTablesSegmentedWithPrefixSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
@@ -1007,7 +1008,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             AssertSecondaryEndpoint();
 
             CloudTableClient client = GenerateCloudTableClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(client.GetServiceStats());
         }
 
@@ -1022,7 +1023,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             AssertSecondaryEndpoint();
 
             CloudTableClient client = GenerateCloudTableClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             using (AutoResetEvent waitHandle = new AutoResetEvent(false))
             {
                 IAsyncResult result = client.BeginGetServiceStats(
@@ -1053,9 +1054,56 @@ namespace Microsoft.WindowsAzure.Storage.Table
             AssertSecondaryEndpoint();
 
             CloudTableClient client = GenerateCloudTableClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(client.GetServiceStatsAsync().Result);
         }
 #endif
+
+
+        [TestMethod]
+        [Description("Server timeout query parameter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableClientServerTimeout()
+        {
+            CloudTableClient client = GenerateCloudTableClient();
+
+            string timeout = null;
+            OperationContext context = new OperationContext();
+            context.SendingRequest += (sender, e) =>
+            {
+                IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.Request.RequestUri.Query);
+                if (!query.TryGetValue("timeout", out timeout))
+                {
+                    timeout = null;
+                }
+            };
+
+            TableRequestOptions options = new TableRequestOptions();
+            client.GetServiceProperties(null, context);
+            Assert.IsNull(timeout);
+            client.GetServiceProperties(options, context);
+            Assert.IsNull(timeout);
+
+            options.ServerTimeout = TimeSpan.FromSeconds(100);
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("100", timeout);
+
+            client.DefaultRequestOptions.ServerTimeout = TimeSpan.FromSeconds(90);
+            client.GetServiceProperties(null, context);
+            Assert.AreEqual("90", timeout);
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("100", timeout);
+
+            options.ServerTimeout = null;
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("90", timeout);
+
+            options.ServerTimeout = TimeSpan.Zero;
+            client.GetServiceProperties(options, context);
+            Assert.IsNull(timeout);
+        }
     }
 }

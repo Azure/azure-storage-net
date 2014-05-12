@@ -25,7 +25,6 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-using System.Xml;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -127,21 +126,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobConstructor()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.Create();
-
-                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-                CreateForTest(blob, 0, 0, false);
-
-                CloudBlockBlob blob2 = new CloudBlockBlob(blob.Uri);
-                Assert.AreEqual(blob.Uri, blob2.Uri);
-                Assert.AreEqual(blob.Name, blob2.Name);
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
+            CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+            CloudBlockBlob blob2 = new CloudBlockBlob(blob.StorageUri, null, null);
+            Assert.AreEqual(blob.Name, blob2.Name);
+            Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
+            Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);
+            Assert.AreEqual(blob.ServiceClient.StorageUri, blob2.ServiceClient.StorageUri);
         }
 
         [TestMethod]
@@ -835,6 +825,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Verify that empty metadata on a block blob can be retrieved.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobGetEmptyMetadata()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
+                CreateForTest(blob, 0, 0, false);
+                blob.Metadata["key1"] = "value1";
+
+                OperationContext context = new OperationContext();
+                context.SendingRequest += (sender, e) =>
+                    {
+                        e.Request.Headers["x-ms-meta-key1"] = string.Empty;
+                    };
+
+                blob.SetMetadata(operationContext:context);
+                blob2.FetchAttributes();
+                Assert.AreEqual(1, blob2.Metadata.Count);
+                Assert.AreEqual(string.Empty, blob2.Metadata["key1"]);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("Verify that a block blob's metadata can be updated")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -864,6 +889,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 e = TestHelper.ExpectedException<StorageException>(
                     () => blob.SetMetadata(),
                     "Metadata keys should have a non-empty value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                blob.Metadata["key1"] = " ";
+                e = TestHelper.ExpectedException<StorageException>(
+                    () => blob.SetMetadata(),
+                    "Metadata keys should have a non-whitespace only value");
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "value1";
@@ -934,6 +965,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         () => blob.EndSetMetadata(result),
                         "Metadata keys should have a non-empty value");
                     Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                    blob.Metadata["key1"] = " ";
+                    result = blob.BeginSetMetadata(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    e = TestHelper.ExpectedException<StorageException>(
+                        () => blob.EndSetMetadata(result),
+                        "Metadata keys should have a non-whitespace only value");
+                    Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                    blob.Metadata["key1"] = "" + "," + "";
+                    blob.SetMetadataAsync().Wait();
+
+                    blob2.FetchAttributesAsync().Wait();
+                    Assert.AreEqual(1, blob2.Metadata.Count);
+                    Assert.AreEqual(",", blob2.Metadata["key1"]);
 
                     blob.Metadata["key1"] = "value1";
                     result = blob.BeginSetMetadata(
@@ -1011,6 +1059,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 e = TestHelper.ExpectedExceptionTask<StorageException>(
                     blob.SetMetadataAsync(),
                     "Metadata keys should have a non-empty value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                blob.Metadata["key1"] = " ";
+                e = TestHelper.ExpectedExceptionTask<StorageException>(
+                    blob.SetMetadataAsync(),
+                    "Metadata keys should have a non-whitespace only value");
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "value1";
@@ -1275,6 +1329,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.IsTrue(extraBlocks.Remove(blockItem.Name));
                 }
                 Assert.AreEqual(0, extraBlocks.Count);
+
+                // Check with 0 length
+                blocks = GetBlockIdList(0);
+                blob.PutBlockList(blocks);
+
+                blob.DownloadBlockList();
+                Assert.AreEqual(0, blob.Properties.Length);
             }
             finally
             {
@@ -1345,6 +1406,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         Assert.IsTrue(extraBlocks.Remove(blockItem.Name));
                     }
                     Assert.AreEqual(0, extraBlocks.Count);
+
+                    // Check with 0 length
+                    blocks = GetBlockIdList(0);
+                    blob.PutBlockList(blocks);
+
+                    result = blob.BeginDownloadBlockList(
+                      ar => waitHandle.Set(),
+                      null);
+                    waitHandle.WaitOne();
+                    blockList = blob.EndDownloadBlockList(result);
+                    Assert.AreEqual(0, blob.Properties.Length);
                 }
             }
             finally
@@ -1407,6 +1479,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.IsTrue(extraBlocks.Remove(blockItem.Name));
                 }
                 Assert.AreEqual(0, extraBlocks.Count);
+
+                // Check with 0 length
+                blocks = GetBlockIdList(0);
+                blob.PutBlockListAsync(blocks).Wait();
+
+                blockList = blob.DownloadBlockListAsync().Result;
+                Assert.AreEqual(0, blob.Properties.Length);
             }
             finally
             {
@@ -2108,7 +2187,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobParallelUploadFromStream()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 8;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 8;
             container.Create();
             try
             {
@@ -2130,7 +2209,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobParallelUploadFromStreamAPM()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 8;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 8;
             container.Create();
             try
             {
@@ -2238,7 +2317,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-            blob.ServiceClient.SingleBlobUploadThresholdInBytes = allowSinglePut ? buffer.Length : buffer.Length / 2;
+            blob.ServiceClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = allowSinglePut ? buffer.Length : buffer.Length / 2;
             blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
 
             using (MemoryStream originalBlobStream = new MemoryStream())
