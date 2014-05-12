@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Test.Network
         }
 
         /// <summary>
-        /// ForBlobTraffic adds a selector that selects traffic intended for the Azure Storage Blob Front E.
+        /// ForBlobTraffic adds a selector that selects traffic intended for the Azure Storage Blob Front End.
         /// </summary>
         /// <param name="predicate">The initial predicate.</param>
         /// <returns>The relevant selector.</returns>
@@ -80,6 +80,25 @@ namespace Microsoft.WindowsAzure.Test.Network
         public static Func<Session, bool> ForQueueTraffic(this Func<Session, bool> predicate)
         {
             return predicate.IfHostNameContains(StorageConstants.QueueBaseDnsName);
+        }
+
+        /// <summary>
+        /// FileTraffic selects traffic intended for the XStore File Front End.
+        /// </summary>
+        /// <returns>The relevant selector.</returns>
+        public static Func<Session, bool> FileTraffic()
+        {
+            return Selectors.IfHostNameContains(StorageConstants.FileBaseDnsName);
+        }
+
+        /// <summary>
+        /// ForFileTraffic adds a selector that selects traffic intended for the XStore File Front End.
+        /// </summary>
+        /// <param name="predicate">The initial predicate.</param>
+        /// <returns>The relevant selector.</returns>
+        public static Func<Session, bool> ForFileTraffic(this Func<Session, bool> predicate)
+        {
+            return predicate.IfHostNameContains(StorageConstants.FileBaseDnsName);
         }
     }
 }

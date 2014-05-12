@@ -1208,7 +1208,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                this.Properties.Length = sizeInBytes;
                 return NullType.Value;
             };
 
@@ -1233,7 +1234,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 this.Properties.Length = sizeInBytes;
                 return NullType.Value;
             };
@@ -1260,7 +1261,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -1300,7 +1301,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob snapshot = new CloudPageBlob(this.Name, snapshotTime, this.Container);
                 snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata);
                 snapshot.attributes.Properties = new BlobProperties(this.Properties);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(snapshot.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
                 return snapshot;
             };
 
@@ -1334,7 +1335,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
                 return Task.Factory.StartNew(() =>
                 {
                     GetPageRangesResponse getPageRangesResponse = new GetPageRangesResponse(cmd.ResponseStream);
@@ -1385,7 +1386,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -1426,7 +1427,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 return NullType.Value;
             };
 

@@ -734,6 +734,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new <see cref="TableServiceContext"/> object for performing operations against the Table service.
         /// </summary>
         /// <returns>A service context to use for performing operations against the Table service.</returns>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         [SuppressMessage(
             "Microsoft.Design",
             "CA1024:UsePropertiesWhereAppropriate",

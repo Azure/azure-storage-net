@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Test.Network;
 using Microsoft.WindowsAzure.Test.Network.Behaviors;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
@@ -37,6 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestBase.BlobBufferManager.OutstandingBufferCount = 0;
             }
         }
+
         //
         // Use TestCleanup to run code after each test has run
         [TestCleanup()]
@@ -45,6 +47,77 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if (TestBase.BlobBufferManager != null)
             {
                 Assert.AreEqual(0, TestBase.BlobBufferManager.OutstandingBufferCount);
+            }
+        }
+
+        [TestMethod]
+        [Description("Validate the Ingress Egress Counters for blob operations")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void BlobIngressEgressCounters()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.CreateIfNotExists();
+            CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+            
+            string[] blockIds = new string[] { Convert.ToBase64String(Guid.NewGuid().ToByteArray()), Convert.ToBase64String(Guid.NewGuid().ToByteArray()), Convert.ToBase64String(Guid.NewGuid().ToByteArray()) };
+            try
+            {
+                // 1 byte
+                TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(blob.Uri.ToString()), () =>
+                    {
+                        OperationContext opContext = new OperationContext();
+                        blob.PutBlock(blockIds[0], new MemoryStream(GetRandomBuffer(1)), null, null, new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                        return opContext.LastResult;
+                    });
+
+                // 1024
+                TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(blob.Uri.ToString()), () =>
+                {
+                    OperationContext opContext = new OperationContext();
+                    blob.PutBlock(blockIds[1], new MemoryStream(GetRandomBuffer(1024)), null, null, new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                    return opContext.LastResult;
+                });
+
+                // 98765
+                TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(blob.Uri.ToString()), () =>
+                {
+                    OperationContext opContext = new OperationContext();
+                    blob.PutBlock(blockIds[2], new MemoryStream(GetRandomBuffer(98765)), null, null, new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                    return opContext.LastResult;
+                });
+
+                // PutBlockList
+                TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(blob.Uri.ToString()), () =>
+                {
+                    OperationContext opContext = new OperationContext();
+                    blob.PutBlockList(blockIds, null, new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                    return opContext.LastResult;
+                });
+
+                // GetBlockList
+                TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(blob.Uri.ToString()), () =>
+                {
+                    OperationContext opContext = new OperationContext();
+                    blob.DownloadBlockList(BlockListingFilter.All, null, new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                    return opContext.LastResult;
+                });
+
+                // Download
+                TestHelper.ValidateIngressEgress(Selectors.IfUrlContains(blob.Uri.ToString()), () =>
+                {
+                    OperationContext opContext = new OperationContext();
+                    blob.DownloadToStream(Stream.Null, null, new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                    return opContext.LastResult;
+                });
+
+                Assert.AreEqual(blob.Properties.Length, 98765 + 1024 + 1);
+            }
+            finally
+            {
+                container.DeleteIfExists();
             }
         }
 

@@ -251,7 +251,7 @@ namespace Microsoft.WindowsAzure.Test.Network
         /// <returns>The relevant selector.</returns>
         public static Func<Session, bool> IfUrlContains(string urlSubstring)
         {
-            return session => session.url.Contains(urlSubstring);
+            return session => session.fullUrl.Contains(urlSubstring);
         }
 
         /// <summary>

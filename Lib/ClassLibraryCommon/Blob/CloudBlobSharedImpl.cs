@@ -85,8 +85,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.RetrieveResponseStream = true;
             getCmd.DestinationStream = destStream;
             getCmd.CalculateMd5ForResponseStream = !options.DisableContentMD5Validation.Value;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) =>
-                BlobHttpWebRequestFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value, accessCondition, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) =>
+                BlobHttpWebRequestFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.RecoveryAction = (cmd, ex, ctx) =>
             {
@@ -108,8 +108,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
 
-                getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, context) =>
-                    BlobHttpWebRequestFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, lockedAccessCondition ?? accessCondition, context);
+                getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, context) =>
+                    BlobHttpWebRequestFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, lockedAccessCondition ?? accessCondition, useVersionHeader, context);
             };
 
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -174,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime, accessCondition, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -202,7 +202,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = primaryOnly ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime, null /* accessCondition */, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime, null /* accessCondition */, useVersionHeader, ctx);
             getCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -234,13 +234,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, attributes.Metadata);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -262,13 +262,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.SetProperties(uri, serverTimeout, attributes.Properties, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetProperties(uri, serverTimeout, attributes.Properties, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, attributes.Metadata);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -291,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(deleteCmd);
-            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Delete(uri, serverTimeout, attributes.SnapshotTime, deleteSnapshotsOption, accessCondition, ctx);
+            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Delete(uri, serverTimeout, attributes.SnapshotTime, deleteSnapshotsOption, accessCondition, useVersionHeader, ctx);
             deleteCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
@@ -324,12 +324,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Acquire, proposedLeaseId, leaseDuration, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Acquire, proposedLeaseId, leaseDuration, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return BlobHttpResponseParsers.GetLeaseId(resp);
             };
 
@@ -358,12 +358,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Renew, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Renew, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -394,12 +394,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Change, proposedLeaseId, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Change, proposedLeaseId, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return BlobHttpResponseParsers.GetLeaseId(resp);
             };
 
@@ -428,12 +428,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Release, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Release, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -464,12 +464,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<TimeSpan> putCmd = new RESTCommand<TimeSpan>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Break, null /* proposedLeaseId */, null /* leaseDuration */, breakSeconds, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Break, null /* proposedLeaseId */, null /* leaseDuration */, breakSeconds, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, TimeSpan.Zero, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
 
                 int? remainingLeaseTime = BlobHttpResponseParsers.GetRemainingLeaseTime(resp);
                 if (!remainingLeaseTime.HasValue)
@@ -507,7 +507,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, sourceAccessCondition, destAccessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, attributes.Metadata);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -541,7 +541,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(blob.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => BlobHttpWebRequestFactory.AbortCopy(uri, serverTimeout, copyId, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.AbortCopy(uri, serverTimeout, copyId, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = blob.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
             
@@ -577,17 +577,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Retrieve ETag, LMT, and Sequence-Number from response.
+        /// Retrieve ETag, LMT, Length and Sequence-Number from response.
         /// </summary>
         /// <param name="attributes">The attributes.</param>
         /// <param name="response">The response to parse.</param>
-        internal static void UpdateETagLMTAndSequenceNumber(BlobAttributes attributes, HttpWebResponse response)
+        /// <param name="updateLength">If set to <c>true</c>, update the blob length.</param>
+        internal static void UpdateETagLMTLengthAndSequenceNumber(BlobAttributes attributes, HttpWebResponse response, bool updateLength)
         {
             BlobProperties parsedProperties = BlobHttpResponseParsers.GetProperties(response);
             attributes.Properties.ETag = parsedProperties.ETag ?? attributes.Properties.ETag;
             attributes.Properties.LastModified = parsedProperties.LastModified ?? attributes.Properties.LastModified;
             attributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? attributes.Properties.PageBlobSequenceNumber;
-            if (parsedProperties.Length > 0)
+            if (updateLength)
             {
                 attributes.Properties.Length = parsedProperties.Length;
             }

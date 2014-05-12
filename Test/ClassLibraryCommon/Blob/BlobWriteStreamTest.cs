@@ -761,7 +761,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             MD5 hasher = MD5.Create();
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 2;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
             try
             {
                 container.Create();
@@ -813,7 +813,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             MD5 hasher = MD5.Create();
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 2;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
             try
             {
                 container.Create();
@@ -866,7 +866,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             MD5 hasher = MD5.Create();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
-            blobClient.ParallelOperationThreadCount = 4;
+            blobClient.DefaultRequestOptions.ParallelOperationThreadCount = 4;
             string name = GetRandomContainerName();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
             try
@@ -883,7 +883,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     };
                     using (CloudBlobStream blobStream = blob.OpenWrite(null, options))
                     {
-                        IAsyncResult[] results = new IAsyncResult[blobClient.ParallelOperationThreadCount * 2];
+                        IAsyncResult[] results = new IAsyncResult[blobClient.DefaultRequestOptions.ParallelOperationThreadCount.Value * 2];
                         for (int i = 0; i < results.Length; i++)
                         {
                             results[i] = blobStream.BeginWrite(buffer, 0, buffer.Length, null, null);
@@ -891,12 +891,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
                         }
 
-                        for (int i = 0; i < blobClient.ParallelOperationThreadCount; i++)
+                        for (int i = 0; i < blobClient.DefaultRequestOptions.ParallelOperationThreadCount; i++)
                         {
                             Assert.IsTrue(results[i].IsCompleted);
                         }
 
-                        for (int i = blobClient.ParallelOperationThreadCount; i < results.Length; i++)
+                        for (int i = blobClient.DefaultRequestOptions.ParallelOperationThreadCount.Value; i < results.Length; i++)
                         {
                             Assert.IsFalse(results[i].IsCompleted);
                         }
@@ -1164,7 +1164,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             MD5 hasher = MD5.Create();
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 2;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
 
             try
             {
@@ -1249,7 +1249,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             MD5 hasher = MD5.Create();
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 2;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
 
             try
             {
@@ -1305,7 +1305,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             MD5 hasher = MD5.Create();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
-            blobClient.ParallelOperationThreadCount = 4;
+            blobClient.DefaultRequestOptions.ParallelOperationThreadCount = 4;
             string name = GetRandomContainerName();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 
@@ -1325,13 +1325,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                     {
-                        IAsyncResult result = blob.BeginOpenWrite(blobClient.ParallelOperationThreadCount * 2 * buffer.Length, null, options, null,
+                        IAsyncResult result = blob.BeginOpenWrite(blobClient.DefaultRequestOptions.ParallelOperationThreadCount * 2 * buffer.Length, null, options, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
                         using (CloudBlobStream blobStream = blob.EndOpenWrite(result))
                         {
-                            IAsyncResult[] results = new IAsyncResult[blobClient.ParallelOperationThreadCount * 2];
+                            IAsyncResult[] results = new IAsyncResult[blobClient.DefaultRequestOptions.ParallelOperationThreadCount.Value * 2];
                             for (int i = 0; i < results.Length; i++)
                             {
                                 results[i] = blobStream.BeginWrite(buffer, 0, buffer.Length, null, null);
@@ -1339,12 +1339,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 Assert.AreEqual(wholeBlob.Position, blobStream.Position);
                             }
 
-                            for (int i = 0; i < blobClient.ParallelOperationThreadCount; i++)
+                            for (int i = 0; i < blobClient.DefaultRequestOptions.ParallelOperationThreadCount; i++)
                             {
                                 Assert.IsTrue(results[i].IsCompleted);
                             }
 
-                            for (int i = blobClient.ParallelOperationThreadCount; i < results.Length; i++)
+                            for (int i = blobClient.DefaultRequestOptions.ParallelOperationThreadCount.Value; i < results.Length; i++)
                             {
                                 Assert.IsFalse(results[i].IsCompleted);
                             }
@@ -1373,7 +1373,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
                     }
 
-                    blobClient.ParallelOperationThreadCount = 2;
+                    blobClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
 
                     TestHelper.ExpectedException<ArgumentException>(
                         () => blob.BeginOpenWrite(null, null, options, null, null, null),
@@ -1390,7 +1390,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             blobStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
                             wholeBlob.Seek(buffer.Length / 2, SeekOrigin.Begin);
 
-                            IAsyncResult[] results = new IAsyncResult[blobClient.ParallelOperationThreadCount * 2];
+                            IAsyncResult[] results = new IAsyncResult[blobClient.DefaultRequestOptions.ParallelOperationThreadCount.Value * 2];
                             for (int i = 0; i < results.Length; i++)
                             {
                                 results[i] = blobStream.BeginWrite(buffer, 0, buffer.Length, null, null);
@@ -1398,12 +1398,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 Assert.AreEqual(wholeBlob.Position, blobStream.Position);
                             }
 
-                            for (int i = 0; i < blobClient.ParallelOperationThreadCount; i++)
+                            for (int i = 0; i < blobClient.DefaultRequestOptions.ParallelOperationThreadCount; i++)
                             {
                                 Assert.IsTrue(results[i].IsCompleted);
                             }
 
-                            for (int i = blobClient.ParallelOperationThreadCount; i < results.Length; i++)
+                            for (int i = blobClient.DefaultRequestOptions.ParallelOperationThreadCount.Value; i < results.Length; i++)
                             {
                                 Assert.IsFalse(results[i].IsCompleted);
                             }
@@ -1446,7 +1446,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
 
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 2;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
             try
             {
                 container.Create();
@@ -1466,7 +1466,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         for (int i = 0; i < 10; i++)
                         {
                             int offset = random.Next(buffer.Length / 512) * 512;
-                            SeekRandomly(blobStream, offset);
+                            TestHelper.SeekRandomly(blobStream, offset);
                             blobStream.Write(buffer, 0, buffer.Length - offset);
                             wholeBlob.Seek(offset, SeekOrigin.Begin);
                             wholeBlob.Write(buffer, 0, buffer.Length - offset);

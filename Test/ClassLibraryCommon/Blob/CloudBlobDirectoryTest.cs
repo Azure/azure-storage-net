@@ -447,7 +447,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 try
                 {
                     CloudBlobDirectory directory = container.GetDirectoryReference("TopDir1" + delimiter);
-                    CloudBlobDirectory subDirectory = directory.GetSubdirectoryReference("MidDir1" + delimiter);
+                    CloudBlobDirectory subDirectory = directory.GetDirectoryReference("MidDir1" + delimiter);
                     CloudBlobDirectory parent = subDirectory.Parent;
                     Assert.AreEqual(parent.Prefix, directory.Prefix);
                     Assert.AreEqual(parent.Uri, directory.Uri);
@@ -491,6 +491,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Get a reference to an empty sub-directory")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobDirectoryGetEmptySubDirectory()
+        {
+            foreach (String delimiter in Delimiters)
+            {
+                CloudBlobClient client = GenerateCloudBlobClient();
+                client.DefaultDelimiter = delimiter;
+                string name = GetRandomContainerName();
+                CloudBlobContainer container = client.GetContainerReference(name);
+
+                CloudBlobDirectory root = container.GetDirectoryReference("TopDir1" + delimiter);
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => root.GetDirectoryReference(String.Empty),
+                    "Try to get a reference to an empty sub-directory");
+            }
+        }
+
+        [TestMethod]
         [Description("Check multiple delimiters")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -528,7 +550,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         Assert.IsTrue(item13.Uri.Equals(container.Uri + "/TopDir1" + delimiter + "MidDir2" + delimiter));
 
                         CloudBlobDirectory directory = container.GetDirectoryReference("TopDir1" + delimiter);
-                        CloudBlobDirectory subDirectory = directory.GetSubdirectoryReference("MidDir1" + delimiter);
+                        CloudBlobDirectory subDirectory = directory.GetDirectoryReference("MidDir1" + delimiter);
                         CloudBlobDirectory parent = subDirectory.Parent;
                         Assert.AreEqual(parent.Prefix, directory.Prefix);
                         Assert.AreEqual(parent.Uri, directory.Uri);
@@ -560,19 +582,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     ////Traverse hierarchically starting with length 1
                     CloudBlobDirectory directory1 = container.GetDirectoryReference("Dir1" + delimiter);
-                    CloudBlobDirectory subdir1 = directory1.GetSubdirectoryReference("Dir2");
+                    CloudBlobDirectory subdir1 = directory1.GetDirectoryReference("Dir2");
                     CloudBlobDirectory parent1 = subdir1.Parent;
                     Assert.AreEqual(parent1.Prefix, directory1.Prefix);
 
-                    CloudBlobDirectory subdir2 = subdir1.GetSubdirectoryReference("Dir3");
+                    CloudBlobDirectory subdir2 = subdir1.GetDirectoryReference("Dir3");
                     CloudBlobDirectory parent2 = subdir2.Parent;
                     Assert.AreEqual(parent2.Prefix, subdir1.Prefix);
 
-                    CloudBlobDirectory subdir3 = subdir2.GetSubdirectoryReference("Dir4");
+                    CloudBlobDirectory subdir3 = subdir2.GetDirectoryReference("Dir4");
                     CloudBlobDirectory parent3 = subdir3.Parent;
                     Assert.AreEqual(parent3.Prefix, subdir2.Prefix);
 
-                    CloudBlobDirectory subdir4 = subdir3.GetSubdirectoryReference("Dir5");
+                    CloudBlobDirectory subdir4 = subdir3.GetDirectoryReference("Dir5");
                     CloudBlobDirectory parent4 = subdir4.Parent;
                     Assert.AreEqual(parent4.Prefix, subdir3.Prefix);
                 }
@@ -645,12 +667,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.AreEqual(directory.Uri, container.Uri + "/TopDir1" + delimiter + "MidDir1" + delimiter + "EndDir1" + delimiter);
 
                     CloudBlobDirectory directory1 = container.GetDirectoryReference("TopDir1" + delimiter);
-                    CloudBlobDirectory subdir1 = directory1.GetSubdirectoryReference("MidDir" + delimiter);
+                    CloudBlobDirectory subdir1 = directory1.GetDirectoryReference("MidDir" + delimiter);
                     CloudBlobDirectory parent1 = subdir1.Parent;
                     Assert.AreEqual(parent1.Prefix, directory1.Prefix);
                     Assert.AreEqual(parent1.Uri, directory1.Uri);
 
-                    CloudBlobDirectory subdir2 = subdir1.GetSubdirectoryReference("EndDir" + delimiter);
+                    CloudBlobDirectory subdir2 = subdir1.GetDirectoryReference("EndDir" + delimiter);
                     CloudBlobDirectory parent2 = subdir2.Parent;
                     Assert.AreEqual(parent2.Prefix, subdir1.Prefix);
                     Assert.AreEqual(parent2.Uri, subdir1.Uri);
@@ -689,10 +711,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     ////Traverse from root to leaf
                     CloudBlobDirectory directory4 = container.GetDirectoryReference(delimiter);
-                    CloudBlobDirectory directory5 = directory4.GetSubdirectoryReference(delimiter);
+                    CloudBlobDirectory directory5 = directory4.GetDirectoryReference(delimiter);
                     Assert.AreEqual(directory5.Prefix, delimiter + delimiter);
 
-                    CloudBlobDirectory directory6 = directory5.GetSubdirectoryReference(delimiter);
+                    CloudBlobDirectory directory6 = directory5.GetDirectoryReference(delimiter);
                     Assert.AreEqual(directory6.Prefix, delimiter + delimiter + delimiter);
 
                     CloudPageBlob blob2 = directory6.GetPageBlobReference("Blob1");
@@ -703,6 +725,30 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     container.DeleteIfExists();
                 }
+            }
+        }
+
+        [TestMethod]
+        [Description("Using absolute Uri string should just append to the base uri")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobDirectoryAbsoluteUriAppended()
+        {
+            foreach (String delimiter in Delimiters)
+            {
+                CloudBlobClient client = GenerateCloudBlobClient();
+                client.DefaultDelimiter = delimiter;
+                string name = GetRandomContainerName();
+                CloudBlobContainer container = client.GetContainerReference(name);
+
+                CloudBlobDirectory dir = container.GetDirectoryReference(container.Uri.AbsoluteUri);
+                Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(container.Uri, container.Uri.AbsoluteUri + delimiter), dir.Uri);
+                Assert.AreEqual(new Uri(container.Uri + "/" + container.Uri.AbsoluteUri + delimiter), dir.Uri);
+
+                dir = container.GetDirectoryReference(container.Uri.AbsoluteUri + "/" + "TopDir1" + delimiter);
+                Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(container.Uri, container.Uri.AbsoluteUri + "/" + "TopDir1" + delimiter), dir.Uri);
             }
         }
     }

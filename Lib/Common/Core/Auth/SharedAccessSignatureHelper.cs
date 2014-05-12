@@ -239,6 +239,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string contentLanguage = null;
             string contentDisposition = null;
             string tableName = null;
+            string startPk = null;
+            string startRk = null;
+            string endPk = null;
+            string endRk = null;
 
             bool sasParameterFound = false;
 
@@ -311,6 +315,26 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                         sasParameterFound = true;
                         break;
 
+                    case Constants.QueryConstants.StartPartitionKey:
+                        startPk = parameter.Value;
+                        sasParameterFound = true;
+                        break;
+
+                    case Constants.QueryConstants.StartRowKey:
+                        startRk = parameter.Value;
+                        sasParameterFound = true;
+                        break;
+
+                    case Constants.QueryConstants.EndPartitionKey:
+                        endPk = parameter.Value;
+                        sasParameterFound = true;
+                        break;
+
+                    case Constants.QueryConstants.EndRowKey:
+                        endRk = parameter.Value;
+                        sasParameterFound = true;
+                        break;
+
                     default:
                         break;
                 }
@@ -342,6 +366,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.ContentLanguage, contentLanguage);
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.ContentDisposition, contentDisposition);
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.SasTableName, tableName);
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.StartPartitionKey, startPk);
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.StartRowKey, startRk);
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.EndPartitionKey, endPk);
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.EndRowKey, endRk);
                
                 return new StorageCredentials(builder.ToString());
             }

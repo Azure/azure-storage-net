@@ -101,21 +101,43 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 
         /// <summary>
-        /// Retrieves the complete container address from a storage Uri
-        /// Example GetContainerAddress(new Uri("http://test.blob.core.windows.net/mycontainer/myfolder/myblob"))
-        /// will return http://test.blob.core.windows.net/mycontainer.
+        /// Retrieves the share part of a storage Uri, or "$root" if the share is implicit.
         /// </summary>
-        /// <param name="blobAddress">The blob address.</param>
-        /// <param name="usePathStyleUris">True to use path style Uris.</param>
-        /// <returns>Uri of the container.</returns>
-        internal static StorageUri GetContainerAddress(StorageUri blobAddress, bool? usePathStyleUris)
+        /// <param name="fileAddress">The file address.</param>
+        /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
+        /// <returns>Name of the share.</returns>
+        /// <remarks>
+        /// The trailing slash is always removed.
+        /// <example>
+        /// GetShareName(new Uri("http://test.file.core.windows.net/myshare/myfolder/myfile")) will return "myshare"
+        /// GetShareName(new Uri("http://test.file.core.windows.net/myshare/")) will return "myshare"
+        /// GetShareName(new Uri("http://test.file.core.windows.net/")) will throw ArgumentException
+        /// </example>
+        /// </remarks>
+        internal static string GetShareName(Uri fileAddress, bool? usePathStyleUris)
         {
-            string containerName;
-            StorageUri containerAddress;
+            string shareName;
+            string fileName;
 
-            GetContainerNameAndAddress(blobAddress, usePathStyleUris, out containerName, out containerAddress);
+            GetShareNameAndFileName(fileAddress, usePathStyleUris, out shareName, out fileName);
 
-            return containerAddress;
+            return shareName;
+        }
+
+        /// <summary>
+        /// Retrieves the file part of a storage Uri.
+        /// </summary>
+        /// <param name="fileAddress">The file address.</param>
+        /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
+        /// <returns>The name of the file.</returns>
+        internal static string GetFileName(Uri fileAddress, bool? usePathStyleUris)
+        {
+            string shareName;
+            string fileName;
+
+            GetShareNameAndFileName(fileAddress, usePathStyleUris, out shareName, out fileName);
+
+            return Uri.UnescapeDataString(fileName);
         }
 
         /// <summary>
@@ -124,30 +146,32 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="blobAddress">The blob address.</param>
         /// <param name="delimiter">The delimiter.</param>
         /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
+        /// <param name="parentName">Name of the parent.</param>
+        /// <param name="parentAddress">The parent URI.</param>
         /// <returns>The name of the parent.</returns>
         /// <remarks>
         /// Adds the trailing delimiter as the prefix returned by the storage REST api always contains the delimiter.
         /// </remarks>
         /// <example>
-        /// GetParentName(new Uri("http://test.blob.core.windows.net/mycontainer/myfolder/myblob", "/")) will return "/mycontainer/myfolder/"
-        /// GetParentName(new Uri("http://test.blob.core.windows.net/mycontainer/myfolder|myblob", "|") will return "/mycontainer/myfolder|"
-        /// GetParentName(new Uri("http://test.blob.core.windows.net/mycontainer/myblob", "/") will return "/mycontainer/"
-        /// GetParentName(new Uri("http://test.blob.core.windows.net/mycontainer/", "/") will return "/mycontainer/"
+        /// GetBlobParentNameAndAddress(new Uri("http://test.blob.core.windows.net/mycontainer/myfolder/myblob", "/")) will return "/myfolder/"
+        /// GetBlobParentNameAndAddress(new Uri("http://test.blob.core.windows.net/mycontainer/myfolder|myblob", "|") will return "/myfolder|"
+        /// GetBlobParentNameAndAddress(new Uri("http://test.blob.core.windows.net/mycontainer/myblob", "/") will return ""
+        /// GetBlobParentNameAndAddress(new Uri("http://test.blob.core.windows.net/mycontainer/", "/") will return ""
         /// </example>
-        internal static string GetParentName(StorageUri blobAddress, string delimiter, bool? usePathStyleUris)
+        internal static bool GetBlobParentNameAndAddress(StorageUri blobAddress, string delimiter, bool? usePathStyleUris, out string parentName, out StorageUri parentAddress)
         {
             CommonUtility.AssertNotNull("blobAbsoluteUriString", blobAddress);
             CommonUtility.AssertNotNullOrEmpty("delimiter", delimiter);
 
+            parentName = null;
+            parentAddress = null;
+
             string containerName;
             StorageUri containerUri;
-            bool explicitRoot = GetContainerNameAndAddress(blobAddress, usePathStyleUris, out containerName, out containerUri);
-            if (!explicitRoot)
+            if (!GetContainerNameAndAddress(blobAddress, usePathStyleUris, out containerName, out containerUri))
             {
-                return null;
+                return false;
             }
-
-            containerName += NavigationHelper.Slash;
 
             // Get the blob path as the rest of the Uri
             Uri blobPathUri = containerUri.PrimaryUri.MakeRelativeUri(blobAddress.PrimaryUri);
@@ -159,13 +183,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 blobPath = blobPath.Substring(0, blobPath.Length - delimiter.Length);
             }
 
-            string parentName = null;
-
             if (string.IsNullOrEmpty(blobPath))
             {
                 // Case 1 /<ContainerName>[Delimiter]*? => /<ContainerName>
                 // Parent of container is container itself
-                parentName = null;
             }
             else
             {
@@ -176,20 +197,88 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     // Case 2 /<Container>/<folder>
                     // Parent of a folder is container
                     parentName = string.Empty;
+                    parentAddress = containerUri;
                 }
                 else
                 {
                     // Case 3 /<Container>/<folder>/[<subfolder>/]*<BlobName>
                     // Parent of blob is folder
-                    parentName = Uri.UnescapeDataString(blobPath.Substring(0, parentLength + delimiter.Length));
-                    if (parentName == containerName)
+                    parentName = Uri.UnescapeDataString(blobPath.Substring(0, parentLength + delimiter.Length)).Substring(containerName.Length + 1);
+                    parentAddress = NavigationHelper.AppendPathToUri(containerUri, parentName);
+                }
+            }
+
+            return parentName != null;
+        }
+
+        /// <summary>
+        /// Retrieves the parent name from a storage Uri.
+        /// </summary>
+        /// <param name="fileAddress">The file address.</param>
+        /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
+        /// <param name="parentName">Name of the parent.</param>
+        /// <param name="parentAddress">The parent URI.</param>
+        /// <returns>The name of the parent.</returns>
+        /// <remarks>
+        /// Adds the trailing delimiter as the prefix returned by the storage REST api always contains the delimiter.
+        /// </remarks>
+        /// <example>
+        /// GetFileParentNameAndAddress(new Uri("http://test.file.core.windows.net/myshare/myfolder/myfile", "/")) will return "myfolder"
+        /// GetFileParentNameAndAddress(new Uri("http://test.file.core.windows.net/myshare/myfile", "/") will return ""
+        /// GetFileParentNameAndAddress(new Uri("http://test.file.core.windows.net/myshare/", "/") will return ""
+        /// </example>
+        internal static bool GetFileParentNameAndAddress(StorageUri fileAddress, bool? usePathStyleUris, out string parentName, out StorageUri parentAddress)
+        {
+            CommonUtility.AssertNotNull("fileAbsoluteUriString", fileAddress);
+
+            parentName = null;
+            parentAddress = null;
+
+            string shareName;
+            StorageUri shareUri;
+            GetShareNameAndAddress(fileAddress, usePathStyleUris, out shareName, out shareUri);
+
+            // Get the file path as the rest of the Uri
+            Uri filePathUri = shareUri.PrimaryUri.MakeRelativeUri(fileAddress.PrimaryUri);
+            string filePath = filePathUri.OriginalString;
+
+            if ((filePath.Length > 0) && (filePath[filePath.Length - 1] == NavigationHelper.SlashChar))
+            {
+                filePath = filePath.Substring(0, filePath.Length - 1);
+            }
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // Case 1 /<ShareName>/*? => /<ShareName>
+                // Parent of share is share itself
+            }
+            else
+            {
+                int parentLength = filePath.LastIndexOf(NavigationHelper.SlashChar);
+
+                if (parentLength <= shareName.Length)
+                {
+                    // Case 2 /<Share>/<folder>
+                    // Parent of a folder is share
+                    parentName = string.Empty;
+                    parentAddress = shareUri;
+                }
+                else
+                {
+                    // Case 3 /<Share>/<folder>/[<subfolder>/]*<FileName>
+                    // Parent of file is folder
+                    parentName = Uri.UnescapeDataString(filePath.Substring(0, parentLength)).Substring(shareName.Length + 1);
+                    parentAddress = NavigationHelper.AppendPathToUri(shareUri, parentName);
+
+                    parentLength = parentName.LastIndexOf(NavigationHelper.SlashChar);
+                    if (parentLength >= 0)
                     {
-                        parentName = string.Empty;
+                        parentName = parentName.Substring(parentLength + 1);
                     }
                 }
             }
 
-            return string.IsNullOrEmpty(parentName) ? parentName : parentName.Substring(containerName.Length);
+            return parentName != null;
         }
 
         /// <summary>
@@ -301,25 +390,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 return uri;
             }
 
-            Uri absoluteUri;
-
-            // Because of URI's Scheme, URI.TryCreate() can't differentiate a string with colon from an absolute URI. 
-            // A workaround is added here to verify if a given string is an absolute URI.
-            if (Uri.TryCreate(relativeUri, UriKind.Absolute, out absoluteUri) && (string.CompareOrdinal(absoluteUri.Scheme, "http") == 0 || string.CompareOrdinal(absoluteUri.Scheme, "https") == 0))
-            {
-                // Handle case if relPath is an absolute Uri
-                if (uri.IsBaseOf(absoluteUri))
-                {
-                    return absoluteUri;
-                }
-                else
-                {
-                    // Happens when using fiddler, DNS aliases, or potentially NATs
-                    absoluteUri = new Uri(relativeUri);
-                    return new Uri(uri, absoluteUri.AbsolutePath);
-                }
-            }
-
             sep = Uri.EscapeUriString(sep);
             relativeUri = Uri.EscapeUriString(relativeUri);
 
@@ -395,6 +465,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 
         /// <summary>
+        /// Extracts a table name from the share's Uri.
+        /// </summary>
+        /// <param name="uri">The share Uri.</param>
+        /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
+        /// <returns>The share name.</returns>
+        internal static string GetShareNameFromShareAddress(Uri uri, bool? usePathStyleUris)
+        {
+            return GetContainerNameFromContainerAddress(uri, usePathStyleUris);
+        }
+
+        /// <summary>
         /// Retrieve the container address and address.
         /// </summary>
         /// <param name="blobAddress">The blob address.</param>
@@ -407,8 +488,23 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             string blobName;
             bool explicitCont = GetContainerNameAndBlobName(blobAddress.PrimaryUri, usePathStyleUris, out containerName, out blobName);
             containerUri = NavigationHelper.AppendPathToUri(GetServiceClientBaseAddress(blobAddress, usePathStyleUris), containerName);
-            
+
             return explicitCont;
+        }
+
+        /// <summary>
+        /// Retrieve the share address and address.
+        /// </summary>
+        /// <param name="fileAddress">The file address.</param>
+        /// <param name="usePathStyleUris">True to use path style Uris.</param>
+        /// <param name="shareName">Name of the share.</param>
+        /// <param name="shareUri">The share URI.</param>
+        /// <returns><c>true</c> when the share is an explicit share. <c>false</c>, otherwise.</returns> 
+        private static void GetShareNameAndAddress(StorageUri fileAddress, bool? usePathStyleUris, out string shareName, out StorageUri shareUri)
+        {
+            string fileName;
+            GetShareNameAndFileName(fileAddress.PrimaryUri, usePathStyleUris, out shareName, out fileName);
+            shareUri = NavigationHelper.AppendPathToUri(GetServiceClientBaseAddress(fileAddress, usePathStyleUris), shareName);
         }
 
         /// <summary>
@@ -468,6 +564,48 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Retrieve the share name and the file or directory name from a file or directory address.
+        /// </summary>
+        /// <param name="fileAddress">The file address.</param>
+        /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
+        /// <param name="shareName">The resulting share name.</param>
+        /// <param name="fileName">The resulting file or directory name.</param>
+        private static void GetShareNameAndFileName(Uri fileAddress, bool? usePathStyleUris, out string shareName, out string fileName)
+        {
+            CommonUtility.AssertNotNull("fileAddress", fileAddress);
+
+            if (usePathStyleUris == null)
+            {
+                // Automatically determine whether to use path style vs host style uris
+                usePathStyleUris = CommonUtility.UsePathStyleAddressing(fileAddress);
+            }
+
+            string[] addressParts = fileAddress.Segments;
+
+            int shareIndex = usePathStyleUris.Value ? 2 : 1;
+
+            if (addressParts.Length - 1 < shareIndex)
+            {
+                // No reference appears to any share or file
+                string error = string.Format(CultureInfo.CurrentCulture, SR.MissingShareInformation, fileAddress);
+                throw new ArgumentException(error, "fileAddress");
+            }
+            else if (addressParts.Length - 1 == shareIndex)
+            {
+                // This is the root directory of a share
+                string shareOrFileName = addressParts[shareIndex];
+                shareName = shareOrFileName.Trim(SlashChar);
+                fileName = string.Empty;
+            }
+            else
+            {
+                // This is a file or a directory in a share
+                shareName = addressParts[shareIndex].Trim(SlashChar);
+                fileName = addressParts[addressParts.Length - 1];
+            }
         }
 
         /// <summary>

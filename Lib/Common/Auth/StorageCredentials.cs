@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
 {
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -349,6 +350,8 @@ namespace Microsoft.WindowsAzure.Storage.Auth
             {
                 this.queryBuilder.Add(parameter.Key, parameter.Value);
             }
+
+            this.queryBuilder.Add(Constants.QueryConstants.ApiVersion, Constants.HeaderConstants.TargetStorageVersion);
         }
     }
 }

@@ -15,14 +15,14 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using System;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
-
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+    using System;
+    using System.IO;
+    using System.Net;
+    using System.Threading.Tasks;
+
     [TestClass]
     public class BlobUploadDownloadTest : BlobTestBase
     {

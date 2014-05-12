@@ -30,6 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     /// Summary description for TableServiceQueryUnitTests
     /// </summary>
     [TestClass]
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public class TableServiceQueryUnitTests : TableTestBase
     {
         #region Ctors + Locals
@@ -116,7 +117,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         public void TableServiceQueryExecuteSecondary()
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.LocationMode = RetryPolicies.LocationMode.SecondaryOnly;
+            tableClient.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.SecondaryOnly;
             TableServiceContext ctx = tableClient.GetTableServiceContext();
 
             // Retrieve Entities

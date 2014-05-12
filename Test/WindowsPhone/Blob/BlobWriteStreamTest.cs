@@ -360,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
 
             CloudBlobClient blobClient = GenerateCloudBlobClient();
-            blobClient.ParallelOperationThreadCount = 2;
+            blobClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
             string name = GetRandomContainerName();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
             try
@@ -499,7 +499,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             byte[] buffer = GetRandomBuffer(6 * 512);
 
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 2;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
 
             try
             {
@@ -570,7 +570,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
 
             CloudBlobContainer container = GetRandomContainerReference();
-            container.ServiceClient.ParallelOperationThreadCount = 2;
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
             try
             {
                 await container.CreateAsync();
@@ -591,7 +591,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         for (int i = 0; i < 10; i++)
                         {
                             int offset = random.Next(buffer.Length / 512) * 512;
-                            SeekRandomly(blobStream, offset);
+                            TestHelper.SeekRandomly(blobStream, offset);
                             await blobStream.WriteAsync(buffer, 0, buffer.Length - offset);
                             wholeBlob.Seek(offset, SeekOrigin.Begin);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length - offset);

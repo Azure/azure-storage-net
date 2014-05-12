@@ -102,6 +102,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual("text/plain", blob.Properties.ContentType);
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual(2048, blob2.Properties.Length);
+
+                // Resize to 0 length
+                await blob.ResizeAsync(0);
+                Assert.AreEqual(0, blob.Properties.Length);
+                await blob.FetchAttributesAsync();
+                Assert.AreEqual("text/plain", blob.Properties.ContentType);
+                await blob2.FetchAttributesAsync();
+                Assert.AreEqual(0, blob2.Properties.Length);
             }
             finally
             {
@@ -487,6 +495,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.ThrowsException<AggregateException>(
                     () => blob.SetMetadataAsync(null, null, operationContext).Wait(),
                     "Metadata keys should have a non-empty value");
+                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+
+                blob.Metadata["key1"] = " ";
+                Assert.ThrowsException<AggregateException>(
+                    () => blob.SetMetadataAsync(null, null, operationContext).Wait(),
+                    "Metadata keys should have a non-whitespace only value");
                 Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "value1";

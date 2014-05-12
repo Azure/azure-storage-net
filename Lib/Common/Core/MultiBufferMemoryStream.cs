@@ -30,9 +30,9 @@ namespace Microsoft.WindowsAzure.Storage.Core
 #endif
 
     /// <summary>
-    /// This class provides MemoryStream-like behavior but uses a list of buffers rather than a single buffer.
+    /// Creates a multi-buffer stream whose backing store is memory.
     /// </summary>
-    internal class MultiBufferMemoryStream : Stream
+    public class MultiBufferMemoryStream : Stream
     {
         private class CopyState
         {
@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <summary>
         /// The underlying buffer blocks for the stream.
         /// </summary>
-        private List<byte[]> bufferBlocks = new List<byte[]>();
+        private List<byte[]> bufferBlocks;
 
         /// <summary>
         /// The currently used length.
@@ -77,12 +77,13 @@ namespace Microsoft.WindowsAzure.Storage.Core
         private IBufferManager bufferManager;
 
         /// <summary>
-        ///  Initializes a new instance of the MultiBufferMemoryStream class with provided IBufferManager.
+        ///  Initializes a new instance of the <see cref="MultiBufferMemoryStream"/> class with the specified buffer manager.
         /// </summary>
-        /// <param name="bufferManager">A reference to the IBufferManager for the stream to use to acquire and return buffers. May be null.</param>
-        /// <param name="bufferSize">The Buffer size to use for each block, default is 64 KB. Note this parameter is disregarded when a IBufferManager is specified.</param>
+        /// <param name="bufferManager">The <see cref="IBufferManager"/> to use to acquire and return buffers for the stream. May be <c>null</c>.</param>
+        /// <param name="bufferSize">The buffer size to use for each block. The default size is 64 KB. Note that this parameter is disregarded when an <see cref="IBufferManager"/> is specified.</param>
         public MultiBufferMemoryStream(IBufferManager bufferManager, int bufferSize = MultiBufferMemoryStream.DefaultSmallBufferSize)
         {
+            this.bufferBlocks = new List<byte[]>();
             this.bufferManager = bufferManager;
 
             this.bufferSize = this.bufferManager == null ? bufferSize : this.bufferManager.GetDefaultBufferSize();
@@ -96,7 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <summary>
         /// Gets a value indicating whether the current stream supports reading.
         /// </summary>
-        /// <value>Is <c>true</c> if the stream supports reading; otherwise, <c>false</c>.</value>
+        /// <value><c>true</c> if the stream supports reading; otherwise, <c>false</c>.</value>
         public override bool CanRead
         {
             get
@@ -108,7 +109,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <summary>
         /// Gets a value indicating whether the current stream supports seeking.
         /// </summary>
-        /// <value>Is true if the stream supports seeking; otherwise, false.</value>
+        /// <value><c>true</c> if the stream supports seeking; otherwise, <c>false</c>.</value>
         public override bool CanSeek
         {
             get
@@ -120,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <summary>
         /// Gets a value indicating whether the current stream supports writing.
         /// </summary>
-        /// <value>Is true if the stream supports writing; otherwise, false.</value>
+        /// <value><c>true</c> if the stream supports writing; otherwise, <c>false</c>.</value>
         public override bool CanWrite
         {
             get
@@ -130,8 +131,9 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         /// <summary>
-        /// Gets the currently written length.
+        /// Gets the length in bytes of the stream.
         /// </summary>
+        /// <returns>A long value representing the length of the stream in bytes.</returns>
         public override long Length
         {
             get
@@ -141,9 +143,9 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         /// <summary>
-        /// Represents the current position in the stream.
+        /// Gets or sets the position within the current stream.
         /// </summary>
-        /// <exception cref="ArgumentException">Thrown if position is outside the stream size</exception>
+        /// <returns>The current position within the stream.</returns>
         public override long Position
         {
             get
@@ -268,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         /// <summary>
-        /// Sets the length of the current stream to the specified value. (pre-allocating the bufferBlocks).
+        /// Sets the length of the current stream.
         /// </summary>
         /// <param name="value">The desired length of the current stream in bytes.</param>
         /// <exception cref="ArgumentOutOfRangeException">If the <paramref name="value"/> is negative.</exception>
@@ -361,7 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
         /// <summary>
-        /// Does not perform any operation as it's an in-memory stream.
+        /// Does not perform any operation, as the stream is an in-memory stream.
         /// </summary>
         public override void Flush()
         {
@@ -381,10 +383,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
 #if WINDOWS_DESKTOP
         /// <summary>
-        /// Reads the bytes from the current stream and writes them to another stream. However, this method eliminates copying the data into a temporary buffer by directly writing to the destination stream.
+        /// Reads the bytes from the current stream and writes them to another stream. This method writes directly to the destination stream, 
+        /// rather than copying the data into a temporary buffer.
         /// </summary>
         /// <param name="destination">The stream to which the contents of the current stream will be copied.</param>
-        /// <param name="expiryTime">DateTime indicating the expiry time.</param>
+        /// <param name="expiryTime">A DateTime indicating the expiry time.</param>
         public void FastCopyTo(Stream destination, DateTime? expiryTime)
         {
             CommonUtility.AssertNotNull("destination", destination);
@@ -543,10 +546,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
 #if WINDOWS_RT
         /// <summary>
-        /// Asynchronously reads the bytes from the current stream and writes them to another stream. However, this method eliminates copying the data into a temporary buffer by directly writing to the destination stream.
+        /// Reads the bytes from the current stream and writes them to another stream. This method writes directly to the destination stream, 
+        /// rather than copying the data into a temporary buffer.
         /// </summary>
         /// <param name="destination">The stream to which the contents of the current stream will be copied.</param>
-        /// <param name="expiryTime">DateTime indicating the expiry time.</param>
+        /// <param name="expiryTime">A DateTime indicating the expiry time.</param>
         /// <returns>A task that represents the asynchronous copy operation.</returns>
         public async Task FastCopyToAsync(Stream destination, DateTime? expiryTime)
         {
@@ -741,6 +745,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
         private volatile bool disposed = false;
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="MultiBufferMemoryStream"/>.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected override void Dispose(bool disposing)
         {
             if (!this.disposed)

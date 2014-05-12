@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     public class EscapingTests : BlobTestBase
     {
         internal const string UnreservedCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-._~";
-        internal const string GenDelimeters = "?:#[]@";
+        internal const string GenDelimeters = "?#[]@";
         internal const string SubDelimeters = "!$'()*+,;=";
 
         //
@@ -90,17 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void PrefixTestWithGenDelimeter()
         {
-            string genDelimeters = GenDelimeters;
-
-            // Remove the char ":" in the given string for .Net 4.0 because In .Net 4.0 
-            // Uri.MakeRelativeUri(...) automatically add "./" when the input has ‘:’ before the first ‘/’.  
-            // It's an undocumented change from .Net 3.5 to .Net 4.0.  
-            if (Environment.Version.ToString().StartsWith("4."))
-            {
-                genDelimeters = genDelimeters.Replace(":", null);
-            }
-
-            PrefixEscapingTest(genDelimeters, genDelimeters);
+            PrefixEscapingTest(GenDelimeters, GenDelimeters);
         }
 
         [TestMethod]

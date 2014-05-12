@@ -230,18 +230,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 OperationContext = operationContext,
             };
 
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistsHandler, storageAsyncResult);
-                storageAsyncResult.CancelDelegate = currentRes.Cancel;
+            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistsHandler, storageAsyncResult);
 
-                // Check if cancellation was requested prior to begin
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.CancelDelegate();
-                }
-            }
-
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = currentRes.Cancel;
             return storageAsyncResult;
         }
 
@@ -457,18 +450,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 OperationContext = operationContext,
             };
 
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
-                storageAsyncResult.CancelDelegate = currentRes.Cancel;
+            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
 
-                // Check if cancellation was requested prior to begin
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.CancelDelegate();
-                }
-            }
-
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = currentRes.Cancel;
             return storageAsyncResult;
         }
 
@@ -2380,7 +2366,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.ClearMessages(uri, serverTimeout, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.ClearMessages(uri, serverTimeout, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 
@@ -2397,7 +2383,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.Create(uri, serverTimeout, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.Create(uri, serverTimeout, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => QueueHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2419,14 +2405,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand{T}"/> that deletes the queue.</returns>
         private RESTCommand<NullType> DeleteQueueImpl(QueueRequestOptions options)
         {
-            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
+            RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
-            options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.Delete(uri, serverTimeout, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
+            options.ApplyToStorageCommand(deleteCmd);
+            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.Delete(uri, serverTimeout, useVersionHeader, ctx);
+            deleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 
-            return putCmd;
+            return deleteCmd;
         }
 
         /// <summary>
@@ -2440,7 +2426,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.GetMetadata(uri, serverTimeout, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetMetadata(uri, serverTimeout, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2464,7 +2450,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = primaryOnly ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.GetMetadata(uri, serverTimeout, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetMetadata(uri, serverTimeout, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2489,7 +2475,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.SetMetadata(uri, serverTimeout, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.SetMetadata(uri, serverTimeout, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => QueueHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2516,7 +2502,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.SetAcl(uri, serverTimeout, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.SetAcl(uri, serverTimeout, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
@@ -2541,7 +2527,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.GetAcl(uri, serverTimeout, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetAcl(uri, serverTimeout, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
@@ -2588,7 +2574,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SetHeaders = (r, ctx) =>
@@ -2646,7 +2632,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, messageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.UpdateMessage(uri, serverTimeout, message.PopReceipt, visibilityTimeout.RoundUpToSeconds(), ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.UpdateMessage(uri, serverTimeout, message.PopReceipt, visibilityTimeout.RoundUpToSeconds(), useVersionHeader, ctx);
 
             if ((updateFields & MessageUpdateFields.Content) != 0)
             {
@@ -2682,7 +2668,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, messageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.DeleteMessage(uri, serverTimeout, popReceipt, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.DeleteMessage(uri, serverTimeout, popReceipt, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 
@@ -2702,7 +2688,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.GetMessages(uri, serverTimeout, messageCount, visibilityTimeout, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetMessages(uri, serverTimeout, messageCount, visibilityTimeout, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
@@ -2730,7 +2716,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => QueueHttpWebRequestFactory.PeekMessages(uri, serverTimeout, messageCount, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.PeekMessages(uri, serverTimeout, messageCount, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>

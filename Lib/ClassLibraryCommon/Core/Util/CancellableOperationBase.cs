@@ -43,31 +43,24 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             set { this.cancelRequested = value; }
         }
 
-        private Action cancelDelegate = null;
-
-        internal Action CancelDelegate
-        {
-            get
-            {
-                return this.cancelDelegate;
-            }
-
-            set
-            {
-                this.cancelDelegate = value;
-            }
-        }
+        internal Action CancelDelegate { get; set; }
 
         public void Cancel()
         {
+            Action cancelDelegate = null;
             lock (this.cancellationLockerObject)
             {
                 this.cancelRequested = true;
                 if (this.CancelDelegate != null)
                 {
-                    this.CancelDelegate();
+                    cancelDelegate = this.CancelDelegate;
                     this.CancelDelegate = null;
                 }
+            }
+
+            if (cancelDelegate != null)
+            {
+                cancelDelegate();
             }
         }
     }

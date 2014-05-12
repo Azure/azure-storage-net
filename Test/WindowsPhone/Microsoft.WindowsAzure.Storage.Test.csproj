@@ -89,6 +89,9 @@
     <Compile Include="..\Common\Core\*.cs">
       <Link>Core\Core</Link>
     </Compile>
+    <Compile Include="..\Common\File\*.cs">
+      <Link>File\File</Link>
+    </Compile>
     <Compile Include="..\Common\Queue\*.cs">
       <Link>Queue\Queue</Link>
     </Compile>
@@ -103,6 +106,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
+      <Link>Analytics\Analytics</Link>
+    </Compile>
     <Compile Include="..\ClassLibraryCommon\Table\Entities\*.cs">
       <Link>Table\Entities\Entities</Link>
     </Compile>
@@ -124,6 +130,17 @@
     <Compile Include="Blob\LeaseTests.cs" />
     <Compile Include="Blob\MD5FlagsTest.cs" />
     <Compile Include="Blob\SASTests.cs" />
+    <Compile Include="File\FileCancellationUnitTests.cs" />
+    <Compile Include="File\FileReadStreamTest.cs" />
+    <Compile Include="File\FileStreamTests.cs" />
+    <Compile Include="File\FileTestBase.cs" />
+    <Compile Include="File\FileUploadDownloadTest.cs" />
+    <Compile Include="File\FileWriteStreamTest.cs" />
+    <Compile Include="File\CloudFileClientTest.cs" />
+    <Compile Include="File\CloudFileDirectoryTest.cs" />
+    <Compile Include="File\CloudFileShareTest.cs" />
+    <Compile Include="File\CloudFileTest.cs" />
+    <Compile Include="File\MD5FlagsTest.cs" />
     <Compile Include="Core\SecondaryTests.cs" />
     <Compile Include="Queue\CloudQueueClientTest.cs" />
     <Compile Include="Queue\QueueAnalyticsUnitTests.cs" />
@@ -216,6 +233,9 @@
       <Project>{CF1D432A-380F-434A-BC43-FC39AC8B61A8}</Project>
       <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsPhone\Microsoft.WindowsAzure.Storage%29</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />

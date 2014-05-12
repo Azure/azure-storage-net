@@ -17,18 +17,12 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using System.Linq;
     using System.Net;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// A collection of well-known error codes.
     /// </summary>
-    /// 
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "*", Justification = "For Readability.")]
     [SuppressMessage("StyleCop.CSharp.SpacingRules", "*", Justification = "For Readability.")]
     public sealed class WindowsAzureErrorCode

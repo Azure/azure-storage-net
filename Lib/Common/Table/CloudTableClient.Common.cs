@@ -22,7 +22,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
 
     /// <summary>
@@ -32,35 +31,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// it also encapsulates the credentials for accessing the storage account.</remarks>    
     public sealed partial class CloudTableClient
     {
-#if WINDOWS_DESKTOP || WINDOWS_PHONE
-        private TablePayloadFormat payloadFormat = TablePayloadFormat.Json;
-#else
-        private TablePayloadFormat payloadFormat = TablePayloadFormat.AtomPub;
-#endif
-
-        /// <summary>
-        /// The default server and client timeout interval.
-        /// </summary>
-        private TimeSpan? timeout;
-
-        /// <summary>
-        /// Max execution time across all potential retries.
-        /// </summary>
-        private TimeSpan? maximumExecutionTime;
-
         private AuthenticationScheme authenticationScheme;
 
         private string accountName;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CloudTableClient"/> class using the specified Table service endpoint
-        /// and anonymous credentials.
-        /// </summary>
-        /// <param name="baseUri">A <see cref="System.Uri"/> object containing the Table service endpoint to use to create the client.</param>
-        public CloudTableClient(Uri baseUri)
-            : this(baseUri, null)
-        {
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudTableClient"/> class using the specified Table service endpoint
@@ -92,10 +65,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
         {
             this.StorageUri = storageUri;
-            this.Credentials = credentials ?? new StorageCredentials();      
-            this.RetryPolicy = new ExponentialRetry();
-            this.LocationMode = LocationMode.PrimaryOnly;
-            this.ServerTimeout = Constants.DefaultServerSideTimeout;
+            this.Credentials = credentials ?? new StorageCredentials();
+            this.DefaultRequestOptions = new TableRequestOptions();
+            this.DefaultRequestOptions.RetryPolicy = new ExponentialRetry();
+            this.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryOnly;
+#if WINDOWS_DESKTOP || WINDOWS_PHONE
+            this.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.Json;
+#else
+            this.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
+#endif
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
 
@@ -137,36 +115,62 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
+        /// Gets or sets the default request options for requests made via the Table service client.
+        /// </summary>
+        /// <value>A <see cref="TableRequestOptions"/> object.</value>
+        public TableRequestOptions DefaultRequestOptions { get; set; }
+
+        /// <summary>
         /// Gets or sets the default retry policy for requests made via the Table service client.
         /// </summary>
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
-        public IRetryPolicy RetryPolicy { get; set; }
+        [Obsolete("Use DefaultRequestOptions.RetryPolicy.")]
+        public IRetryPolicy RetryPolicy
+        {
+            get
+            {
+                return this.DefaultRequestOptions.RetryPolicy;
+            }
+
+            set
+            {
+                this.DefaultRequestOptions.RetryPolicy = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the default location mode for requests made via the Table service client.
         /// </summary>
         /// <value>A <see cref="LocationMode"/> object.</value>
-        public LocationMode LocationMode { get; set; }
+        [Obsolete("Use DefaultRequestOptions.LocationMode.")]
+        public LocationMode? LocationMode
+        {
+            get
+            {
+                return this.DefaultRequestOptions.LocationMode;
+            }
+
+            set
+            {
+                this.DefaultRequestOptions.LocationMode = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the default server timeout for requests made via the Table service client.
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> containing the server timeout interval.</value>
+        [Obsolete("Use DefaultRequestOptions.ServerTimeout.")]
         public TimeSpan? ServerTimeout
         {
             get
             {
-                return this.timeout;
+                return this.DefaultRequestOptions.ServerTimeout;
             }
 
             set
             {
-                if (value.HasValue)
-                {
-                    CommonUtility.CheckTimeoutBounds(value.Value);
-                }
-
-                this.timeout = value;
+                this.DefaultRequestOptions.ServerTimeout = value;
             }
         }
 
@@ -174,21 +178,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Gets or sets the maximum execution time across all potential retries.
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
+        [Obsolete("Use DefaultRequestOptions.MaximumExecutionTime.")]
         public TimeSpan? MaximumExecutionTime
         {
             get
             {
-                return this.maximumExecutionTime;
+                return this.DefaultRequestOptions.MaximumExecutionTime;
             }
 
             set
             {
-                if (value.HasValue)
-                {
-                    CommonUtility.CheckTimeoutBounds(value.Value);
-                }
-
-                this.maximumExecutionTime = value;
+                this.DefaultRequestOptions.MaximumExecutionTime = value;
             }
         }
 
@@ -198,22 +198,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <value>A <see cref="TablePayloadFormat"/> enumeration value.</value>
         /// <remarks>By default, this property is set to <see cref="TablePayloadFormat.Json"/> for .NET and Windows Phone. For Windows Runtime,
         /// it is set to <see cref="TablePayloadFormat.AtomPub"/>.</remarks>
-        public TablePayloadFormat PayloadFormat
+        [Obsolete("Use DefaultRequestOptions.PayloadFormat.")]
+        public TablePayloadFormat? PayloadFormat
         {
             get
             {
-                return this.payloadFormat;
+                return this.DefaultRequestOptions.PayloadFormat;
             }
 
             set
             {
 #if WINDOWS_RT
-                if (value == TablePayloadFormat.Json || value == TablePayloadFormat.JsonNoMetadata || value == TablePayloadFormat.JsonFullMetadata)
+                if (value.HasValue)
                 {
-                    throw new ArgumentException(SR.JsonNotSupportedOnRT, "value");
+                    if (value.Value == TablePayloadFormat.Json || value.Value == TablePayloadFormat.JsonNoMetadata || value.Value == TablePayloadFormat.JsonFullMetadata)
+                    {
+                        throw new ArgumentException(SR.JsonNotSupportedOnRT, "value");
+                    }
                 }
 #endif
-                this.payloadFormat = value;
+                this.DefaultRequestOptions.PayloadFormat = value;
             }
         }
 

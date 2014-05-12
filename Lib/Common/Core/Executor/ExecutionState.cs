@@ -23,12 +23,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System;
     using System.Globalization;
     using System.IO;
-    using System.Threading;
 
 #if WINDOWS_RT
     using System.Net.Http;
 #else
     using System.Net;
+    using System.Threading;
 #endif
 
     // This class encapsulates a StorageCommand and stores state about its execution.
@@ -163,7 +163,25 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         internal int RetryCount { get; set; }
 
-        internal Stream ReqStream { get; set; }
+        internal Stream ReqStream
+        {
+            get
+            {
+                return this.reqStream;
+            }
+
+            set
+            {
+                this.reqStream =
+#if WINDOWS_RT
+                    value;
+#else
+                    value == null ? null : value.WrapWithByteCountingStream(this.Cmd.CurrentResult);
+#endif
+            }
+        }
+
+        private Stream reqStream;
 
         private volatile Exception exceptionRef = null;
 

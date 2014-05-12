@@ -63,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 TimeSpan delay = TimeSpan.Zero;
 
                 // Create a new client
-                HttpClient client = cmd.BuildClient(cmd, cmd.Handler, executionState.OperationContext);
+                HttpClient client = cmd.BuildClient(cmd, cmd.Handler, !cmd.Credentials.IsSAS, executionState.OperationContext);
                 client.Timeout = TimeSpan.FromMilliseconds(int.MaxValue);
 
                 do
@@ -317,6 +317,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
                         Logger.LogInformational(executionState.OperationContext, SR.TraceRetry);
                     }
+
+                    Executor.FireRetrying(executionState);
                 }
                 while (shouldRetry);
 

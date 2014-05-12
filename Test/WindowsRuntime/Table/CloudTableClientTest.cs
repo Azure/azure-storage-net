@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
@@ -256,8 +257,55 @@ namespace Microsoft.WindowsAzure.Storage.Table
             AssertSecondaryEndpoint();
 
             CloudTableClient client = GenerateCloudTableClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
+        }
+
+
+        [TestMethod]
+        [Description("Server timeout query parameter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudTableClientServerTimeoutAsync()
+        {
+            CloudTableClient client = GenerateCloudTableClient();
+
+            string timeout = null;
+            OperationContext context = new OperationContext();
+            context.SendingRequest += (sender, e) =>
+            {
+                IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.RequestUri.Query);
+                if (!query.TryGetValue("timeout", out timeout))
+                {
+                    timeout = null;
+                }
+            };
+
+            TableRequestOptions options = new TableRequestOptions();
+            await client.GetServicePropertiesAsync(null, context);
+            Assert.IsNull(timeout);
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.IsNull(timeout);
+
+            options.ServerTimeout = TimeSpan.FromSeconds(100);
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.AreEqual("100", timeout);
+
+            client.DefaultRequestOptions.ServerTimeout = TimeSpan.FromSeconds(90);
+            await client.GetServicePropertiesAsync(null, context);
+            Assert.AreEqual("90", timeout);
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.AreEqual("100", timeout);
+
+            options.ServerTimeout = null;
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.AreEqual("90", timeout);
+
+            options.ServerTimeout = TimeSpan.Zero;
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.IsNull(timeout);
         }
     }
 }

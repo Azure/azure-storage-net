@@ -42,8 +42,11 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            string dateString = HttpWebUtility.ConvertDateTimeToHttpString(DateTimeOffset.UtcNow);
-            request.Headers.Add(Constants.HeaderConstants.Date, dateString);
+            if (!request.Headers.Contains(Constants.HeaderConstants.Date))
+            {
+                string dateString = HttpWebUtility.ConvertDateTimeToHttpString(DateTimeOffset.UtcNow);
+                request.Headers.Add(Constants.HeaderConstants.Date, dateString);
+            }
 
             if (this.credentials.IsSharedKey)
             {

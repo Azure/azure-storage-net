@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
@@ -1508,8 +1509,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 container.Create();
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(5);
 
-                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(30);
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 blockBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream ms = new MemoryStream(buffer))
@@ -1517,6 +1518,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     try
                     {
                         blockBlob.UploadFromStream(ms);
+                        Assert.Fail();
                     }
                     catch (TimeoutException ex)
                     {
@@ -1528,15 +1530,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
 
-                Assert.IsFalse(blockBlob.Exists());
-
-                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(5);
                 CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                pageBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
                     try
                     {
                         pageBlob.UploadFromStream(ms);
+                        Assert.Fail();
                     }
                     catch (TimeoutException ex)
                     {
@@ -1550,7 +1551,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                blobClient.MaximumExecutionTime = null;
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = null;
                 container.DeleteIfExists();
             }
         }
@@ -1571,7 +1572,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.Create();
 
-                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(30);
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(30);
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
                 blockBlob.StreamWriteSizeInBytes = 1024 * 1024;
@@ -1589,7 +1590,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last write
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -1602,6 +1603,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (Stream bis = blockBlob.OpenRead())
                 {
                     DateTime start = DateTime.Now;
+
                     int total = 0;
                     while (total < 7 * 1024 * 1024)
                     {
@@ -1609,7 +1611,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last read
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -1635,7 +1637,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last write
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -1655,7 +1657,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last read
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -1675,7 +1677,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             finally
             {
 
-                blobClient.MaximumExecutionTime = null;
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = null;
                 container.DeleteIfExists();
             }
         }
@@ -1691,7 +1693,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             AssertSecondaryEndpoint();
 
             CloudBlobClient client = GenerateCloudBlobClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(client.GetServiceStats());
         }
 
@@ -1706,7 +1708,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             AssertSecondaryEndpoint();
 
             CloudBlobClient client = GenerateCloudBlobClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             using (AutoResetEvent waitHandle = new AutoResetEvent(false))
             {
                 IAsyncResult result = client.BeginGetServiceStats(
@@ -1737,9 +1739,55 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             AssertSecondaryEndpoint();
 
             CloudBlobClient client = GenerateCloudBlobClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(client.GetServiceStatsAsync().Result);
         }
 #endif
+
+        [TestMethod]
+        [Description("Server timeout query parameter")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientServerTimeout()
+        {
+            CloudBlobClient client = GenerateCloudBlobClient();
+
+            string timeout = null;
+            OperationContext context = new OperationContext();
+            context.SendingRequest += (sender, e) =>
+                {
+                    IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.Request.RequestUri.Query);
+                    if (!query.TryGetValue("timeout", out timeout))
+                    {
+                        timeout = null;
+                    }
+                };
+
+            BlobRequestOptions options = new BlobRequestOptions();
+            client.GetServiceProperties(null, context);
+            Assert.IsNull(timeout);
+            client.GetServiceProperties(options, context);
+            Assert.IsNull(timeout);
+
+            options.ServerTimeout = TimeSpan.FromSeconds(100);
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("100", timeout);
+
+            client.DefaultRequestOptions.ServerTimeout = TimeSpan.FromSeconds(90);
+            client.GetServiceProperties(null, context);
+            Assert.AreEqual("90", timeout);
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("100", timeout);
+
+            options.ServerTimeout = null;
+            client.GetServiceProperties(options, context);
+            Assert.AreEqual("90", timeout);
+
+            options.ServerTimeout = TimeSpan.Zero;
+            client.GetServiceProperties(options, context);
+            Assert.IsNull(timeout);
+        }
     }
 }

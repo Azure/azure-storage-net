@@ -164,7 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
 
-            queue.CreateAsync(null, new OperationContext()).Wait();;
+            queue.CreateAsync(null, new OperationContext()).Wait();
 
             Assert.IsTrue(queue.ExistsAsync(null, new OperationContext()).Result);
 
@@ -704,6 +704,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
                 Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
 
+                CloudQueue listedQueue = client.ListQueues(queue.Name, QueueListingDetails.All, null, null).First();
+                Assert.AreEqual(1, listedQueue.Metadata.Count);
+                Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+
                 queue.Metadata.Clear();
                 queue.SetMetadata();
 
@@ -750,6 +754,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
                     Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
 
+                    result = client.BeginListQueuesSegmented(queue.Name, QueueListingDetails.All, null, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    CloudQueue listedQueue = client.EndListQueuesSegmented(result).Results.First();
+                    Assert.AreEqual(1, listedQueue.Metadata.Count);
+                    Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+
                     queue.Metadata.Clear();
                     result = queue.BeginSetMetadata(null, new OperationContext(), ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
@@ -793,6 +803,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 queueToRetrieve.FetchAttributesAsync().Wait();
                 Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
                 Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
+
+                CloudQueue listedQueue = client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null).Result.Results.First();
+                Assert.AreEqual(1, listedQueue.Metadata.Count);
+                Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
 
                 queue.Metadata.Clear();
                 queue.SetMetadataAsync(null, new OperationContext()).Wait();
@@ -844,9 +858,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 string sasTokenFromId = queue.GetSharedAccessSignature(null, id);
                 StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
 
-                CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint));
+                CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, null /* blobEndpoint */, new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), null /* tableEndpoint */, null /* fileEndpoint */);
                 CloudQueueClient sasClient = sasAcc.CreateCloudQueueClient();
-                
+
                 CloudQueue sasQueueFromSasUri = new CloudQueue(sasClient.Credentials.TransformUri(queue.Uri));
                 CloudQueueMessage receivedMessage = sasQueueFromSasUri.PeekMessage();
                 Assert.AreEqual(messageContent, receivedMessage.AsString);
@@ -1491,7 +1505,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 string sasTokenFromId = queue.GetSharedAccessSignature(null, id, Constants.VersionConstants.February2012);
                 StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
 
-                CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint));
+                CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, null /* blobEndpoint */, new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), null /* tableEndpoint */, null /* fileEndpoint */);
                 CloudQueueClient sasClient = sasAcc.CreateCloudQueueClient();
 
                 CloudQueue sasQueueFromSasUri = new CloudQueue(sasClient.Credentials.TransformUri(queue.Uri));
@@ -1511,40 +1525,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 CloudQueue sasQueueFromPolicy = new CloudQueue(queue.Uri, sasCredsFromPolicy);
                 CloudQueueMessage receivedMessage3 = sasQueueFromPolicy.PeekMessage();
                 Assert.AreEqual(messageContent, receivedMessage3.AsString);
-            }
-            finally
-            {
-                queue.DeleteIfExists();
-            }
-        }
-
-        [TestMethod]
-        [Description("Test SAS with absolute Uri")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueSASWithAbsoluteUri()
-        {
-            CloudQueueClient queueClient = GenerateCloudQueueClient();
-
-            CloudQueue queue = queueClient.GetQueueReference(queueClient.BaseUri + GenerateNewQueueName());
-            try
-            {
-                queue.CreateIfNotExists();
-
-                SharedAccessQueuePolicy policy = new SharedAccessQueuePolicy()
-                {
-                    Permissions = SharedAccessQueuePermissions.Read,
-                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
-                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
-                };
-
-                string sasToken = queue.GetSharedAccessSignature(policy);
-                StorageCredentials creds = new StorageCredentials(sasToken);
-
-                CloudQueue sasQueue = new CloudQueue(queue.Uri, creds);
-                sasQueue.PeekMessage();
             }
             finally
             {

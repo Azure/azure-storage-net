@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchInsertAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -156,7 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchInsertFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             ITableEntity ent = GenerateRandomEntity("foo");
 
@@ -199,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchInsertOrMergeAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Merge with no pre-existing entity
             DynamicTableEntity insertOrMergeEntity = new DynamicTableEntity("insertOrMerge entity", "foo" + format.ToString());
@@ -253,7 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchInsertOrReplaceAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Replace with no pre-existing entity
             DynamicTableEntity insertOrReplaceEntity = new DynamicTableEntity("insertOrReplace entity", "foo" + format.ToString());
@@ -303,7 +303,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchDeleteAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -350,7 +350,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchDeleteFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             ITableEntity ent = GenerateRandomEntity("foo");
 
@@ -403,7 +403,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchMergeAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -444,7 +444,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchMergeFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -524,7 +524,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchReplaceAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -564,7 +564,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchReplaceFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -641,7 +641,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchAllSupportedOperationsAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -723,7 +723,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchRetrieveAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -801,7 +801,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Add insert
             DynamicTableEntity sendEnt = GenerateRandomEntity(Guid.NewGuid().ToString());
@@ -853,7 +853,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchOperationsWithEmptyKeysAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = "", RowKey = "" };
@@ -1003,7 +1003,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task InsertAndDeleteBatchWithNEntities(int n, TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -1091,7 +1091,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task InsertOrMergeBatchWithNEntities(int n, TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -1293,7 +1293,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -1336,7 +1336,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -1373,7 +1373,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchEntityOver1MBShouldThrowAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -1410,7 +1410,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchOver4MBShouldThrowAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -1589,7 +1589,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();

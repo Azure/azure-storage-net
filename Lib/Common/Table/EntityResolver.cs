@@ -21,7 +21,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
 
-#if !WINDOWS_RTMD
     /// <summary>
     /// Returns a delegate for resolving entities.
     /// </summary>
@@ -34,5 +33,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <returns></returns>  
     [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "etag", Justification = "Reviewed: etag can be used for identifier names.")]
     public delegate T EntityResolver<T>(string partitionKey, string rowKey, DateTimeOffset timestamp, IDictionary<string, EntityProperty> properties, string etag);
-#endif
 }

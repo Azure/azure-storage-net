@@ -63,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="messageContent">The message body.</param>
         /// <param name="outputStream">An output stream.</param>
-        internal static void WriteMessageContent(string messageContent, Stream outputStream)
+        public static void WriteMessageContent(string messageContent, Stream outputStream)
         {
             CommonUtility.AssertNotNull("outputStream", outputStream);
 

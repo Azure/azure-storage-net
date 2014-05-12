@@ -1,10 +1,10 @@
-# Windows Azure SDK for .NET
+# Microsoft Azure Storage SDK for .NET
 
-The Windows Azure SDK for .NET allows you to build Windows Azure applications 
+The Microsoft Azure Storage SDK for .NET allows you to build Microsoft Azure applications 
 that take advantage of scalable cloud computing resources.
 
 This repository contains the open source subset of the .NET Storage SDK. For documentation of the 
-complete SDK, please see the [Windows Azure .NET Developer Center](http://www.windowsazure.com/en-us/develop/net/).
+complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http://www.windowsazure.com/en-us/develop/net/).
 
 # Features
 
@@ -19,40 +19,39 @@ complete SDK, please see the [Windows Azure .NET Developer Center](http://www.wi
     - Advanced Queue Operations
 # Getting started
 
-The complete Windows Azure SDK can be downloaded from the [Windows Azure Downloads Page](http://www.windowsazure.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
+The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://www.windowsazure.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
 
 For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
 
 ## Target Frameworks
 
-- .NET Framework 4.0: As of October 2013, the Windows Azure SDK for .NET (v2.2) supports primarily the desktop .NET Framework 4 release and above. For earlier .NET versions, SDK v2.1 is still supported.
+- .NET Framework 4.0: As of October 2013, the Microsoft Azure SDK for .NET (v2.2) supports primarily the desktop .NET Framework 4 release and above. For earlier .NET versions, SDK v2.1 is still supported.
 - Windows 8 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
  
 ## Requirements
 
-- Windows Azure Subscription: To call Windows Azure services, you need to first [create an account](https://account.windowsazure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
-- Hosting: To host your .NET code in Windows Azure, you additionally need to download the full Windows Azure SDK for .NET - which includes packaging,
-    emulation, and deployment tools, or use Windows Azure Web Sites to deploy ASP.NET web applications.
+- Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://account.windowsazure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
+- Hosting: To host your .NET code in Microsoft Azure, you additionally need to download the full Microsoft Azure SDK for .NET - which includes packaging,
+    emulation, and deployment tools, or use Microsoft Azure Web Sites to deploy ASP.NET web applications.
 
 ## Need Help?
-Be sure to check out the Windows Azure [Developer Forums on MSDN](http://go.microsoft.com/fwlink/?LinkId=234489) if you have trouble with the provided code or use StackOverflow.
+Be sure to check out the Microsoft Azure [Developer Forums on MSDN](http://go.microsoft.com/fwlink/?LinkId=234489) if you have trouble with the provided code or use StackOverflow.
 
 ## Collaborate & Contribute
 
 We gladly accept community contributions.
 
 - Issues: Please report bugs using the Issues section of GitHub
-- Forums: Interact with the development teams on StackOverflow or the Windows Azure Forums
-- Source Code Contributions: Please follow the [contribution guidelines for Windows Azure open source](http://windowsazure.github.io/guidelines.html) that details information on onboarding as a contributor 
+- Forums: Interact with the development teams on StackOverflow or the Microsoft Azure Forums
+- Source Code Contributions: Please follow the [contribution guidelines for Microsoft Azure open source](http://windowsazure.github.io/guidelines.html) that details information on onboarding as a contributor 
 
-For general suggestions about Windows Azure please use our [UserVoice forum](http://www.mygreatwindowsazureidea.com/forums/34192-windows-azure-feature-voting).
+For general suggestions about Microsoft Azure please use our [UserVoice forum](http://www.mygreatwindowsazureidea.com/forums/34192-windows-azure-feature-voting).
 
-# Storage Client Library for .NET 4, Windows 8, and Windows Phone 8 (3.0.0.0)
+# Storage Client Library for .NET 4, Windows 8, and Windows Phone 8 (4.0.0)
 
-The Storage Client Library ships with the Windows Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
+The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You will find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-Please note that Windows 8 and Windows Phone 8 libraries are CTP (Community
-Technology Preview) releases.
+This version of the Storage Client Library ships with the new Storage version 2014-02-14.
 
 ## Download & Install
 
@@ -61,7 +60,7 @@ Technology Preview) releases.
 To get the source code of the SDK via git just type:
 
 ```bash
-git clone git://github.com/WindowsAzure/azure-storage-net.git
+git clone git://github.com/Azure/azure-storage-net.git
 cd azure-storage-net
 ```
 
@@ -70,12 +69,7 @@ cd azure-storage-net
 To get the binaries of this library as distributed by Microsoft, ready for use
 within your project you can also have them installed by the .NET package manager [NuGet](http://www.nuget.org/).
 
-#### Desktop
 `Install-Package WindowsAzure.Storage`
-
-#### Windows 8 and Windows Phone
-`Install-Package WindowsAzure.Storage-Preview -Pre`
-`Install-Package WindowsAzure.Storage.Table-Preview -Pre`
 
 ## Dependencies
 
@@ -109,7 +103,7 @@ Once installed:
 ## Code Samples
 
 > Note:
-> How-Tos focused around accomplishing specific tasks are available on the [Windows Azure .NET Developer Center](http://azure.microsoft.com/en-us/documentation/services/storage/).
+> How-Tos focused around accomplishing specific tasks are available on the [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/documentation/services/storage/).
 
 ### Creating a Table
 
@@ -121,7 +115,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 ```
 
-To perform an operation on any Windows Azure resource you will first instantiate
+To perform an operation on any Microsoft Azure resource you will first instantiate
 a *client* which allows performing actions on it. The resource is known as an 
 *entity*. To do so for Table you also have to authenticate your request:
 
@@ -140,5 +134,5 @@ peopleTable.Create();
 
 # Learn More
 
-- [Windows Azure .NET Developer Center](http://www.windowsazure.com/en-us/develop/net/)
-- [Windows Azure SDK Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/dd179380.aspx)
+- [Microsoft Azure .NET Developer Center](http://www.windowsazure.com/en-us/develop/net/)
+- [Microsoft Azure SDK Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/dd179380.aspx)

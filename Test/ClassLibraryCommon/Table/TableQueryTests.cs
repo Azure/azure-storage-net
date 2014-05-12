@@ -135,7 +135,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryBasicSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
             query.TakeCount = 100;
 
@@ -166,7 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithContinuationSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery query = new TableQuery();
 
             OperationContext opContext = new OperationContext();
@@ -637,7 +637,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithFilter(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}')", "tables_batch_1", "0050"));
 
             OperationContext opContext = new OperationContext();
@@ -671,7 +671,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryEnumerateTwice(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery query = new TableQuery();
 
             OperationContext opContext = new OperationContext();
@@ -722,7 +722,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryProjection(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery query = new TableQuery().Select(new List<string>() { "a", "c" });
 
             foreach (DynamicTableEntity ent in currentTable.ExecuteQuery(query))
@@ -758,7 +758,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             table.Create();
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             try
             {
@@ -896,7 +896,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             CloudTableClient client = GenerateCloudTableClient();
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             try
             {
@@ -1036,7 +1036,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             table.Create();
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             // Setup
             string pk = Guid.NewGuid().ToString();
@@ -1069,7 +1069,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithTakeCount(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             // No continuation
             TableQuery query = new TableQuery().Take(100);
 
@@ -1104,7 +1104,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithTakeCountAndResolver(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // No continuation
             TableQuery query = new TableQuery().Take(100);
@@ -1144,7 +1144,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithInvalidTakeCount(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             try
             {
                 TableQuery query = new TableQuery().Take(0);
@@ -1190,7 +1190,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithInvalidQuery(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery query = new TableQuery().Where(string.Format("(PartitionKey ) and (RowKey ge '{1}')", "tables_batch_1", "000050"));
 

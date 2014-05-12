@@ -21,8 +21,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     
     /// <summary>
@@ -52,7 +52,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="other">BlobRequestOptions instance to be cloned.</param>
         internal BlobRequestOptions(BlobRequestOptions other)
-            : this()
         {
             if (other != null)
             {
@@ -73,14 +72,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             BlobRequestOptions modifiedOptions = new BlobRequestOptions(options);
 
-            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.RetryPolicy;
-            modifiedOptions.LocationMode = modifiedOptions.LocationMode ?? serviceClient.LocationMode;
-            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.ServerTimeout;
-            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.MaximumExecutionTime;
-            modifiedOptions.ParallelOperationThreadCount = modifiedOptions.ParallelOperationThreadCount
-                                                           ?? serviceClient.ParallelOperationThreadCount;
-            modifiedOptions.SingleBlobUploadThresholdInBytes = modifiedOptions.SingleBlobUploadThresholdInBytes
-                                                               ?? serviceClient.SingleBlobUploadThresholdInBytes;
+            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+            modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
+                                            ?? serviceClient.DefaultRequestOptions.LocationMode) 
+                                            ?? RetryPolicies.LocationMode.PrimaryOnly;
+            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
+            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
+            modifiedOptions.ParallelOperationThreadCount = (modifiedOptions.ParallelOperationThreadCount
+                                                           ?? serviceClient.DefaultRequestOptions.ParallelOperationThreadCount)
+                                                           ?? 1;
+            modifiedOptions.SingleBlobUploadThresholdInBytes = (modifiedOptions.SingleBlobUploadThresholdInBytes
+                                                               ?? serviceClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes)
+                                                               ?? Constants.MaxSingleUploadBlobSize / 2;
             
             if (applyExpiry && !modifiedOptions.OperationExpiryTime.HasValue && modifiedOptions.MaximumExecutionTime.HasValue)
             {
@@ -92,9 +95,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             modifiedOptions.StoreBlobContentMD5 = false;
             modifiedOptions.UseTransactionalMD5 = false;
 #else
-            modifiedOptions.DisableContentMD5Validation = modifiedOptions.DisableContentMD5Validation ?? false;
-            modifiedOptions.StoreBlobContentMD5 = modifiedOptions.StoreBlobContentMD5 ?? (blobType == BlobType.BlockBlob);
-            modifiedOptions.UseTransactionalMD5 = modifiedOptions.UseTransactionalMD5 ?? false;
+            modifiedOptions.DisableContentMD5Validation = (modifiedOptions.DisableContentMD5Validation
+                                                            ?? serviceClient.DefaultRequestOptions.DisableContentMD5Validation) 
+                                                            ?? false;
+            modifiedOptions.StoreBlobContentMD5 = (modifiedOptions.StoreBlobContentMD5 
+                                                    ?? serviceClient.DefaultRequestOptions.StoreBlobContentMD5)
+                                                    ?? (blobType == BlobType.BlockBlob);
+            modifiedOptions.UseTransactionalMD5 = (modifiedOptions.UseTransactionalMD5 
+                                                    ?? serviceClient.DefaultRequestOptions.UseTransactionalMD5)
+                                                    ?? false;
 #endif
 
             return modifiedOptions;

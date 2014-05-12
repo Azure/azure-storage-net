@@ -121,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableQueryBasicAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
 
             TableQuerySegment<DynamicTableEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, null);
@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoTableQueryWithContinuationAsync(TablePayloadFormat format)
         {
             TableQuery query = new TableQuery();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             OperationContext opContext = new OperationContext();
             TableQuerySegment<DynamicTableEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext);
@@ -194,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithFilterAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}')", "tables_batch_1", "0050"));
             OperationContext opContext = new OperationContext();
@@ -228,7 +228,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryProjectionAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery query = new TableQuery().Select(new List<string>() { "a", "c" });
 
             foreach (DynamicTableEntity ent in ExecuteQuery(currentTable, query))
@@ -260,7 +260,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableQueryOnSupportedTypesAsync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             CloudTableClient client = GenerateCloudTableClient();
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
@@ -401,7 +401,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Thread.CurrentThread.CurrentCulture = new CultureInfo("tr-TR");
 
             CloudTableClient client = GenerateCloudTableClient();
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             await table.CreateAsync();
@@ -539,7 +539,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoTableQueryEmptyValueAsync(TablePayloadFormat format)
         {
             CloudTableClient client = GenerateCloudTableClient();
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             await table.CreateAsync();
@@ -579,7 +579,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryWithInvalidTakeCount(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             try
             {
                 TableQuery query = new TableQuery().Take(0);
@@ -625,7 +625,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private async Task DoTableQueryWithInvalidQuery(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery query = new TableQuery().Where(string.Format("(PartitionKey ) and (RowKey ge '{1}')", "tables_batch_1", "000050"));
 

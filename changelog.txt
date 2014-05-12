@@ -1,8 +1,8 @@
 Issues fixed in 2.0.1 : 
 	
-	- All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
-	- All: StorageErrorCodeStrings class is missing.
-	- Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.
+  - All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
+  - All: StorageErrorCodeStrings class is missing.
+  - Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.
 
 Issues fixed in 2.0.2 :
 
@@ -57,9 +57,9 @@ Issues fixed in 2.0.5 :
 Issues fixed in 2.0.5.1 :
 
   - All: Make sure the response stream is drained to prevent socket exhaustion.
-	
+
 Issues fixed in 2.0.6 :
-	
+
   - All: Default RetryPolicy filters updated to not retry 100-407, 409-499, 501, and 505
   - All: Support for all flavors of SharedKey and SharedKeyLite message signing through AuthenticationScheme property on client classes.
   - All: Unusable HttpWebRequestFactory and WebRequestExtensions are not public anymore
@@ -76,7 +76,7 @@ Issues fixed in 2.0.6 :
 
 Issues fixed in 2.0.6.1 :
 
-	- Tables: Fix for Table Service layer to drain response stream
+  - Tables: Fix for Table Service layer to drain response stream
 
 Changes in 2.1.0 :
 
@@ -192,7 +192,7 @@ Issues fixed in 3.0.3 :
 
   - All: Fixed an issue that was causing a deadlock because the cancellation registration was being de-registered while holding on to a lock that the cancellation callback was waiting on.
   - All: Fixed an issue where parsing exception information out of the response stream while using async was blocking on IO calls.
-  - All (WP): Fixed an issue with cancellation and timeout during upload and download causing a thread to hang. HttpWebRequest.Abort is not called during stream operations anymore.
+  - All (WP): Fixed an issue with cancellation and timeout during upload and download causing a thread to stop responding. HttpWebRequest.Abort is not called during stream operations anymore.
   - Blobs: Streams opened with OpenRead methods use the user-provided buffer pooling implementation.
   - Blobs: If the parent of a blob is the container, Cloud{BlockBlob|PageBlob|BlobDirectory}.Parent returns a valid CloudBlobDirectory with an empty prefix. Similarly, container.GetDirectoryReference("") gets a valid CloudBlobDirectory representing the container.
   - Tables (Perf): Fixed an issue where the entity properties were being enumerated twice during table write operations while using JSON.
@@ -208,8 +208,49 @@ Issues fixed in 3.1.0.1 :
   - All: Removed the System.Data.Services.Client dependency from the Nuget package.
   - Queues: Added an overload to GetSharedAccessSignature that takes only the SharedAccessQueuePolicy in CloudQueue.
   - Tables: Added an overload to GetSharedAccessSignature that takes only the SharedAccessTablePolicy and an overload that takes the SharedAccessTablePolicy and an accessPolicyIndentifier string in CloudTable.
-  
+
 Issues fixed in 3.2.0 :
 
   - All: Added support for secondary location access in Azure Storage Emulator
   - All: Fixed a race condition that was causing NullReferenceException during asynchronous upload/download.
+  
+Issues fixed in 3.2.1 :
+
+  - All: Fixed a race condition that was causing deadlock during Task cancellation.
+  - Queues: CloudQueue objects returned by listing queues include metadata when QueueListingDetails.Metadata is used.
+
+Changes in 4.0.0 :
+
+  - Files: Added support for File service.
+  - All: RequestResult tracks Ingress and Egress Bytes for all requests.
+  - All: Get{BlockBlob|PageBlob|Directory|Container|Queue|Table}Reference always treat the string parameter as a relative address.
+  - All: ServerTimeout is set to null by default. Therefore, "timeout" query parameter will not be sent to the server if ServerTimeout is not set by the user.
+  - All: Renamed DoesServiceRequest to DoesServiceRequestAttribute.
+  - All: Added DefaultRequestOptions to the Service Clients.
+  - All: Deprecated all service client request options properties (RetryPolicy, LocationMode, ServerTimeout, MaximumExecutionTime, SingleBlobUploadThresholdInBytes, ParallelOperationThreadCount, and TablePayloadFormat) via the Obsolete attribute.
+  - All: No longer shipping the WindowsAzure.Storage.Table-Preview package or the WindowsAzure.Storage-Preview package; everything is included in the WindowsAzure.Storage RTM package.
+  - All: Introduced AnalyticsClient and related entity types to simplify downloading logging and metrics data.
+  - All: MultiBufferMemoryStream, the BufferManager-aware high performance memory stream, is public. 
+  - All: Shared Access Signature requests use the api-version query parameter instead of the x-ms-version header.
+  - All: Validated that the maxResults parameter passed into any List operation (eg ListBlobs, ListQueues, etc) is either null or has a positive value.
+  - All (RT): The RT libraries have been merged into a single dll.  The winmd is no longer created.  Code has been moved from //Lib/WindowsRuntimeTable to //Lib/WindowsRuntime/Table.
+  - All: Deprecated SharedKeyLiteAuthenticationHandler, use SharedKeyAuthenticationHandler instead.
+  - All: SharedKeyAuthenticationHandler.SignRequest does not add x-ms-date header if already present.
+  - Blobs: Update blob length only in APIs where the server includes the x-ms-blob-content-length or Content-Length header in the response.
+  - Blobs: Renamed CloudBlobDirectory.GetSubdirectoryReference to CloudBlobDirectory.GetDirectoryReference.
+  - Blobs: Changed the deprecated ParallelOperationThreadCount, SingleBlobUploadThresholdInBytes, and LocationMode on the BlobClient to nullables.
+  - Blobs: Fixed an issue that allowed whitespace metadata values to be set.
+  - Blobs: Changed the type of exception thrown to ArgumentNullException when a null prefix is passed to the ListBlobs method.
+  - Queues: Changed the deprecated LocationMode on the QueueClient to a nullable.
+  - Queues: Changed the visibility of QueueRequest.WriteMessageContent method to public.
+  - Queues: Removed the CloudQueueClient(Uri) constructor because queues don't support anonymous access. The correct usage is to use the CloudQueueClient(Uri, StorageCredentials) constructor instead.
+  - Tables: Changed the deprecated PayloadFormat and LocationMode on the TableClient to nullables.
+  - Tables: Deprecated the DataServices namespace via the Obsolete attribute.
+  - Tables: TableEntity is serializable via the ISerializable interface.
+  - Tables: Made the DateTime public in the EntityProperty class.
+  - Tables: Removed the CloudTableClient(Uri) constructor because tables don't support anonymous access. The correct usage is to use the CloudTableClient(Uri, StorageCredentials) constructor instead.
+  - Tables: CloudTable(Uri) correctly parses partition key and row key limit values from passed in URLs with SAS tokens.
+  - Tables (RT): Windows RT class "TableBatchOperationExtensions" no longer exists; functionality has been moved to methods in the TableBatchOperation class.
+  - Tables (RT): Windows RT class "CloudTableExtensions" no longer exists; functionality has been moved to methods in the CloudTable class.
+  - Tables (RT): Windows RT class "TableQueryExtensions" no longer exists; functionality has been moved to methods in the TableQuery class.
+  - Tables (RT): Windows RT class "TableOperationFactory" no longer exists; functionality has been moved to methods in the TableOperation class.

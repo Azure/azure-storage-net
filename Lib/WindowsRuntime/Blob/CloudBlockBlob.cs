@@ -1210,7 +1210,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob snapshot = new CloudBlockBlob(this.Name, snapshotTime, this.Container);
                 snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata);
                 snapshot.attributes.Properties = new BlobProperties(this.Properties);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(snapshot.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
                 return snapshot;
             };
 
@@ -1246,7 +1246,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 this.Properties.Length = length.Value;
                 return NullType.Value;
             };
@@ -1309,7 +1309,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };
@@ -1337,7 +1337,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                CloudBlobSharedImpl.UpdateETagLMTAndSequenceNumber(this.attributes, resp);
+                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
                 return Task.Factory.StartNew(() =>
                 {
                     GetBlockListResponse responseParser = new GetBlockListResponse(cmd.ResponseStream);

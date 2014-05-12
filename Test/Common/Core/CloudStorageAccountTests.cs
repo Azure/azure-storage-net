@@ -19,8 +19,10 @@ using System;
 using System.Globalization;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.File;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
 #if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -108,10 +110,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             Assert.IsFalse(cred.IsSharedKey);
 
             Uri testUri = new Uri("http://test/abc");
-            Assert.AreEqual(testUri.AbsoluteUri + token, cred.TransformUri(testUri).AbsoluteUri, true);
+            Assert.AreEqual(testUri.AbsoluteUri + token + "&" + Constants.QueryConstants.ApiVersion + "=" + Constants.HeaderConstants.TargetStorageVersion, cred.TransformUri(testUri).AbsoluteUri, true);
 
             testUri = new Uri("http://test/abc?query=a&query2=b");
-            string expectedUri = testUri.AbsoluteUri + "&" + token.Substring(1);
+            string expectedUri = testUri.AbsoluteUri + "&" + token.Substring(1) + "&" + Constants.QueryConstants.ApiVersion + "=" + Constants.HeaderConstants.TargetStorageVersion;
             Assert.AreEqual(expectedUri, cred.TransformUri(testUri).AbsoluteUri, true);
 
             byte[] dummyKey = { 0, 1, 2 };
@@ -277,11 +279,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             Assert.AreEqual(a.BlobEndpoint, b.BlobEndpoint);
             Assert.AreEqual(a.QueueEndpoint, b.QueueEndpoint);
             Assert.AreEqual(a.TableEndpoint, b.TableEndpoint);
+            Assert.AreEqual(a.FileEndpoint, b.FileEndpoint);
 
             // storage uris are the same
             Assert.AreEqual(a.BlobStorageUri, b.BlobStorageUri);
             Assert.AreEqual(a.QueueStorageUri, b.QueueStorageUri);
             Assert.AreEqual(a.TableStorageUri, b.TableStorageUri);
+            Assert.AreEqual(a.FileStorageUri, b.FileStorageUri);
 
             // seralized representatons are the same.
             string aToStringNoSecrets = a.ToString();
@@ -331,6 +335,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             Assert.AreEqual(devstoreAccount.BlobStorageUri.SecondaryUri, new Uri("http://127.0.0.1:10000/devstoreaccount1-secondary"));
             Assert.AreEqual(devstoreAccount.QueueStorageUri.SecondaryUri, new Uri("http://127.0.0.1:10001/devstoreaccount1-secondary"));
             Assert.AreEqual(devstoreAccount.TableStorageUri.SecondaryUri, new Uri("http://127.0.0.1:10002/devstoreaccount1-secondary"));
+            Assert.IsNull(devstoreAccount.FileStorageUri);
 
             string devstoreAccountToStringWithSecrets = devstoreAccount.ToString(true);
             CloudStorageAccount testAccount = CloudStorageAccount.Parse(devstoreAccountToStringWithSecrets);
@@ -359,12 +364,16 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 new Uri(String.Format("http://{0}.queue.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.TableEndpoint,
                 new Uri(String.Format("http://{0}.table.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
+            Assert.AreEqual(cloudStorageAccount.FileEndpoint,
+                new Uri(String.Format("http://{0}.file.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.BlobStorageUri.SecondaryUri,
                 new Uri(String.Format("http://{0}-secondary.blob.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.QueueStorageUri.SecondaryUri,
                 new Uri(String.Format("http://{0}-secondary.queue.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.TableStorageUri.SecondaryUri,
                 new Uri(String.Format("http://{0}-secondary.table.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
+            Assert.AreEqual(cloudStorageAccount.FileStorageUri.SecondaryUri,
+                new Uri(String.Format("http://{0}-secondary.file.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             
             string cloudStorageAccountToStringNoSecrets = cloudStorageAccount.ToString();
             string cloudStorageAccountToStringWithSecrets = cloudStorageAccount.ToString(true);
@@ -389,12 +398,16 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 new Uri(String.Format("https://{0}.queue.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.TableEndpoint,
                 new Uri(String.Format("https://{0}.table.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
+            Assert.AreEqual(cloudStorageAccount.FileEndpoint,
+                new Uri(String.Format("https://{0}.file.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.BlobStorageUri.SecondaryUri,
                 new Uri(String.Format("https://{0}-secondary.blob.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.QueueStorageUri.SecondaryUri,
                 new Uri(String.Format("https://{0}-secondary.queue.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
             Assert.AreEqual(cloudStorageAccount.TableStorageUri.SecondaryUri,
                 new Uri(String.Format("https://{0}-secondary.table.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
+            Assert.AreEqual(cloudStorageAccount.FileStorageUri.SecondaryUri,
+                new Uri(String.Format("https://{0}-secondary.file.core.windows.net", TestBase.TargetTenantConfig.AccountName)));
 
             string cloudStorageAccountToStringWithSecrets = cloudStorageAccount.ToString(true);
             CloudStorageAccount testAccount = CloudStorageAccount.Parse(cloudStorageAccountToStringWithSecrets);
@@ -425,12 +438,16 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 new Uri(String.Format("http://{0}.queue.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.TableEndpoint,
                 new Uri(String.Format("http://{0}.table.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
+            Assert.AreEqual(cloudStorageAccount.FileEndpoint,
+                new Uri(String.Format("http://{0}.file.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.BlobStorageUri.SecondaryUri,
                 new Uri(String.Format("http://{0}-secondary.blob.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.QueueStorageUri.SecondaryUri,
                 new Uri(String.Format("http://{0}-secondary.queue.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.TableStorageUri.SecondaryUri,
                 new Uri(String.Format("http://{0}-secondary.table.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
+            Assert.AreEqual(cloudStorageAccount.FileStorageUri.SecondaryUri,
+               new Uri(String.Format("http://{0}-secondary.file.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
 
             string cloudStorageAccountToStringWithSecrets = cloudStorageAccount.ToString(true);
             CloudStorageAccount testAccount = CloudStorageAccount.Parse(cloudStorageAccountToStringWithSecrets);
@@ -461,12 +478,16 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 new Uri(String.Format("https://{0}.queue.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.TableEndpoint,
                 new Uri(String.Format("https://{0}.table.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
+            Assert.AreEqual(cloudStorageAccount.FileEndpoint,
+                new Uri(String.Format("https://{0}.file.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.BlobStorageUri.SecondaryUri,
                 new Uri(String.Format("https://{0}-secondary.blob.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.QueueStorageUri.SecondaryUri,
                 new Uri(String.Format("https://{0}-secondary.queue.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
             Assert.AreEqual(cloudStorageAccount.TableStorageUri.SecondaryUri,
                 new Uri(String.Format("https://{0}-secondary.table.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
+            Assert.AreEqual(cloudStorageAccount.FileStorageUri.SecondaryUri,
+                new Uri(String.Format("https://{0}-secondary.file.{1}", TestBase.TargetTenantConfig.AccountName, TestEndpointSuffix)));
 
             string cloudStorageAccountToStringWithSecrets = cloudStorageAccount.ToString(true);
             CloudStorageAccount testAccount = CloudStorageAccount.Parse(cloudStorageAccountToStringWithSecrets);
@@ -563,21 +584,25 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             CloudBlobClient blob = account.CreateCloudBlobClient();
             CloudQueueClient queue = account.CreateCloudQueueClient();
             CloudTableClient table = account.CreateCloudTableClient();
+            CloudFileClient file = account.CreateCloudFileClient();
 
             // check endpoints
             Assert.AreEqual(account.BlobEndpoint, blob.BaseUri, "Blob endpoint doesn't match account");
             Assert.AreEqual(account.QueueEndpoint, queue.BaseUri, "Queue endpoint doesn't match account");
             Assert.AreEqual(account.TableEndpoint, table.BaseUri, "Table endpoint doesn't match account");
+            Assert.AreEqual(account.FileEndpoint, file.BaseUri, "File endpoint doesn't match account");
 
             // check storage uris
             Assert.AreEqual(account.BlobStorageUri, blob.StorageUri, "Blob endpoint doesn't match account");
             Assert.AreEqual(account.QueueStorageUri, queue.StorageUri, "Queue endpoint doesn't match account");
             Assert.AreEqual(account.TableStorageUri, table.StorageUri, "Table endpoint doesn't match account");
+            Assert.AreEqual(account.FileStorageUri, file.StorageUri, "File endpoint doesn't match account");
 
             // check creds
             Assert.AreEqual(account.Credentials, blob.Credentials, "Blob creds don't match account");
             Assert.AreEqual(account.Credentials, queue.Credentials, "Queue creds don't match account");
             Assert.AreEqual(account.Credentials, table.Credentials, "Table creds don't match account");
+            Assert.AreEqual(account.Credentials, file.Credentials, "File creds don't match account");
         }
 
         [TestMethod]
@@ -602,6 +627,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             CloudTableClient tableClient = cloudStorageAccount.CreateCloudTableClient();
             CloudTable table = tableClient.GetTableReference("table1");
             Assert.AreEqual(cloudStorageAccount.TableEndpoint.ToString() + "table1", table.Uri.ToString());
+
+            CloudFileClient fileClient = cloudStorageAccount.CreateCloudFileClient();
+            CloudFileShare share = fileClient.GetShareReference("share1");
+            Assert.AreEqual(cloudStorageAccount.FileEndpoint.ToString() + "share1", share.Uri.ToString());
         }
 
         [TestMethod]
@@ -689,6 +718,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             Assert.AreEqual(new Uri("http://ipv4.fiddler:10000/devstoreaccount1-secondary"), account.BlobStorageUri.SecondaryUri);
             Assert.AreEqual(new Uri("http://ipv4.fiddler:10001/devstoreaccount1-secondary"), account.QueueStorageUri.SecondaryUri);
             Assert.AreEqual(new Uri("http://ipv4.fiddler:10002/devstoreaccount1-secondary"), account.TableStorageUri.SecondaryUri);
+            Assert.IsNull(account.FileStorageUri);
         }
 
         [TestMethod]
@@ -755,7 +785,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
 
-            CloudStorageAccount account = new CloudStorageAccount(null, new Uri("http://blobs/"), null, null);
+            CloudStorageAccount account = new CloudStorageAccount(null, new Uri("http://blobs/"), null, null, null);
 
             AccountsAreEqual(account, CloudStorageAccount.Parse(account.ToString(true)));
         }
@@ -809,6 +839,19 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         public void CloudStorageAccountJustTableToString()
         {
             string accountString = "TableEndpoint=http://table/;AccountName=test;AccountKey=abc=";
+
+            Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
+        }
+
+        [TestMethod]
+        [Description("ToString method with custom file endpoint should return the same connection string")]
+        [TestCategory(ComponentCategory.Core)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudStorageAccountJustFileToString()
+        {
+            string accountString = "FileEndpoint=http://file/;AccountName=test;AccountKey=abc=";
 
             Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
         }

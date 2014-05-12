@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage
 
         #endregion
 
-        #region Events
+        #region Logging
 
         /// <summary>
         /// Gets or sets the default logging level to be used for subsequently created instances of the <see cref="OperationContext"/> class.
@@ -69,17 +69,51 @@ namespace Microsoft.WindowsAzure.Storage
         /// Gets or sets the logging level to be used for an instance of the <see cref="OperationContext"/> class.
         /// </summary>
         /// <value>A value of type <see cref="LogLevel"/> that specifies which events are logged by the <see cref="OperationContext"/>.</value>
-        public LogLevel LogLevel { get; set; }
+        public LogLevel LogLevel { get; set; } 
 
+        #endregion
+        
+        #region Events
+
+        /// <summary>
+        /// Occurs immediately before a request is signed.
+        /// </summary>
+        public static event EventHandler<RequestEventArgs> GlobalSendingRequest;
+
+        /// <summary>
+        /// Occurs when a response is received from the server, before any processing or downloading.
+        /// </summary>
+        public static event EventHandler<RequestEventArgs> GlobalResponseReceived;
+
+        /// <summary>
+        /// Occurs after a response has been fully received and processed.
+        /// </summary>
+        public static event EventHandler<RequestEventArgs> GlobalRequestCompleted;
+
+        /// <summary>
+        /// Occurs before a request is retried
+        /// </summary>
+        public static event EventHandler<RequestEventArgs> GlobalRetrying;
+        
         /// <summary>
         /// Occurs immediately before a request is signed.
         /// </summary>
         public event EventHandler<RequestEventArgs> SendingRequest;
 
         /// <summary>
-        /// Occurs when a response is received from the server.
+        /// Occurs when a response is received from the service, before any processing or downloading.
         /// </summary>
         public event EventHandler<RequestEventArgs> ResponseReceived;
+
+        /// <summary>
+        /// Occurs after a response has been fully received and processed.
+        /// </summary>
+        public event EventHandler<RequestEventArgs> RequestCompleted;
+
+        /// <summary>
+        /// Occurs before a request is retried
+        /// </summary>
+        public event EventHandler<RequestEventArgs> Retrying;
 
         internal void FireSendingRequest(RequestEventArgs args)
         {
@@ -87,6 +121,12 @@ namespace Microsoft.WindowsAzure.Storage
             if (handler != null)
             {
                 handler(this, args);
+            }
+
+            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalSendingRequest;
+            if (handlerStatic != null)
+            {
+                handlerStatic(this, args);
             }
         }
 
@@ -96,6 +136,42 @@ namespace Microsoft.WindowsAzure.Storage
             if (handler != null)
             {
                 handler(this, args);
+            }
+
+            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalResponseReceived;
+            if (handlerStatic != null)
+            {
+                handlerStatic(this, args);
+            }
+        }
+
+        internal void FireRequestCompleted(RequestEventArgs args)
+        {
+            EventHandler<RequestEventArgs> handler = this.RequestCompleted;
+            if (handler != null)
+            {
+                handler(this, args);
+            }
+
+            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalRequestCompleted;
+            if (handlerStatic != null)
+            {
+                handlerStatic(this, args);
+            }
+        }
+
+        internal void FireRetrying(RequestEventArgs args)
+        {
+            EventHandler<RequestEventArgs> handler = this.Retrying;
+            if (handler != null)
+            {
+                handler(this, args);
+            }
+
+            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalRetrying;
+            if (handlerStatic != null)
+            {
+                handlerStatic(this, args);
             }
         }
         #endregion

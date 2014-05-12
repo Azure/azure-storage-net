@@ -54,81 +54,62 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return blocks;
         }
 
-        public static void SeekRandomly(Stream stream, long offset)
+        public static void AssertAreEqual(ICloudBlob expected, ICloudBlob actual)
         {
-            Random random = new Random();
-            int randomOrigin = random.Next(3);
-            SeekOrigin origin = SeekOrigin.Begin;
-            switch (randomOrigin)
+            if (expected == null)
             {
-                case 1:
-                    origin = SeekOrigin.Current;
-                    offset = offset - stream.Position;
-                    break;
-
-                case 2:
-                    origin = SeekOrigin.End;
-                    offset = offset - stream.Length;
-                    break;
-            }
-            stream.Seek(offset, origin);
-        }
-
-        public static void AssertAreEqual(ICloudBlob blob1, ICloudBlob blob2)
-        {
-            if (blob1 == null)
-            {
-                Assert.IsNull(blob2);
+                Assert.IsNull(actual);
             }
             else
             {
-                Assert.IsNotNull(blob2);
-                Assert.AreEqual(blob1.BlobType, blob2.BlobType);
-                Assert.AreEqual(blob1.Uri, blob2.Uri);
-                Assert.AreEqual(blob1.SnapshotTime, blob2.SnapshotTime);
-                Assert.AreEqual(blob1.IsSnapshot, blob2.IsSnapshot);
-                Assert.AreEqual(blob1.SnapshotQualifiedUri, blob2.SnapshotQualifiedUri);
-                AssertAreEqual(blob1.Properties, blob2.Properties);
-                AssertAreEqual(blob1.CopyState, blob2.CopyState);
+                Assert.IsNotNull(actual);
+                Assert.AreEqual(expected.BlobType, actual.BlobType);
+                Assert.AreEqual(expected.Uri, actual.Uri);
+                Assert.AreEqual(expected.StorageUri, actual.StorageUri);
+                Assert.AreEqual(expected.SnapshotTime, actual.SnapshotTime);
+                Assert.AreEqual(expected.IsSnapshot, actual.IsSnapshot);
+                Assert.AreEqual(expected.SnapshotQualifiedUri, actual.SnapshotQualifiedUri);
+                AssertAreEqual(expected.Properties, actual.Properties);
+                AssertAreEqual(expected.CopyState, actual.CopyState);
             }
         }
 
-        public static void AssertAreEqual(BlobProperties prop1, BlobProperties prop2)
+        public static void AssertAreEqual(BlobProperties expected, BlobProperties actual)
         {
-            if (prop1 == null)
+            if (expected == null)
             {
-                Assert.IsNull(prop2);
+                Assert.IsNull(actual);
             }
             else
             {
-                Assert.IsNotNull(prop2);
-                Assert.AreEqual(prop1.CacheControl, prop2.CacheControl);
-                Assert.AreEqual(prop1.ContentDisposition, prop2.ContentDisposition);
-                Assert.AreEqual(prop1.ContentEncoding, prop2.ContentEncoding);
-                Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
-                Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
-                Assert.AreEqual(prop1.ContentType, prop2.ContentType);
-                Assert.AreEqual(prop1.ETag, prop2.ETag);
-                Assert.AreEqual(prop1.LastModified, prop2.LastModified);
-                Assert.AreEqual(prop1.Length, prop2.Length);
+                Assert.IsNotNull(actual);
+                Assert.AreEqual(expected.CacheControl, actual.CacheControl);
+                Assert.AreEqual(expected.ContentDisposition, actual.ContentDisposition);
+                Assert.AreEqual(expected.ContentEncoding, actual.ContentEncoding);
+                Assert.AreEqual(expected.ContentLanguage, actual.ContentLanguage);
+                Assert.AreEqual(expected.ContentMD5, actual.ContentMD5);
+                Assert.AreEqual(expected.ContentType, actual.ContentType);
+                Assert.AreEqual(expected.ETag, actual.ETag);
+                Assert.AreEqual(expected.LastModified, actual.LastModified);
+                Assert.AreEqual(expected.Length, actual.Length);
             }
         }
 
-        public static void AssertAreEqual(CopyState copy1, CopyState copy2)
+        public static void AssertAreEqual(CopyState expected, CopyState actual)
         {
-            if (copy1 == null)
+            if (expected == null)
             {
-                Assert.IsNull(copy2);
+                Assert.IsNull(actual);
             }
             else
             {
-                Assert.IsNotNull(copy2);
-                Assert.AreEqual(copy1.BytesCopied, copy2.BytesCopied);
-                Assert.AreEqual(copy1.CompletionTime, copy2.CompletionTime);
-                Assert.AreEqual(copy1.CopyId, copy2.CopyId);
-                Assert.AreEqual(copy1.Source, copy2.Source);
-                Assert.AreEqual(copy1.Status, copy2.Status);
-                Assert.AreEqual(copy1.TotalBytes, copy2.TotalBytes);
+                Assert.IsNotNull(actual);
+                Assert.AreEqual(expected.BytesCopied, actual.BytesCopied);
+                Assert.AreEqual(expected.CompletionTime, actual.CompletionTime);
+                Assert.AreEqual(expected.CopyId, actual.CopyId);
+                Assert.AreEqual(expected.Source, actual.Source);
+                Assert.AreEqual(expected.Status, actual.Status);
+                Assert.AreEqual(expected.TotalBytes, actual.TotalBytes);
             }
         }
     }

@@ -1,0 +1,376 @@
+﻿//-----------------------------------------------------------------------
+// <copyright file="CloudFileClient.cs" company="Microsoft">
+//    Copyright 2013 Microsoft Corporation
+//
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+// </copyright>
+//-----------------------------------------------------------------------
+
+namespace Microsoft.WindowsAzure.Storage.File
+{
+    using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    /// <summary>
+    /// Provides a client-side logical representation of the Windows Azure File service. This client is used to configure and execute requests against the File service.
+    /// </summary>
+    /// <remarks>The service client encapsulates the base URI for the File service. If the service client will be used for authenticated access,
+    /// it also encapsulates the credentials for accessing the storage account.</remarks>
+    public sealed partial class CloudFileClient
+    {
+        private IAuthenticationHandler authenticationHandler;
+
+        /// <summary>
+        /// Gets or sets the authentication scheme to use to sign HTTP requests.
+        /// </summary>
+        public AuthenticationScheme AuthenticationScheme
+        {
+            get
+            {
+                return this.authenticationScheme;
+            }
+
+            set
+            {
+                if (value != this.authenticationScheme)
+                {
+                    this.authenticationScheme = value;
+                    this.authenticationHandler = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the authentication handler used to sign HTTP requests.
+        /// </summary>
+        /// <value>The authentication handler.</value>
+        internal IAuthenticationHandler AuthenticationHandler
+        {
+            get
+            {
+                IAuthenticationHandler result = this.authenticationHandler;
+                if (result == null)
+                {
+                    if (this.Credentials.IsSharedKey)
+                    {
+                        result = new SharedKeyAuthenticationHandler(
+                            this.GetCanonicalizer(),
+                            this.Credentials,
+                            this.Credentials.AccountName);
+                    }
+                    else
+                    {
+                        result = new NoOpAuthenticationHandler();
+                    }
+
+                    this.authenticationHandler = result;
+                }
+
+                return result;
+            }
+        }
+
+#if SYNC
+        /// <summary>
+        /// Returns an enumerable collection of shares, which are retrieved lazily, whose names 
+        /// begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="detailsIncluded">A value that indicates whether to return share metadata with the listing.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of shares that are retrieved lazily.</returns>
+        [DoesServiceRequest]
+        public IEnumerable<CloudFileShare> ListShares(string prefix = null, ShareListingDetails detailsIncluded = ShareListingDetails.None, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
+            return CommonUtility.LazyEnumerable(
+                token => this.ListSharesSegmentedCore(prefix, detailsIncluded, null, (FileContinuationToken)token, modifiedOptions, operationContext),
+                long.MaxValue);
+        }
+
+        /// <summary>
+        /// Returns a result segment containing a collection of shares.
+        /// </summary>
+        /// <param name="currentToken">A <see cref="FileContinuationToken"/> token returned by a previous listing operation.</param>
+        /// <returns>A result segment of shares.</returns>
+        [DoesServiceRequest]
+        public ShareResultSegment ListSharesSegmented(FileContinuationToken currentToken)
+        {
+            return this.ListSharesSegmented(null, ShareListingDetails.None, null, currentToken, null, null);
+        }
+
+        /// <summary>
+        /// Returns a result segment containing a collection of shares.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <returns>A result segment of shares.</returns>
+        [DoesServiceRequest]
+        public ShareResultSegment ListSharesSegmented(string prefix, FileContinuationToken currentToken)
+        {
+            return this.ListSharesSegmented(prefix, ShareListingDetails.None, null, currentToken, null, null);
+        }
+
+        /// <summary>
+        /// Returns a result segment containing a collection of shares
+        /// whose names begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="detailsIncluded">A value that indicates whether to return share metadata with the listing.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned 
+        /// in the result segment, up to the per-operation limit of 5000. If this value is null, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A result segment of shares.</returns>
+        [DoesServiceRequest]
+        public ShareResultSegment ListSharesSegmented(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
+            ResultSegment<CloudFileShare> resultSegment = this.ListSharesSegmentedCore(prefix, detailsIncluded, maxResults, currentToken, modifiedOptions, operationContext);
+            return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
+        }
+
+        /// <summary>
+        /// Returns a result segment containing a collection of shares
+        /// whose names begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="detailsIncluded">A value that indicates whether to return share metadata with the listing.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned 
+        /// in the result segment, up to the per-operation limit of 5000. If this value is null, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A result segment of shares.</returns>
+        private ResultSegment<CloudFileShare> ListSharesSegmentedCore(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
+        {
+            return Executor.ExecuteSync(
+                this.ListSharesImpl(prefix, detailsIncluded, currentToken, maxResults, options),
+                options.RetryPolicy, 
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous request to return a result segment containing a collection of shares.
+        /// </summary>
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginListSharesSegmented(FileContinuationToken currentToken, AsyncCallback callback, object state)
+        {
+            return this.BeginListSharesSegmented(null, ShareListingDetails.None, null, currentToken, null, null, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous request to return a result segment containing a collection of shares.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginListSharesSegmented(string prefix, FileContinuationToken currentToken, AsyncCallback callback, object state)
+        {
+            return this.BeginListSharesSegmented(prefix, ShareListingDetails.None, null, currentToken, null, null, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous request to return a result segment containing a collection of shares
+        /// whose names begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="detailsIncluded">A value that indicates whether to return share metadata with the listing.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned 
+        /// in the result segment, up to the per-operation limit of 5000. If this value is null, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginListSharesSegmented(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
+            return Executor.BeginExecuteAsync(
+                this.ListSharesImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
+                modifiedOptions.RetryPolicy, 
+                operationContext, 
+                callback, 
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to return a result segment containing a collection of shares.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A result segment of shares.</returns>
+        public ShareResultSegment EndListSharesSegmented(IAsyncResult asyncResult)
+        {
+            ResultSegment<CloudFileShare> resultSegment = Executor.EndExecuteAsync<ResultSegment<CloudFileShare>>(asyncResult);
+            return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
+        }
+        
+#if TASK
+        /// <summary>
+        /// Returns a task that performs an asynchronous request to return a result segment containing a collection of shares.
+        /// </summary>
+        /// <param name="currentToken">A <see cref="FileContinuationToken"/> token returned by a previous listing operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken)
+        {
+            return this.ListSharesSegmentedAsync(currentToken, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous request to return a result segment containing a collection of shares.
+        /// </summary>
+        /// <param name="currentToken">A <see cref="FileContinuationToken"/> token returned by a previous listing operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginListSharesSegmented, this.EndListSharesSegmented, currentToken, cancellationToken);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous request to return a result segment containing a collection of shares
+        /// whose names begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>    
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken)
+        {
+            return this.ListSharesSegmentedAsync(prefix, currentToken, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous request to return a result segment containing a collection of shares
+        /// whose names begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>    
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginListSharesSegmented, this.EndListSharesSegmented, prefix, currentToken, cancellationToken);
+        }
+        
+        /// <summary>
+        /// Returns a task that performs an asynchronous request to return a result segment containing a collection of shares
+        /// whose names begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="detailsIncluded">A value that indicates whether to return share metadata with the listing.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned 
+        /// in the result segment, up to the per-operation limit of 5000. If this value is null, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
+        }
+        
+        /// <summary>
+        /// Returns a task that performs an asynchronous request to return a result segment containing a collection of shares
+        /// whose names begin with the specified prefix.
+        /// </summary>
+        /// <param name="prefix">The share name prefix.</param>
+        /// <param name="detailsIncluded">A value that indicates whether to return share metadata with the listing.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned 
+        /// in the result segment, up to the per-operation limit of 5000. If this value is null, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginListSharesSegmented, this.EndListSharesSegmented, prefix, detailsIncluded, maxResults, currentToken, options, operationContext, cancellationToken);
+        }
+#endif
+
+        /// <summary>
+        /// Core implementation for the ListShares method.
+        /// </summary>
+        /// <param name="prefix">The share prefix.</param>
+        /// <param name="detailsIncluded">The details included.</param>
+        /// <param name="currentToken">The continuation token.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned 
+        /// in the result segment, up to the per-operation limit of 5000. If this value is null, the maximum possible number of results will be returned, up to 5000.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that lists the shares.</returns>
+        private RESTCommand<ResultSegment<CloudFileShare>> ListSharesImpl(string prefix, ShareListingDetails detailsIncluded, FileContinuationToken currentToken, int? maxResults, FileRequestOptions options)
+        {
+            ListingContext listingContext = new ListingContext(prefix, maxResults)
+            {
+                Marker = currentToken != null ? currentToken.NextMarker : null
+            };
+
+            RESTCommand<ResultSegment<CloudFileShare>> getCmd = new RESTCommand<ResultSegment<CloudFileShare>>(this.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(getCmd);
+            getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
+            getCmd.RetrieveResponseStream = true;
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.List(uri, serverTimeout, listingContext, detailsIncluded, useVersionHeader, ctx);
+            getCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
+            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            {
+                ListSharesResponse listSharesResponse = new ListSharesResponse(cmd.ResponseStream);
+                List<CloudFileShare> sharesList = new List<CloudFileShare>(
+                    listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, this)));
+                FileContinuationToken continuationToken = null;
+                if (listSharesResponse.NextMarker != null)
+                {
+                    continuationToken = new FileContinuationToken()
+                    {
+                        NextMarker = listSharesResponse.NextMarker,
+                        TargetLocation = cmd.CurrentResult.TargetLocation,
+                    };
+                }
+
+                return new ResultSegment<CloudFileShare>(sharesList)
+                {
+                    ContinuationToken = continuationToken,
+                };
+            };
+
+            return getCmd;
+        }
+    }
+}

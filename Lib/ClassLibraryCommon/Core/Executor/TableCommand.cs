@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Diagnostics.CodeAnalysis;
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     internal class TableCommand<T, INTERMEDIATE_TYPE> : StorageCommandBase<T>
     {
         public Func<INTERMEDIATE_TYPE> ExecuteFunc;

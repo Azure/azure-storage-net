@@ -18,12 +18,8 @@
 namespace Microsoft.WindowsAzure.Storage.Core.Auth
 {
     using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Net.Http;
-    using System.Text;
 
     internal sealed class SharedKeyTableCanonicalizer : ICanonicalizer
     {

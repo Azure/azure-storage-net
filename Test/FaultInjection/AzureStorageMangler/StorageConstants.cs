@@ -36,5 +36,10 @@ namespace Microsoft.WindowsAzure.Test.Network
         /// The root host name for the Table service.
         /// </summary>
         public const string TableBaseDnsName = "table.core.windows.net";
+
+        /// <summary>
+        /// The root file storage DNS name.
+        /// </summary>
+        public const string FileBaseDnsName = "file.core.windows.net";
     }
 }

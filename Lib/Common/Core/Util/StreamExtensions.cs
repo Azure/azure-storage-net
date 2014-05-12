@@ -220,6 +220,18 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return val2;
         }
+
+        /// <summary>
+        /// Associates a given stream to a given RequestResult such that the RequestResult byte counters are accurately updated as data is read or written.
+        /// </summary>
+        /// <param name="stream">A reference to the original stream</param>
+        /// <param name="result">An object that represents the result of a physical request.</param>
+        /// <returns></returns>
+        [DebuggerNonUserCode]
+        internal static Stream WrapWithByteCountingStream(this Stream stream, RequestResult result)
+        {
+            return new ByteCountingStream(stream, result);
+        }
 #endif
 
 #if WINDOWS_RT

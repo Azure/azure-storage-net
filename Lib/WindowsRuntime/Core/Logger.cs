@@ -17,10 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using System;
-    using System.Diagnostics.Tracing;
-
     internal static partial class Logger
     {
         private static StorageEventSource eventSource = new StorageEventSource();

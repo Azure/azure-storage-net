@@ -278,96 +278,90 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             };
 
             this.CreateIfNotExistsHandler(accessType, modifiedOptions, operationContext, storageAsyncResult);
-
             return storageAsyncResult;
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool thread.")]
         private void CreateIfNotExistsHandler(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                    true,
-                    options,
-                    operationContext,
-                    existsResult =>
+            ICancellableAsyncResult savedExistsResult = this.BeginExists(
+                true,
+                options,
+                operationContext,
+                existsResult =>
+                {
+                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
+                    lock (storageAsyncResult.CancellationLockerObject)
                     {
-                        storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                        lock (storageAsyncResult.CancellationLockerObject)
+                        storageAsyncResult.CancelDelegate = null;
+                        try
                         {
-                            storageAsyncResult.CancelDelegate = null;
-                            try
+                            bool exists = this.EndExists(existsResult);
+                            if (exists)
                             {
-                                bool exists = this.EndExists(existsResult);
-                                if (exists)
-                                {
-                                    storageAsyncResult.Result = false;
-                                    storageAsyncResult.OnComplete();
-                                    return;
-                                }
+                                storageAsyncResult.Result = false;
+                                storageAsyncResult.OnComplete();
+                                return;
+                            }
 
-                                ICancellableAsyncResult savedCreateResult = this.BeginCreate(
-                                    accessType,
-                                    options,
-                                    operationContext,
-                                    createResult =>
+                            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
+                                accessType,
+                                options,
+                                operationContext,
+                                createResult =>
+                                {
+                                    storageAsyncResult.UpdateCompletedSynchronously(createResult.CompletedSynchronously);
+                                    storageAsyncResult.CancelDelegate = null;
+                                    try
                                     {
-                                        storageAsyncResult.UpdateCompletedSynchronously(createResult.CompletedSynchronously);
-                                        storageAsyncResult.CancelDelegate = null;
-                                        try
+                                        this.EndCreate(createResult);
+                                        storageAsyncResult.Result = true;
+                                        storageAsyncResult.OnComplete();
+                                    }
+                                    catch (StorageException e)
+                                    {
+                                        if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
                                         {
-                                            this.EndCreate(createResult);
-                                            storageAsyncResult.Result = true;
-                                            storageAsyncResult.OnComplete();
-                                        }
-                                        catch (StorageException e)
-                                        {
-                                            if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                                            if ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                                                (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists))
                                             {
-                                                if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists))
-                                                {
-                                                    storageAsyncResult.Result = false;
-                                                    storageAsyncResult.OnComplete();
-                                                }
-                                                else
-                                                {
-                                                    storageAsyncResult.OnComplete(e);
-                                                }
+                                                storageAsyncResult.Result = false;
+                                                storageAsyncResult.OnComplete();
                                             }
                                             else
                                             {
                                                 storageAsyncResult.OnComplete(e);
                                             }
                                         }
-                                        catch (Exception e)
+                                        else
                                         {
                                             storageAsyncResult.OnComplete(e);
                                         }
-                                    },
-                                    null /* state */);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        storageAsyncResult.OnComplete(e);
+                                    }
+                                },
+                                null /* state */);
 
-                                storageAsyncResult.CancelDelegate = savedCreateResult.Cancel;
-                                if (storageAsyncResult.CancelRequested)
-                                {
-                                    storageAsyncResult.Cancel();
-                                }
-                            }
-                            catch (Exception e)
+                            storageAsyncResult.CancelDelegate = savedCreateResult.Cancel;
+                            if (storageAsyncResult.CancelRequested)
                             {
-                                storageAsyncResult.OnComplete(e);
+                                storageAsyncResult.Cancel();
                             }
                         }
-                    },
-                    null /* state */);
+                        catch (Exception e)
+                        {
+                            storageAsyncResult.OnComplete(e);
+                        }
+                    }
+                },
+                null /* state */);
 
-                storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.Cancel();
-                }
-            }
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
         }
 
         /// <summary>
@@ -655,89 +649,84 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool thread.")]
         private void DeleteIfExistsHandler(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                    true,
-                    options,
-                    operationContext,
-                    existsResult =>
+            ICancellableAsyncResult savedExistsResult = this.BeginExists(
+                true,
+                options,
+                operationContext,
+                existsResult =>
+                {
+                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
+                    lock (storageAsyncResult.CancellationLockerObject)
                     {
-                        storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                        lock (storageAsyncResult.CancellationLockerObject)
+                        storageAsyncResult.CancelDelegate = null;
+                        try
                         {
-                            storageAsyncResult.CancelDelegate = null;
-                            try
+                            bool exists = this.EndExists(existsResult);
+                            if (!exists)
                             {
-                                bool exists = this.EndExists(existsResult);
-                                if (!exists)
-                                {
-                                    storageAsyncResult.Result = false;
-                                    storageAsyncResult.OnComplete();
-                                    return;
-                                }
+                                storageAsyncResult.Result = false;
+                                storageAsyncResult.OnComplete();
+                                return;
+                            }
 
-                                ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                                    accessCondition,
-                                    options,
-                                    operationContext,
-                                    deleteResult =>
+                            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
+                                accessCondition,
+                                options,
+                                operationContext,
+                                deleteResult =>
+                                {
+                                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
+                                    storageAsyncResult.CancelDelegate = null;
+                                    try
                                     {
-                                        storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                                        storageAsyncResult.CancelDelegate = null;
-                                        try
+                                        this.EndDelete(deleteResult);
+                                        storageAsyncResult.Result = true;
+                                        storageAsyncResult.OnComplete();
+                                    }
+                                    catch (StorageException e)
+                                    {
+                                        if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                                         {
-                                            this.EndDelete(deleteResult);
-                                            storageAsyncResult.Result = true;
-                                            storageAsyncResult.OnComplete();
-                                        }
-                                        catch (StorageException e)
-                                        {
-                                            if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                                            if ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                                                (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
                                             {
-                                                if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
-                                                {
-                                                    storageAsyncResult.Result = false;
-                                                    storageAsyncResult.OnComplete();
-                                                }
-                                                else
-                                                {
-                                                    storageAsyncResult.OnComplete(e);
-                                                }
+                                                storageAsyncResult.Result = false;
+                                                storageAsyncResult.OnComplete();
                                             }
                                             else
                                             {
                                                 storageAsyncResult.OnComplete(e);
                                             }
                                         }
-                                        catch (Exception e)
+                                        else
                                         {
                                             storageAsyncResult.OnComplete(e);
                                         }
-                                    },
-                                    null /* state */);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        storageAsyncResult.OnComplete(e);
+                                    }
+                                },
+                                null /* state */);
 
-                                storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
-                                if (storageAsyncResult.CancelRequested)
-                                {
-                                    storageAsyncResult.Cancel();
-                                }
-                            }
-                            catch (Exception e)
+                            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
+                            if (storageAsyncResult.CancelRequested)
                             {
-                                storageAsyncResult.OnComplete(e);
+                                storageAsyncResult.Cancel();
                             }
                         }
-                    },
-                    null /* state */);
+                        catch (Exception e)
+                        {
+                            storageAsyncResult.OnComplete(e);
+                        }
+                    }
+                },
+                null /* state */);
 
-                storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.Cancel();
-                }
-            }
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
         }
 
         /// <summary>
@@ -2386,7 +2375,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Acquire, proposedLeaseId, leaseDuration, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Acquire, proposedLeaseId, leaseDuration, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2416,7 +2405,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Renew, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Renew, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2447,7 +2436,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Change, proposedLeaseId, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Change, proposedLeaseId, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2477,7 +2466,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Release, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Release, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2509,7 +2498,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<TimeSpan> putCmd = new RESTCommand<TimeSpan>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Break, null /* proposedLeaseId */, null /* leaseDuration */, breakSeconds, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Break, null /* proposedLeaseId */, null /* leaseDuration */, breakSeconds, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2540,7 +2529,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Create(uri, serverTimeout, ctx, accessType);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.Create(uri, serverTimeout, useVersionHeader, ctx, accessType);
             putCmd.SetHeaders = (r, ctx) => ContainerHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2562,14 +2551,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand{T}"/> that deletes the container.</returns>
         private RESTCommand<NullType> DeleteContainerImpl(AccessCondition accessCondition, BlobRequestOptions options)
         {
-            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
+            RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
-            options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.Delete(uri, serverTimeout, accessCondition, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
+            options.ApplyToStorageCommand(deleteCmd);
+            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.Delete(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            deleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
-            return putCmd;
+            return deleteCmd;
         }
 
         /// <summary>
@@ -2584,7 +2573,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.GetProperties(uri, serverTimeout, accessCondition, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.GetProperties(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2609,7 +2598,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = primaryOnly ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.GetProperties(uri, serverTimeout, null /* accessCondition */, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.GetProperties(uri, serverTimeout, null /* accessCondition */, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2638,7 +2627,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => ContainerHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2667,7 +2656,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.SetAcl(uri, serverTimeout, acl.PublicAccess, accessCondition, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.SetAcl(uri, serverTimeout, acl.PublicAccess, accessCondition, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
@@ -2696,7 +2685,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.GetAcl(uri, serverTimeout, accessCondition, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.GetAcl(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2782,7 +2771,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, ctx) => ContainerHttpWebRequestFactory.ListBlobs(uri, serverTimeout, listingContext, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.ListBlobs(uri, serverTimeout, listingContext, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>

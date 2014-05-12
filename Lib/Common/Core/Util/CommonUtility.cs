@@ -20,7 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.File;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -29,6 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
 #if WINDOWS_DESKTOP
     using System.Net;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #endif
 
     internal static class CommonUtility
@@ -74,7 +75,24 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 options.ApplyToStorageCommand(cmdWithTimeout);
             }
 
-            return new ExecutionState<NullType>(cmdWithTimeout, options.RetryPolicy, new OperationContext());
+            return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
+        }
+
+        /// <summary>
+        /// Create an ExecutionState object that can be used for pre-request operations
+        /// such as buffering user's data.
+        /// </summary>
+        /// <param name="options">Request options</param>
+        /// <returns>Temporary ExecutionState object</returns>
+        internal static ExecutionState<NullType> CreateTemporaryExecutionState(FileRequestOptions options)
+        {
+            RESTCommand<NullType> cmdWithTimeout = new RESTCommand<NullType>(new StorageCredentials(), null /* Uri */);
+            if (options != null)
+            {
+                options.ApplyToStorageCommand(cmdWithTimeout);
+            }
+
+            return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
 
         /// <summary>
@@ -191,16 +209,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 throw new ArgumentOutOfRangeException(paramName, string.Format(CultureInfo.InvariantCulture, SR.ArgumentTooSmallError, paramName, min));
             }
-        }
-
-        /// <summary>
-        /// Checks that the given timeout in within allowed bounds.
-        /// </summary>
-        /// <param name="timeout">The timeout to check.</param>
-        /// <exception cref="ArgumentOutOfRangeException">The timeout is not within allowed bounds.</exception>
-        internal static void CheckTimeoutBounds(TimeSpan timeout)
-        {
-            CommonUtility.AssertInBounds("Timeout", timeout, TimeSpan.FromSeconds(1), Constants.MaximumAllowedTimeout);
         }
 
         /// <summary>

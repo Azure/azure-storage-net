@@ -136,7 +136,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 // SAS via account constructor
                 sasCreds = new StorageCredentials(sasToken);
-                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri);
+                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri, null);
                 sasClient = sasAccount.CreateCloudTableClient();
                 sasTable = sasClient.GetTableReference(table.Name);
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
@@ -486,7 +486,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             Action<BaseEntity, OperationContext> queryDelegate = (tableEntity, ctx) =>
             {
-                Task<TableResult> retrieveTask = testClient.GetTableReference(tableName).ExecuteAsync(TableOperationFactory.Retrieve<BaseEntity>(tableEntity.PartitionKey, tableEntity.RowKey), null, ctx).AsTask();
+                Task<TableResult> retrieveTask = testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Retrieve<BaseEntity>(tableEntity.PartitionKey, tableEntity.RowKey), null, ctx).AsTask();
 
                 retrieveTask.Wait();
 
@@ -1095,7 +1095,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 string sasToken = table.GetSharedAccessSignature(policy, null, null, null, null, null);
                 StorageCredentials creds = new StorageCredentials(sasToken);
-                CloudStorageAccount sasAcc = new CloudStorageAccount(creds, new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint));
+                CloudStorageAccount sasAcc = new CloudStorageAccount(creds, null /* blobEndpoint */, null /* queueEndpoint */, new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint), null /* fileEndpoint */);
                 CloudTableClient client = sasAcc.CreateCloudTableClient();
 
                 CloudTable sasTable = new CloudTable(client.Credentials.TransformUri(table.Uri));

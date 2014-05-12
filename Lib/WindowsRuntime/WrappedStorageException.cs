@@ -17,10 +17,10 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.InteropServices;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
 
     internal class WrappedStorageException : COMException
     {

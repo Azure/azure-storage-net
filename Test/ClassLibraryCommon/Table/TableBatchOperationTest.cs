@@ -232,7 +232,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchInsertSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
 
@@ -281,7 +281,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchBasicOperationsCheck(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
             TableBatchOperation batch = new TableBatchOperation();
@@ -334,7 +334,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchInsertFailSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             ITableEntity ent = GenerateRandomEntity("foo");
 
@@ -548,7 +548,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchInsertOrMergeSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Merge with no pre-existing entity
             DynamicTableEntity insertOrMergeEntity = new DynamicTableEntity("insertOrMerge entity", "foo" + format.ToString());
@@ -672,7 +672,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchInsertOrReplaceSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Replace with no pre-existing entity
             DynamicTableEntity insertOrReplaceEntity = new DynamicTableEntity("insertOrReplace entity", "foo" + format.ToString());
@@ -789,7 +789,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchDeleteSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -836,7 +836,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchDeleteFailSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             ITableEntity ent = GenerateRandomEntity("foo");
 
@@ -1006,7 +1006,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchMergeSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -1047,7 +1047,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchMergeFailSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
@@ -1266,7 +1266,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchReplaceSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
@@ -1306,7 +1306,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchReplaceFailSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
@@ -1520,7 +1520,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchAllSupportedOperationsSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -1686,7 +1686,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchRetrieveSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -1764,7 +1764,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchRetrieveWithResolverSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Add insert
             DynamicTableEntity sendEnt = GenerateRandomEntity(Guid.NewGuid().ToString());
@@ -1812,7 +1812,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchRetrieveWithITableEntitySync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Add insert
             DynamicTableEntity sendEnt = GenerateRandomEntity(Guid.NewGuid().ToString());
@@ -2075,7 +2075,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchOperationsWithEmptyKeys(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = "", RowKey = "" };
@@ -2240,7 +2240,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void InsertAndDeleteBatchWithNEntities(int n, TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -2268,7 +2268,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void POCOInsertAndDeleteBatchWithNEntities(int n, TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -2356,7 +2356,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void InsertOrMergeBatchWithNEntities(int n, TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             string pk = Guid.NewGuid().ToString();
 
@@ -2481,7 +2481,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchWithMultipleOperationsOnSameEntityShouldFail(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -2527,7 +2527,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchOver100EntitiesShouldThrow(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
             for (int m = 0; m < 101; m++)
@@ -2563,7 +2563,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchEntityOver1MBShouldThrow(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
 
@@ -2600,7 +2600,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchOver4MBShouldThrow(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -2724,7 +2724,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchEmptyBatchShouldThrow(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             TestHelper.ExpectedException<InvalidOperationException>(
@@ -2791,7 +2791,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
@@ -2831,7 +2831,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableBatchOperationWithRetryHasCorrectNumberOfResults(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableBatchOperation batch = new TableBatchOperation();
             for (int i = 0; i < 100; i++)

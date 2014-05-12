@@ -18,6 +18,7 @@
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Core;
+using Microsoft.WindowsAzure.Storage.File;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
@@ -59,11 +60,15 @@ namespace Microsoft.WindowsAzure.Storage
 #if WINDOWS_DESKTOP
         public static WCFBufferManagerAdapter BlobBufferManager = new WCFBufferManagerAdapter(BufferManager.CreateBufferManager(512 * (int)Constants.MB, 64 * (int)Constants.KB), 64 * (int)Constants.KB);
 
+        public static WCFBufferManagerAdapter FileBufferManager = new WCFBufferManagerAdapter(BufferManager.CreateBufferManager(512 * (int)Constants.MB, 64 * (int)Constants.KB), 64 * (int)Constants.KB);
+
         public static WCFBufferManagerAdapter TableBufferManager = new WCFBufferManagerAdapter(BufferManager.CreateBufferManager(256 * (int)Constants.MB, 64 * (int)Constants.KB), 64 * (int)Constants.KB);
 
         public static WCFBufferManagerAdapter QueueBufferManager = new WCFBufferManagerAdapter(BufferManager.CreateBufferManager(64 * (int)Constants.MB, (int)Constants.KB), (int)Constants.KB);
 #else
         public static MockBufferManager BlobBufferManager = new MockBufferManager(64 * (int)Constants.KB);
+
+        public static MockBufferManager FileBufferManager = new MockBufferManager(64 * (int)Constants.KB);
 
         public static MockBufferManager TableBufferManager = new MockBufferManager(64 * (int)Constants.KB);
 
@@ -120,6 +125,12 @@ namespace Microsoft.WindowsAzure.Storage
             return client;
         }
 
+        public static CloudFileClient GenerateCloudFileClient()
+        {
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint);
+            return new CloudFileClient(baseAddressUri, TestBase.StorageCredentials);
+        }
+
         public static CloudQueueClient GenerateCloudQueueClient()
         {
             CloudQueueClient client;
@@ -146,6 +157,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
 #if WINDOWS_DESKTOP
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public static void SetPayloadFormatOnDataServiceContext(TableServiceContext ctx, TablePayloadFormat format, CloudTableClient tableClient)
         {
             if (format == TablePayloadFormat.AtomPub)

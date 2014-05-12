@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
-    using Microsoft.WindowsAzure.Storage.Queue.Protocol;
     using System.Collections.Generic;
 
     /// <summary>

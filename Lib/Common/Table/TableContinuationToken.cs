@@ -72,7 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Gets or sets the type element (blob, queue, table) for continuing results for <see cref="ITableEntity"/> enumeration operations.
+        /// Gets or sets the type element (blob, queue, table, file) for continuing results for <see cref="ITableEntity"/> enumeration operations.
         /// </summary>
         /// <value>The type element.</value>
         private string Type

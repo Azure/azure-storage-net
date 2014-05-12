@@ -113,7 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoCloudTableCreateSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
 
@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoCloudTableCreateAlreadyExistsSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
             OperationContext ctx = new OperationContext();
@@ -386,7 +386,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoCloudTableCreateIfNotExistsSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
 
@@ -601,7 +601,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoCloudTableDeleteSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
 
@@ -636,7 +636,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoCloudTableDeleteWhenNotExistSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
             OperationContext ctx = new OperationContext();
@@ -847,7 +847,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoCloudTableDeleteIfExistsSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
 
@@ -1080,7 +1080,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private void DoCloudTableExistsSync(TablePayloadFormat format)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
 

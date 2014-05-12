@@ -114,10 +114,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             this.attributes = new BlobAttributes();
             this.attributes.StorageUri = NavigationHelper.AppendPathToUri(container.StorageUri, blobName);
+            this.Name = blobName;
             this.ServiceClient = container.ServiceClient;
-
-            // Set the relativized name from the URI.
-            this.Name = NavigationHelper.GetBlobName(this.attributes.Uri, this.ServiceClient.UsePathStyleUris);
             this.container = container;
             this.SnapshotTime = snapshotTime;
             this.Properties.BlobType = BlobType.BlockBlob;
@@ -375,16 +373,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (this.parent == null)
                 {
-                    string parentName = NavigationHelper.GetParentName(this.StorageUri, this.ServiceClient.DefaultDelimiter, this.ServiceClient.UsePathStyleUris);
-
-                    if (parentName != null)
+                    string parentName;
+                    StorageUri parentUri;
+                    if (NavigationHelper.GetBlobParentNameAndAddress(this.StorageUri, this.ServiceClient.DefaultDelimiter, this.ServiceClient.UsePathStyleUris, out parentName, out parentUri))
                     {
-                        StorageUri parentUri = NavigationHelper.AppendPathToUri(this.Container.StorageUri, parentName);
-
-                        this.parent = new CloudBlobDirectory(
-                            parentUri,
-                            parentName,
-                            this.Container);
+                        this.parent = new CloudBlobDirectory(parentUri, parentName, this.Container);
                     }
                 }
 

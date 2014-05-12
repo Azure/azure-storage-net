@@ -103,16 +103,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         {
             get
             {
-                string prefixString = this.Prefix;
-                int maximumResults = this.MaxResults;
-                string delimiterString = this.Delimiter;
-                string nextMarkerString = this.NextMarker;
-                BlobListingContext listingContext = new BlobListingContext(
-                    prefixString,
-                    maximumResults,
-                    delimiterString,
-                    BlobListingDetails.None);
-                listingContext.Marker = nextMarkerString;
+                BlobListingContext listingContext = new BlobListingContext(this.Prefix, this.MaxResults, this.Delimiter, BlobListingDetails.None);
+                listingContext.Marker = this.NextMarker;
                 return listingContext;
             }
         }

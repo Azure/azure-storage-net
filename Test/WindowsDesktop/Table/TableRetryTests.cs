@@ -292,7 +292,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableOperationNoRetry()
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.RetryPolicy = new NoRetry();
+            tableClient.DefaultRequestOptions.RetryPolicy = new NoRetry();
             CloudTable currentTable = tableClient.GetTableReference("noretrytable");
             currentTable.CreateIfNotExists();
             DynamicTableEntity insertEntity = new DynamicTableEntity("insert test", "foo");

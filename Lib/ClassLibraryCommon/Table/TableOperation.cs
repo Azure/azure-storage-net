@@ -22,7 +22,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Table.Protocol;
     using System;
-    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Net;
 
@@ -31,59 +30,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     public sealed partial class TableOperation
     {
-        /// <summary>
-        /// Creates a new table operation that retrieves the contents of
-        /// the given entity in a table.
-        /// </summary>
-        /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
-        /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
-        /// <param name="rowkey">A string containing the row key of the entity to retrieve.</param>        
-        /// <returns>The <see cref="TableOperation"/> object.</returns>
-        [SuppressMessage("Microsoft.Design",
-            "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "Reviewed")]
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "rowkey",
-            Justification = "Reviewed : towkey is acceptable.")]
-        public static TableOperation Retrieve<TElement>(string partitionKey, string rowkey)
-            where TElement : ITableEntity
-        {
-            CommonUtility.AssertNotNull("partitionKey", partitionKey);
-            CommonUtility.AssertNotNull("rowkey", rowkey);
-
-            // Create and return the table operation.
-            return new TableOperation(null /* entity */, TableOperationType.Retrieve)
-                       {
-                           RetrievePartitionKey = partitionKey,
-                           RetrieveRowKey = rowkey,
-                           RetrieveResolver =
-                               (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(
-                                       pk,
-                                       rk,
-                                       ts,
-                                       prop,
-                                       etag),
-                           PropertyResolverType = typeof(TElement)
-                       };
-        }
-
-        /// <summary>
-        /// Creates a new table operation that retrieves the contents of
-        /// the given entity in a table.
-        /// </summary>
-        /// <typeparam name="TResult">The return type which the specified <see cref="EntityResolver{T}"/> will resolve the given entity to.</typeparam>
-        /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
-        /// <param name="rowkey">A string containing the row key of the entity to retrieve.</param>
-        /// <param name="resolver">The <see cref="EntityResolver{TResult}"/> implementation to project the entity to retrieve as a particular type in the result.</param>
-        /// <returns>The <see cref="TableOperation"/> object.</returns>
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "rowkey", Justification = "Reviewed : rowkey is acceptable.")]
-        public static TableOperation Retrieve<TResult>(string partitionKey, string rowkey, EntityResolver<TResult> resolver)
-        {
-            CommonUtility.AssertNotNull("partitionKey", partitionKey);
-            CommonUtility.AssertNotNull("rowkey", rowkey);
-
-            // Create and return the table operation.
-            return new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey, RetrieveResolver = (pk, rk, ts, prop, etag) => resolver(pk, rk, ts, prop, etag) };
-        }
-
 #if SYNC
         internal TableResult Execute(CloudTableClient client, CloudTable table, TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -176,9 +122,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertCmd.RetrieveResponseStream = true;
             insertCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             insertCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            insertCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) =>
+            insertCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
                 insertCmd.SendStream = res.Item2;
                 return res.Item1;
             };
@@ -199,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             deleteCmd.RetrieveResponseStream = false;
             deleteCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             deleteCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            deleteCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName).Item1;
+            deleteCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions.PayloadFormat.Value, client.AccountName).Item1;
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
             return deleteCmd;
@@ -214,9 +160,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             mergeCmd.RetrieveResponseStream = false;
             mergeCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             mergeCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            mergeCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) =>
+            mergeCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
                 mergeCmd.SendStream = res.Item2;
                 return res.Item1;
             };
@@ -235,9 +181,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             replaceCmd.RetrieveResponseStream = false;
             replaceCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             replaceCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            replaceCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) =>
+            replaceCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
                 replaceCmd.SendStream = res.Item2;
                 return res.Item1;
             };
@@ -257,7 +203,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             retrieveCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            retrieveCmd.BuildRequestDelegate = (uri, builder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, ctx, requestOptions.PayloadFormat.Value, client.AccountName).Item1;
+            retrieveCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions.PayloadFormat.Value, client.AccountName).Item1;
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {

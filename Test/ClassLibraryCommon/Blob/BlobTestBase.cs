@@ -120,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 stream.Seek(0, SeekOrigin.Begin);
-                blob.ServiceClient.ParallelOperationThreadCount = 2;
+                blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
                 blob.UploadFromStream(stream, accessCondition, options, operationContext);
             }
         }
@@ -142,7 +142,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 stream.Seek(0, SeekOrigin.Begin);
-                blob.ServiceClient.ParallelOperationThreadCount = 2;
+                blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
                     IAsyncResult result = blob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
@@ -172,7 +172,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 stream.Seek(0, SeekOrigin.Begin);
-                blob.ServiceClient.ParallelOperationThreadCount = 2;
+                blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
                 try
                 {
                     blob.UploadFromStreamAsync(stream, accessCondition, options, operationContext).Wait();

@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Windows.Globalization;
@@ -173,6 +174,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
             Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
 
+            CloudQueue listedQueue = (await client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null)).Results.First();
+            Assert.AreEqual(1, listedQueue.Metadata.Count);
+            Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+
             queue.Metadata.Clear();
             await queue.SetMetadataAsync();
 
@@ -216,9 +221,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string sasTokenFromId = queue.GetSharedAccessSignature(null, id);
             StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
 
-            CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint));
+            CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, null /* blobEndpoint */, new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), null /* tableEndpoint */, null /* fileEndpoint */);
             CloudQueueClient sasClient = sasAcc.CreateCloudQueueClient();
-            
+
             CloudQueue sasQueueFromSasUri = new CloudQueue(sasClient.Credentials.TransformUri(queue.Uri));
             CloudQueueMessage receivedMessage = await sasQueueFromSasUri.PeekMessageAsync();
             Assert.AreEqual(messageContent, receivedMessage.AsString);
@@ -226,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueue sasQueueFromSasUri1 = new CloudQueue(new Uri(queue.Uri.ToString() + sasTokenFromId));
             CloudQueueMessage receivedMessage1 = await sasQueueFromSasUri1.PeekMessageAsync();
             Assert.AreEqual(messageContent, receivedMessage1.AsString);
-           
+
             CloudQueue sasQueueFromId = new CloudQueue(queue.Uri, sasCredsFromId);
             CloudQueueMessage receivedMessage2 = await sasQueueFromId.PeekMessageAsync();
             Assert.AreEqual(messageContent, receivedMessage2.AsString);
@@ -295,7 +300,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 queue.DeleteIfExistsAsync().AsTask().Wait();
             }
         }
-          
+
         [TestMethod]
         [Description("Test queue sas")]
         [TestCategory(ComponentCategory.Queue)]

@@ -54,10 +54,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         {
             QueueRequestOptions modifiedOptions = new QueueRequestOptions(options);
             
-            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.RetryPolicy;
-            modifiedOptions.LocationMode = modifiedOptions.LocationMode ?? serviceClient.LocationMode;
-            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.ServerTimeout;
-            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.MaximumExecutionTime;
+            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+            modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
+                                            ?? serviceClient.DefaultRequestOptions.LocationMode)
+                                            ?? RetryPolicies.LocationMode.PrimaryOnly;
+            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
+            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
             
             if (!modifiedOptions.OperationExpiryTime.HasValue && modifiedOptions.MaximumExecutionTime.HasValue)
             {

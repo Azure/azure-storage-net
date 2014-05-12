@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using System.Net.Http;
     using System.Threading.Tasks;
 
-    internal class TableOperationHttpResponseParsers
+    internal static class TableOperationHttpResponseParsers
     {
         internal static TableResult TableOperationPreProcess<T>(TableResult result, TableOperation operation, HttpResponseMessage resp, Exception ex, StorageCommandBase<T> cmd, OperationContext ctx)
         {

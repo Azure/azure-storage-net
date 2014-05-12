@@ -34,12 +34,13 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The request URI.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request for performing the operation.
         /// </returns>
         [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "operationContext")]
-        internal static HttpWebRequest CreateWebRequest(string method, Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
+        internal static HttpWebRequest CreateWebRequest(string method, Uri uri, int? timeout, UriQueryBuilder builder, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -75,7 +76,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             }
 
             request.UserAgent = Constants.HeaderConstants.UserAgent;
-            request.Headers[Constants.HeaderConstants.StorageVersionHeader] = Constants.HeaderConstants.TargetStorageVersion;
+
+            if (useVersionHeader)
+            {
+                request.Headers[Constants.HeaderConstants.StorageVersionHeader] = Constants.HeaderConstants.TargetStorageVersion;
+            }
 
 #if !WINDOWS_PHONE
             request.KeepAlive = true;
@@ -93,11 +98,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The URI to create.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpWebRequest Create(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
+        internal static HttpWebRequest Create(Uri uri, int? timeout, UriQueryBuilder builder, bool useVersionHeader, OperationContext operationContext)
         {
-            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, operationContext);
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -107,9 +113,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the resource.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="builder">An optional query builder to use.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest GetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        internal static HttpWebRequest GetAcl(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -118,7 +125,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "acl");
 
-            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
 
             // Windows phone adds */* as the Accept type when we don't set one explicitly.
 #if WINDOWS_PHONE
@@ -133,9 +140,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the resource.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="builder">An optional query builder to use.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest SetAcl(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        internal static HttpWebRequest SetAcl(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -144,7 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "acl");
 
-            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, operationContext);
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
 
             // Windows phone adds */* as the Accept type when we don't set one explicitly.
 #if WINDOWS_PHONE
@@ -159,11 +167,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The URI to query.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpWebRequest GetProperties(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
+        internal static HttpWebRequest GetProperties(Uri uri, int? timeout, UriQueryBuilder builder, bool useVersionHeader, OperationContext operationContext)
         {
-            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Head, uri, timeout, builder, operationContext);
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Head, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -173,9 +182,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The blob Uri.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
+        internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -184,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "metadata");
 
-            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Head, uri, timeout, builder, operationContext);
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Head, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -194,9 +204,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The blob Uri.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpWebRequest SetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, OperationContext operationContext)
+        internal static HttpWebRequest SetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -205,7 +216,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "metadata");
 
-            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, operationContext);
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -233,7 +244,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="value">The metadata value.</param>
         internal static void AddMetadata(HttpWebRequest request, string name, string value)
         {
-            CommonUtility.AssertNotNullOrEmpty("value", value);
+            CommonUtility.AssertNotNull("value", value);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException(SR.ArgumentEmptyError, value);
+            }
+
             request.Headers.Add("x-ms-meta-" + name, value);
         }
 
@@ -243,11 +259,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The URI of the resource to delete.</param>
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpWebRequest Delete(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        internal static HttpWebRequest Delete(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
         {
-            HttpWebRequest request = CreateWebRequest("DELETE", uri, timeout, builder, operationContext);
+            HttpWebRequest request = CreateWebRequest("DELETE", uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -257,11 +274,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to get the service properties.
         /// </returns>
-        internal static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        internal static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -271,7 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             builder.Add(Constants.QueryConstants.Component, "properties");
             builder.Add(Constants.QueryConstants.ResourceType, "service");
 
-            return CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            return CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -280,11 +298,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="builder">The builder.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to set the service properties.
         /// </returns>
-        internal static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        internal static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -294,7 +313,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             builder.Add(Constants.QueryConstants.Component, "properties");
             builder.Add(Constants.QueryConstants.ResourceType, "service");
 
-            return CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, operationContext);
+            return CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -303,11 +322,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>
         /// A web request to get the service stats.
         /// </returns>
-        internal static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        internal static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
         {
             if (builder == null)
             {
@@ -317,7 +337,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             builder.Add(Constants.QueryConstants.Component, "stats");
             builder.Add(Constants.QueryConstants.ResourceType, "service");
 
-            return CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            return CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
         }
 
         /// <summary>

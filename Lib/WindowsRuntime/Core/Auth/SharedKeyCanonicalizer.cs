@@ -18,7 +18,6 @@
 namespace Microsoft.WindowsAzure.Storage.Core.Auth
 {
     using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Net.Http;
 

@@ -171,7 +171,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             queryCmd.Builder = builder;
             queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            queryCmd.BuildRequestDelegate = (uri, queryBuilder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableQuery(uri, queryBuilder, timeout, ctx, requestOptions.PayloadFormat.Value);
+            queryCmd.BuildRequestDelegate = (uri, queryBuilder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableQuery(uri, queryBuilder, timeout, useVersionHeader, ctx, requestOptions.PayloadFormat.Value);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp != null ? resp.StatusCode : HttpStatusCode.Unused, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
@@ -205,7 +205,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             queryCmd.Builder = builder;
             queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            queryCmd.BuildRequestDelegate = (uri, queryBuilder, timeout, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableQuery(uri, queryBuilder, timeout, ctx, requestOptions.PayloadFormat.Value);
+            queryCmd.BuildRequestDelegate = (uri, queryBuilder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableQuery(uri, queryBuilder, timeout, useVersionHeader, ctx, requestOptions.PayloadFormat.Value);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp != null ? resp.StatusCode : HttpStatusCode.Unused, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {

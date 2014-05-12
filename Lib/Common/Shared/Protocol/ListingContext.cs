@@ -17,6 +17,8 @@
 
 namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+
     /// <summary>
     /// Represents the listing context for enumeration operations.
     /// </summary>
@@ -27,6 +29,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #endif
         class ListingContext
     {
+        /// <summary>
+        /// Stores the maximum number of results to list. Must be null or a value between 1 and 5000.
+        /// </summary>
+        private int? maxResults;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ListingContext"/> class.
         /// </summary>
@@ -49,7 +56,23 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Gets or sets the MaxResults value.
         /// </summary>
         /// <value>The MaxResults value.</value>
-        public int? MaxResults { get; set; }
+        public int? MaxResults
+        {
+            get
+            {
+                return this.maxResults;
+            }
+
+            set
+            {
+                if (value.HasValue)
+                {
+                    CommonUtility.AssertInBounds("maxResults", value.Value, 1);
+                }
+
+                this.maxResults = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the Marker value.

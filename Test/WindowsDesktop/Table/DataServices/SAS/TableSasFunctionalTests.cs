@@ -24,6 +24,7 @@ using System.Threading;
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 {
     [TestClass]
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public class TableSasFunctionalTests : TableTestBase
     {
         #region Locals + Ctors

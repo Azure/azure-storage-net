@@ -33,6 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     /// Summary description for TableServiceContextUnitTests
     /// </summary>
     [TestClass]
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public class TableServiceContextUnitTests : TableTestBase
     {
         #region Ctors + Locals

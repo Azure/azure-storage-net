@@ -141,7 +141,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             // Check that the default service properties set in the Test Initialization were uploaded correctly
             await Task.Delay(60 * 1000);
-            AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync()); ;
+            AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
         [TestMethod]

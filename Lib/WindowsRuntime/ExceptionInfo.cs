@@ -17,9 +17,9 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Xml;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
 
     /// <summary>
     /// Represents exception information from a request to the Storage service.

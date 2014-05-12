@@ -22,7 +22,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Net;
     using System.Text;
@@ -41,7 +40,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, OperationContext operationContext)
         {
-            return ContainerHttpWebRequestFactory.Create(uri, timeout, operationContext, BlobContainerPublicAccessType.Off);
+            return ContainerHttpWebRequestFactory.Create(uri, timeout, true /* useVersionHeader */, operationContext, BlobContainerPublicAccessType.Off);
+        }
+
+        /// <summary>
+        /// Constructs a web request to create a new container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest Create(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return ContainerHttpWebRequestFactory.Create(uri, timeout, useVersionHeader, operationContext, BlobContainerPublicAccessType.Off);
         }
 
         /// <summary>
@@ -54,8 +66,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, OperationContext operationContext, BlobContainerPublicAccessType accessType)
         {
+            return ContainerHttpWebRequestFactory.Create(uri, timeout, true /* useVersionHeader */, operationContext, accessType);
+        }
+
+        /// <summary>
+        /// Constructs a web request to create a new container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and the level of access.</param>                
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest Create(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext, BlobContainerPublicAccessType accessType)
+        {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
-            HttpWebRequest request = HttpWebRequestFactory.Create(uri, timeout, containerBuilder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.Create(uri, timeout, containerBuilder, useVersionHeader, operationContext);
 
             if (accessType != BlobContainerPublicAccessType.Off)
             {
@@ -64,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             return request;
         }
-
+        
         /// <summary>
         /// Constructs a web request to delete the container and all of the blobs within it.
         /// </summary>
@@ -75,8 +101,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Delete(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
+            return ContainerHttpWebRequestFactory.Delete(uri, timeout, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to delete the container and all of the blobs within it.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest Delete(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
-            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, containerBuilder, timeout, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.Delete(uri, containerBuilder, timeout, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -91,8 +131,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
+            return ContainerHttpWebRequestFactory.GetMetadata(uri, timeout, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to return the user-defined metadata for this container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
-            HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, containerBuilder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, containerBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -107,8 +161,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
+            return ContainerHttpWebRequestFactory.GetProperties(uri, timeout, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to return the properties and user-defined metadata for this container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
-            HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, containerBuilder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, containerBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -123,8 +191,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
+            return ContainerHttpWebRequestFactory.SetMetadata(uri, timeout, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to set user-defined metadata for the container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
-            HttpWebRequest request = HttpWebRequestFactory.SetMetadata(uri, timeout, containerBuilder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.SetMetadata(uri, timeout, containerBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -146,10 +228,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, OperationContext operationContext)
         {
+            return ContainerHttpWebRequestFactory.Lease(uri, timeout, action, proposedLeaseId, leaseDuration, leaseBreakPeriod, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to use to acquire, renew, change, release or break the lease for the container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="action">A <see cref="LeaseAction"/> enumeration value indicating the lease action to perform.</param>
+        /// <param name="proposedLeaseId">A string specifying the lease ID to propose for the result of an acquire or change operation,
+        /// or <c>null</c> if no ID is proposed for an acquire operation. This parameter should be <c>null</c> for renew, release, and break operations.</param>
+        /// <param name="leaseDuration">The lease duration, in seconds, for acquire operations.
+        /// If this is -1 then an infinite duration is specified. This should be <c>null</c> for renew, change, release, and break operations.</param>
+        /// <param name="leaseBreakPeriod">The amount of time to wait, in seconds, after a break operation before the lease is broken.
+        /// If this is <c>null</c> then the default time is used. This should be <c>null</c> for acquire, renew, change, and release operations.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = GetContainerUriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "lease");
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
 
             // Add Headers
             BlobHttpWebRequestFactory.AddLeaseAction(request, action);
@@ -193,6 +296,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A web request for the specified operation.</returns>
         public static HttpWebRequest List(Uri uri, int? timeout, ListingContext listingContext, ContainerListingDetails detailsIncluded, OperationContext operationContext)
         {
+            return ContainerHttpWebRequestFactory.List(uri, timeout, listingContext, detailsIncluded, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return a listing of all containers in this storage account.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
+        /// <param name="detailsIncluded">A <see cref="ContainerListingDetails"/> enumeration value that indicates whether to return container metadata with the listing.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A web request for the specified operation.</returns>
+        public static HttpWebRequest List(Uri uri, int? timeout, ListingContext listingContext, ContainerListingDetails detailsIncluded, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "list");
 
@@ -208,7 +326,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     builder.Add("marker", listingContext.Marker);
                 }
 
-                if (listingContext.MaxResults != null)
+                if (listingContext.MaxResults.HasValue)
                 {
                     builder.Add("maxresults", listingContext.MaxResults.ToString());
                 }
@@ -219,7 +337,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 builder.Add("include", "metadata");
             }
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 
@@ -233,7 +351,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetAcl(Uri uri, int? timeout, AccessCondition accessCondition, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.GetAcl(uri, GetContainerUriQueryBuilder(), timeout, operationContext);
+            return ContainerHttpWebRequestFactory.GetAcl(uri, timeout, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return the ACL for a container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetAcl(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.GetAcl(uri, GetContainerUriQueryBuilder(), timeout, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -247,10 +379,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        [SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.String.ToLower", Justification = "ToLower(CultureInfo) is not present in RT and ToLowerInvariant() also violates FxCop")]
         public static HttpWebRequest SetAcl(Uri uri, int? timeout, BlobContainerPublicAccessType publicAccess, AccessCondition accessCondition, OperationContext operationContext)
         {
-            HttpWebRequest request = HttpWebRequestFactory.SetAcl(uri, GetContainerUriQueryBuilder(), timeout, operationContext);
+            return ContainerHttpWebRequestFactory.SetAcl(uri, timeout, publicAccess, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to set the ACL for a container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="publicAccess">The type of public access to allow for the container.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest SetAcl(Uri uri, int? timeout, BlobContainerPublicAccessType publicAccess, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
+            HttpWebRequest request = HttpWebRequestFactory.SetAcl(uri, GetContainerUriQueryBuilder(), timeout, useVersionHeader, operationContext);
 
             if (publicAccess != BlobContainerPublicAccessType.Off)
             {
@@ -270,6 +416,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest ListBlobs(Uri uri, int? timeout, BlobListingContext listingContext, OperationContext operationContext)
+        {
+            return ContainerHttpWebRequestFactory.ListBlobs(uri, timeout, listingContext, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to return a listing of all blobs in the container.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest ListBlobs(Uri uri, int? timeout, BlobListingContext listingContext, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder builder = ContainerHttpWebRequestFactory.GetContainerUriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "list");
@@ -291,7 +451,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     builder.Add("marker", listingContext.Marker);
                 }
 
-                if (listingContext.MaxResults != null)
+                if (listingContext.MaxResults.HasValue)
                 {
                     builder.Add("maxresults", listingContext.MaxResults.ToString());
                 }
@@ -362,7 +522,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 }
             }
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, operationContext);
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 

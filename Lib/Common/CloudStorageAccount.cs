@@ -17,10 +17,14 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
+#if !WINDOWS_RT
+    using Microsoft.WindowsAzure.Storage.Analytics;
+#endif
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.Table;
     using System;
@@ -101,6 +105,11 @@ namespace Microsoft.WindowsAzure.Storage
         internal const string TableEndpointSettingString = "TableEndpoint";
 
         /// <summary>
+        /// The setting name for a custom file storage endpoint.
+        /// </summary>
+        internal const string FileEndpointSettingString = "FileEndpoint";
+
+        /// <summary>
         /// The setting name for a custom storage endpoint suffix.
         /// </summary>
         internal const string EndpointSuffixSettingString = "EndpointSuffix";
@@ -144,6 +153,11 @@ namespace Microsoft.WindowsAzure.Storage
         /// The root table storage DNS name prefix.
         /// </summary>
         private const string DefaultTableHostnamePrefix = "table";
+
+        /// <summary>
+        /// The default file storage DNS hostname prefix.
+        /// </summary>
+        private const string DefaultFileHostnamePrefix = "file";
 
         /// <summary>
         /// Validator for the UseDevelopmentStorage setting. Must be "true".
@@ -191,6 +205,11 @@ namespace Microsoft.WindowsAzure.Storage
         private static readonly AccountSetting TableEndpointSetting = Setting(TableEndpointSettingString, IsValidUri);
 
         /// <summary>
+        /// Validator for the FileEndpoint setting. Must be a valid Uri.
+        /// </summary>
+        private static readonly AccountSetting FileEndpointSetting = Setting(FileEndpointSettingString, IsValidUri);
+
+        /// <summary>
         /// Validator for the EndpointSuffix setting. Must be a valid Uri.
         /// </summary>
         private static readonly AccountSetting EndpointSuffixSetting = Setting(EndpointSuffixSettingString, IsValidDomain);
@@ -213,8 +232,9 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="blobEndpoint">A <see cref="System.Uri"/> specifying the primary Blob service endpoint.</param>
         /// <param name="queueEndpoint">A <see cref="System.Uri"/> specifying the primary Queue service endpoint.</param>
         /// <param name="tableEndpoint">A <see cref="System.Uri"/> specifying the primary Table service endpoint.</param>
-        public CloudStorageAccount(StorageCredentials storageCredentials, Uri blobEndpoint, Uri queueEndpoint, Uri tableEndpoint)
-            : this(storageCredentials, new StorageUri(blobEndpoint), new StorageUri(queueEndpoint), new StorageUri(tableEndpoint))
+        /// <param name="fileEndpoint">A <see cref="System.Uri"/> specifying the primary File service endpoint.</param>
+        public CloudStorageAccount(StorageCredentials storageCredentials, Uri blobEndpoint, Uri queueEndpoint, Uri tableEndpoint, Uri fileEndpoint)
+            : this(storageCredentials, new StorageUri(blobEndpoint), new StorageUri(queueEndpoint), new StorageUri(tableEndpoint), new StorageUri(fileEndpoint))
         {
         }
 
@@ -226,25 +246,27 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="blobStorageUri">A <see cref="StorageUri"/> specifying the Blob service endpoint or endpoints.</param>
         /// <param name="queueStorageUri">A <see cref="StorageUri"/> specifying the Queue service endpoint or endpoints.</param>
         /// <param name="tableStorageUri">A <see cref="StorageUri"/> specifying the Table service endpoint or endpoints.</param>
+        /// <param name="fileStorageUri">A <see cref="StorageUri"/> specifying the File service endpoint or endpoints.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudStorageAccount"/> instance for the specific credentials and service endpoints.</returns>
-        public static CloudStorageAccount Create(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri)
+        public static CloudStorageAccount Create(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
         {
-            return new CloudStorageAccount(storageCredentials, blobStorageUri, queueStorageUri, tableStorageUri);
+            return new CloudStorageAccount(storageCredentials, blobStorageUri, queueStorageUri, tableStorageUri, fileStorageUri);
         }
 
-        private CloudStorageAccount(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri)
+        private CloudStorageAccount(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
 #else
-        public CloudStorageAccount(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri)
+        public CloudStorageAccount(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
 #endif
         {
             this.Credentials = storageCredentials;
             this.BlobStorageUri = blobStorageUri;
             this.QueueStorageUri = queueStorageUri;
             this.TableStorageUri = tableStorageUri;
+            this.FileStorageUri = fileStorageUri;
             this.DefaultEndpoints = false;
         }
-
+    
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
         /// credentials, and specifies whether to use HTTP or HTTPS to connect to the storage services. 
@@ -273,6 +295,7 @@ namespace Microsoft.WindowsAzure.Storage
             this.BlobStorageUri = ConstructBlobEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
             this.QueueStorageUri = ConstructQueueEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
             this.TableStorageUri = ConstructTableEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
+            this.FileStorageUri = ConstructFileEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
             this.Credentials = storageCredentials;
             this.EndpointSuffix = endpointSuffix;
             this.DefaultEndpoints = true;
@@ -367,6 +390,23 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
+        /// Gets the primary endpoint for the File service, as configured for the storage account.
+        /// </summary>
+        /// <value>A <see cref="System.Uri"/> containing the primary File service endpoint.</value>
+        public Uri FileEndpoint
+        {
+            get
+            {
+                if (this.FileStorageUri == null)
+                {
+                    return null;
+                }
+
+                return this.FileStorageUri.PrimaryUri;
+            }
+        }
+
+        /// <summary>
         /// Gets the endpoints for the Blob service at the primary and secondary location, as configured for the storage account.
         /// </summary>
         /// <value>A <see cref="StorageUri"/> containing the Blob service endpoints.</value>
@@ -383,6 +423,12 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <value>A <see cref="StorageUri"/> containing the Table service endpoints.</value>
         public StorageUri TableStorageUri { get; private set; }
+
+        /// <summary>
+        /// Gets the endpoints for the File service at the primary and secondary location, as configured for the storage account.
+        /// </summary>
+        /// <value>A <see cref="StorageUri"/> containing the File service endpoints.</value>
+        public StorageUri FileStorageUri { get; private set; }
 
         /// <summary>
         /// Gets the credentials used to create this <see cref="CloudStorageAccount"/> object.
@@ -499,6 +545,51 @@ namespace Microsoft.WindowsAzure.Storage
             return new CloudBlobClient(this.BlobStorageUri, this.Credentials);
         }
 
+#if !WINDOWS_RT
+        /// <summary>
+        /// Creates an analytics client.
+        /// </summary>
+        /// <returns>A <see cref="CloudAnalyticsClient"/> object.</returns>
+        public CloudAnalyticsClient CreateCloudAnalyticsClient()
+        {
+            if (this.BlobEndpoint == null)
+            {
+                throw new InvalidOperationException(SR.BlobEndPointNotConfigured);
+            }
+
+            if (this.TableEndpoint == null)
+            {
+                throw new InvalidOperationException(SR.TableEndPointNotConfigured);
+            }
+
+            if (this.Credentials == null)
+            {
+                throw new InvalidOperationException(SR.MissingCredentials);
+            }
+
+            return new CloudAnalyticsClient(this.BlobStorageUri, this.TableStorageUri, this.Credentials);
+        }
+#endif
+
+        /// <summary>
+        /// Creates the File service client.
+        /// </summary>
+        /// <returns>A client object that specifies the File service endpoint.</returns>
+        public CloudFileClient CreateCloudFileClient()
+        {
+            if (this.FileEndpoint == null)
+            {
+                throw new InvalidOperationException(SR.FileEndPointNotConfigured);
+            }
+
+            if (this.Credentials == null)
+            {
+                throw new InvalidOperationException(SR.MissingCredentials);
+            }
+
+            return new CloudFileClient(this.FileStorageUri, this.Credentials);
+        }
+
         /// <summary>
         /// Returns a connection string for this storage account, without sensitive data.
         /// </summary>
@@ -543,6 +634,11 @@ namespace Microsoft.WindowsAzure.Storage
                     if (this.TableEndpoint != null)
                     {
                         this.Settings.Add(TableEndpointSettingString, this.TableEndpoint.ToString());
+                    }
+
+                    if (this.FileEndpoint != null)
+                    {
+                        this.Settings.Add(FileEndpointSettingString, this.FileEndpoint.ToString());
                     }
                 }
             }
@@ -591,10 +687,12 @@ namespace Microsoft.WindowsAzure.Storage
             Uri tableSecondaryEndpoint = builder.Uri;
 
             StorageCredentials credentials = new StorageCredentials(DevstoreAccountName, DevstoreAccountKey);
-            CloudStorageAccount account = new CloudStorageAccount(credentials,
+            CloudStorageAccount account = new CloudStorageAccount(
+                credentials,
                 new StorageUri(blobEndpoint, blobSecondaryEndpoint),
                 new StorageUri(queueEndpoint, queueSecondaryEndpoint),
-                new StorageUri(tableEndpoint, tableSecondaryEndpoint));
+                new StorageUri(tableEndpoint, tableSecondaryEndpoint),
+                null /* fileStorageUri */);
 
             account.Settings = new Dictionary<string, string>();
             account.Settings.Add(UseDevelopmentStorageSettingString, "true");
@@ -651,7 +749,7 @@ namespace Microsoft.WindowsAzure.Storage
             if (MatchesSpecification(
                 settings,
                 AllRequired(DefaultEndpointsProtocolSetting, AccountNameSetting, AccountKeySetting),
-                Optional(BlobEndpointSetting, QueueEndpointSetting, TableEndpointSetting, AccountKeyNameSetting, EndpointSuffixSetting)))
+                Optional(BlobEndpointSetting, QueueEndpointSetting, TableEndpointSetting, FileEndpointSetting, AccountKeyNameSetting, EndpointSuffixSetting)))
             {
                 string blobEndpoint = null;
                 settings.TryGetValue(BlobEndpointSettingString, out blobEndpoint);
@@ -662,11 +760,15 @@ namespace Microsoft.WindowsAzure.Storage
                 string tableEndpoint = null;
                 settings.TryGetValue(TableEndpointSettingString, out tableEndpoint);
 
+                string fileEndpoint = null;
+                settings.TryGetValue(FileEndpointSettingString, out fileEndpoint);
+
                 accountInformation = new CloudStorageAccount(
                     GetCredentials(settings),
                     blobEndpoint != null ? new StorageUri(new Uri(blobEndpoint)) : ConstructBlobEndpoint(settings),
                     queueEndpoint != null ? new StorageUri(new Uri(queueEndpoint)) : ConstructQueueEndpoint(settings),
-                    tableEndpoint != null ? new StorageUri(new Uri(tableEndpoint)) : ConstructTableEndpoint(settings));
+                    tableEndpoint != null ? new StorageUri(new Uri(tableEndpoint)) : ConstructTableEndpoint(settings),
+                    fileEndpoint != null ? new StorageUri(new Uri(fileEndpoint)) : ConstructFileEndpoint(settings));
 
                 string endpointSuffix = null;
                 if (settings.TryGetValue(EndpointSuffixSettingString, out endpointSuffix))
@@ -681,14 +783,15 @@ namespace Microsoft.WindowsAzure.Storage
             // explicit case
             if (MatchesSpecification(
                 settings,
-                AtLeastOne(BlobEndpointSetting, QueueEndpointSetting, TableEndpointSetting),
+                AtLeastOne(BlobEndpointSetting, QueueEndpointSetting, TableEndpointSetting, FileEndpointSetting),
                 ValidCredentials))
             {
                 Uri blobUri = !settings.ContainsKey(BlobEndpointSettingString) || settings[BlobEndpointSettingString] == null ? null : new Uri(settings[BlobEndpointSettingString]);
                 Uri queueUri = !settings.ContainsKey(QueueEndpointSettingString) || settings[QueueEndpointSettingString] == null ? null : new Uri(settings[QueueEndpointSettingString]);
                 Uri tableUri = !settings.ContainsKey(TableEndpointSettingString) || settings[TableEndpointSettingString] == null ? null : new Uri(settings[TableEndpointSettingString]);
+                Uri fileUri = !settings.ContainsKey(FileEndpointSettingString) || settings[FileEndpointSettingString] == null ? null : new Uri(settings[FileEndpointSettingString]);
 
-                accountInformation = new CloudStorageAccount(GetCredentials(settings), blobUri, queueUri, tableUri);
+                accountInformation = new CloudStorageAccount(GetCredentials(settings), blobUri, queueUri, tableUri, fileUri);
 
                 accountInformation.Settings = ValidCredentials(settings);
                 return true;
@@ -1065,6 +1168,63 @@ namespace Microsoft.WindowsAzure.Storage
                 accountName,
                 SecondaryLocationAccountSuffix,
                 DefaultBlobHostnamePrefix,
+                endpointSuffix);
+
+            return new StorageUri(new Uri(primaryUri), new Uri(secondaryUri));
+        }
+
+        /// <summary>
+        /// Gets the default file endpoint using specified settings.
+        /// </summary>
+        /// <param name="settings">The settings to use.</param>
+        /// <returns>The default file endpoint.</returns>
+        private static StorageUri ConstructFileEndpoint(IDictionary<string, string> settings)
+        {
+            return ConstructFileEndpoint(
+                settings[DefaultEndpointsProtocolSettingString],
+                settings[AccountNameSettingString],
+                settings.ContainsKey(EndpointSuffixSettingString) ? settings[EndpointSuffixSettingString] : null);
+        }
+
+        /// <summary>
+        /// Gets the default file endpoint using the specified protocol and account name.
+        /// </summary>
+        /// <param name="scheme">The protocol to use.</param>
+        /// <param name="accountName">The name of the storage account.</param>
+        /// <param name="endpointSuffix">The Endpoint DNS suffix; use <c>null</c> for default.</param>
+        /// <returns>The default file endpoint.</returns>
+        private static StorageUri ConstructFileEndpoint(string scheme, string accountName, string endpointSuffix)
+        {
+            if (string.IsNullOrEmpty(scheme))
+            {
+                throw new ArgumentNullException("scheme");
+            }
+
+            if (string.IsNullOrEmpty(accountName))
+            {
+                throw new ArgumentNullException("accountName");
+            }
+
+            if (string.IsNullOrEmpty(endpointSuffix))
+            {
+                endpointSuffix = DefaultEndpointSuffix;
+            }
+
+            string primaryUri = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}://{1}.{2}.{3}/",
+                scheme,
+                accountName,
+                DefaultFileHostnamePrefix,
+                endpointSuffix);
+
+            string secondaryUri = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}://{1}{2}.{3}.{4}",
+                scheme,
+                accountName,
+                SecondaryLocationAccountSuffix,
+                DefaultFileHostnamePrefix,
                 endpointSuffix);
 
             return new StorageUri(new Uri(primaryUri), new Uri(secondaryUri));

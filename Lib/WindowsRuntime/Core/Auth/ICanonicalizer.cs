@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Auth
 {
-    using System;
     using System.Net.Http;
 
     internal interface ICanonicalizer

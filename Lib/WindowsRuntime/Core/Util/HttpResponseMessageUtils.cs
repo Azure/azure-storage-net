@@ -17,8 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-    using System;
-    using System.Linq;
     using System.Net.Http.Headers;
 
     internal static class HttpResponseMessageUtils

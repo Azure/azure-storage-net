@@ -191,7 +191,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudBlobContainer container = BlobTestBase.GetRandomContainerReference();
             using (MultiLocationTestHelper helper = new MultiLocationTestHelper(container.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
             {
-                container.ServiceClient.LocationMode = clientLocationMode;
+                container.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
                 BlobRequestOptions options = new BlobRequestOptions()
                 {
                     LocationMode = optionsLocationMode,
@@ -211,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudQueue queue = GenerateCloudQueueClient().GetQueueReference(QueueTestBase.GenerateNewQueueName());
             using (MultiLocationTestHelper helper = new MultiLocationTestHelper(queue.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
             {
-                queue.ServiceClient.LocationMode = clientLocationMode;
+                queue.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
                 QueueRequestOptions options = new QueueRequestOptions()
                 {
                     LocationMode = optionsLocationMode,
@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudTable table = GenerateCloudTableClient().GetTableReference(TableTestBase.GenerateRandomTableName());
             using (MultiLocationTestHelper helper = new MultiLocationTestHelper(table.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
             {
-                table.ServiceClient.LocationMode = clientLocationMode;
+                table.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
                 TableRequestOptions options = new TableRequestOptions()
                 {
                     LocationMode = optionsLocationMode,

@@ -44,3 +44,21 @@ Property name over 255 chars –
 Error message previously – The property name exceeds the maximum allowed length.
 Error message now - The property name exceeds the maximum allowed length (255).
 
+Tracking Breaking Changes since 3
+
+- Removed the generic query filter generation helper methods from TableQueryGeneric.Common.cs. The Correct usage is to leverage the methods exposed on the non-generic TableQuery class.
+- Renamed CloudBlobDirectory.GetSubdirectoryReference to CloudBlobDirectory.GetDirectoryReference.
+- Get{BlockBlob|PageBlob|Directory|Container|Queue|Table}Reference always treat the string parameter as a relative address. Specifically for containers, queues and tables, the names should not be preceded or followed by any ‘/’ characters and should follow the naming guidelines on MSDN.
+- ServerTimeout is set to null by default. Therefore, "timeout" query parameter will not be sent to the server if ServerTimeout is not set by the user.
+- CloudBlobDirectory.GetDirectoryReference throws an ArgumentException if the directory name is empty.
+- Renamed DoesServiceRequest to DoesServiceRequestAttribute.
+- Deprecated the WCF DataServices Table implementation namespace via the Obsolete attribute.
+- No longer shipping the WindowsAzure.Storage.Table-Preview package or the WindowsAzure.Storage-Preview package; everything is included in the WindowsAzure.Storage package.
+- Windows RT classes "TableBatchOperationExtensions", "TableQueryExtensions", and "CloudTableExtensions" no longer exist; functionality has been moved to the "TableBatchOperation", "TableQuery", and "CloudTable" classes.  If the methods were being used as extention methods, this should require no code change, but it will require a recompile of dependant code.
+- Windows RT class "TableOperationFactory" no longer exists; functionality has been moved to the "TableOperation" class.
+- All Windows RT code is in a single DLL (no longer creating the winmd).
+- Deprecated service client request options properties via the Obsolete attribute.
+- Previously non-nullable deprecated Service Client configuration properties (i.e. Blob: ParallelOperationThreadCount, SingleBlobUploadThresholdInBytes, LocationMode; Queue: LocationMode; Table: PayloadFormat, LocationMode) are nullable. MaximumExecutionTime and ServerTimeout are able to be set to zero.
+- Removed the CloudQueueClient(Uri) and CloudTableClient(Uri) constructors from CloudQueueClient.Common.cs and CloudTableClient.Common.cs respectively. Queues and Tables don't support anonymous access. Therefore the correct usage is to use the CloudQueueClient(Uri, StorageCredentials) and CloudTableClient(Uri, StorageCredentials) constructors instead.
+- Whitespace only metadata values are no longer accepted.
+- Deprecated SharedKeyLiteAuthenticationHandler via the Obsolete attribute as it was just an empty wrapper on SharedKeyAuthenticationHandler.

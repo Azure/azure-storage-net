@@ -131,7 +131,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryBasicSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
 
@@ -160,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryComplexWithoutPropertyResolverSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             CloudTable currentTestTable = tableClient.GetTableReference("tbl" + Guid.NewGuid().ToString("N"));
             try
             {
@@ -201,7 +201,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryWithContinuationSync(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
 
@@ -726,7 +726,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryWithFilter(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}')", "tables_batch_1", "0050"));
 
             OperationContext opContext = new OperationContext();
@@ -759,7 +759,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryEnumerateTwice(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
 
@@ -811,7 +811,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryProjection(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "C" });
 
             foreach (BaseEntity ent in currentTable.ExecuteQuery(query))
@@ -844,7 +844,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericWithResolver(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<TableEntity> query = new TableQuery<TableEntity>().Select(new List<string>() { "A", "C", "E" });
             query.TakeCount = 1000;
@@ -1019,7 +1019,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryResolverWithDynamic(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableRequestOptions options = new TableRequestOptions()
             {
@@ -1064,7 +1064,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQuerySegmentedResolver(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "C", "E" });
             TableContinuationToken token = null;
@@ -1120,7 +1120,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQuerySegmentedResolverWithDynamic(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableRequestOptions options = new TableRequestOptions()
             {
@@ -1299,7 +1299,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             table.Create();
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             try
             {
@@ -1436,7 +1436,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             table.Create();
-            client.PayloadFormat = format;
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             try
             {
@@ -1475,74 +1475,74 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 // 1. Filter on String
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterCondition("String", QueryComparisons.GreaterThanOrEqual, "0050"), 50);
+                        TableQuery.GenerateFilterCondition("String", QueryComparisons.GreaterThanOrEqual, "0050"), 50);
 
                 // 2. Filter on Guid
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForGuid("Guid", QueryComparisons.Equal, middleRef.Guid), 1);
+                        TableQuery.GenerateFilterConditionForGuid("Guid", QueryComparisons.Equal, middleRef.Guid), 1);
 
                 // 3. Filter on Long
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForLong("Int64", QueryComparisons.GreaterThanOrEqual,
+                        TableQuery.GenerateFilterConditionForLong("Int64", QueryComparisons.GreaterThanOrEqual,
                                 middleRef.LongPrimitive), 50);
 
-                ExecuteQueryAndAssertResults(table, TableQuery<ComplexEntity>.GenerateFilterConditionForLong("LongPrimitive",
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForLong("LongPrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.LongPrimitive), 50);
 
                 // 4. Filter on Double
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForDouble("Double", QueryComparisons.GreaterThanOrEqual,
+                        TableQuery.GenerateFilterConditionForDouble("Double", QueryComparisons.GreaterThanOrEqual,
                                 middleRef.Double), 50);
 
-                ExecuteQueryAndAssertResults(table, TableQuery<ComplexEntity>.GenerateFilterConditionForDouble("DoublePrimitive",
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForDouble("DoublePrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.DoublePrimitive), 50);
 
                 // 5. Filter on Integer
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForInt("Int32", QueryComparisons.GreaterThanOrEqual,
+                        TableQuery.GenerateFilterConditionForInt("Int32", QueryComparisons.GreaterThanOrEqual,
                                 middleRef.Int32), 50);
 
-                ExecuteQueryAndAssertResults(table, TableQuery<ComplexEntity>.GenerateFilterConditionForInt("IntegerPrimitive",
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForInt("IntegerPrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.IntegerPrimitive), 50);
 
                 // 6. Filter on Date
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForDate("DateTimeOffset", QueryComparisons.GreaterThanOrEqual,
+                        TableQuery.GenerateFilterConditionForDate("DateTimeOffset", QueryComparisons.GreaterThanOrEqual,
                                 middleRef.DateTimeOffset), 50);
 
                 // 7. Filter on Boolean
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForBool("Bool", QueryComparisons.Equal, middleRef.Bool), 50);
+                        TableQuery.GenerateFilterConditionForBool("Bool", QueryComparisons.Equal, middleRef.Bool), 50);
 
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForBool("BoolPrimitive", QueryComparisons.Equal, middleRef.BoolPrimitive),
+                        TableQuery.GenerateFilterConditionForBool("BoolPrimitive", QueryComparisons.Equal, middleRef.BoolPrimitive),
                         50);
 
                 // 8. Filter on Binary 
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForBinary("Binary", QueryComparisons.Equal, middleRef.Binary), 1);
+                        TableQuery.GenerateFilterConditionForBinary("Binary", QueryComparisons.Equal, middleRef.Binary), 1);
 
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForBinary("BinaryPrimitive", QueryComparisons.Equal,
+                        TableQuery.GenerateFilterConditionForBinary("BinaryPrimitive", QueryComparisons.Equal,
                                 middleRef.BinaryPrimitive), 1);
 
                 // 9. Filter on Binary GTE
                 ExecuteQueryAndAssertResults(table,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForBinary("Binary", QueryComparisons.GreaterThanOrEqual,
+                        TableQuery.GenerateFilterConditionForBinary("Binary", QueryComparisons.GreaterThanOrEqual,
                                 middleRef.Binary), 50);
 
-                ExecuteQueryAndAssertResults(table, TableQuery<ComplexEntity>.GenerateFilterConditionForBinary("BinaryPrimitive",
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForBinary("BinaryPrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.BinaryPrimitive), 50);
 
                 // 10. Complex Filter on Binary GTE
-                ExecuteQueryAndAssertResults(table, TableQuery<ComplexEntity>.CombineFilters(
-                        TableQuery<ComplexEntity>.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal,
+                ExecuteQueryAndAssertResults(table, TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal,
                                 middleRef.PartitionKey),
                         TableOperators.And,
-                        TableQuery<ComplexEntity>.GenerateFilterConditionForBinary("Binary", QueryComparisons.GreaterThanOrEqual,
+                        TableQuery.GenerateFilterConditionForBinary("Binary", QueryComparisons.GreaterThanOrEqual,
                                 middleRef.Binary)), 50);
 
-                ExecuteQueryAndAssertResults(table, TableQuery<ComplexEntity>.GenerateFilterConditionForBinary("BinaryPrimitive",
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForBinary("BinaryPrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.BinaryPrimitive), 50);
             }
             finally
@@ -1567,7 +1567,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryGenericWithTakeCount(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // No continuation
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Take(100);
@@ -1609,7 +1609,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableQueryGenericWithTakeCountAndResolver(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // No continuation
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Take(100);
@@ -1645,7 +1645,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryWithInternalType(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<InternalEntity> query = new TableQuery<InternalEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
 
@@ -1725,7 +1725,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private void DoTableGenericQueryWithInvalidQuery(TablePayloadFormat format)
         {
-            tableClient.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             TableQuery<ComplexEntity> query = new TableQuery<ComplexEntity>().Where(string.Format("(PartitionKey ) and (RowKey ge '{1}')", "tables_batch_1", "000050"));
 
@@ -1761,7 +1761,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 table.CreateIfNotExists();
 
-                tableClient.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
+                tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.JsonNoMetadata;
                 TableEntity.DisablePropertyResolverCache = disableCache;
 
                 string pk = Guid.NewGuid().ToString();
@@ -1830,7 +1830,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             finally
             {
                 table.DeleteIfExists();
-                tableClient.PayloadFormat = TablePayloadFormat.Json;
+                tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.Json;
             }
         }
         #region Helpers

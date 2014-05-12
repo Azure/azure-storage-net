@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
@@ -291,43 +292,52 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(Guid.NewGuid().ToString("N"));
-            byte[] buffer = BlobTestBase.GetRandomBuffer(20 * 1024 * 1024);
+            byte[] buffer = BlobTestBase.GetRandomBuffer(80 * 1024 * 1024);
 
             try
             {
                 await container.CreateAsync();
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
-                CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
-                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(5);
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(5);
 
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
+                blockBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
                     try
                     {
                         await blockBlob.UploadFromStreamAsync(ms.AsInputStream());
-                    }
-                    catch (Exception ex)
-                    {
-                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.Message).ExceptionInfo.Message);
-                    }
-                }
-
-                using (MemoryStream ms = new MemoryStream(buffer))
-                {
-                    try
-                    {
-                        await pageBlob.UploadFromStreamAsync(ms.AsInputStream());
+                        Assert.Fail();
                     }
                     catch (AggregateException ex)
                     {
                         Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.InnerException.Message).ExceptionInfo.Message);
                     }
+                    catch (TaskCanceledException)
+                    {
+                    }
+                }
+
+                CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                pageBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+                using (MemoryStream ms = new MemoryStream(buffer))
+                {
+                    try
+                    {
+                        await pageBlob.UploadFromStreamAsync(ms.AsInputStream());
+                        Assert.Fail();
+                    }
+                    catch (AggregateException ex)
+                    {
+                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.InnerException.Message).ExceptionInfo.Message);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                    }
                 }
             }
-
             finally
             {
-                blobClient.MaximumExecutionTime = null;
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = null;
                 container.DeleteIfExistsAsync().AsTask().Wait();
             }
         }
@@ -348,12 +358,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await container.CreateAsync();
 
-                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(30);
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(30);
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
                 blockBlob.StreamWriteSizeInBytes = 1024 * 1024;
                 blockBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
-                blockBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
+                pageBlob.StreamWriteSizeInBytes = 1024 * 1024;
                 pageBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
 
                 using (ICloudBlobStream bos = await blockBlob.OpenWriteAsync())
@@ -365,7 +375,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last write
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -386,7 +396,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last read
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -411,7 +421,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last write
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -432,7 +442,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last read
-                    int msRemaining = (int)(blobClient.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
                     if (msRemaining > 0)
                     {
@@ -451,7 +461,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             finally
             {
-                blobClient.MaximumExecutionTime = null;
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = null;
                 container.DeleteIfExistsAsync().AsTask().Wait();
             }
         }
@@ -467,8 +477,54 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             AssertSecondaryEndpoint();
 
             CloudBlobClient client = GenerateCloudBlobClient();
-            client.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
+        }
+
+        [TestMethod]
+        [Description("Server timeout query parameter")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientServerTimeoutAsync()
+        {
+            CloudBlobClient client = GenerateCloudBlobClient();
+
+            string timeout = null;
+            OperationContext context = new OperationContext();
+            context.SendingRequest += (sender, e) =>
+            {
+                IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.RequestUri.Query);
+                if (!query.TryGetValue("timeout", out timeout))
+                {
+                    timeout = null;
+                }
+            };
+
+            BlobRequestOptions options = new BlobRequestOptions();
+            await client.GetServicePropertiesAsync(null, context);
+            Assert.IsNull(timeout);
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.IsNull(timeout);
+
+            options.ServerTimeout = TimeSpan.FromSeconds(100);
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.AreEqual("100", timeout);
+
+            client.DefaultRequestOptions.ServerTimeout = TimeSpan.FromSeconds(90);
+            await client.GetServicePropertiesAsync(null, context);
+            Assert.AreEqual("90", timeout);
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.AreEqual("100", timeout);
+
+            options.ServerTimeout = null;
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.AreEqual("90", timeout);
+
+            options.ServerTimeout = TimeSpan.Zero;
+            await client.GetServicePropertiesAsync(options, context);
+            Assert.IsNull(timeout);
         }
     }
 }

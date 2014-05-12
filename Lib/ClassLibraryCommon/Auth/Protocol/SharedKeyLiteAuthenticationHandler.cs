@@ -18,12 +18,14 @@
 namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 {
     using Microsoft.WindowsAzure.Storage.Core.Auth;
+    using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Net;
 
     /// <summary>
     /// Represents a handler that signs HTTP requests with a shared key.
     /// </summary>
+    [Obsolete("Use SharedKeyAuthenticationHandler")]
     public sealed class SharedKeyLiteAuthenticationHandler : IAuthenticationHandler
     {
         private readonly SharedKeyAuthenticationHandler authenticationHandler;

@@ -20,6 +20,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Test.Network;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -273,6 +274,46 @@ namespace Microsoft.WindowsAzure.Storage
             }
 
             Assert.AreEqual(headerValue, retrievedHeaderValue);
+        }
+
+        internal static void ValidateIngressEgress(Func<Session, bool> selector, Func<RequestResult> act)
+        {
+            RequestResult res = null;
+            long observedIngressBodyBytes = 0;
+            long observedEgressBodyBytes = 0;
+            bool isChunked = false;
+
+            using (HttpMangler proxy = new HttpMangler(false, new ProxyBehavior[]{
+                new ProxyBehavior(session => observedEgressBodyBytes += session.requestBodyBytes.Length, selector, null, TriggerType.BeforeRequest),
+                new ProxyBehavior(session =>
+                {
+                    isChunked = session.oResponse.headers.ExistsAndContains("Transfer-Encoding", "chunked");
+                    observedIngressBodyBytes+= session.responseBodyBytes.Length;
+                }, selector, null, TriggerType.AfterSessionComplete),
+            }))
+            {
+                res = act();
+            }
+
+            Assert.IsNotNull(res);
+
+            // If chunked use more lenient evaluation
+            if (isChunked)
+            {
+                Assert.IsTrue(res.IngressBytes < observedIngressBodyBytes);
+
+                // 5 bytes for chunked encoded 
+                if (res.IngressBytes == 0)
+                {
+                    Assert.IsTrue(observedIngressBodyBytes == 5);
+                }
+            }
+            else
+            {
+                Assert.AreEqual(res.IngressBytes, observedIngressBodyBytes);
+            }
+
+            Assert.AreEqual(res.EgressBytes, observedEgressBodyBytes);
         }
 #endif
     }

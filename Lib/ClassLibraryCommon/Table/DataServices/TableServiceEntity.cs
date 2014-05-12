@@ -24,6 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     /// <summary>
     /// Represents an entity in the Windows Azure Table service.
     /// </summary>
+    [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     [DataServiceKey("PartitionKey", "RowKey")]
     public abstract class TableServiceEntity
     {
@@ -50,18 +51,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         /// Gets or sets the timestamp for the entity.
         /// </summary>
         /// <value>The entity's timestamp.</value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public DateTime Timestamp { get; set; }
 
         /// <summary>
         /// Gets or sets the partition key of a table entity.
         /// </summary>
         /// <value>The partition key.</value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public virtual string PartitionKey { get; set; }
 
         /// <summary>
         /// Gets or sets the row key of a table entity.
         /// </summary>
         /// <value>The row key.</value>
+        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public virtual string RowKey { get; set; }
     }
 }
