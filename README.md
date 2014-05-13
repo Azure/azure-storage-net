@@ -1,32 +1,37 @@
-# Microsoft Azure Storage SDK for .NET
+# Microsoft Azure Storage SDK for .NET (4.0.0)
 
-The Microsoft Azure Storage SDK for .NET allows you to build Microsoft Azure applications 
+The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
 
-This repository contains the open source subset of the .NET Storage SDK. For documentation of the 
-complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http://www.windowsazure.com/en-us/develop/net/).
+This repository contains the open source subset of the .NET SDK. For documentation of the 
+complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/).
 
-# Features
+## Features
 
 - Tables
     - Create/Delete Tables
     - Query/Create/Read/Update/Delete Entities
 - Blobs
     - Create/Read/Update/Delete Blobs
+- Files
+	- Create/Update/Delete Directories
+	- Create/Read/Update/Delete Files
 - Queues
     - Create/Delete Queues
     - Insert/Peek Queue Messages
     - Advanced Queue Operations
-# Getting started
+	
+## Getting started
 
-The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://www.windowsazure.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
+The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://azure.microsoft.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
 
 For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
 
 ## Target Frameworks
 
-- .NET Framework 4.0: As of October 2013, the Microsoft Azure SDK for .NET (v2.2) supports primarily the desktop .NET Framework 4 release and above. For earlier .NET versions, SDK v2.1 is still supported.
-- Windows 8 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
+- .NET Framework 4.0: As of October 2012, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4 release and above.
+- Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
+- Windows Phone 8 for Windows Phone app development: Storage Client Libraries are available for Windows Phone applications.
  
 ## Requirements
 
@@ -34,26 +39,12 @@ For the best development experience, developers should use the official Microsof
 - Hosting: To host your .NET code in Microsoft Azure, you additionally need to download the full Microsoft Azure SDK for .NET - which includes packaging,
     emulation, and deployment tools, or use Microsoft Azure Web Sites to deploy ASP.NET web applications.
 
-## Need Help?
-Be sure to check out the Microsoft Azure [Developer Forums on MSDN](http://go.microsoft.com/fwlink/?LinkId=234489) if you have trouble with the provided code or use StackOverflow.
-
-## Collaborate & Contribute
-
-We gladly accept community contributions.
-
-- Issues: Please report bugs using the Issues section of GitHub
-- Forums: Interact with the development teams on StackOverflow or the Microsoft Azure Forums
-- Source Code Contributions: Please follow the [contribution guidelines for Microsoft Azure open source](http://windowsazure.github.io/guidelines.html) that details information on onboarding as a contributor 
-
-For general suggestions about Microsoft Azure please use our [UserVoice forum](http://www.mygreatwindowsazureidea.com/forums/34192-windows-azure-feature-voting).
-
-# Storage Client Library for .NET 4, Windows 8, and Windows Phone 8 (4.0.0)
-
-The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You will find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
-
-This version of the Storage Client Library ships with the new Storage version 2014-02-14.
-
 ## Download & Install
+
+The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
+
+This version of the Storage Client Library ships with the new storage version 2014-02-14. This storage version provides a preview of the Microsoft Azure File Service. For more details,
+please see the [Introducing Microsoft Azure File Service blog on MSDN] (http://blogs.msdn.com/b/windowsazurestorage/archive/2014/05/11/introducing-microsoft-azure-file-service.aspx).
 
 ### Via Git
 
@@ -85,6 +76,18 @@ The specific ODataLib packages are:
 - [Microsoft.Data.Edm](http://nuget.org/packages/Microsoft.Data.Edm/)
 - [System.Spatial](http://nuget.org/packages/System.Spatial)
 
+### Newtonsoft Json
+
+The desktop and phone libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
+
+- [Newtonsoft.Json] (http://www.nuget.org/packages/Newtonsoft.Json)
+
+### WCF Data Services Client
+
+The desktop library depends on WCF Data Services Client, which can be downloaded directly or referenced by your code project through Nuget.
+
+- [Microsoft.Data.Services.Client] (http://www.nuget.org/packages/Microsoft.Data.Services.Client/)
+
 ### Test Dependencies
 
 FiddlerCore is required by:
@@ -93,7 +96,7 @@ FiddlerCore is required by:
 - Test\FaultInjection\AzureStoreMangler
 - Test\WindowsDesktop
 
-This dependency is not included and must be downloaded from [Fiddler Core](http://www.telerik.com/fiddler/fiddlercore).
+This dependency is not included and must be downloaded from [http://www.fiddler2.com/Fiddler/Core/](http://www.fiddler2.com/Fiddler/Core/).
 
 Once installed:
 
@@ -103,7 +106,7 @@ Once installed:
 ## Code Samples
 
 > Note:
-> How-Tos focused around accomplishing specific tasks are available on the [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/documentation/services/storage/).
+> How-Tos focused around accomplishing specific tasks are available on the [http://azure.microsoft.com/en-us/develop/net/](Microsoft Azure .NET Developer Center).
 
 ### Creating a Table
 
@@ -132,7 +135,21 @@ CloudTable peopleTable = tableClient.GetTableReference("people");
 peopleTable.Create();
 ```
 
+## Need Help?
+Be sure to check out the Microsoft Azure [Developer Forums on MSDN](http://go.microsoft.com/fwlink/?LinkId=234489) if you have trouble with the provided code or use StackOverflow.
+
+## Collaborate & Contribute
+
+We gladly accept community contributions.
+
+- Issues: Please report bugs using the Issues section of GitHub
+- Forums: Interact with the development teams on StackOverflow or the Microsoft Azure Forums
+- Source Code Contributions: Please follow the [contribution guidelines for Microsoft Azure open source](http://azure.github.io/guidelines.html) that details information on onboarding as a contributor 
+
+For general suggestions about Microsoft Azure please use our [UserVoice forum](http://feedback.azure.com/forums/34192--general-feedback).
+
 # Learn More
 
-- [Microsoft Azure .NET Developer Center](http://www.windowsazure.com/en-us/develop/net/)
-- [Microsoft Azure SDK Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/dd179380.aspx)
+- [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/)
+- [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/library/azure/dn495001(v=azure.10).aspx)
+- [Azure Storage Team Blog] (http://blogs.msdn.com/b/windowsazurestorage/)
