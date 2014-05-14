@@ -1,17 +1,3 @@
-Tracking Breaking Changes since 2.0
-
-- maxResults while listing queues in nullable now.
-
-- The BlobTypeMismatch and ExtendedErrorUnavailable error strings have changed in SR.cs.
-
-- OperationContext.RequestResults does not expose a setter anymore.
-
-- Renamed CloudQueue.EndBeginClear(IAsyncResult) to CloudQueue.EndClear(IAsyncResult).
-
-- Sync and Async blob upload methods (BeginPutBlock, PutBlock, BeginUploadFromStream, UploadFromStream, BeginWritePages and WritePages) now throw InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream") when the length of the stream exceeds the permitted length.
-
-- The StorageException thrown when an operation is cancelled now includes an OperationCanceledException as its inner exception.
-
 Tracking Breaking Changes since 2.1 RTM
 
 - When DataServiceContext is used to execute table operations, response received event on OperationContext is no longer fired.
@@ -43,4 +29,20 @@ Property name over 255 chars –
 
 Error message previously – The property name exceeds the maximum allowed length.
 Error message now - The property name exceeds the maximum allowed length (255).
+
+Tracking Breaking Changes since 2.0
+
+- maxResults while listing queues in nullable now.
+
+- The BlobTypeMismatch and ExtendedErrorUnavailable error strings have changed in SR.cs.
+
+- OperationContext.RequestResults does not expose a setter anymore.
+
+- Renamed CloudQueue.EndBeginClear(IAsyncResult) to CloudQueue.EndClear(IAsyncResult).
+
+- Sync and Async blob upload methods (BeginPutBlock, PutBlock, BeginUploadFromStream, UploadFromStream, BeginWritePages and WritePages) now throw InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream") when the length of the stream exceeds the permitted length.
+
+- The StorageException thrown when an operation is cancelled now includes an OperationCanceledException as its inner exception.
+
+
 

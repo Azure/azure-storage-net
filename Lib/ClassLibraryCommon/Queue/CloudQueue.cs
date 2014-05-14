@@ -230,18 +230,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 OperationContext = operationContext,
             };
 
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistsHandler, storageAsyncResult);
-                storageAsyncResult.CancelDelegate = currentRes.Cancel;
+            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistsHandler, storageAsyncResult);
 
-                // Check if cancellation was requested prior to begin
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.CancelDelegate();
-                }
-            }
-
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = currentRes.Cancel;
             return storageAsyncResult;
         }
 
@@ -457,18 +450,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 OperationContext = operationContext,
             };
 
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
-                storageAsyncResult.CancelDelegate = currentRes.Cancel;
+            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
 
-                // Check if cancellation was requested prior to begin
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.CancelDelegate();
-                }
-            }
-
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = currentRes.Cancel;
             return storageAsyncResult;
         }
 

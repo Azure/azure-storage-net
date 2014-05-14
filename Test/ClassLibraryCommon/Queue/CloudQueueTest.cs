@@ -704,6 +704,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
                 Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
 
+                CloudQueue listedQueue = client.ListQueues(queue.Name, QueueListingDetails.All, null, null).First();
+                Assert.AreEqual(1, listedQueue.Metadata.Count);
+                Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+
                 queue.Metadata.Clear();
                 queue.SetMetadata();
 
@@ -750,6 +754,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
                     Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
 
+                    result = client.BeginListQueuesSegmented(queue.Name, QueueListingDetails.All, null, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    CloudQueue listedQueue = client.EndListQueuesSegmented(result).Results.First();
+                    Assert.AreEqual(1, listedQueue.Metadata.Count);
+                    Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+
                     queue.Metadata.Clear();
                     result = queue.BeginSetMetadata(null, new OperationContext(), ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
@@ -793,6 +803,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 queueToRetrieve.FetchAttributesAsync().Wait();
                 Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
                 Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
+
+                CloudQueue listedQueue = client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null).Result.Results.First();
+                Assert.AreEqual(1, listedQueue.Metadata.Count);
+                Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
 
                 queue.Metadata.Clear();
                 queue.SetMetadataAsync(null, new OperationContext()).Wait();

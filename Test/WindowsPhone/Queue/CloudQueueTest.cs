@@ -20,6 +20,7 @@ using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -173,6 +174,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             await queueToRetrieve.FetchAttributesAsync();
             Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
             Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
+
+            CloudQueue listedQueue = (await client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null)).Results.First();
+            Assert.AreEqual(1, listedQueue.Metadata.Count);
+            Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
 
             queue.Metadata.Clear();
             await queue.SetMetadataAsync();

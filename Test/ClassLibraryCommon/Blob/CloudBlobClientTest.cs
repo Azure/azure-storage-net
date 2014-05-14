@@ -1508,8 +1508,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 container.Create();
+                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(5);
 
-                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(30);
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 blockBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream ms = new MemoryStream(buffer))
@@ -1517,6 +1517,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     try
                     {
                         blockBlob.UploadFromStream(ms);
+                        Assert.Fail();
                     }
                     catch (TimeoutException ex)
                     {
@@ -1528,15 +1529,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
 
-                Assert.IsFalse(blockBlob.Exists());
-
-                blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(5);
                 CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                pageBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
                     try
                     {
                         pageBlob.UploadFromStream(ms);
+                        Assert.Fail();
                     }
                     catch (TimeoutException ex)
                     {
@@ -1602,6 +1602,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (Stream bis = blockBlob.OpenRead())
                 {
                     DateTime start = DateTime.Now;
+
                     int total = 0;
                     while (total < 7 * 1024 * 1024)
                     {
