@@ -1,83 +1,72 @@
-Issues fixed in 2.0.1 : 
-	
-	- All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
-	- All: StorageErrorCodeStrings class is missing.
-	- Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.
+Issues fixed in 3.2.1 :
 
-Issues fixed in 2.0.2 :
+  - All: Fixed a race condition that was causing deadlock during Task cancellation.
+  - Queues: CloudQueue objects returned by listing queues include metadata when QueueListingDetails.Metadata is used.
+  
+Issues fixed in 3.2.0 :
 
-  - All: CompletedSynchronously property returns inconsistent values on IAsyncResult objects returned by asynchronous methods and thus TaskFactory.FromAsync does not work properly.
-  - Tables: Public DynamicTableEntity constructors use DateTime even though the Timestamp property is of type DateTimeOffset.
-  - Tables: BeginSaveChangesWithRetries overload ignores the options argument.
+  - All: Added support for secondary location access in Azure Storage Emulator
+  - All: Fixed a race condition that was causing NullReferenceException during asynchronous upload/download.
+  
+Issues fixed in 3.1.0.1 :
 
-Issues fixed in 2.0.3 :
+  - All: Fixed an issue that was causing the Cloud{BlobContainer|Queue|Table|BlockBlob|PageBlob} names to be set incorrectly when the absolute Uri was passed to the Get{Container|Queue|Table|BlockBlob|PageBlob}Reference methods. This also ensures that the SharedAccessSignature which includes the canonicalized names of these resources is calculated correctly.
+  - All: Removed the System.Data.Services.Client dependency from the Nuget package.
+  - Queues: Added an overload to GetSharedAccessSignature that takes only the SharedAccessQueuePolicy in CloudQueue.
+  - Tables: Added an overload to GetSharedAccessSignature that takes only the SharedAccessTablePolicy and an overload that takes the SharedAccessTablePolicy and an accessPolicyIndentifier string in CloudTable.
+  
+Issues fixed in 3.1.0 : 
 
-  - All (RT): General metadata correctness test fails when using the RT library to develop windows store apps.
-  - Queues: CloudQueueMessage.MaxNumberOfMessagesToPeek, CloudQueueMessage.MaxMessageSize and CloudQueueMessage.MaximumTimeToLive have disappeared from CloudQueueMessage.
-  - Queues: CloudQueue.BeginCreateIfNotExists and CloudQueue.BeginDeleteIfExists methods expect valid options argument.
-  - Tables: When one or more of the batches fails, but then succeeds on a retry, the "extra" TableResults of the failed transactions are also returned.
-  - Tables: TableQuery.GenerateFilterConditionForLong does not append 'L' at the end of the value and thus values larger than Int32.MaxValue cannot be used when filtering.
-  - Tables: TableEntity does not support serializing nullable values.
-  - Tables: CloudTable.EndListTablesSegmented method does not work correctly.
+  - All: Added the ability to choose which SAS Version to use when generating Shared Access Signatures (either the 2012-02-12 or 2013-08-15 versions).
+  
+Issues fixed in 3.0.3 :
 
-Issues fixed in 2.0.4 :
+  - All: Fixed an issue that was causing a deadlock because the cancellation registration was being de-registered while holding on to a lock that the cancellation callback was waiting on.
+  - All: Fixed an issue where parsing exception information out of the response stream while using async was blocking on IO calls.
+  - All (WP): Fixed an issue with cancellation and timeout during upload and download causing a thread to hang. HttpWebRequest.Abort is not called during stream operations anymore.
+  - Blobs: Streams opened with OpenRead methods use the user-provided buffer pooling implementation.
+  - Blobs: If the parent of a blob is the container, Cloud{BlockBlob|PageBlob|BlobDirectory}.Parent returns a valid CloudBlobDirectory with an empty prefix. Similarly, container.GetDirectoryReference("") gets a valid CloudBlobDirectory representing the container.
+  - Tables (Perf): Fixed an issue where the entity properties were being enumerated twice during table write operations while using JSON.
+  - Tables (Perf): Parse the URI for the account name only once in the client constructor and store it so that all table operations can use the stored value.
+  
+Issues fixed in 3.0.2 :
 
-  - All: Flush HttpWebRequest's request stream before calling BeginGetResponse.
-  - All: Support Null Retry Policies.
-  - Blobs: Continue ListContainers parsing if a container property is unknown.
-  - Queues (RT): DeleteMessageAsync(string messageId, string popReceipt) ignores the messageId and popReceipt.
-  - Tables: Add a TableConstant to define minimum DateTime supported.
-  - Tables: Correct count behavior with synchronous non segmented execution.
-  - Tables: Allow String.Empty in TableQuery Filters.
+  - All (WP): Fixed an issue causing ArgumentOutOfRangeException in many APIs.
+  - Queues: Fixed an issue causing NullReferenceException when trying to re-create an existing queue.
+  - Tables: Fixed an issue with TableServiceContext causing NullReferenceException when the error response cannot be parsed.
+  - Tables (RT): Do not allow users to set JsonFullMetadata format on RequestOptions in RT, because JSON is not supported on the RT library yet.
+  
+Issues fixed in 3.0.1 :
 
-Issues fixed in 2.0.4.1 :
+  - All (WP): Set the Accept type to application/xml explicitly for Get/SetACL.
+  - Blobs: LastModified and ETag properties are populated after Lease operations.
+  - Tables: Added an explicit reference to Microsoft.Data.Services.Client in the Nuget package.
+  - Tables: Fixed an issue caused by a Json .NET bug that resulted in an error being thrown while parsing a table query response. More details on the bug can be found here: http://james.newtonking.com/archive/2013/11/29/fixing-jarray-getenumerator-method-not-found-bug
+  - Tables (RT): Fixed continuation tokens for queries and listing operations.
+  
+Changes in 3.0.0 :
 
-  - All: Updated Odata dependency to latest and also changed nuspec to allow any version >= 5.2.0.
+  - All: Support for 2013-08-15 REST version - see here for additional details: http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/27/windows-azure-storage-release-introducing-cors-json-minute-metrics-and-more.aspx.
+  - All: Suppress warning for FiddlerCore EntensionAttribute conflict.
+  - Blobs: Added support for XML serialize/deserialize of BlobContinuationToken.
+  - Blobs: Added ParallelOperationThreadCount and SingleBlobUploadThresholdInBytes to BlobRequestOptions.
+  - Tables: Fixed GetHashCode() in EntityProperty to return equal values for binary types.
+  - Tables: JsonMinimalMetadata is now the default payload format (rather than AtomPub). Payload format can be specified for all table requests by using CloudTableClient.TablePayloadFormat or for an individual table request by using TableRequestOptions.TablePayloadFormat.
+  - Tables (RT): Fixed error parsing for tables.
+  
+Issues fixed in 2.1.0.4 :
+ 
+  - Tables: Do not send the cast operator in the table query filter string.
+  
+Issues fixed in 2.1.0.3 :
 
-Issues fixed in 2.0.5 :
+  - All: Registered wait handles are unregistered sooner for more efficient GC.
+  
+Issues fixed in 2.1.0.2 :
 
-  - All: StorageException is serializable. Also, other useful objects for debugging (StorageExtendedErrorInformation and RequestResult) are also serializable.
-  - All: SharedAccessSignature helper uses culture invariant characteristics to calculate SAS.
-  - All: CloudStorageAccount can parse connection strings with extra blank values.
-  - All: OperationContext StartTime and EndTime are populated during execution.
-  - All: StorageCredentials.UpdateKey does not work on SAS/Anonymous credentials anymore.
-  - All: Metadata headers are sorted using en-US culture to prevent 403 errors in some cultures.
-  - All: Fixed issue where in some cases a sync method call could result in a 0 ms timeout being set on HttpWebRequest.
-  - Blobs: Snapshot time embedded in blob Uri is parsed in the constructor.
-  - Blobs: GetBlobReferenceFromServer works with blob Uri that contain a SAS token.
-  - Blobs: BlobWriteStream honors AccessCondition.
-  - Blobs: BlobWriteStream prevents using StoreBlobContentMD5 on existing page blobs.
-  - Blobs: ICloudBlob has OpenRead method.
-  - Blobs: Cloud*Blob.OpenRead can be used with snapshots.
-  - Blobs: AbortCopy does not throw an exception anymore when a copy is successfully aborted.
-  - Queues: Ability to recreate CloudQueueMessage with Message Id and Pop Receipt.
-  - Tables: Exceptions during TableBatchOperation parse the entity index from the server response.
-  - Tables: Floating-point number filter is generated using invariant culture.
-
-Issues fixed in 2.0.5.1 :
-
-  - All: Make sure the response stream is drained to prevent socket exhaustion.
-	
-Issues fixed in 2.0.6 :
-	
-  - All: Default RetryPolicy filters updated to not retry 100-407, 409-499, 501, and 505
-  - All: Support for all flavors of SharedKey and SharedKeyLite message signing through AuthenticationScheme property on client classes.
-  - All: Unusable HttpWebRequestFactory and WebRequestExtensions are not public anymore
-  - All: TranslateFromExceptionMessage has been deprecated in Microsoft.WindowsAzure.Storage.dll and is now available only in Microsoft.WindowsAzure.Storage.WinMD
-  - All: StorageCredentials supports empty account keys.
-  - All: RequestResult deserialization does not fail when Content-MD5 is missing
-  - Blobs (RT): DownloadToStreamAsync and DownloadRangeToStreamAsync writes the entire data to the given stream before returning back to the caller.
-  - Blobs (RT): UploadFromStreamAsync commits the blob in a worker thread to unblock UI.
-  - Blobs: Blob stream now uses a GUID instead of a random number as block ID prefix to prevent collisions.
-  - Queues: Changed return type of CloudQueue.BeginSetMetadata(AsyncCallback, object) to ICancellableAsyncResult.
-  - Tables: Changed default message signing to SharedKey (except for Data Services).
-  - Tables: EntityProperty updated to set the IsNull value for properties correctly in the case when the user sets an EntityProperty value through its setter.
-  - Tables: EdmType for null values in EntityProperty is set correctly and does not default to string any more.
-
-Issues fixed in 2.0.6.1 :
-
-	- Tables: Fix for Table Service layer to drain response stream
-
+  - Blobs: Streams opened by OpenRead do not throw NotSupportedException when Flush is called.
+  - Tables: Generic ExecuteQuery methods on CloudTable execute IQueryable queries correctly by generating the filter string.
+  
 Changes in 2.1.0 :
 
   - All: Changed User-Agent header value to include .NET CLR and OS versions
@@ -149,67 +138,83 @@ Changes in 2.1.0 :
   - Tables: Exposed table serialialization logic. Allow users to persist and read back entities that don't derive from TableEntity using static methods(ReadUserObject and WriteUserObject).
   - Tables: Exposed CreateEntityPropertyFromObject in EntityProperty so users can pass in a value and get the corresponding EntityProperty.
   - Tables: Escape single quote in PartitionKey and RowKey correctly while generating URIs.
-
-Issues fixed in 2.1.0.2 :
-
-  - Blobs: Streams opened by OpenRead do not throw NotSupportedException when Flush is called.
-  - Tables: Generic ExecuteQuery methods on CloudTable execute IQueryable queries correctly by generating the filter string.
-
-Issues fixed in 2.1.0.3 :
-
-  - All: Registered wait handles are unregistered sooner for more efficient GC.
-
-Issues fixed in 2.1.0.4 :
- 
-  - Tables: Do not send the cast operator in the table query filter string.
-
-Changes in 3.0.0 :
-
-  - All: Support for 2013-08-15 REST version - see here for additional details: http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/27/windows-azure-storage-release-introducing-cors-json-minute-metrics-and-more.aspx.
-  - All: Suppress warning for FiddlerCore EntensionAttribute conflict.
-  - Blobs: Added support for XML serialize/deserialize of BlobContinuationToken.
-  - Blobs: Added ParallelOperationThreadCount and SingleBlobUploadThresholdInBytes to BlobRequestOptions.
-  - Tables: Fixed GetHashCode() in EntityProperty to return equal values for binary types.
-  - Tables: JsonMinimalMetadata is now the default payload format (rather than AtomPub). Payload format can be specified for all table requests by using CloudTableClient.TablePayloadFormat or for an individual table request by using TableRequestOptions.TablePayloadFormat.
-  - Tables (RT): Fixed error parsing for tables.
-
-Issues fixed in 3.0.1 :
-
-  - All (WP): Set the Accept type to application/xml explicitly for Get/SetACL.
-  - Blobs: LastModified and ETag properties are populated after Lease operations.
-  - Tables: Added an explicit reference to Microsoft.Data.Services.Client in the Nuget package.
-  - Tables: Fixed an issue caused by a Json .NET bug that resulted in an error being thrown while parsing a table query response. More details on the bug can be found here: http://james.newtonking.com/archive/2013/11/29/fixing-jarray-getenumerator-method-not-found-bug
-  - Tables (RT): Fixed continuation tokens for queries and listing operations.
-
-Issues fixed in 3.0.2 :
-
-  - All (WP): Fixed an issue causing ArgumentOutOfRangeException in many APIs.
-  - Queues: Fixed an issue causing NullReferenceException when trying to re-create an existing queue.
-  - Tables: Fixed an issue with TableServiceContext causing NullReferenceException when the error response cannot be parsed.
-  - Tables (RT): Do not allow users to set JsonFullMetadata format on RequestOptions in RT, because JSON is not supported on the RT library yet.
-
-Issues fixed in 3.0.3 :
-
-  - All: Fixed an issue that was causing a deadlock because the cancellation registration was being de-registered while holding on to a lock that the cancellation callback was waiting on.
-  - All: Fixed an issue where parsing exception information out of the response stream while using async was blocking on IO calls.
-  - All (WP): Fixed an issue with cancellation and timeout during upload and download causing a thread to hang. HttpWebRequest.Abort is not called during stream operations anymore.
-  - Blobs: Streams opened with OpenRead methods use the user-provided buffer pooling implementation.
-  - Blobs: If the parent of a blob is the container, Cloud{BlockBlob|PageBlob|BlobDirectory}.Parent returns a valid CloudBlobDirectory with an empty prefix. Similarly, container.GetDirectoryReference("") gets a valid CloudBlobDirectory representing the container.
-  - Tables (Perf): Fixed an issue where the entity properties were being enumerated twice during table write operations while using JSON.
-  - Tables (Perf): Parse the URI for the account name only once in the client constructor and store it so that all table operations can use the stored value.
-
-Issues fixed in 3.1.0 : 
-
-  - All: Added the ability to choose which SAS Version to use when generating Shared Access Signatures (either the 2012-02-12 or 2013-08-15 versions).
-
-Issues fixed in 3.1.0.1 :
-
-  - All: Fixed an issue that was causing the Cloud{BlobContainer|Queue|Table|BlockBlob|PageBlob} names to be set incorrectly when the absolute Uri was passed to the Get{Container|Queue|Table|BlockBlob|PageBlob}Reference methods. This also ensures that the SharedAccessSignature which includes the canonicalized names of these resources is calculated correctly.
-  - All: Removed the System.Data.Services.Client dependency from the Nuget package.
-  - Queues: Added an overload to GetSharedAccessSignature that takes only the SharedAccessQueuePolicy in CloudQueue.
-  - Tables: Added an overload to GetSharedAccessSignature that takes only the SharedAccessTablePolicy and an overload that takes the SharedAccessTablePolicy and an accessPolicyIndentifier string in CloudTable.
   
-Issues fixed in 3.2.0 :
+Issues fixed in 2.0.6.1 :
 
-  - All: Added support for secondary location access in Azure Storage Emulator
-  - All: Fixed a race condition that was causing NullReferenceException during asynchronous upload/download.
+	- Tables: Fix for Table Service layer to drain response stream
+	
+Issues fixed in 2.0.6 :
+	
+  - All: Default RetryPolicy filters updated to not retry 100-407, 409-499, 501, and 505
+  - All: Support for all flavors of SharedKey and SharedKeyLite message signing through AuthenticationScheme property on client classes.
+  - All: Unusable HttpWebRequestFactory and WebRequestExtensions are not public anymore
+  - All: TranslateFromExceptionMessage has been deprecated in Microsoft.WindowsAzure.Storage.dll and is now available only in Microsoft.WindowsAzure.Storage.WinMD
+  - All: StorageCredentials supports empty account keys.
+  - All: RequestResult deserialization does not fail when Content-MD5 is missing
+  - Blobs (RT): DownloadToStreamAsync and DownloadRangeToStreamAsync writes the entire data to the given stream before returning back to the caller.
+  - Blobs (RT): UploadFromStreamAsync commits the blob in a worker thread to unblock UI.
+  - Blobs: Blob stream now uses a GUID instead of a random number as block ID prefix to prevent collisions.
+  - Queues: Changed return type of CloudQueue.BeginSetMetadata(AsyncCallback, object) to ICancellableAsyncResult.
+  - Tables: Changed default message signing to SharedKey (except for Data Services).
+  - Tables: EntityProperty updated to set the IsNull value for properties correctly in the case when the user sets an EntityProperty value through its setter.
+  - Tables: EdmType for null values in EntityProperty is set correctly and does not default to string any more.
+  
+Issues fixed in 2.0.5.1 :
+
+  - All: Make sure the response stream is drained to prevent socket exhaustion.
+  
+Issues fixed in 2.0.5 :
+
+  - All: StorageException is serializable. Also, other useful objects for debugging (StorageExtendedErrorInformation and RequestResult) are also serializable.
+  - All: SharedAccessSignature helper uses culture invariant characteristics to calculate SAS.
+  - All: CloudStorageAccount can parse connection strings with extra blank values.
+  - All: OperationContext StartTime and EndTime are populated during execution.
+  - All: StorageCredentials.UpdateKey does not work on SAS/Anonymous credentials anymore.
+  - All: Metadata headers are sorted using en-US culture to prevent 403 errors in some cultures.
+  - All: Fixed issue where in some cases a sync method call could result in a 0 ms timeout being set on HttpWebRequest.
+  - Blobs: Snapshot time embedded in blob Uri is parsed in the constructor.
+  - Blobs: GetBlobReferenceFromServer works with blob Uri that contain a SAS token.
+  - Blobs: BlobWriteStream honors AccessCondition.
+  - Blobs: BlobWriteStream prevents using StoreBlobContentMD5 on existing page blobs.
+  - Blobs: ICloudBlob has OpenRead method.
+  - Blobs: Cloud*Blob.OpenRead can be used with snapshots.
+  - Blobs: AbortCopy does not throw an exception anymore when a copy is successfully aborted.
+  - Queues: Ability to recreate CloudQueueMessage with Message Id and Pop Receipt.
+  - Tables: Exceptions during TableBatchOperation parse the entity index from the server response.
+  - Tables: Floating-point number filter is generated using invariant culture.
+  
+Issues fixed in 2.0.4.1 :
+
+  - All: Updated Odata dependency to latest and also changed nuspec to allow any version >= 5.2.0.
+  
+Issues fixed in 2.0.4 :
+
+  - All: Flush HttpWebRequest's request stream before calling BeginGetResponse.
+  - All: Support Null Retry Policies.
+  - Blobs: Continue ListContainers parsing if a container property is unknown.
+  - Queues (RT): DeleteMessageAsync(string messageId, string popReceipt) ignores the messageId and popReceipt.
+  - Tables: Add a TableConstant to define minimum DateTime supported.
+  - Tables: Correct count behavior with synchronous non segmented execution.
+  - Tables: Allow String.Empty in TableQuery Filters.
+  
+Issues fixed in 2.0.3 :
+
+  - All (RT): General metadata correctness test fails when using the RT library to develop windows store apps.
+  - Queues: CloudQueueMessage.MaxNumberOfMessagesToPeek, CloudQueueMessage.MaxMessageSize and CloudQueueMessage.MaximumTimeToLive have disappeared from CloudQueueMessage.
+  - Queues: CloudQueue.BeginCreateIfNotExists and CloudQueue.BeginDeleteIfExists methods expect valid options argument.
+  - Tables: When one or more of the batches fails, but then succeeds on a retry, the "extra" TableResults of the failed transactions are also returned.
+  - Tables: TableQuery.GenerateFilterConditionForLong does not append 'L' at the end of the value and thus values larger than Int32.MaxValue cannot be used when filtering.
+  - Tables: TableEntity does not support serializing nullable values.
+  - Tables: CloudTable.EndListTablesSegmented method does not work correctly.
+  
+Issues fixed in 2.0.2 :
+
+  - All: CompletedSynchronously property returns inconsistent values on IAsyncResult objects returned by asynchronous methods and thus TaskFactory.FromAsync does not work properly.
+  - Tables: Public DynamicTableEntity constructors use DateTime even though the Timestamp property is of type DateTimeOffset.
+  - Tables: BeginSaveChangesWithRetries overload ignores the options argument.
+  
+Issues fixed in 2.0.1 : 
+	
+	- All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
+	- All: StorageErrorCodeStrings class is missing.
+	- Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.

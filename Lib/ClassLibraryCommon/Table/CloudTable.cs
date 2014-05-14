@@ -51,7 +51,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             CommonUtility.AssertNotNull("operation", operation);
 
             return operation.Execute(this.ServiceClient, this, requestOptions, operationContext);
-        } 
+        }
 #endif
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CommonUtility.AssertNotNull("batch", batch);
             return batch.Execute(this.ServiceClient, this, requestOptions, operationContext);
-        } 
+        }
 #endif
 
         /// <summary>
@@ -291,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CommonUtility.AssertNotNull("query", query);
             return query.ExecuteQuerySegmented(token, this.ServiceClient, this, requestOptions, operationContext);
-        } 
+        }
 #endif
 
         /// <summary>
@@ -590,7 +590,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 return query.ExecuteQuerySegmentedInternal(token, this.ServiceClient, this, requestOptions, operationContext);
             }
-        } 
+        }
 #endif
 
         /// <summary>
@@ -759,7 +759,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 return query.ExecuteQuerySegmentedInternal(token, this.ServiceClient, this, resolver, requestOptions, operationContext);
             }
         }
-        
+
 #endif
         /// <summary>
         /// Begins an asynchronous operation to query a table in segmented mode and apply the specified <see cref="EntityResolver{T}"/> to the results.
@@ -1081,25 +1081,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            StorageAsyncResult<bool> retResult = new StorageAsyncResult<bool>(callback, state)
+            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
             {
                 RequestOptions = modifiedOptions,
                 OperationContext = operationContext,
             };
 
-            lock (retResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistHandler, retResult);
-                retResult.CancelDelegate = currentRes.Cancel;
+            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistHandler, storageAsyncResult);
 
-                // Check if cancellation was requested prior to begin
-                if (retResult.CancelRequested)
-                {
-                    retResult.CancelDelegate();
-                }
-            }
-
-            return retResult;
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = currentRes.Cancel;
+            return storageAsyncResult;
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
@@ -1428,25 +1421,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            StorageAsyncResult<bool> retResult = new StorageAsyncResult<bool>(callback, state)
+            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
             {
                 RequestOptions = modifiedOptions,
                 OperationContext = operationContext
             };
 
-            lock (retResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, retResult);
-                retResult.CancelDelegate = currentRes.Cancel;
+            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
 
-                // Check if cancellation was requested prior to begin
-                if (retResult.CancelRequested)
-                {
-                    retResult.CancelDelegate();
-                }
-            }
-
-            return retResult;
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = currentRes.Cancel;
+            return storageAsyncResult;
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]

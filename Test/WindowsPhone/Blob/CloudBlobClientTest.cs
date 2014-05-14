@@ -290,20 +290,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(Guid.NewGuid().ToString("N"));
-            byte[] buffer = BlobTestBase.GetRandomBuffer(20 * 1024 * 1024);
+            byte[] buffer = BlobTestBase.GetRandomBuffer(80 * 1024 * 1024);
 
             try
             {
                 await container.CreateAsync();
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
-                CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
                 blobClient.MaximumExecutionTime = TimeSpan.FromSeconds(5);
 
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
+                blockBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
                     try
                     {
                         await blockBlob.UploadFromStreamAsync(ms);
+                        Assert.Fail();
                     }
                     catch (TimeoutException ex)
                     {
@@ -315,11 +316,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
 
+                CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                pageBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
                     try
                     {
                         await pageBlob.UploadFromStreamAsync(ms);
+                        Assert.Fail();
                     }
                     catch (TimeoutException ex)
                     {
@@ -331,7 +335,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
             }
-
             finally
             {
                 blobClient.MaximumExecutionTime = null;
@@ -360,7 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
                 blockBlob.StreamWriteSizeInBytes = 1024 * 1024;
                 blockBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
-                blockBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
+                pageBlob.StreamWriteSizeInBytes = 1024 * 1024;
                 pageBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
 
                 using (CloudBlobStream bos = await blockBlob.OpenWriteAsync())
