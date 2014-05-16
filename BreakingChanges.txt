@@ -1,50 +1,4 @@
-Tracking Breaking Changes since 2.0
-
-- maxResults while listing queues in nullable now.
-
-- The BlobTypeMismatch and ExtendedErrorUnavailable error strings have changed in SR.cs.
-
-- OperationContext.RequestResults does not expose a setter anymore.
-
-- Renamed CloudQueue.EndBeginClear(IAsyncResult) to CloudQueue.EndClear(IAsyncResult).
-
-- Sync and Async blob upload methods (BeginPutBlock, PutBlock, BeginUploadFromStream, UploadFromStream, BeginWritePages and WritePages) now throw InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream") when the length of the stream exceeds the permitted length.
-
-- The StorageException thrown when an operation is cancelled now includes an OperationCanceledException as its inner exception.
-
-Tracking Breaking Changes since 2.1 RTM
-
-- When DataServiceContext is used to execute table operations, response received event on OperationContext is no longer fired.
-
-- Inserts in table operations no longer echo content. This will cause the resulting HTTP status code on the TableResult for successful inserts to be 204 (no-content) rather than 201 (Created). Echo content can be re-enabled by using the insert(TableEntity, boolean) method and specifying true. 
-
-- QueueContinuationToken is moved to Queue namespace(Microsoft.WindowsAzure.Storage.Queue).
-
-- ContinuationTokens are written with an additional <ContinuationToken> element enclosing them if WriteXml() method is used - ReadXml() parser is updated to handle this.
-
-- Only the ServiceProperties that are provided are changed. In previous REST versions ommitting a properties section such as Metrics would result in those settings being removed by the service.
-
-- Please refer to the blog post about Breaking Changes on the server side in the new storage protocol version(2013-08-15) here: 
-http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/23/windows-azure-storage-breaking-changes-for-windows-azure-tables-november-2013.aspx.
-
-Additionally, the following error messages have changed in the Table Service:
-
-Entity over 1MB – 
-
-Error message previously - The entity is larger than allowed by the Table Service.
-Error message now - The entity is larger than the maximum allowed size (1MB).
-
-Batch over 4MB - 
-
-Error message previously - The content length for the requested operation has exceeded the limit.
-Error message now - The content length for the requested operation has exceeded the limit (4MB).
-
-Property name over 255 chars –
-
-Error message previously – The property name exceeds the maximum allowed length.
-Error message now - The property name exceeds the maximum allowed length (255).
-
-Tracking Breaking Changes since 3
+Tracking Breaking Changes since 3.0
 
 - Removed the generic query filter generation helper methods from TableQueryGeneric.Common.cs. The Correct usage is to leverage the methods exposed on the non-generic TableQuery class.
 - Renamed CloudBlobDirectory.GetSubdirectoryReference to CloudBlobDirectory.GetDirectoryReference.
@@ -62,3 +16,48 @@ Tracking Breaking Changes since 3
 - Removed the CloudQueueClient(Uri) and CloudTableClient(Uri) constructors from CloudQueueClient.Common.cs and CloudTableClient.Common.cs respectively. Queues and Tables don't support anonymous access. Therefore the correct usage is to use the CloudQueueClient(Uri, StorageCredentials) and CloudTableClient(Uri, StorageCredentials) constructors instead.
 - Whitespace only metadata values are no longer accepted.
 - Deprecated SharedKeyLiteAuthenticationHandler via the Obsolete attribute as it was just an empty wrapper on SharedKeyAuthenticationHandler.
+
+Tracking Breaking Changes since 2.1 RTM
+
+- When DataServiceContext is used to execute table operations, response received event on OperationContext is no longer fired.
+
+- Inserts in table operations no longer echo content. This will cause the resulting HTTP status code on the TableResult for successful inserts to be 204 (no-content) rather than 201 (Created). Echo content can be re-enabled by using the insert(TableEntity, boolean) method and specifying true. 
+
+- QueueContinuationToken is moved to Queue namespace(Microsoft.WindowsAzure.Storage.Queue).
+
+- ContinuationTokens are written with an additional <ContinuationToken> element enclosing them if WriteXml() method is used - ReadXml() parser is updated to handle this.
+
+- Only the ServiceProperties that are provided are changed. In previous REST versions ommitting a properties section such as Metrics would result in those settings being removed by the service.
+
+- Please refer to the blog post about Breaking Changes on the server side in the new storage protocol version(2013-08-15) here: 
+http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/23/windows-azure-storage-breaking-changes-for-windows-azure-tables-november-2013.aspx.
+Additionally, the following error messages have changed in the Table Service:
+
+Entity over 1MB – 
+
+Error message previously - The entity is larger than allowed by the Table Service.
+Error message now - The entity is larger than the maximum allowed size (1MB).
+
+Batch over 4MB - 
+
+Error message previously - The content length for the requested operation has exceeded the limit.
+Error message now - The content length for the requested operation has exceeded the limit (4MB).
+
+Property name over 255 chars –
+
+Error message previously – The property name exceeds the maximum allowed length.
+Error message now - The property name exceeds the maximum allowed length (255).
+
+Tracking Breaking Changes since 2.0
+
+- maxResults while listing queues in nullable now.
+
+- The BlobTypeMismatch and ExtendedErrorUnavailable error strings have changed in SR.cs.
+
+- OperationContext.RequestResults does not expose a setter anymore.
+
+- Renamed CloudQueue.EndBeginClear(IAsyncResult) to CloudQueue.EndClear(IAsyncResult).
+
+- Sync and Async blob upload methods (BeginPutBlock, PutBlock, BeginUploadFromStream, UploadFromStream, BeginWritePages and WritePages) now throw InvalidOperationException(SR.StreamLengthError) instead of ArgumentOutOfRangeException("stream") when the length of the stream exceeds the permitted length.
+
+- The StorageException thrown when an operation is cancelled now includes an OperationCanceledException as its inner exception.
