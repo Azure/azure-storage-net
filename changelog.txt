@@ -1,6 +1,6 @@
 Changes in 4.0.1 :
 
-  - Tables: TableEntity cannot be serialized. If serialization logic is required for entities, please implement the ITableEntity interface directly. 
+  - Tables: TableEntity does not support object serialization. If serialization logic is required for your entity, please implement the ITableEntity interface and serialization logic directly in your entity class. 
 
 Changes in 4.0.0 :
 
