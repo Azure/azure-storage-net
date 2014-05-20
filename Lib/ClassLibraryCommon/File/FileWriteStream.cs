@@ -212,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 // We cannot allow more than one BeginFlush at a time, because
                 // RegisterWaitForSingleObject would need duplicated handles
                 // of noPendingWritesEvent for each call.
-                throw new InvalidOperationException(SR.BlobStreamFlushPending);
+                throw new InvalidOperationException(SR.FileStreamFlushPending);
             }
 
             try

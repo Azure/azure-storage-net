@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
     using System.Net;
 
     /// <summary>
-    /// Provides a set of methods for parsing a response containing blob data from the File service.
+    /// Provides a set of methods for parsing a response containing file data from the File service.
     /// </summary>
     public static partial class FileHttpResponseParsers
     {

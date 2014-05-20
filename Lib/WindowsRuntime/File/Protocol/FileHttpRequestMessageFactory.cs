@@ -293,7 +293,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the file.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="newBlobSize">The new file size. Set this parameter to <c>null</c> to keep the existing file size.</param>
+        /// <param name="newFileSize">The new file size. Set this parameter to <c>null</c> to keep the existing file size.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static HttpRequestMessage Resize(Uri uri, int? timeout, long newFileSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)

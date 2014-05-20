@@ -3593,7 +3593,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         };
                     }
 
-                    // If the download fails and Get Blob needs to resume the download, going to the
+                    // If the download fails and Get File needs to resume the download, going to the
                     // same storage location is important to prevent a possible ETag mismatch.
                     getCmd.CommandLocationMode = cmd.CurrentResult.TargetLocation == StorageLocation.Primary ? CommandLocationMode.PrimaryOnly : CommandLocationMode.SecondaryOnly;
                     lockedETag = attributes.Properties.ETag;
@@ -3957,7 +3957,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Retrieve ETag, LMT and Length from response.
         /// </summary>
         /// <param name="response">The response to parse.</param>
-        /// <param name="updateLength">If set to <c>true</c>, update the blob length.</param>
+        /// <param name="updateLength">If set to <c>true</c>, update the file length.</param>
         private void UpdateETagLMTAndLength(HttpWebResponse response, bool updateLength)
         {
             FileProperties parsedProperties = FileHttpResponseParsers.GetProperties(response);

@@ -25,9 +25,6 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
     /// <summary>
     /// Represents an entity in a storage analytics capacity table.
     /// </summary>
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    [Serializable]
-#endif
     public class CapacityEntity : TableEntity
     {
         /// <summary>
@@ -36,19 +33,6 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         public CapacityEntity()
         {
         }
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Required constructor for ISerializable interface. 
-        /// </summary>
-        /// <param name="info">A store populated with the data needed to deserialize the object.</param>
-        /// <param name="context">Information about the serialization stream.</param>
-        protected CapacityEntity(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            this.ReadEntity(info, context);
-        }
-#endif
 
         /// <summary>
         /// Gets the capacity entity's timestamp in UTC, representing the start time for that log entry.
@@ -79,18 +63,5 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         /// </summary>
         /// <value>A long containing the number of committed and uncommitted blobs in the storage account, per this capacity entity.</value>
         public long ObjectCount { get; set; }
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Populates a <see cref="System.Runtime.Serialization.SerializationInfo"/> object with the data needed to serialize a <see cref="CapacityEntity"/> object.
-        /// </summary>
-        /// <param name="info">The store to populate with the data needed to serialize the object.</param> 
-        /// <param name="context">Information about the serialization stream.</param> 
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-            this.WriteEntity(info, context);
-        }
-#endif
     }
 }
