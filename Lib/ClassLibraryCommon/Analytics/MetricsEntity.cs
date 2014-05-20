@@ -27,9 +27,6 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
     /// <summary>
     /// Represents an entity in a storage analytics metrics table.
     /// </summary>
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    [Serializable]
-#endif
     public class MetricsEntity : TableEntity
     {
         /// <summary>
@@ -38,19 +35,6 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         public MetricsEntity()
         {
         }
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Required constructor for ISerializable interface. 
-        /// </summary>
-        /// <param name="info">A store populated with the data needed to deserialize the object.</param>
-        /// <param name="context">Information about the serialization stream.</param>
-        protected MetricsEntity(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            this.ReadEntity(info, context);
-        }
-#endif
 
         /// <summary>
         /// Gets the metrics entity's timestamp in UTC, representing the start time for that log entry.
@@ -322,18 +306,5 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         /// </summary>
         /// <value>A long containing the number of SAS requests that returned a NetworkError for the metrics entity.</value>
         public long SASNetworkError { get; set; }
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Populates a <see cref="System.Runtime.Serialization.SerializationInfo" /> object with the data needed to serialize a <see cref="MetricsEntity"/> object.
-        /// </summary>
-        /// <param name="info">The store to populate with the data needed to serialize the object.</param>
-        /// <param name="context">Information about the serialization stream.</param>
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-            this.WriteEntity(info, context);
-        }
-#endif
     }
 }

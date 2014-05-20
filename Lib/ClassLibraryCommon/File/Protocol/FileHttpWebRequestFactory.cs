@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
     using System.Net;
 
     /// <summary>
-    /// A factory class for constructing a web request to manage blobs in the File service.
+    /// A factory class for constructing a web request to manage files in the File service.
     /// </summary>
     public static class FileHttpWebRequestFactory
     {

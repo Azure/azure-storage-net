@@ -31,8 +31,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Linq;
     using System.Linq.Expressions;
     using System.Collections.Concurrent;
-    using System.Runtime.Serialization;
-
 #endif
 
     /// <summary>
@@ -46,33 +44,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1117:ParametersMustBeOnSameLineOrSeparateLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:ParameterMustNotSpanMultipleLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1001:CommasMustBeSpacedCorrectly", Justification = "Reviewed.")]
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-[Serializable]
-#endif
     public class TableEntity : ITableEntity 
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-, ISerializable
-#endif
     {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         static TableEntity()
         {
             DisableCompiledSerializers = false;
-        }
-
-        /// <summary>
-        /// Required constructor for ISerializable interface. 
-        /// </summary>
-        /// <param name="info">A store populated with the data needed to deserialize the object.</param>
-        /// <param name="context">Information about the serialization stream.</param>
-        protected TableEntity(SerializationInfo info, StreamingContext context)
-        {
-            CommonUtility.AssertNotNull("info", info);
-
-            this.PartitionKey = info.GetString("PartitionKey");
-            this.RowKey = info.GetString("RowKey");
-            this.Timestamp = (DateTimeOffset)info.GetValue("Timestamp", typeof(DateTimeOffset));
-            this.ETag = info.GetString("ETag");
         }
 #endif
 
@@ -115,15 +92,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public DateTimeOffset Timestamp { get; set; }
 
         /// <summary>
-        /// Gets or sets the entity's current ETag.  Set this value to '*' in order to blindly overwrite an entity as part of an update operation.
+        /// Gets or sets the entity's ETag. Set this value to '*' in order to force an overwrite to an entity as part of an update operation.
         /// </summary>
-        /// <value>A string containing the ETag for the entity.</value>
+        /// <value>A string containing the ETag value for the entity.</value>
         public string ETag { get; set; }
 
         /// <summary>
-        /// Deserializes this <see cref="TableEntity"/> instance using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values. 
+        /// Deserializes the entity using the specified <see cref="IDictionary{TKey,TValue}"/> that maps property names to typed <see cref="EntityProperty"/> values. 
         /// </summary>
-        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps property names to typed <see cref="EntityProperty"/> values.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         public virtual void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
@@ -141,28 +118,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
             ReflectionRead(this, properties, operationContext);
         }
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Deserializes the entity using the specified serialization information.
-        /// </summary>
-        /// <param name="info">A <see cref="System.Runtime.Serialization.SerializationInfo"/> object containing the data needed to deserialize the object.</param> 
-        /// <param name="context">A <see cref="StreamingContext"/> object describing the serialization stream.</param> 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "context", Justification = "Reviewed.")]
-        public void ReadEntity(SerializationInfo info, StreamingContext context)
-        {
-            CommonUtility.AssertNotNull("info", info);
-
-            IDictionary<string, EntityProperty> properties = new Dictionary<string, EntityProperty>();
-
-            foreach (SerializationEntry entry in info)
-            {
-                properties.Add(entry.Name, EntityProperty.CreateEntityPropertyFromObject(entry.Value));
-            }
-            
-            this.ReadEntity(properties, null /* operationContext */);
-        }
-#endif
 
         /// <summary>
         /// Deserializes a custom entity instance using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values. 
@@ -318,26 +273,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
             return ReflectionWrite(this, operationContext);
         }
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Serializes the entity using the specified serialization information.
-        /// </summary>
-        /// <param name="info">A <see cref="System.Runtime.Serialization.SerializationInfo"/> object to populate with the data needed to serialize the object.</param> 
-        /// <param name="context">A <see cref="StreamingContext"/> object describing the serialization stream.</param> 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "context", Justification = "Reviewed.")]
-        public void WriteEntity(SerializationInfo info, StreamingContext context)
-        {
-            CommonUtility.AssertNotNull("info", info);
-
-            IDictionary<string, EntityProperty> properties = this.WriteEntity(null /* operationContext */);
-
-            foreach (KeyValuePair<string, EntityProperty> property in properties)
-            {
-                info.AddValue(property.Key, property.Value.PropertyAsObject);
-            }
-        }
-#endif
 
         /// <summary>
         /// Create a <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.
@@ -865,22 +800,5 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
 
         #endregion
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Populates a <see cref="System.Runtime.Serialization.SerializationInfo"/> object with the data needed to serialize a <see cref="TableEntity"/> object.
-        /// </summary>
-        /// <param name="info">The store to populate with the data needed to serialize the object.</param> 
-        /// <param name="context">Information about the serialization stream.</param> 
-        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            CommonUtility.AssertNotNull("info", info);
-
-            info.AddValue("PartitionKey", this.PartitionKey);
-            info.AddValue("RowKey", this.RowKey);
-            info.AddValue("Timestamp", this.Timestamp);
-            info.AddValue("ETag", this.ETag);
-        }
-#endif
     }
 }

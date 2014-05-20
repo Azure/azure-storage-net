@@ -1,3 +1,7 @@
+Changes in 4.0.1 :
+
+  - Tables: TableEntity cannot be serialized. If serialization logic is required for entities, please implement the ITableEntity interface directly. 
+
 Changes in 4.0.0 :
 
   - Files: Added support for File service.

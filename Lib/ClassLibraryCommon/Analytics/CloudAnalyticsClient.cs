@@ -207,8 +207,8 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of objects that implement <see cref="ICloudBlob"/> and are retrieved lazily.</returns>
-        /// <remarks>Note that specifying a log type for the <paramref name="LoggingOperations"/> parameter will return any log that contains the specified log type,
-        /// even if that log also includes other log types. Also note that the only currently supported values for the <paramref name="BlobListingDetails"/> 
+        /// <remarks>Note that specifying a log type for the <paramref name="operations"/> parameter will return any log that contains the specified log type,
+        /// even if that log also includes other log types. Also note that the only currently supported values for the <paramref name="details"/> 
         /// parameter are <c>None</c> and <c>Metadata</c>.</remarks>
         public IEnumerable<ICloudBlob> ListLogs(StorageService service, LoggingOperations operations, BlobListingDetails details, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -258,8 +258,8 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of objects that implement <see cref="ICloudBlob"/> and are retrieved lazily.</returns>
-        /// <remarks>Note that specifying a log type for the <paramref name="LoggingOperations"/> parameter will return any log that contains the specified log type,
-        /// even if that log also includes other log types. Also note that the only currently supported values for the <paramref name="BlobListingDetails"/> 
+        /// <remarks>Note that specifying a log type for the <paramref name="operations"/> parameter will return any log that contains the specified log type,
+        /// even if that log also includes other log types. Also note that the only currently supported values for the <paramref name="details"/> 
         /// parameter are <c>None</c> and <c>Metadata</c>.</remarks>
         public IEnumerable<ICloudBlob> ListLogs(StorageService service, DateTimeOffset startTime, DateTimeOffset? endTime, LoggingOperations operations, BlobListingDetails details, BlobRequestOptions options, OperationContext operationContext)
         {

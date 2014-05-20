@@ -20,10 +20,7 @@ using Microsoft.WindowsAzure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Net;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.Serialization;
 using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.Table
@@ -2558,89 +2555,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableEntity retrievedEnt2 = currentTable.Execute(TableOperation.Retrieve<TableEntity>(testEnt2.PartitionKey, testEnt2.RowKey)).Result as TableEntity;
             Assert.IsNotNull(retrievedEnt2);
         }
-
-        [TestMethod]
-        [Description("Test for TableEntity Serializable attribute -- serialize/deserialize and a roundtrip, with and without CompiledSerializers")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableEntitySerializationAttribute()
-        {
-            DoTableEntitySerializationAttribute(TablePayloadFormat.Json);
-            DoTableEntitySerializationAttribute(TablePayloadFormat.JsonNoMetadata);
-            DoTableEntitySerializationAttribute(TablePayloadFormat.JsonFullMetadata);
-            DoTableEntitySerializationAttribute(TablePayloadFormat.AtomPub);
-        }
-
-        private void DoTableEntitySerializationAttribute(TablePayloadFormat format)
-        {
-            using (MemoryStream stream = new MemoryStream())
-            {
-
-                tableClient.DefaultRequestOptions.PayloadFormat = format;
-                BinaryFormatter formatter = new BinaryFormatter();
-
-                // Create an entity and change the default values.
-                ComplexEntity testEnt = new ComplexEntity(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
-                testEnt.Binary = new Byte[] { 5, 6, 7, 8 };
-                testEnt.BinaryNull = null;
-                testEnt.BinaryPrimitive = new byte[] { 5, 6, 7, 8 };
-                testEnt.Bool = true;
-                testEnt.BoolN = true;
-                testEnt.BoolNull = null;
-                testEnt.BoolPrimitive = true;
-                testEnt.BoolPrimitiveN = true;
-                testEnt.BoolPrimitiveNull = null;
-                testEnt.DateTime = DateTime.UtcNow.AddMinutes(1);
-                testEnt.DateTimeN = DateTime.UtcNow.AddMinutes(1);
-                testEnt.DateTimeNull = null;
-                testEnt.DateTimeOffset = DateTimeOffset.Now.AddMinutes(1);
-                testEnt.DateTimeOffsetN = DateTimeOffset.Now.AddMinutes(1);
-                testEnt.DateTimeOffsetNull = null;
-                testEnt.Double = (Double)5678.5678;
-                testEnt.DoubleN = (Double)5678.5678;
-                testEnt.DoubleNull = null;
-                testEnt.DoublePrimitive = (double)5678.5678;
-                testEnt.DoublePrimitiveN = (double)5678.5678;
-                testEnt.DoublePrimitiveNull = null;
-                testEnt.Guid = Guid.NewGuid();
-                testEnt.GuidN = Guid.NewGuid();
-                testEnt.GuidNull = null;
-                testEnt.Int32 = 5678;
-                testEnt.Int32N = 5678;
-                testEnt.Int32Null = null;
-                testEnt.Int64 = (long)5678;
-                testEnt.Int64N = (long)5678;
-                testEnt.Int64Null = null;
-                testEnt.IntegerPrimitive = 5678;
-                testEnt.IntegerPrimitiveN = 5678;
-                testEnt.IntegerPrimitiveNull = null;
-                testEnt.LongPrimitive = 5678;
-                testEnt.LongPrimitiveN = 5678;
-                testEnt.LongPrimitiveNull = null;
-                testEnt.String = "ResetTestTotested";
-
-                // Serialize and deserialize the entity and make sure they're still equal.
-                formatter.Serialize(stream, testEnt);
-                stream.Seek(0, SeekOrigin.Begin);
-                ComplexEntity testEntRehydrate = (ComplexEntity)formatter.Deserialize(stream);
-                ComplexEntity.AssertEquality(testEnt, testEntRehydrate);
-
-                // Do a round trip with the entity and make sure they're still equal.
-                currentTable.Execute(TableOperation.Insert(testEntRehydrate));
-                ComplexEntity retrievedEnt = currentTable.Execute(TableOperation.Retrieve<ComplexEntity>(testEntRehydrate.PartitionKey, testEntRehydrate.RowKey)).Result as ComplexEntity;
-                ComplexEntity.AssertEquality(testEnt, retrievedEnt);
-
-                // Serialize and deserialize the retrieved entity and make sure they're still equal. 
-                stream.Seek(0, SeekOrigin.Begin);
-                formatter.Serialize(stream, retrievedEnt);
-                stream.Seek(0, SeekOrigin.Begin);
-                ComplexEntity retrievedEntRehydrate = (ComplexEntity)formatter.Deserialize(stream);
-                ComplexEntity.AssertEquality(retrievedEnt, retrievedEntRehydrate);
-            }
-        }
-
         #endregion
 
         #region Table Entity Regression Tests

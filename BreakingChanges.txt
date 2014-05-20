@@ -1,3 +1,7 @@
+Tracking Breaking Changes since 4.0
+
+- Tables: TableEntity cannot be serialized. If serialization logic is required for entities, please implement the ITableEntity interface directly.
+
 Tracking Breaking Changes since 3.0
 
 - Removed the generic query filter generation helper methods from TableQueryGeneric.Common.cs. The Correct usage is to leverage the methods exposed on the non-generic TableQuery class.
