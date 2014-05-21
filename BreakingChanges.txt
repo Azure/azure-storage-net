@@ -1,6 +1,6 @@
 Tracking Breaking Changes since 4.0
 
-- Tables: TableEntity does not support object serialization. If serialization logic is required for your entity, please implement the ITableEntity interface and serialization logic directly in your entity class.
+- Tables: Removed Serialized attribute and ISerializable implementation from TableEntity. Implement ITabeEntity for your custom entities if you need either.
 
 Tracking Breaking Changes since 3.0
 
