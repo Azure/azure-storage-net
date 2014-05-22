@@ -24,12 +24,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
+    using System.Text.RegularExpressions;
 
     /// <summary>
     /// Represents a Windows Azure table.
     /// </summary>
     public sealed partial class CloudTable
     {
+        private static Regex tableNameRegex = new Regex("^[A-Za-z][A-Za-z0-9]{2,62}$");
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudTable"/> class.
         /// </summary>
@@ -76,7 +79,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="client">The client.</param>
         internal CloudTable(string tableName, CloudTableClient client)
         {
-            CommonUtility.AssertNotNull("tableName", tableName);
+            CommonUtility.AssertNotNull("tableName", tableName);            
+            if (!tableNameRegex.IsMatch(tableName))
+            {
+                throw new ArgumentException(SR.InvalidTableName, "tableName");
+            }
+
             CommonUtility.AssertNotNull("client", client);
             this.Name = tableName;
             this.StorageUri = NavigationHelper.AppendPathToUri(client.StorageUri, tableName);
