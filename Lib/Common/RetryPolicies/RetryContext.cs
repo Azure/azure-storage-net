@@ -42,7 +42,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// <summary>
         /// Gets the location mode for subsequent retries.
         /// </summary>
-        /// <value>A <see cref="LocationMode"/> object.</value>
+        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
         public LocationMode LocationMode { get; private set; }
 
         /// <summary>

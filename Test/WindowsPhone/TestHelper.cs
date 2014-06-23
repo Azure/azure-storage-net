@@ -96,9 +96,9 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 await operation();
             }
-            catch (Exception)
+            catch (StorageException ex)
             {
-                Assert.AreEqual((int)expectedStatusCode, operationContext.LastResult.HttpStatusCode, "Http status code is unexpected.");
+                Assert.AreEqual((int)expectedStatusCode, ex.RequestInformation.HttpStatusCode, "Http status code is unexpected.");
                 if (!string.IsNullOrEmpty(requestErrorCode))
                 {
                     Assert.IsNotNull(operationContext.LastResult.ExtendedErrorInformation);
@@ -107,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage
                 return;
             }
 
-            Assert.Fail("No exception received while while expecting {0}: {1}", expectedStatusCode, operationDescription);
+            Assert.Fail("No Storage exception received while while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
     }
 }

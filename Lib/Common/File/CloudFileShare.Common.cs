@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Initializes a new instance of the <see cref="CloudFileShare"/> class.
         /// </summary>
         /// <param name="shareAddress">The absolute URI to the share.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudFileShare(Uri shareAddress, StorageCredentials credentials)
             : this(new StorageUri(shareAddress), credentials)
         {
@@ -41,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Initializes a new instance of the <see cref="CloudFileShare"/> class.
         /// </summary>
         /// <param name="shareAddress">The absolute URI to the share.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudFileShare"/> object.</returns>
         public static CloudFileShare Create(StorageUri shareAddress, StorageCredentials credentials)

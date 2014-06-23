@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 ODataMessageWriterSettings writerSettings = new ODataMessageWriterSettings()
                 {
                     CheckCharacters = false,   // sets this flag on the XmlWriter for ATOM  
-                    Version = ODataVersion.V3 // set the Odata version to use when writing the entry 
+                    Version = TableConstants.ODataProtocolVersion // set the Odata version to use when writing the entry 
                 };
 
                 HttpWebRequestAdapterMessage adapterMsg = new HttpWebRequestAdapterMessage(msg, bufferManager);
@@ -122,7 +122,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             ODataMessageWriterSettings writerSettings = new ODataMessageWriterSettings()
             {
                 CheckCharacters = false,   // sets this flag on the XmlWriter for ATOM  
-                Version = ODataVersion.V3 // set the Odata version to use when writing the entry 
+                Version = TableConstants.ODataProtocolVersion // set the Odata version to use when writing the entry 
             };
 
             HttpWebRequestAdapterMessage adapterMsg = new HttpWebRequestAdapterMessage(msg, bufferManager);

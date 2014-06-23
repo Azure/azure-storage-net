@@ -455,11 +455,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
                         async () => await file.WriteRangeAsync(memoryStream.AsInputStream(), 0, null),
                         "Zero-length WriteRange should fail");
-
-                    memoryStream.SetLength(4 * 1024 * 1024 + 1);
-                    await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await file.WriteRangeAsync(memoryStream.AsInputStream(), 0, null),
-                        ">4MB WriteRange should fail");
                 }
 
                 using (MemoryStream resultingData = new MemoryStream())
@@ -472,7 +467,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                             opContext,
                             "Writing out-of-range ranges should fail",
                             HttpStatusCode.RequestedRangeNotSatisfiable,
-                            "InvalidFileRange");
+                            "InvalidRange");
 
                         memoryStream.Seek(0, SeekOrigin.Begin);
                         await file.WriteRangeAsync(memoryStream.AsInputStream(), 0, contentMD5);
@@ -623,11 +618,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             await share.CreateAsync();
             try
             {
-                await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                         async () => await this.CloudFileUploadFromStreamAsync(share, 3 * 512, 4 * 512, null, null, 0),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
-                await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                         async () => await this.CloudFileUploadFromStreamAsync(share, 3 * 512, 2 * 512, null, null, 1024),
                         "The given stream does not contain the requested number of bytes from its given position.");
             }
@@ -641,7 +636,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             byte[] buffer = GetRandomBuffer(size);
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
-            hasher.Append(buffer.AsBuffer(startOffset, (copyLength.HasValue ? (int)copyLength.Value : buffer.Length) - startOffset));
+            hasher.Append(buffer.AsBuffer(startOffset, copyLength.HasValue ? (int)copyLength.Value : buffer.Length - startOffset));
             string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
 
             CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");

@@ -42,7 +42,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Initializes a new instance of the <see cref="CloudFile"/> class using an absolute URI to the file.
         /// </summary>
         /// <param name="fileAbsoluteUri">The absolute URI to the file.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudFile(Uri fileAbsoluteUri, StorageCredentials credentials)
             : this(new StorageUri(fileAbsoluteUri), credentials)
         {
@@ -52,7 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Initializes a new instance of the <see cref="CloudFile"/> class using an absolute URI to the file.
         /// </summary>
         /// <param name="fileAbsoluteUri">The absolute URI to the file.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudFile"/> object.</returns>
         public static CloudFile Create(StorageUri fileAbsoluteUri, StorageCredentials credentials)

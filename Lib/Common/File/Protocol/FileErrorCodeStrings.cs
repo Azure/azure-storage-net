@@ -33,81 +33,81 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <summary>
         /// The specified share was not found.
         /// </summary>
-        public const string ShareNotFound = "ShareNotFound";
+        public static readonly string ShareNotFound = "ShareNotFound";
 
         /// <summary>
         /// The specified share already exists.
         /// </summary>
-        public const string ShareAlreadyExists = "ShareAlreadyExists";
+        public static readonly string ShareAlreadyExists = "ShareAlreadyExists";
 
         /// <summary>
         /// The specified share is disabled.
         /// </summary>
-        public const string ShareDisabled = "ShareDisabled";
+        public static readonly string ShareDisabled = "ShareDisabled";
 
         /// <summary>
         /// The specified share is being deleted.
         /// </summary>
-        public const string ShareBeingDeleted = "ShareBeingDeleted";
+        public static readonly string ShareBeingDeleted = "ShareBeingDeleted";
 
         /// <summary>
         /// The specified resource is marked for deletion by an SMB client.
         /// </summary>
-        public const string DeletePending = "DeletePending";
+        public static readonly string DeletePending = "DeletePending";
 
         /// <summary>
         /// The specified parent was not found.
         /// </summary>
-        public const string ParentNotFound = "ParentNotFound";
+        public static readonly string ParentNotFound = "ParentNotFound";
 
         /// <summary>
         /// The specified resource name contains invalid characters.
         /// </summary>
-        public const string InvalidResourceName = "InvalidResourceName";
+        public static readonly string InvalidResourceName = "InvalidResourceName";
 
         /// <summary>
         /// The specified resource already exists.
         /// </summary>
-        public const string ResourceAlreadyExists = "ResourceAlreadyExists";
+        public static readonly string ResourceAlreadyExists = "ResourceAlreadyExists";
 
         /// <summary>
         /// The specified resource type does not match the type of the existing resource.
         /// </summary>
-        public const string ResourceTypeMismatch = "ResourceTypeMismatch";
+        public static readonly string ResourceTypeMismatch = "ResourceTypeMismatch";
 
         /// <summary>
         /// The specified resource may be in use by an SMB client.
         /// </summary>
-        public const string SharingViolation = "SharingViolation";
+        public static readonly string SharingViolation = "SharingViolation";
 
         /// <summary>
         /// The file or directory could not be deleted because it is in use by an SMB client.
         /// </summary>
-        public const string CannotDeleteFileOrDirectory = "CannotDeleteFileOrDirectory";
+        public static readonly string CannotDeleteFileOrDirectory = "CannotDeleteFileOrDirectory";
 
         /// <summary>
         /// A portion of the specified file is locked by an SMB client.
         /// </summary>
-        public const string FileLockConflict = "FileLockConflict";
+        public static readonly string FileLockConflict = "FileLockConflict";
 
         /// <summary>
         /// The specified resource is read-only and cannot be modified at this time.
         /// </summary>
-        public const string ReadOnlyAttribute = "ReadOnlyAttribute";
+        public static readonly string ReadOnlyAttribute = "ReadOnlyAttribute";
 
         /// <summary>
         /// The specified resource state could not be flushed from an SMB client in the specified time.
         /// </summary>
-        public const string ClientCacheFlushDelay = "ClientCacheFlushDelay";
+        public static readonly string ClientCacheFlushDelay = "ClientCacheFlushDelay";
 
         /// <summary>
         /// File or directory path is too long.
         /// </summary>
-        public const string InvalidFileOrDirectoryPathName = "InvalidFileOrDirectoryPathName";
+        public static readonly string InvalidFileOrDirectoryPathName = "InvalidFileOrDirectoryPathName";
 
         /// <summary>
         /// Condition headers are not supported.
         /// </summary>
-        public const string ConditionHeadersNotSupported = "ConditionHeadersNotSupported";
+        public static readonly string ConditionHeadersNotSupported = "ConditionHeadersNotSupported";
     }
 }

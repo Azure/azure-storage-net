@@ -104,15 +104,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
             props.Logging.RetentionDays = 5;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
 
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 6;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
             props.MinuteMetrics.RetentionDays = 6;
-            props.MinuteMetrics.Version = "1.0";
+            props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.Cors.CorsRules.Add(
                 new CorsRule()
@@ -157,15 +157,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
             props.Logging.RetentionDays = 5;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
 
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 6;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
             props.MinuteMetrics.RetentionDays = 6;
-            props.MinuteMetrics.Version = "1.0";
+            props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.Cors.CorsRules.Add(
                 new CorsRule()
@@ -234,11 +234,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
             props.Logging.RetentionDays = 5;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
 
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 6;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             client.SetServicePropertiesAsync(props).Wait();
 
@@ -257,10 +257,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write | LoggingOperations.Delete;
             props.Logging.RetentionDays = 8;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 8;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             client.SetServicePropertiesAsync(props).Wait();
 
@@ -281,10 +281,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write | LoggingOperations.Delete;
             props.Logging.RetentionDays = 9;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 9;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             client.SetServicePropertiesAsync(props, cancellationToken).Wait();
 
@@ -306,10 +306,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write | LoggingOperations.Delete;
             props.Logging.RetentionDays = 10;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 10;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             client.SetServicePropertiesAsync(props, requestOptions, operationContext).Wait();
 
@@ -330,10 +330,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write | LoggingOperations.Delete;
             props.Logging.RetentionDays = 11;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 11;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             client.SetServicePropertiesAsync(props, requestOptions, operationContext, cancellationToken).Wait();
 
@@ -400,7 +400,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             // None
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
 
             client.SetServiceProperties(props);
 
@@ -424,7 +424,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             // None
             props.HourMetrics.MetricsLevel = MetricsLevel.None;
             props.HourMetrics.RetentionDays = null;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
             client.SetServiceProperties(props);
 
             TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties());
@@ -453,7 +453,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             // None
             props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
             props.MinuteMetrics.RetentionDays = null;
-            props.MinuteMetrics.Version = "1.0";
+            props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
             client.SetServiceProperties(props);
 
             TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties());
@@ -828,15 +828,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
             props.Logging.RetentionDays = 5;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
 
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 6;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
             props.MinuteMetrics.RetentionDays = 6;
-            props.MinuteMetrics.Version = "1.0";
+            props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.Cors.CorsRules.Clear();
             
@@ -909,15 +909,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
-            props.Logging.Version = "1.0";
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
 
             props.HourMetrics.MetricsLevel = MetricsLevel.None;
             props.HourMetrics.RetentionDays = null;
-            props.HourMetrics.Version = "1.0";
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
             props.MinuteMetrics.RetentionDays = null;
-            props.MinuteMetrics.Version = "1.0";
+            props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.Cors.CorsRules = new List<CorsRule>();
 

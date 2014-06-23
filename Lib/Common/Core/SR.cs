@@ -92,6 +92,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string LeaseTimeNotReceived = "Valid lease time expected but not received from the service.";
         public const string LengthNotInRange = "The length provided is out of range. The range must be between 0 and the length of the byte array.";
         public const string ListSnapshotsWithDelimiterError = "Listing snapshots is only supported in flat mode (no delimiter). Consider setting the useFlatBlobListing parameter to true.";
+        public const string LogStreamEndError = "Error parsing log record: unexpected end of stream at position '{0}'.";
+        public const string LogStreamDelimiterError = "Error parsing log record: expected the delimiter '{0}', but read '{1}' at position '{2}'.";
+        public const string LogStreamParseError = "Error parsing log record: could not parse '{0}' using format: {1}";
+        public const string LogStreamQuoteError = "Error parsing log record: unexpected quote character found. String so far: '{0}'. Character read: '{1}'";
+        public const string LogVersionUnsupported = "A storage log version of {0} is unsupported.";
         public const string LoggingVersionNull = "The logging version is null or empty.";
         public const string MD5MismatchError = "Calculated MD5 does not match existing property";
         public const string MD5NotPossible = "MD5 cannot be calculated for an existing page blob because it would require reading the existing data. Please disable StoreBlobContentMD5.";

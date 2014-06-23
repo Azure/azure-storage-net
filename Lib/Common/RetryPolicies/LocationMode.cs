@@ -18,7 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.RetryPolicies
 {
     /// <summary>
-    /// Specifies the location mode used to decide which location the request should be sent to.
+    /// Specifies the location mode to indicate which location should receive the request.
     /// </summary>
     public enum LocationMode
     {

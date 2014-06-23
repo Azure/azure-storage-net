@@ -192,11 +192,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Assert.AreEqual("File1", ((CloudFile)item11).Name);
 
                     IListFileItem item12 = simpleList1.ElementAt(1);
-                    Assert.IsTrue(item12.Uri.Equals(share.Uri + "/TopDir1/MidDir1/"));
+                    Assert.IsTrue(item12.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
                     Assert.AreEqual("MidDir1", ((CloudFileDirectory)item12).Name);
 
                     IListFileItem item13 = simpleList1.ElementAt(2);
-                    Assert.IsTrue(item13.Uri.Equals(share.Uri + "/TopDir1/MidDir2/"));
+                    Assert.IsTrue(item13.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
                     Assert.AreEqual("MidDir2", ((CloudFileDirectory)item13).Name);
                     CloudFileDirectory midDir2 = (CloudFileDirectory)item13;
 
@@ -206,11 +206,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Assert.IsTrue(simpleList2.Count == 2);
 
                     IListFileItem item21 = simpleList2.ElementAt(0);
-                    Assert.IsTrue(item21.Uri.Equals(share.Uri + "/TopDir1/MidDir2/EndDir1/"));
+                    Assert.IsTrue(item21.Uri.Equals(share.Uri + "/TopDir1/MidDir2/EndDir1"));
                     Assert.AreEqual("EndDir1", ((CloudFileDirectory)item21).Name);
 
                     IListFileItem item22 = simpleList2.ElementAt(1);
-                    Assert.IsTrue(item22.Uri.Equals(share.Uri + "/TopDir1/MidDir2/EndDir2/"));
+                    Assert.IsTrue(item22.Uri.Equals(share.Uri + "/TopDir1/MidDir2/EndDir2"));
                     Assert.AreEqual("EndDir2", ((CloudFileDirectory)item22).Name);
                 }
             }
@@ -237,14 +237,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                 await share.CreateAsync();
                 if (await CloudFileDirectorySetupAsync(share))
                 {
-                    CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1/MidDir1/EndDir1/");
+                    CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1/MidDir1/EndDir1");
                     CloudFile file1 = dir1.GetFileReference("EndFile1");
                     OperationContext context = new OperationContext();
                     await TestHelper.ExpectedExceptionAsync(
                         async () => await dir1.DeleteAsync(null, null, context),
                         context,
                         "Delete a non-empty directory",
-                        HttpStatusCode.PreconditionFailed);
+                        HttpStatusCode.Conflict);
 
                     await file1.DeleteAsync();
                     await dir1.DeleteAsync();
@@ -430,13 +430,12 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 await share.CreateAsync();
-                CloudFile file = share.GetRootDirectoryReference().GetFileReference("Dir1/File1");
-                await file.CreateAsync(0);
-                Assert.AreEqual("Dir1/File1", file.Name);
+                CloudFile file = share.GetRootDirectoryReference().GetDirectoryReference("Dir1").GetFileReference("File1");
+                Assert.AreEqual("File1", file.Name);
 
                 // get the file's parent
                 CloudFileDirectory parent = file.Parent;
-                Assert.AreEqual(parent.Name, "Dir1/");
+                Assert.AreEqual(parent.Name, "Dir1");
 
                 // get share as parent
                 CloudFileDirectory root = parent.Parent;
@@ -451,14 +450,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.AreEqual("", root.Name);
                 Assert.AreEqual(share.Uri.AbsoluteUri, root.Uri.AbsoluteUri);
 
-                List<IListFileItem> list = (await ListFilesAndDirectoriesAsync(root, null, null, null)).ToList();
-                Assert.AreEqual(1, list.Count);
-
                 // make sure the parent of the share dir is null
                 empty = root.Parent;
                 Assert.IsNull(empty);
-
-                await file.DeleteIfExistsAsync();
             }
             finally
             {
@@ -478,8 +472,8 @@ namespace Microsoft.WindowsAzure.Storage.File
             string name = GetRandomShareName();
             CloudFileShare share = client.GetShareReference(name);
 
-            CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1/");
-            CloudFileDirectory subDirectory = directory.GetDirectoryReference("MidDir1/");
+            CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1");
+            CloudFileDirectory subDirectory = directory.GetDirectoryReference("MidDir1");
             CloudFileDirectory parent = subDirectory.Parent;
             Assert.AreEqual(parent.Name, directory.Name);
             Assert.AreEqual(parent.Uri, directory.Uri);
@@ -518,7 +512,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             CloudFileShare share = client.GetShareReference(name);
 
             ////Traverse hierarchically starting with length 1
-            CloudFileDirectory directory1 = share.GetRootDirectoryReference().GetDirectoryReference("Dir1/");
+            CloudFileDirectory directory1 = share.GetRootDirectoryReference().GetDirectoryReference("Dir1");
             CloudFileDirectory subdir1 = directory1.GetDirectoryReference("Dir2");
             CloudFileDirectory parent1 = subdir1.Parent;
             Assert.AreEqual(parent1.Name, directory1.Name);
@@ -548,47 +542,14 @@ namespace Microsoft.WindowsAzure.Storage.File
             string name = GetRandomShareName();
             CloudFileShare share = client.GetShareReference(name);
 
-            CloudFile file = share.GetRootDirectoryReference().GetFileReference("TopDir1/MidDir1/EndDir1/EndFile1");
+            CloudFile file = share.GetRootDirectoryReference().
+                GetDirectoryReference("TopDir1").
+                GetDirectoryReference("MidDir1").
+                GetDirectoryReference("EndDir1").
+                GetFileReference("EndFile1");
             CloudFileDirectory directory = file.Parent;
-            Assert.AreEqual(directory.Name, "TopDir1/MidDir1/EndDir1/");
-            Assert.AreEqual(directory.Uri, share.Uri + "/TopDir1/MidDir1/EndDir1/");
-        }
-
-        [TestMethod]
-        [Description("Multiple slashes in a row or empty directory names")]
-        [TestCategory(ComponentCategory.File)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileDirectoryDelimitersInARow()
-        {
-            CloudFileClient client = GenerateCloudFileClient();
-            string name = GetRandomShareName();
-            CloudFileShare share = client.GetShareReference(name);
-
-            CloudFile file = share.GetRootDirectoryReference().GetFileReference(NavigationHelper.Slash + NavigationHelper.Slash + NavigationHelper.Slash + "File1");
-
-            ////Traverse from leaf to root
-            CloudFileDirectory directory1 = file.Parent;
-            Assert.AreEqual(directory1.Name, NavigationHelper.Slash + NavigationHelper.Slash + NavigationHelper.Slash);
-
-            CloudFileDirectory directory2 = directory1.Parent;
-            Assert.AreEqual(directory2.Name, NavigationHelper.Slash + NavigationHelper.Slash);
-
-            CloudFileDirectory directory3 = directory2.Parent;
-            Assert.AreEqual(directory3.Name, NavigationHelper.Slash);
-
-            ////Traverse from root to leaf
-            CloudFileDirectory directory4 = share.GetRootDirectoryReference().GetDirectoryReference(NavigationHelper.Slash);
-            CloudFileDirectory directory5 = directory4.GetDirectoryReference(NavigationHelper.Slash);
-            Assert.AreEqual(directory5.Name, NavigationHelper.Slash + NavigationHelper.Slash);
-
-            CloudFileDirectory directory6 = directory5.GetDirectoryReference(NavigationHelper.Slash);
-            Assert.AreEqual(directory6.Name, NavigationHelper.Slash + NavigationHelper.Slash + NavigationHelper.Slash);
-
-            CloudFile file2 = directory6.GetFileReference("File1");
-            Assert.AreEqual(file2.Name, NavigationHelper.Slash + NavigationHelper.Slash + NavigationHelper.Slash + "File1");
-            Assert.AreEqual(file2.Uri, file.Uri);
+            Assert.AreEqual(directory.Name, "EndDir1");
+            Assert.AreEqual(directory.Uri, share.Uri + "/TopDir1/MidDir1/EndDir1");
         }
 
         [TestMethod]
@@ -622,11 +583,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             CloudFileShare share = client.GetShareReference(name);
 
             CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference(share.Uri.AbsoluteUri);
-            Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(share.Uri, share.Uri.AbsoluteUri + NavigationHelper.Slash), dir.Uri);
-            Assert.AreEqual(new Uri(share.Uri + "/" + share.Uri.AbsoluteUri + NavigationHelper.Slash), dir.Uri);
+            Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(share.Uri, share.Uri.AbsoluteUri), dir.Uri);
+            Assert.AreEqual(new Uri(share.Uri + "/" + share.Uri.AbsoluteUri), dir.Uri);
 
-            dir = share.GetRootDirectoryReference().GetDirectoryReference(share.Uri.AbsoluteUri + "/TopDir1/");
-            Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(share.Uri, share.Uri.AbsoluteUri + "/TopDir1/"), dir.Uri);
+            dir = share.GetRootDirectoryReference().GetDirectoryReference(share.Uri.AbsoluteUri + "/TopDir1");
+            Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(share.Uri, share.Uri.AbsoluteUri + "/TopDir1"), dir.Uri);
         }
     }
 }

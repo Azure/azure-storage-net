@@ -281,13 +281,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream wholeFile = new MemoryStream())
                 {
-                    using (Stream writeStream = await file.OpenWriteAsync(buffer.Length))
+                    using (Stream fileStream = await file.OpenWriteAsync(buffer.Length))
                     {
-                        Stream fileStream = writeStream;
-                        TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                            () => fileStream.Seek(1, SeekOrigin.Begin),
-                            "File stream should not allow unaligned seeks");
-
                         await fileStream.WriteAsync(buffer, 0, buffer.Length);
                         await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                         Random random = new Random();

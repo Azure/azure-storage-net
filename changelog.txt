@@ -1,3 +1,12 @@
+Changes in 4.1.0 :
+
+  - All: Added parsing logic and the LogRecord class to further augment the Analytics Client ListLogs methods.
+  - All: Added Storage Analytics version constant strings.
+  - All: Updated the ErrorCodeStrings classes.
+  - All: Fixed an issue which caused Async methods to hang when an exception was thrown while translating a previous exception.
+  - Blobs: Fixed an issue in DownloadToFile that caused empty files to be created in the error case.
+  - Files: Fixed an issue in DownloadToFile that caused empty files to be created in the error case.
+
 Changes in 4.0.1 :
 
   - Tables: Removed Serialized attribute and ISerializable implementation from TableEntity. Implement ITabeEntity for your custom entities if you need either. 
@@ -255,6 +264,6 @@ Issues fixed in 2.0.2 :
   
 Issues fixed in 2.0.1 : 
 	
-	- All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
-	- All: StorageErrorCodeStrings class is missing.
-	- Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.
+  - All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
+  - All: StorageErrorCodeStrings class is missing.
+  - Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.

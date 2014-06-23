@@ -186,6 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobUploadDownloadFile()
         {
             CloudBlockBlob blob = this.testContainer.GetBlockBlobReference("blob1");
+            CloudBlockBlob nullBlob = this.testContainer.GetBlockBlobReference("null");
             this.DoUploadDownloadFile(blob, 0, false);
             this.DoUploadDownloadFile(blob, 4096, false);
             this.DoUploadDownloadFile(blob, 4097, false);
@@ -193,6 +194,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<IOException>(
                 () => blob.UploadFromFile("non_existent.file", FileMode.Open),
                 "UploadFromFile requires an existing file");
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.Create),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.CreateNew),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.Append),
+                "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
         }
 
         [TestMethod]
@@ -204,6 +221,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudPageBlobUploadDownloadFile()
         {
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
+            CloudPageBlob nullBlob = this.testContainer.GetPageBlobReference("null");
             this.DoUploadDownloadFile(blob, 0, false);
             this.DoUploadDownloadFile(blob, 4096, false);
 
@@ -214,6 +232,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<IOException>(
                 () => blob.UploadFromFile("non_existent.file", FileMode.Open),
                 "UploadFromFile requires an existing file");
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.Create),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.CreateNew),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.OpenOrCreate),
+                "DownloadToFile should leave an empty file behind after failing, depending on file mode.");
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
         }
 
         [TestMethod]
@@ -225,6 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobUploadDownloadFileAPM()
         {
             CloudBlockBlob blob = this.testContainer.GetBlockBlobReference("blob1");
+            CloudBlockBlob nullBlob = this.testContainer.GetBlockBlobReference("null");
             this.DoUploadDownloadFile(blob, 0, true);
             this.DoUploadDownloadFile(blob, 4096, true);
             this.DoUploadDownloadFile(blob, 4097, true);
@@ -232,6 +267,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<IOException>(
                 () => blob.BeginUploadFromFile("non_existent.file", FileMode.Open, null, null),
                 "UploadFromFile requires an existing file");
+
+            IAsyncResult result;
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                OperationContext context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.Create, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.CreateNew, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.Append, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should leave an empty file behind after failing, depending on file mode.");
+                Assert.IsTrue(File.Exists("garbage.file"));
+                File.Delete("garbage.file");
+            }
         }
 
         [TestMethod]
@@ -243,16 +313,52 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudPageBlobUploadDownloadFileAPM()
         {
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
+            CloudPageBlob nullBlob = this.testContainer.GetPageBlobReference("null");
             this.DoUploadDownloadFile(blob, 0, true);
             this.DoUploadDownloadFile(blob, 4096, true);
 
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadDownloadFile(blob, 4097, true),
                 "Page blobs must be 512-byte aligned");
-
+ 
             TestHelper.ExpectedException<IOException>(
                 () => blob.BeginUploadFromFile("non_existent.file", FileMode.Open, null, null),
                 "UploadFromFile requires an existing file");
+
+            IAsyncResult result;
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                OperationContext context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.Create, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.CreateNew, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.Append, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+                Assert.IsTrue(File.Exists("garbage.file"));
+                File.Delete("garbage.file");
+            }
         }
 
 #if TASK
@@ -265,6 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobUploadDownloadFileTask()
         {
             CloudBlockBlob blob = this.testContainer.GetBlockBlobReference("blob1");
+            CloudBlockBlob nullBlob = this.testContainer.GetBlockBlobReference("null");
             this.DoUploadDownloadFileTask(blob, 0);
             this.DoUploadDownloadFileTask(blob, 4096);
             this.DoUploadDownloadFileTask(blob, 4097);
@@ -272,6 +379,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<IOException>(
                 () => blob.UploadFromFileAsync("non_existent.file", FileMode.Open),
                 "UploadFromFile requires an existing file");
+
+            AggregateException e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.Create).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.CreateNew).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.OpenOrCreate).Wait(),
+                "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
         }
 
         [TestMethod]
@@ -283,6 +409,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudPageBlobUploadDownloadFileTask()
         {
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
+            CloudPageBlob nullBlob = this.testContainer.GetPageBlobReference("null");
             this.DoUploadDownloadFileTask(blob, 0);
             this.DoUploadDownloadFileTask(blob, 4096);
             
@@ -293,6 +420,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<IOException>(
                 () => blob.UploadFromFileAsync("non_existent.file", FileMode.Open),
                 "UploadFromFile requires an existing file");
+
+            AggregateException e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.Create).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.CreateNew).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.Append).Wait(),
+                "DownloadToFile should leave an empty file behind after failing, depending on file mode.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
         }
 
         private void DoUploadDownloadFileTask(ICloudBlob blob, int fileSize)

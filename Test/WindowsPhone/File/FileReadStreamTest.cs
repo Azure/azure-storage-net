@@ -107,9 +107,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (Stream fileStream = await file.OpenReadAsync(null, null, opContext))
+                using (Stream fileStreamForRead = await file.OpenReadAsync(null, null, opContext))
                 {
-                    Stream fileStreamForRead = fileStream;
                     await fileStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
                     await file.SetMetadataAsync();
                     await TestHelper.ExpectedExceptionAsync(

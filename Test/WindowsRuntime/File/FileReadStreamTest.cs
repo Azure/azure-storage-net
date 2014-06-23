@@ -91,7 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Stream fileStreamForRead = fileStream.AsStreamForRead();
                     await fileStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
                     await file.SetMetadataAsync();
-                    await TestHelper.ExpectedExceptionAsync(
+                    await ExpectedExceptionAsync(
                         async () => await fileStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
                         opContext,
                         "File read stream should fail if file is modified during read",
@@ -104,7 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Stream fileStreamForRead = fileStream.AsStreamForRead();
                     long length = fileStreamForRead.Length;
                     await file.SetMetadataAsync();
-                    await TestHelper.ExpectedExceptionAsync(
+                    await ExpectedExceptionAsync(
                         async () => await fileStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
                         opContext,
                         "File read stream should fail if file is modified during read",
@@ -126,6 +126,32 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 share.DeleteIfExistsAsync().AsTask().Wait();
             }
+        }
+
+        /// <summary>
+        /// Runs a given operation that is expected to throw an exception.
+        /// </summary>
+        /// <param name="operation"></param>
+        /// <param name="operationDescription"></param>
+        /// <param name="expectedStatusCode"></param>
+        private static async Task ExpectedExceptionAsync(Func<Task> operation, OperationContext operationContext, string operationDescription, HttpStatusCode expectedStatusCode, string requestErrorCode = null)
+        {
+            try
+            {
+                await operation();
+            }
+            catch (IOException ex)
+            {
+                Assert.AreEqual((int)expectedStatusCode, ((StorageException)ex.InnerException).RequestInformation.HttpStatusCode, "Http status code is unexpected.");
+                if (!string.IsNullOrEmpty(requestErrorCode))
+                {
+                    Assert.IsNotNull(operationContext.LastResult.ExtendedErrorInformation);
+                    Assert.AreEqual(requestErrorCode, operationContext.LastResult.ExtendedErrorInformation.ErrorCode);
+                }
+                return;
+            }
+
+            Assert.Fail("No exception received while while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
 
         private static async Task<uint> FileReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)

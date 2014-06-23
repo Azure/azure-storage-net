@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             catch (Exception e)
             {
-                Assert.AreEqual(WindowsAzureErrorCode.TimeoutException, e.HResult);
+                Assert.AreEqual(WindowsAzureErrorCode.TimeoutException, e.InnerException.InnerException.HResult);
             }
             finally
             {
@@ -134,7 +134,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 new Task(() =>
                 {
-                    new System.Threading.ManualResetEvent(false).WaitOne(500);
+                    new System.Threading.ManualResetEvent(false).WaitOne(100);
                     cts.Cancel(false);
                 }).Start();
 
