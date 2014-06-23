@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Gets or sets the location mode of the request.
         /// </summary>
-        /// <value>A <see cref="LocationMode"/> object.</value>
+        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
         LocationMode? LocationMode { get; set; }
 
         /// <summary>

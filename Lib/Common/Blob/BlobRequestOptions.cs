@@ -145,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the location mode of the request.
         /// </summary>
-        /// <value>A <see cref="LocationMode"/> object indicating the location mode of the request.</value>
+        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value indicating the location mode of the request.</value>
         public LocationMode? LocationMode { get; set; }
 
         /// <summary>

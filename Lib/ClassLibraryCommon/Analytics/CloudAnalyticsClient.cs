@@ -26,7 +26,9 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.IO;
     using System.Linq;
+    using System.Text;
 
     /// <summary>
     /// Provides a client-side logical representation for Microsoft Azure Storage Analytics. 
@@ -45,10 +47,10 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudAnalyticsClient"/> class using the specified Blob and Table service endpoints
         /// and account credentials.
+        /// </summary>
         /// <param name="blobStorageUri">A <see cref="StorageUri"/> object containing the Blob service endpoint to use to create the client.</param>
         /// <param name="tableStorageUri">A <see cref="StorageUri"/> object containing the Table service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-        /// </summary>
         public CloudAnalyticsClient(StorageUri blobStorageUri, StorageUri tableStorageUri, StorageCredentials credentials)
         {
             CommonUtility.AssertNotNull("blobStorageUri", blobStorageUri);
@@ -190,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
 
 #if SYNC
         /// <summary>
-        /// Returns an enumerable collection of logs stored as blobs, retrieved lazily.
+        /// Returns an enumerable collection of log blobs containing Analytics log records. The blobs are retrieved lazily.
         /// </summary>
         /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
         public IEnumerable<ICloudBlob> ListLogs(StorageService service)
@@ -199,16 +201,16 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         }
 
         /// <summary>
-        /// Returns an enumerable collection of logs stored as blobs, retrieved lazily.
+        /// Returns an enumerable collection of log blobs containing Analytics log records. The blobs are retrieved lazily.
         /// </summary>
         /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
-        /// <param name="operations">A <see cref="LoggingOperations"/> enumeration value that indicates which log types to return.</param>
+        /// <param name="operations">A <see cref="LoggingOperations"/> enumeration value that indicates the types of logging operations on which to filter the log blobs.</param>
         /// <param name="details">A <see cref="BlobListingDetails"/> enumeration value that indicates whether or not blob metadata should be returned. Only <c>None</c> and <c>Metadata</c> are valid values. </param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of objects that implement <see cref="ICloudBlob"/> and are retrieved lazily.</returns>
-        /// <remarks>Note that specifying a log type for the <paramref name="operations"/> parameter will return any log that contains the specified log type,
-        /// even if that log also includes other log types. Also note that the only currently supported values for the <paramref name="details"/> 
+        /// <remarks>Note that specifying a logging operation type for the <paramref name="operations"/> parameter will return any Analytics log blob that contains the specified logging operation,
+        /// even if that log blob also includes other types of logging operations. Also note that the only currently supported values for the <paramref name="details"/> 
         /// parameter are <c>None</c> and <c>Metadata</c>.</remarks>
         public IEnumerable<ICloudBlob> ListLogs(StorageService service, LoggingOperations operations, BlobListingDetails details, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -236,7 +238,7 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         }
 
         /// <summary>
-        /// Returns an enumerable collection of logs stored as blobs, retrieved lazily.
+        /// Returns an enumerable collection of log blobs containing Analytics log records. The blobs are retrieved lazily.
         /// </summary>
         /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
         /// <param name="startTime">A <see cref="DateTimeOffset"/> object representing the start time for which logs should be retrieved.</param>
@@ -248,18 +250,18 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         }
 
         /// <summary>
-        /// Returns an enumerable collection of logs stored as blobs, retrieved lazily.
+        /// Returns an enumerable collection of log blobs containing Analytics log records. The blobs are retrieved lazily.
         /// </summary>
         /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
         /// <param name="startTime">A <see cref="DateTimeOffset"/> object representing the start of the time range for which logs should be retrieved.</param>
         /// <param name="endTime">A <see cref="DateTimeOffset"/> object representing the end of the time range for which logs should be retrieved.</param>
-        /// <param name="operations">A <see cref="LoggingOperations"/> enumeration value that indicates which log types to return</param>
+        /// <param name="operations">A <see cref="LoggingOperations"/> enumeration value that indicates the types of logging operations on which to filter the log blobs.</param>
         /// <param name="details">A <see cref="BlobListingDetails"/> enumeration value that indicates whether or not blob metadata should be returned. Only <c>None</c> and <c>Metadata</c> are valid values. </param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of objects that implement <see cref="ICloudBlob"/> and are retrieved lazily.</returns>
-        /// <remarks>Note that specifying a log type for the <paramref name="operations"/> parameter will return any log that contains the specified log type,
-        /// even if that log also includes other log types. Also note that the only currently supported values for the <paramref name="details"/> 
+        /// <remarks>Note that specifying a logging operation type for the <paramref name="operations"/> parameter will return any Analytics log blob that contains the specified logging operation,
+        /// even if that log blob also includes other types of logging operations. Also note that the only currently supported values for the <paramref name="details"/> 
         /// parameter are <c>None</c> and <c>Metadata</c>.</remarks>
         public IEnumerable<ICloudBlob> ListLogs(StorageService service, DateTimeOffset startTime, DateTimeOffset? endTime, LoggingOperations operations, BlobListingDetails details, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -407,9 +409,104 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
 
                 dateCounter = dateCounter.AddYears(1);
                 if (dateCounter > DateTimeOffset.UtcNow.AddHours(1))
-                {
+                { 
                     yield break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Returns an enumerable collection of Analytics log records, retrieved lazily.
+        /// </summary>
+        /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="LogRecord"/> and are retrieved lazily.</returns>
+        public IEnumerable<LogRecord> ListLogRecords(StorageService service)
+        {
+            return this.ListLogRecords(service, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Returns an enumerable collection of Analytics log records, retrieved lazily.
+        /// </summary>
+        /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="LogRecord"/> and are retrieved lazily.</returns>
+        public IEnumerable<LogRecord> ListLogRecords(StorageService service, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return CloudAnalyticsClient.ParseLogBlobs(this.ListLogs(service, LoggingOperations.All, BlobListingDetails.None, options, operationContext));
+        }
+
+        /// <summary>
+        /// Returns an enumerable collection of Analytics log records, retrieved lazily.
+        /// </summary>
+        /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
+        /// <param name="startTime">A <see cref="DateTimeOffset"/> object representing the start of the time range for which logs should be retrieved.</param>
+        /// <param name="endTime">A <see cref="DateTimeOffset"/> object representing the end of the time range for which logs should be retrieved.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="LogRecord"/> and are retrieved lazily.</returns>
+        public IEnumerable<LogRecord> ListLogRecords(StorageService service, DateTimeOffset startTime, DateTimeOffset? endTime)
+        {
+            return this.ListLogRecords(service, startTime, endTime, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Returns an enumerable collection of Analytics log records, retrieved lazily.
+        /// </summary>
+        /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
+        /// <param name="startTime">A <see cref="DateTimeOffset"/> object representing the start of the time range for which logs should be retrieved.</param>
+        /// <param name="endTime">A <see cref="DateTimeOffset"/> object representing the end of the time range for which logs should be retrieved.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="LogRecord"/> and are retrieved lazily.</returns>
+        public IEnumerable<LogRecord> ListLogRecords(StorageService service, DateTimeOffset startTime, DateTimeOffset? endTime, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return CloudAnalyticsClient.ParseLogBlobs(this.ListLogs(service, startTime, endTime, LoggingOperations.All, BlobListingDetails.None, options, operationContext));
+        }
+        
+        /// <summary>
+        /// Returns an enumerable collection of Analytics log records, retrieved lazily.
+        /// </summary>
+        /// <param name="logBlobs">An enumerable collection of <see cref="ICloudBlob"/> objects from which to parse log records.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="LogRecord"/> and are retrieved lazily.</returns>
+        public static IEnumerable<LogRecord> ParseLogBlobs(IEnumerable<ICloudBlob> logBlobs)
+        {
+            return logBlobs.SelectMany(CloudAnalyticsClient.ParseLogBlob);
+        }
+
+        /// <summary>
+        /// Returns an enumerable collection of Analytics log records, retrieved lazily.
+        /// </summary>
+        /// <param name="logBlob">The <see cref="ICloudBlob"/> object from which to parse log records.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="LogRecord"/> and are retrieved lazily.</returns>
+        public static IEnumerable<LogRecord> ParseLogBlob(ICloudBlob logBlob)
+        {
+            using (Stream stream = ((CloudBlockBlob)logBlob).OpenRead())
+            {
+                using (LogRecordStreamReader reader = new LogRecordStreamReader(stream, (int)stream.Length))
+                {
+                    LogRecord log;
+                    while (!reader.IsEndOfFile)
+                    {
+                        log = new LogRecord(reader);
+                        yield return log;
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Returns an enumerable collection of Analytics log records, retrieved lazily.
+        /// </summary>
+        /// <param name="stream">The <see cref="System.IO.Stream"/> object from which to parse log records.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="LogRecord"/> and are retrieved lazily.</returns>
+        public static IEnumerable<LogRecord> ParseLogStream(Stream stream)
+        {
+            LogRecordStreamReader reader = new LogRecordStreamReader(stream, (int)stream.Length);
+            LogRecord log;
+            while (!reader.IsEndOfFile)
+            {
+                log = new LogRecord(reader);
+                yield return log;
             }
         }
 #endif

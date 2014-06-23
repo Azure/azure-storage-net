@@ -450,11 +450,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
                         async () => await file.WriteRangeAsync(memoryStream, 0, null),
                         "Zero-length WriteRange should fail");
-
-                    memoryStream.SetLength(4 * 1024 * 1024 + 1);
-                    await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await file.WriteRangeAsync(memoryStream, 0, null),
-                        ">4MB WriteRange should fail");
                 }
 
                 using (MemoryStream resultingData = new MemoryStream())
@@ -467,7 +462,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                             opContext,
                             "Writing out-of-range ranges should fail",
                             HttpStatusCode.RequestedRangeNotSatisfiable,
-                            "InvalidFileRange");
+                            "InvalidRange");
 
                         memoryStream.Seek(0, SeekOrigin.Begin);
                         await file.WriteRangeAsync(memoryStream, 0, null);

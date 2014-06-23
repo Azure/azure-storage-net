@@ -351,6 +351,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             this.reader.ReadEndElement();
 
             Uri uri = NavigationHelper.AppendPathToSingleUri(baseUri, name);
+
             if (blob.SnapshotTime.HasValue)
             {
                 UriQueryBuilder builder = new UriQueryBuilder();
@@ -423,9 +424,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 }
                 else
                 {
-                    Uri baseUri = NavigationHelper.AppendPathToSingleUri(
-                            new Uri(this.reader.GetAttribute(Constants.ServiceEndpointElement)),
-                            this.reader.GetAttribute(Constants.ContainerNameElement));
+                    Uri baseUri;
+                    string serviceEndpoint = this.reader.GetAttribute(Constants.ServiceEndpointElement);
+                    if (!string.IsNullOrEmpty(serviceEndpoint))
+                    {
+                        baseUri = NavigationHelper.AppendPathToSingleUri(
+                                new Uri(serviceEndpoint),
+                                this.reader.GetAttribute(Constants.ContainerNameElement));
+                    }
+                    else
+                    {
+                        baseUri = new Uri(this.reader.GetAttribute(Constants.ContainerNameElement));
+                    }
 
                     this.reader.ReadStartElement();
                     while (this.reader.IsStartElement())

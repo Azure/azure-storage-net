@@ -79,7 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// Default server side timeout for all service clients.
         /// </summary>
-        [Obsolete("Server side timeout is not needed by default.")]
+        [Obsolete("Server-side timeout is not required by default.")]
         public static readonly TimeSpan DefaultServerSideTimeout = TimeSpan.FromSeconds(90);
 
         /// <summary>
@@ -755,7 +755,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "4.0.1";
+            public const string UserAgentProductVersion = "4.1.0";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.
@@ -1447,6 +1447,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Constant for the queue service secondary location minute metrics table.
             /// </summary>
             public const string MetricsMinuteSecondaryTransactionsQueue = "$MetricsMinuteSecondaryTransactionsQueue";
+
+            /// <summary>
+            /// Constant for default logging version.
+            /// </summary>
+            public const string LoggingVersionV1 = "1.0";
+
+            /// <summary>
+            /// Constant for default metrics version.
+            /// </summary>
+            public const string MetricsVersionV1 = "1.0";
         }
     }
 }

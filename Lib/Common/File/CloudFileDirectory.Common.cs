@@ -42,8 +42,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFileDirectory"/> class using an absolute URI to the directory.
         /// </summary>
-        /// <param name="directoryAbsoluteUri">The absolute URI to the directory.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="directoryAbsoluteUri">A <see cref="System.Uri"/> object containing the absolute URI to the directory.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudFileDirectory(Uri directoryAbsoluteUri, StorageCredentials credentials)
             : this(new StorageUri(directoryAbsoluteUri), credentials)
         {
@@ -52,8 +52,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFileDirectory"/> class using an absolute URI to the directory.
         /// </summary>
-        /// <param name="directoryAbsoluteUri">The absolute URI to the directory.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="directoryAbsoluteUri">A <see cref="System.Uri"/> object containing the absolute URI to the directory.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudFileDirectory"/> object.</returns>
         public static CloudFileDirectory Create(StorageUri directoryAbsoluteUri, StorageCredentials credentials)
@@ -90,15 +90,15 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Gets a <see cref="CloudFileClient"/> object that represents the service client for the directory.
+        /// Gets a <see cref="CloudFileClient"/> object that specifies the endpoint for the File service.
         /// </summary>
-        /// <value>A <see cref="CloudFileClient"/> object that specifies the endpoint for the File service.</value>
+        /// <value>A <see cref="CloudFileClient"/> object.</value>
         public CloudFileClient ServiceClient { get; private set; }
 
         /// <summary>
-        /// Gets the URI that identifies the directory for the primary location.
+        /// Gets the directory's URI for the primary location.
         /// </summary>
-        /// <value>The URI to the directory, at the primary location.</value>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the directory at the primary location.</value>
         public Uri Uri
         {
             get
@@ -110,19 +110,19 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Gets the file directory's URIs for all locations.
         /// </summary>
-        /// <value>An object of type <see cref="StorageUri"/> containing the file directory's URIs for all locations.</value>
+        /// <value>A <see cref="StorageUri"/> object containing the file directory's URIs for all locations.</value>
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
         /// Gets a <see cref="FileDirectoryProperties"/> object that represents the directory's system properties.
         /// </summary>
-        /// <value>A <see cref="FileDirectoryProperties"/> object containing the directory's properties.</value>
+        /// <value>A <see cref="FileDirectoryProperties"/> object.</value>
         public FileDirectoryProperties Properties { get; internal set; }
 
         /// <summary>
         /// Gets a <see cref="CloudFileShare"/> object that represents the share for the directory.
         /// </summary>
-        /// <value>The share for the directory.</value>
+        /// <value>A <see cref="CloudFileShare"/> object.</value>
         public CloudFileShare Share
         {
             get
@@ -140,7 +140,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Gets a <see cref="CloudFileDirectory"/> object that represents the parent directory for the directory.
         /// </summary>
-        /// <value>The directory's parent directory.</value>
+        /// <value>A <see cref="CloudFileDirectory"/> object.</value>
         public CloudFileDirectory Parent
         {
             get
@@ -162,7 +162,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Gets the name of the directory.
         /// </summary>
-        /// <value>The name of the directory.</value>
+        /// <value>A <see cref="System.String"/> containing the name of the directory.</value>
         public string Name { get; private set; }
 
         /// <summary>
@@ -194,8 +194,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Returns a <see cref="CloudFile"/> object that represents a file in this directory.
         /// </summary>
-        /// <param name="fileName">The name of the file.</param>
-        /// <returns>A <see cref="CloudFile"/> object representing a reference to a file.</returns>
+        /// <param name="fileName">A <see cref="System.String"/> containing the name of the file.</param>
+        /// <returns>A <see cref="CloudFile"/> object.</returns>
         public CloudFile GetFileReference(string fileName)
         {
             CommonUtility.AssertNotNullOrEmpty("fileName", fileName);
@@ -207,8 +207,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Returns a <see cref="CloudFileDirectory"/> object that represents a subdirectory within this directory.
         /// </summary>
-        /// <param name="itemName">The name of the subdirectory.</param>
-        /// <returns>A <see cref="CloudFileDirectory"/> object representing the subdirectory.</returns>
+        /// <param name="itemName">A <see cref="System.String"/> containing the name of the subdirectory.</param>
+        /// <returns>A <see cref="CloudFileDirectory"/> object.</returns>
         public CloudFileDirectory GetDirectoryReference(string itemName)
         {
             CommonUtility.AssertNotNullOrEmpty("itemName", itemName);

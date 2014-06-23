@@ -148,7 +148,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets or sets the default location mode for requests made via the Blob service client.
         /// </summary>
-        /// <value>A <see cref="LocationMode"/> object.</value>
+        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
         [Obsolete("Use DefaultRequestOptions.LocationMode.")]
         public LocationMode? LocationMode
         {
@@ -265,6 +265,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Returns a reference to the root container.
         /// </summary>
         /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
+        /// <remarks>Note that the root container must be explicitly created, if it does not already exist, before
+        /// you can read from it or write to it.</remarks>
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Reviewed")]
         public CloudBlobContainer GetRootContainerReference()
         {

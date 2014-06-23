@@ -149,15 +149,16 @@ namespace Microsoft.WindowsAzure.Storage
         public static StorageException TranslateException(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError)
         {
             StorageException storageException;
-            if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
-            {
-                return storageException;
-            }
 
-            WebException we = ex as WebException;
-            if (we != null)
+            try
             {
-                try
+                if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
+                {
+                    return storageException;
+                }
+
+                WebException we = ex as WebException;
+                if (we != null)
                 {
                     HttpWebResponse response = we.Response as HttpWebResponse;
                     if (response != null)
@@ -170,10 +171,11 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
                     }
                 }
-                catch (Exception)
-                {
-                    // no op
-                }
+            }
+            catch (Exception)
+            {
+                // if there is an error thrown while parsing the service error, just wrap the service error in a StorageException.
+                //no op
             }
 
             // Just wrap in StorageException
@@ -191,15 +193,16 @@ namespace Microsoft.WindowsAzure.Storage
         internal static StorageException TranslateExceptionWithPreBufferedStream(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError, Stream responseStream)
         {
             StorageException storageException;
-            if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
-            {
-                return storageException;
-            }
 
-            WebException we = ex as WebException;
-            if (we != null)
+            try
             {
-                try
+                if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
+                {
+                    return storageException;
+                }
+
+                WebException we = ex as WebException;
+                if (we != null)
                 {
                     HttpWebResponse response = we.Response as HttpWebResponse;
                     if (response != null)
@@ -213,10 +216,11 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
                     }
                 }
-                catch (Exception)
-                {
-                    // no op
-                }
+            }
+            catch (Exception)
+            {
+                // if there is an error thrown while parsing the service error, just wrap the service error in a StorageException.
+                //no op
             }
 
             // Just wrap in StorageException

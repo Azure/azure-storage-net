@@ -590,9 +590,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("path", path);
 
-            using (FileStream fileStream = new FileStream(path, mode, FileAccess.Write))
+            try
             {
-                this.DownloadToStream(fileStream, accessCondition, options, operationContext);
+                using (FileStream fileStream = new FileStream(path, mode, FileAccess.Write))
+                {
+                    this.DownloadToStream(fileStream, accessCondition, options, operationContext);
+                }
+            }
+            catch (Exception)
+            {
+                if (mode == FileMode.Create || mode == FileMode.CreateNew)
+                {
+                    try
+                    {
+                        File.Delete(path);
+                    }
+                    catch (Exception)
+                    {
+                        // Best effort to clean up in the event that download was unsuccessful.
+                        // Do not throw as we want to throw original exception.
+                    }
+                }
+
+                throw;
             }
         }
 #endif
@@ -630,7 +650,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             FileStream fileStream = new FileStream(path, mode, FileAccess.Write);
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state)
             {
-                OperationState = fileStream
+                OperationState = Tuple.Create<FileStream, FileMode>(fileStream, mode)
             };
 
             try
@@ -642,6 +662,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             catch (Exception)
             {
                 fileStream.Dispose();
+                if (mode == FileMode.Create || mode == FileMode.CreateNew)
+                {
+                    try
+                    {
+                        File.Delete(path);
+                    }
+                    catch (Exception)
+                    {
+                        // Best effort to clean up in the event that download was unsuccessful.
+                        // Do not throw as we want to throw original exception.
+                    }
+                }
+
                 throw;
             }
         }
@@ -654,6 +687,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult.AsyncState;
             Exception exception = null;
+            bool tryFileDelete = false;
 
             try
             {
@@ -662,18 +696,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             catch (Exception e)
             {
                 exception = e;
+                tryFileDelete = true;
             }
 
             // We should do FileStream disposal in a separate try-catch block
             // because we want to close the file even if the operation fails.
             try
             {
-                FileStream fileStream = (FileStream)storageAsyncResult.OperationState;
+                FileStream fileStream = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item1;
                 fileStream.Dispose();
             }
             catch (Exception e)
             {
                 exception = e;
+            }
+
+            if (tryFileDelete)
+            {
+                try
+                {
+                    FileMode mode = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item2;
+                    if (mode == FileMode.Create || mode == FileMode.CreateNew)
+                    {
+                        string path = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item1.Name;
+                        File.Delete(path);
+                    }
+                }
+                catch (Exception)
+                {
+                    // Best effort to clean up in the event that download was unsuccessful.
+                    // Do not throw as we want to throw original exception.
+                }
             }
 
             storageAsyncResult.OnComplete(exception);

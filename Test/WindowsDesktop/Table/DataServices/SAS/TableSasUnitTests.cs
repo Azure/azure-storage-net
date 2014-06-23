@@ -1442,8 +1442,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 
                 // Construct a valid set of service properties to upload.
                 ServiceProperties properties = new ServiceProperties();
-                properties.Logging.Version = "1.0";
-                properties.HourMetrics.Version = "1.0";
+                properties.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
+                properties.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
                 properties.Logging.RetentionDays = 9;
                 sasClient.GetServiceProperties();
                 sasClient.SetServiceProperties(properties);

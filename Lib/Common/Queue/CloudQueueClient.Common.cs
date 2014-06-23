@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Gets or sets the default location mode for requests made via the Queue service client.
         /// </summary>
-        /// <value>A <see cref="LocationMode"/> object.</value>
+        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
         [Obsolete("Use DefaultRequestOptions.LocationMode.")]
         public LocationMode? LocationMode
         {

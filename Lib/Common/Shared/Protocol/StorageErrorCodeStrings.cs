@@ -32,97 +32,97 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// The specified HTTP verb is not supported.
         /// </summary>
-        public const string UnsupportedHttpVerb = "UnsupportedHttpVerb";
+        public static readonly string UnsupportedHttpVerb = "UnsupportedHttpVerb";
 
         /// <summary>
         /// The Content-Length header is required for this request.
         /// </summary>
-        public const string MissingContentLengthHeader = "MissingContentLengthHeader";
+        public static readonly string MissingContentLengthHeader = "MissingContentLengthHeader";
 
         /// <summary>
         /// A required header was missing.
         /// </summary>
-        public const string MissingRequiredHeader = "MissingRequiredHeader";
+        public static readonly string MissingRequiredHeader = "MissingRequiredHeader";
 
         /// <summary>
         /// A required XML node was missing.
         /// </summary>
-        public const string MissingRequiredXmlNode = "MissingRequiredXmlNode";
+        public static readonly string MissingRequiredXmlNode = "MissingRequiredXmlNode";
 
         /// <summary>
         /// One or more header values are not supported.
         /// </summary>
-        public const string UnsupportedHeader = "UnsupportedHeader";
+        public static readonly string UnsupportedHeader = "UnsupportedHeader";
 
         /// <summary>
         /// One or more XML nodes are not supported.
         /// </summary>
-        public const string UnsupportedXmlNode = "UnsupportedXmlNode";
+        public static readonly string UnsupportedXmlNode = "UnsupportedXmlNode";
 
         /// <summary>
         /// One or more header values are invalid.
         /// </summary>
-        public const string InvalidHeaderValue = "InvalidHeaderValue";
+        public static readonly string InvalidHeaderValue = "InvalidHeaderValue";
 
         /// <summary>
         /// One or more XML node values are invalid.
         /// </summary>
-        public const string InvalidXmlNodeValue = "InvalidXmlNodeValue";
+        public static readonly string InvalidXmlNodeValue = "InvalidXmlNodeValue";
 
         /// <summary>
         /// A required query parameter is missing.
         /// </summary>
-        public const string MissingRequiredQueryParameter = "MissingRequiredQueryParameter";
+        public static readonly string MissingRequiredQueryParameter = "MissingRequiredQueryParameter";
 
         /// <summary>
         /// One or more query parameters is not supported.
         /// </summary>
-        public const string UnsupportedQueryParameter = "UnsupportedQueryParameter";
+        public static readonly string UnsupportedQueryParameter = "UnsupportedQueryParameter";
 
         /// <summary>
         /// One or more query parameters are invalid.
         /// </summary>
-        public const string InvalidQueryParameterValue = "InvalidQueryParameterValue";
+        public static readonly string InvalidQueryParameterValue = "InvalidQueryParameterValue";
 
         /// <summary>
         /// One or more query parameters are out of range.
         /// </summary>
-        public const string OutOfRangeQueryParameterValue = "OutOfRangeQueryParameterValue";
+        public static readonly string OutOfRangeQueryParameterValue = "OutOfRangeQueryParameterValue";
 
         /// <summary>
         /// The URI is invalid.
         /// </summary>
-        public const string InvalidUri = "InvalidUri";
+        public static readonly string InvalidUri = "InvalidUri";
 
         /// <summary>
         /// The HTTP verb is invalid.
         /// </summary>
-        public const string InvalidHttpVerb = "InvalidHttpVerb";
+        public static readonly string InvalidHttpVerb = "InvalidHttpVerb";
 
         /// <summary>
         /// The metadata key is empty.
         /// </summary>
-        public const string EmptyMetadataKey = "EmptyMetadataKey";
+        public static readonly string EmptyMetadataKey = "EmptyMetadataKey";
 
         /// <summary>
         /// The request body is too large.
         /// </summary>
-        public const string RequestBodyTooLarge = "RequestBodyTooLarge";
+        public static readonly string RequestBodyTooLarge = "RequestBodyTooLarge";
 
         /// <summary>
         /// The specified XML document is invalid.
         /// </summary>
-        public const string InvalidXmlDocument = "InvalidXmlDocument";
+        public static readonly string InvalidXmlDocument = "InvalidXmlDocument";
 
         /// <summary>
         /// An internal error occurred.
         /// </summary>
-        public const string InternalError = "InternalError";
+        public static readonly string InternalError = "InternalError";
 
         /// <summary>
         /// Authentication failed.
         /// </summary>
-        public const string AuthenticationFailed = "AuthenticationFailed";
+        public static readonly string AuthenticationFailed = "AuthenticationFailed";
 
         /// <summary>
         /// The specified MD5 hash does not match the server value.
@@ -132,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             "CA1709:IdentifiersShouldBeCasedCorrectly",
             MessageId = "Md",
             Justification = "The casing matches the storage constant the identifier represents.")]
-        public const string Md5Mismatch = "Md5Mismatch";
+        public static readonly string Md5Mismatch = "Md5Mismatch";
 
         /// <summary>
         /// The specified MD5 hash is invalid.
@@ -142,71 +142,127 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             "CA1709:IdentifiersShouldBeCasedCorrectly",
             MessageId = "Md",
             Justification = "The casing matches the storage constant the identifier represents.")]
-        public const string InvalidMd5 = "InvalidMd5";
+        public static readonly string InvalidMd5 = "InvalidMd5";
 
         /// <summary>
         /// The input is out of range.
         /// </summary>
-        public const string OutOfRangeInput = "OutOfRangeInput";
+        public static readonly string OutOfRangeInput = "OutOfRangeInput";
 
         /// <summary>
         /// The input is invalid.
         /// </summary>
-        public const string InvalidInput = "InvalidInput";
+        public static readonly string InvalidInput = "InvalidInput";
 
         /// <summary>
         /// The operation timed out.
         /// </summary>
-        public const string OperationTimedOut = "OperationTimedOut";
+        public static readonly string OperationTimedOut = "OperationTimedOut";
 
         /// <summary>
         /// The specified resource was not found.
         /// </summary>
-        public const string ResourceNotFound = "ResourceNotFound";
+        public static readonly string ResourceNotFound = "ResourceNotFound";
 
         /// <summary>
         /// The specified metadata is invalid.
         /// </summary>
-        public const string InvalidMetadata = "InvalidMetadata";
+        public static readonly string InvalidMetadata = "InvalidMetadata";
 
         /// <summary>
         /// The specified metadata is too large.
         /// </summary>
-        public const string MetadataTooLarge = "MetadataTooLarge";
+        public static readonly string MetadataTooLarge = "MetadataTooLarge";
 
         /// <summary>
         /// The specified condition was not met.
         /// </summary>
-        public const string ConditionNotMet = "ConditionNotMet";
+        public static readonly string ConditionNotMet = "ConditionNotMet";
 
         /// <summary>
         /// The specified range is invalid.
         /// </summary>
-        public const string InvalidRange = "InvalidRange";
+        public static readonly string InvalidRange = "InvalidRange";
 
         /// <summary>
         /// The specified container was not found.
         /// </summary>
-        public const string ContainerNotFound = "ContainerNotFound";
+        public static readonly string ContainerNotFound = "ContainerNotFound";
 
         /// <summary>
         /// The specified container already exists.
         /// </summary>
-        public const string ContainerAlreadyExists = "ContainerAlreadyExists";
+        public static readonly string ContainerAlreadyExists = "ContainerAlreadyExists";
 
         /// <summary>
         /// The specified container is disabled.
         /// </summary>
-        public const string ContainerDisabled = "ContainerDisabled";
+        public static readonly string ContainerDisabled = "ContainerDisabled";
 
         /// <summary>
         /// The specified container is being deleted.
         /// </summary>
-        public const string ContainerBeingDeleted = "ContainerBeingDeleted";
+        public static readonly string ContainerBeingDeleted = "ContainerBeingDeleted";
 
         /// <summary>
         /// The server is busy.
         /// </summary>
-        public const string ServerBusy = "ServerBusy";
+        public static readonly string ServerBusy = "ServerBusy";
+
+        /// <summary>
+        /// The url in the request could not be parsed.
+        /// </summary>
+        public static readonly string RequestUrlFailedToParse = "RequestUrlFailedToParse";
+
+        /// <summary>
+        /// The authentication information was not provided in the correct format. Verify the value of Authorization header.
+        /// </summary>
+        public static readonly string InvalidAuthenticationInfo = "InvalidAuthenticationInfo";
+
+        /// <summary>
+        /// The specifed resource name contains invalid characters.
+        /// </summary>
+        public static readonly string InvalidResourceName = "InvalidResourceName";
+
+        /// <summary>
+        /// Condition headers are not supported.
+        /// </summary>
+        public static readonly string ConditionHeadersNotSupported = "ConditionHeadersNotSupported";
+
+        /// <summary>
+        /// Multiple condition headers are not supported.
+        /// </summary>
+        public static readonly string MultipleConditionHeadersNotSupported = "MultipleConditionHeadersNotSupported";
+
+        /// <summary>
+        /// Read-access geo-redundant replication is not enabled for the account, write operations to the secondary location are not allowed, 
+        /// or the account being accessed does not have sufficient permissions to execute this operation.
+        /// </summary>
+        public static readonly string InsufficientAccountPermissions = "InsufficientAccountPermissions";
+
+        /// <summary>
+        /// The specified account is disabled.
+        /// </summary>
+        public static readonly string AccountIsDisabled = "AccountIsDisabled";
+
+        /// <summary>
+        /// The specified account already exists.
+        /// </summary>
+        public static readonly string AccountAlreadyExists = "AccountAlreadyExists";
+
+        /// <summary>
+        /// The specified account is in the process of being created.
+        /// </summary>
+        public static readonly string AccountBeingCreated = "AccountBeingCreated";
+
+        /// <summary>
+        /// The specified resource already exists.
+        /// </summary>
+        public static readonly string ResourceAlreadyExists = "ResourceAlreadyExists";
+
+        /// <summary>
+        /// The specified resource type does not match the type of the existing resource.
+        /// </summary>
+        public static readonly string ResourceTypeMismatch = "ResourceTypeMismatch";
     }
 }

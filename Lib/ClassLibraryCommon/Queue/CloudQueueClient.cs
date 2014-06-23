@@ -596,7 +596,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to get service stats for the Queue service.
+        /// Begins an asynchronous operation to get service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
@@ -608,7 +608,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to get service stats for the Queue service.
+        /// Begins an asynchronous operation to get service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <param name="requestOptions">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -629,7 +629,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Ends an asynchronous operation to get service stats for the Queue service.
+        /// Ends an asynchronous operation to get service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns>A <see cref="ServiceStats"/> object.</returns>
@@ -640,7 +640,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to get service stats for the Queue service.
+        /// Initiates an asynchronous operation to get service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceStats"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -650,7 +650,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to get service stats for the Queue service.
+        /// Initiates an asynchronous operation to get service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceStats"/> that represents the asynchronous operation.</returns>
@@ -661,7 +661,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to get service stats for the Queue service.
+        /// Initiates an asynchronous operation to get service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <param name="requestOptions">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -673,7 +673,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to get service stats for the Queue service.
+        /// Initiates an asynchronous operation to get service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <param name="requestOptions">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -688,7 +688,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
 #if SYNC
         /// <summary>
-        /// Gets service stats for the Queue service.
+        /// Gets service stats for the secondary Queue service endpoint.
         /// </summary>
         /// <param name="requestOptions">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>

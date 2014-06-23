@@ -187,12 +187,29 @@ namespace Microsoft.WindowsAzure.Storage.File
         public void CloudFileUploadDownloadFile()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
+            CloudFile nullFile = this.testShare.GetRootDirectoryReference().GetFileReference("null");
             this.DoUploadDownloadFile(file, 0, false);
             this.DoUploadDownloadFile(file, 4096, false);
 
             TestHelper.ExpectedException<IOException>(
                 () => file.UploadFromFile("non_existent.file", FileMode.Open),
                 "UploadFromFile requires an existing file");
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullFile.DownloadToFile("garbage.file", FileMode.Create),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullFile.DownloadToFile("garbage.file", FileMode.CreateNew),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                 () => nullFile.DownloadToFile("garbage.file", FileMode.Append),
+                "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
         }
 
         [TestMethod]
@@ -204,12 +221,48 @@ namespace Microsoft.WindowsAzure.Storage.File
         public void CloudFileUploadDownloadFileAPM()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
+            CloudFile nullFile = this.testShare.GetRootDirectoryReference().GetFileReference("null");
             this.DoUploadDownloadFile(file, 0, true);
             this.DoUploadDownloadFile(file, 4096, true);
 
             TestHelper.ExpectedException<IOException>(
                 () => file.BeginUploadFromFile("non_existent.file", FileMode.Open, null, null),
                 "UploadFromFile requires an existing file");
+
+            IAsyncResult result;
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                OperationContext context = new OperationContext();
+                result = nullFile.BeginDownloadToFile("garbage.file", FileMode.Create, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullFile.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullFile.BeginDownloadToFile("garbage.file", FileMode.CreateNew, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullFile.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullFile.BeginDownloadToFile("garbage.file", FileMode.Append, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullFile.EndDownloadToFile(result),
+                    "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+                Assert.IsTrue(File.Exists("garbage.file"));
+                File.Delete("garbage.file");
+            }
         }
 
 #if TASK
@@ -222,12 +275,32 @@ namespace Microsoft.WindowsAzure.Storage.File
         public void CloudFileUploadDownloadFileTask()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
+            CloudFile nullFile = this.testShare.GetRootDirectoryReference().GetFileReference("null");
             this.DoUploadDownloadFileTask(file, 0);
             this.DoUploadDownloadFileTask(file, 4096);
 
             TestHelper.ExpectedException<IOException>(
                 () => file.UploadFromFileAsync("non_existent.file", FileMode.Open),
                 "UploadFromFile requires an existing file");
+
+            AggregateException e = TestHelper.ExpectedException<AggregateException>(
+                () => nullFile.DownloadToFileAsync("garbage.file", FileMode.Create).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullFile.DownloadToFileAsync("garbage.file", FileMode.CreateNew).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullFile.DownloadToFileAsync("garbage.file", FileMode.Append).Wait(),
+                "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
         }
 
         private void DoUploadDownloadFileTask(CloudFile file, int fileSize)

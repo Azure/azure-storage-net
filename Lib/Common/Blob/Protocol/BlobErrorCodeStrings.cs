@@ -31,138 +31,183 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
  static class BlobErrorCodeStrings
     {
         /// <summary>
-        /// Error code that may be returned when a block ID is invalid.
-        /// </summary>
-        public const string InvalidBlockId = "InvalidBlockId";
-
-        /// <summary>
-        /// Error code that may be returned when a blob with the specified address cannot be found.
-        /// </summary>
-        public const string BlobNotFound = "BlobNotFound";
-
-        /// <summary>
-        /// Error code that may be returned when a client attempts to create a blob that already exists.
-        /// </summary>
-        public const string BlobAlreadyExists = "BlobAlreadyExists";
-
-        /// <summary>
         /// Error code that may be returned when the specified block or blob is invalid.
         /// </summary>
-        public const string InvalidBlobOrBlock = "InvalidBlobOrBlock";
+        public static readonly string InvalidBlobOrBlock = "InvalidBlobOrBlock";
+
+        /// <summary>
+        /// Error code that may be returned when a block ID is invalid.
+        /// </summary>
+        public static readonly string InvalidBlockId = "InvalidBlockId";
 
         /// <summary>
         /// Error code that may be returned when a block list is invalid.
         /// </summary>
-        public const string InvalidBlockList = "InvalidBlockList";
+        public static readonly string InvalidBlockList = "InvalidBlockList";
 
         /// <summary>
         /// The specified container was not found.
         /// </summary>
-        public const string ContainerNotFound = "ContainerNotFound";
+        public static readonly string ContainerNotFound = "ContainerNotFound";
+
+        /// <summary>
+        /// Error code that may be returned when a blob with the specified address cannot be found.
+        /// </summary>
+        public static readonly string BlobNotFound = "BlobNotFound";
 
         /// <summary>
         /// The specified container already exists.
         /// </summary>
-        public const string ContainerAlreadyExists = "ContainerAlreadyExists";
+        public static readonly string ContainerAlreadyExists = "ContainerAlreadyExists";
 
         /// <summary>
         /// The specified container is disabled.
         /// </summary>
-        public const string ContainerDisabled = "ContainerDisabled";
+        public static readonly string ContainerDisabled = "ContainerDisabled";
 
         /// <summary>
         /// The specified container is being deleted.
         /// </summary>
-        public const string ContainerBeingDeleted = "ContainerBeingDeleted";
+        public static readonly string ContainerBeingDeleted = "ContainerBeingDeleted";
+
+        /// <summary>
+        /// Error code that may be returned when a client attempts to create a blob that already exists.
+        /// </summary>
+        public static readonly string BlobAlreadyExists = "BlobAlreadyExists";
 
         /// <summary>
         /// Error code that may be returned when there is currently no lease on the blob.
         /// </summary>
-        public const string LeaseNotPresentWithBlobOperation = "LeaseNotPresentWithBlobOperation";
+        public static readonly string LeaseNotPresentWithBlobOperation = "LeaseNotPresentWithBlobOperation";
 
         /// <summary>
         /// Error code that may be returned when there is currently no lease on the container.
         /// </summary>
-        public const string LeaseNotPresentWithContainerOperation = "LeaseNotPresentWithContainerOperation";
+        public static readonly string LeaseNotPresentWithContainerOperation = "LeaseNotPresentWithContainerOperation";
 
         /// <summary>
         /// Error code that may be returned when a lease ID was specified, but the lease has expired.
         /// </summary>
-        public const string LeaseLost = "LeaseLost";
+        public static readonly string LeaseLost = "LeaseLost";
 
         /// <summary>
         /// Error code that may be returned when the lease ID specified did not match the lease ID for the blob.
         /// </summary>
-        public const string LeaseIdMismatchWithBlobOperation = "LeaseIdMismatchWithBlobOperation";
+        public static readonly string LeaseIdMismatchWithBlobOperation = "LeaseIdMismatchWithBlobOperation";
 
         /// <summary>
         /// Error code that may be returned when the lease ID specified did not match the lease ID for the container.
         /// </summary>
-        public const string LeaseIdMismatchWithContainerOperation = "LeaseIdMismatchWithContainerOperation";
+        public static readonly string LeaseIdMismatchWithContainerOperation = "LeaseIdMismatchWithContainerOperation";
 
         /// <summary>
         /// Error code that may be returned when there is currently a lease on the resource and no lease ID was specified in the request.
         /// </summary>
-        public const string LeaseIdMissing = "LeaseIdMissing";
+        public static readonly string LeaseIdMissing = "LeaseIdMissing";
 
         /// <summary>
         /// Error code that may be returned when there is currently no lease on the resource.
         /// </summary>
-        public const string LeaseNotPresentWithLeaseOperation = "LeaseNotPresentWithLeaseOperation";
+        public static readonly string LeaseNotPresentWithLeaseOperation = "LeaseNotPresentWithLeaseOperation";
 
         /// <summary>
         /// Error code that may be returned when the lease ID specified did not match the lease ID.
         /// </summary>
-        public const string LeaseIdMismatchWithLeaseOperation = "LeaseIdMismatchWithLeaseOperation";
+        public static readonly string LeaseIdMismatchWithLeaseOperation = "LeaseIdMismatchWithLeaseOperation";
 
         /// <summary>
         /// Error code that may be returned when there is already a lease present.
         /// </summary>
-        public const string LeaseAlreadyPresent = "LeaseAlreadyPresent";
+        public static readonly string LeaseAlreadyPresent = "LeaseAlreadyPresent";
 
         /// <summary>
         /// Error code that may be returned when the lease has already been broken and cannot be broken again.
         /// </summary>
-        public const string LeaseAlreadyBroken = "LeaseAlreadyBroken";
+        public static readonly string LeaseAlreadyBroken = "LeaseAlreadyBroken";
 
         /// <summary>
         /// Error code that may be returned when the lease ID matched, but the lease has been broken explicitly and cannot be renewed.
         /// </summary>
-        public const string LeaseIsBrokenAndCannotBeRenewed = "LeaseIsBrokenAndCannotBeRenewed";
+        public static readonly string LeaseIsBrokenAndCannotBeRenewed = "LeaseIsBrokenAndCannotBeRenewed";
 
         /// <summary>
         /// Error code that may be returned when the lease ID matched, but the lease is breaking and cannot be acquired.
         /// </summary>
-        public const string LeaseIsBreakingAndCannotBeAcquired = "LeaseIsBreakingAndCannotBeAcquired";
+        public static readonly string LeaseIsBreakingAndCannotBeAcquired = "LeaseIsBreakingAndCannotBeAcquired";
 
         /// <summary>
         /// Error code that may be returned when the lease ID matched, but the lease is breaking and cannot be changed.
         /// </summary>
-        public const string LeaseIsBreakingAndCannotBeChanged = "LeaseIsBreakingAndCannotBeChanged";
-
-        /// <summary>
-        /// Error code that may be returned when the copy ID specified in an Abort Copy operation does not match the current pending copy ID.
-        /// </summary>
-        public const string CopyIdMismatch = "CopyIdMismatch";
-
-        /// <summary>
-        /// Error code that may be returned when an Abort Copy operation is called when there is no pending copy.
-        /// </summary>
-        public const string NoPendingCopyOperation = "NoPendingCopyOperation";
-
-        /// <summary>
-        /// Error code that may be returned when an attempt to modify the destination of a pending copy is made.
-        /// </summary>
-        public const string PendingCopyOperation = "PendingCopyOperation";
-
-        /// <summary>
-        /// Error code that may be returned when the source of a copy cannot be accessed.
-        /// </summary>
-        public const string CannotVerifyCopySource = "CannotVerifyCopySource";
+        public static readonly string LeaseIsBreakingAndCannotBeChanged = "LeaseIsBreakingAndCannotBeChanged";
 
         /// <summary>
         /// Error code that may be returned when the destination of a copy operation has a lease of fixed duration.
         /// </summary>
-        public const string InfiniteLeaseDurationRequired = "InfiniteLeaseDurationRequired";
+        public static readonly string InfiniteLeaseDurationRequired = "InfiniteLeaseDurationRequired";
+
+        /// <summary>
+        /// Error code that may be returned when the operation is not permitted because the blob has snapshots.
+        /// </summary>
+        public static readonly string SnapshotsPresent = "SnapshotsPresent";
+
+        /// <summary>
+        /// Error code that may be returned when the blob type is invalid for this operation.
+        /// </summary>
+        public static readonly string InvalidBlobType = "InvalidBlobType";
+
+        /// <summary>
+        /// Error code that may be returned when the operation on page blobs uses a version prior to 2009-09-19.
+        /// </summary>
+        public static readonly string InvalidVersionForPageBlobOperation = "InvalidVersionForPageBlobOperation";
+
+        /// <summary>
+        /// Error code that may be returned when the page range specified is invalid.
+        /// </summary>
+        public static readonly string InvalidPageRange = "InvalidPageRange";
+
+        /// <summary>
+        /// Error code that may be returned when the sequence number condition specified was not met.
+        /// </summary>
+        public static readonly string SequenceNumberConditionNotMet = "SequenceNumberConditionNotMet";
+
+        /// <summary>
+        /// Error code that may be returned when the sequence number increment cannot be performed because it would result in overflow of the sequence number.
+        /// </summary>
+        public static readonly string SequenceNumberIncrementTooLarge = "SequenceNumberIncrementTooLarge";
+
+        /// <summary>
+        /// Error code that may be returned when the source condition specified using HTTP conditional header(s) is not met.
+        /// </summary>
+        public static readonly string SourceConditionNotMet = "SourceConditionNotMet";
+
+        /// <summary>
+        /// Error code that may be returned when the target condition specified using HTTP conditional header(s) is not met.
+        /// </summary>
+        public static readonly string TargetConditionNotMet = "TargetConditionNotMet";
+
+        /// <summary>
+        /// Error code that may be returned when the copy source account and destination account are not the same.
+        /// </summary>
+        public static readonly string CopyAcrossAccountsNotSupported = "CopyAcrossAccountsNotSupported";
+
+        /// <summary>
+        /// Error code that may be returned when the source of a copy cannot be accessed.
+        /// </summary>
+        public static readonly string CannotVerifyCopySource = "CannotVerifyCopySource";
+
+        /// <summary>
+        /// Error code that may be returned when an attempt to modify the destination of a pending copy is made.
+        /// </summary>
+        public static readonly string PendingCopyOperation = "PendingCopyOperation";
+
+        /// <summary>
+        /// Error code that may be returned when an Abort Copy operation is called when there is no pending copy.
+        /// </summary>
+        public static readonly string NoPendingCopyOperation = "NoPendingCopyOperation";
+
+        /// <summary>
+        /// Error code that may be returned when the copy ID specified in an Abort Copy operation does not match the current pending copy ID.
+        /// </summary>
+        public static readonly string CopyIdMismatch = "CopyIdMismatch";
     }
 }

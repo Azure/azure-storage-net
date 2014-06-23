@@ -52,7 +52,7 @@ namespace Microsoft.WindowsAzure.Storage
                 return;
             }
 
-            Assert.Fail("No exception received while while expecting {0}: {1}", expectedStatusCode, operationDescription);
+            Assert.Fail("No Storage exception received while while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
 
 #if TASK

@@ -423,13 +423,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
                 SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
-                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write | SharedAccessBlobPermissions.List,
             };
 
             string sasToken = this.testContainer.GetSharedAccessSignature(policy, null, Constants.VersionConstants.February2012);
             CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob");
             UploadText(testBlockBlob, "blob", Encoding.UTF8);
-            TestAccess(sasToken, SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write, null, this.testContainer, testBlockBlob);
+            TestAccess(sasToken, SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write | SharedAccessBlobPermissions.List, null, this.testContainer, testBlockBlob);
         }
 
         [TestMethod]

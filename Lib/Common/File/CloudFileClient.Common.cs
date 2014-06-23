@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// and account credentials.
         /// </summary>
         /// <param name="baseUri">The File service endpoint to use to create the client.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudFileClient(Uri baseUri, StorageCredentials credentials)
             : this(new StorageUri(baseUri), credentials)
         {
@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// and account credentials.
         /// </summary>
         /// <param name="storageUri">The File service endpoint to use to create the client.</param>
-        /// <param name="credentials">The account credentials.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
 #if WINDOWS_RT
         /// <returns>A <see cref="CloudFileClient"/> object.</returns>
         public static CloudFileClient Create(StorageUri storageUri, StorageCredentials credentials)

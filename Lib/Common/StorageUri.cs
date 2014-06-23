@@ -210,11 +210,11 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Determines whether two <see cref="StorageUri"/> instances have the same value.
+        /// Compares two <see cref="StorageUri"/> objects for equivalency.
         /// </summary>
-        /// <param name="uri1">A <see cref="StorageUri"/> instance to compare with uri2.</param>
-        /// <param name="uri2">A <see cref="StorageUri"/> instance to compare with uri1.</param>
-        /// <returns><c>true</c> if the <see cref="StorageUri"/> instances are equivalent; otherwise, <c>false</c>.</returns>
+        /// <param name="uri1">The first <see cref="StorageUri"/> object to compare.</param>
+        /// <param name="uri2">The second <see cref="StorageUri"/> object to compare.</param>
+        /// <returns><c>true</c> if the <see cref="StorageUri"/> objects have equivalent values; otherwise, <c>false</c>.</returns>
         public static bool operator ==(StorageUri uri1, StorageUri uri2)
         {
             if (object.ReferenceEquals(uri1, uri2))
@@ -231,11 +231,11 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Determines whether two <see cref="StorageUri"/> instances do not have the same value.
+        /// Compares two <see cref="StorageUri"/> objects for non-equivalency.
         /// </summary>
-        /// <param name="uri1">A <see cref="StorageUri"/> instance to compare with uri2.</param>
-        /// <param name="uri2">A <see cref="StorageUri"/> instance to compare with uri1.</param>
-        /// <returns><c>true</c> if the <see cref="StorageUri"/> instances are not equal; otherwise, <c>false</c>.</returns>
+        /// <param name="uri1">The first <see cref="StorageUri"/> object to compare.</param>
+        /// <param name="uri2">The second <see cref="StorageUri"/> object to compare.</param>
+        /// <returns><c>true</c> if the <see cref="StorageUri"/> objects have non-equivalent values; otherwise, <c>false</c>.</returns>
         public static bool operator !=(StorageUri uri1, StorageUri uri2)
         {
             return !(uri1 == uri2);

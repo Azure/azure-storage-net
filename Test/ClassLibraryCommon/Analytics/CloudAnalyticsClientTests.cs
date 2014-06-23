@@ -26,6 +26,8 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #if WINDOWS_DESKTOP
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System.Collections;
+    using System.Net;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
@@ -237,8 +239,112 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
                 container.DeleteIfExists();
             }
         }
-#endif
+        [TestMethod]
+        [Description("Validate log parser.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAnalyticsClientParseLogs()
+        {
+            string logText = "1.0;2011-08-09T18:52:40.9241789Z;GetBlob;AnonymousSuccess;200;18;10;anonymous;;myaccount;blob;\"https://myaccount.blob.core.windows.net/thumbnails/lake.jpg?timeout=30000\";\"/myaccount/thumbnails/lake.jpg\";a84aa705-8a85-48c5-b064-b43bd22979c3;0;123.100.2.10;2009-09-19;252;0;265;100;0;;;\"0x8CE1B6EA95033D5\";Tuesday, 09-Aug-11 18:52:40 GMT;;;;\"8/9/2011 6:52:40 PM ba98eb12-700b-4d53-9230-33a3330571fc\"" + '\n' + "1.0;2011-08-09T18:02:40.6271789Z;PutBlob;Success;201;28;21;authenticated;myaccount;myaccount;blob;\"https://myaccount.blob.core.windows.net/thumbnails/lake.jpg?timeout=30000\";\"/myaccount/thumbnails/lake.jpg\";fb658ee6-6123-41f5-81e2-4bfdc178fea3;0;201.9.10.20;2009-09-19;438;100;223;0;100;;\"66CbMXKirxDeTr82SXBKbg==\";\"0x8CE1B67AD25AA05\";Tuesday, 09-Aug-11 18:02:40 GMT;;;;\"8/9/2011 6:02:40 PM ab970a57-4a49-45c4-baa9-20b687941e32\"" + '\n' + "2.0;2011-08-09T18:02:40.6271789Z;PutBlob;Success;201;28;21;authenticated;myaccount;myaccount;blob;\"https://myaccount.blob.core.windows.net/thumbnails/lake.jpg?timeout=30000\";\"/myaccount/thumbnails/lake.jpg\";fb658ee6-6123-41f5-81e2-4bfdc178fea3;0;201.9.10.20;2009-09-19;438;100;223;0;100;;\"66CbMXKirxDeTr82SXBKbg==\";\"0x8CE1B67AD25AA05\";Tuesday, 09-Aug-11 18:02:40 GMT;;;;\"8/9/2011 6:02:40 PM ab970a57-4a49-45c4-baa9-20b687941e32\"" + '\n';         
+            Blob.CloudBlobClient blobClient = CloudAnalyticsClientTests.GenerateCloudBlobClient();
+            Table.CloudTableClient tableClient = CloudAnalyticsClientTests.GenerateCloudTableClient();
+            CloudAnalyticsClient analyticsClient = new CloudAnalyticsClient(blobClient.StorageUri, tableClient.StorageUri, tableClient.Credentials);
+            IEnumerable<LogRecord> logRecordsEnumerable = analyticsClient.ListLogRecords(StorageService.Blob);
+            CloudBlobContainer container = blobClient.GetContainerReference(CloudAnalyticsClientTests.GetRandomContainerName());
+            container.CreateIfNotExists();
+            CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+            blob.UploadText(logText);
+
+            IEnumerable<LogRecord> enumerable = CloudAnalyticsClient.ParseLogBlob(blob);
+            IEnumerator<LogRecord> enumerator = enumerable.GetEnumerator();
+
+            enumerator.MoveNext();
+            LogRecord actualItemOne = enumerator.Current;
+            enumerator.MoveNext();
+            LogRecord actualItemTwo = enumerator.Current;
+
+            try 
+            {
+                enumerator.MoveNext();
+                LogRecord actualItemThree = enumerator.Current;
+                Assert.Fail();
+            }
+            catch(ArgumentException e)
+            {
+                Assert.AreEqual(e.Message, "A storage log version of 2.0 is unsupported.");
+            }
+
+            LogRecord expectedItemOne = new LogRecord();
+            expectedItemOne.VersionNumber = "1.0";
+            expectedItemOne.RequestStartTime = DateTimeOffset.ParseExact("2011-08-09T18:52:40.9241789Z", "o", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            expectedItemOne.OperationType = "GetBlob";
+            expectedItemOne.RequestStatus = "AnonymousSuccess";
+            expectedItemOne.HttpStatusCode = "200";
+            expectedItemOne.EndToEndLatency = new TimeSpan(0, 0, 0, 0, 18);
+            expectedItemOne.ServerLatency = new TimeSpan(0, 0, 0, 0, 10);
+            expectedItemOne.AuthenticationType = "anonymous";
+            expectedItemOne.RequesterAccountName = null;
+            expectedItemOne.OwnerAccountName = "myaccount";
+            expectedItemOne.ServiceType = "blob";
+            expectedItemOne.RequestUrl = new Uri("https://myaccount.blob.core.windows.net/thumbnails/lake.jpg?timeout=30000");
+            expectedItemOne.RequestedObjectKey = "/myaccount/thumbnails/lake.jpg";
+            expectedItemOne.RequestIdHeader = new Guid("a84aa705-8a85-48c5-b064-b43bd22979c3");
+            expectedItemOne.OperationCount = 0;
+            expectedItemOne.RequesterIPAddress = "123.100.2.10";
+            expectedItemOne.RequestVersionHeader = "2009-09-19";
+            expectedItemOne.RequestHeaderSize = 252;
+            expectedItemOne.RequestPacketSize = 0;
+            expectedItemOne.ResponseHeaderSize = 265;
+            expectedItemOne.ResponsePacketSize = 100;
+            expectedItemOne.RequestContentLength = 0;
+            expectedItemOne.RequestMD5 = null;
+            expectedItemOne.ServerMD5 = null;
+            expectedItemOne.ETagIdentifier = "0x8CE1B6EA95033D5";
+            expectedItemOne.LastModifiedTime = DateTimeOffset.ParseExact("Tuesday, 09-Aug-11 18:52:40 GMT", "dddd, dd-MMM-yy HH':'mm':'ss 'GMT'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            expectedItemOne.ConditionsUsed = null;
+            expectedItemOne.UserAgentHeader = null;
+            expectedItemOne.ReferrerHeader = null;
+            expectedItemOne.ClientRequestId = "8/9/2011 6:52:40 PM ba98eb12-700b-4d53-9230-33a3330571fc";
+
+            LogRecord expectedItemTwo = new LogRecord();
+            expectedItemTwo.VersionNumber = "1.0";
+            expectedItemTwo.RequestStartTime = DateTimeOffset.ParseExact("2011-08-09T18:02:40.6271789Z", "o", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            expectedItemTwo.OperationType = "PutBlob";
+            expectedItemTwo.RequestStatus = "Success";
+            expectedItemTwo.HttpStatusCode = "201";
+            expectedItemTwo.EndToEndLatency = new TimeSpan(0, 0, 0, 0, 28);
+            expectedItemTwo.ServerLatency = new TimeSpan(0, 0, 0, 0, 21);
+            expectedItemTwo.AuthenticationType = "authenticated";
+            expectedItemTwo.RequesterAccountName = "myaccount";
+            expectedItemTwo.OwnerAccountName = "myaccount";
+            expectedItemTwo.ServiceType = "blob";
+            expectedItemTwo.RequestUrl = new Uri("https://myaccount.blob.core.windows.net/thumbnails/lake.jpg?timeout=30000");
+            expectedItemTwo.RequestedObjectKey = "/myaccount/thumbnails/lake.jpg";
+            expectedItemTwo.RequestIdHeader = new Guid("fb658ee6-6123-41f5-81e2-4bfdc178fea3");
+            expectedItemTwo.OperationCount = 0;
+            expectedItemTwo.RequesterIPAddress = "201.9.10.20";
+            expectedItemTwo.RequestVersionHeader = "2009-09-19";
+            expectedItemTwo.RequestHeaderSize = 438;
+            expectedItemTwo.RequestPacketSize = 100;
+            expectedItemTwo.ResponseHeaderSize = 223;
+            expectedItemTwo.ResponsePacketSize = 0;
+            expectedItemTwo.RequestContentLength = 100;
+            expectedItemTwo.RequestMD5 = null;
+            expectedItemTwo.ServerMD5 = "66CbMXKirxDeTr82SXBKbg==";
+            expectedItemTwo.ETagIdentifier = "0x8CE1B67AD25AA05";
+            expectedItemTwo.LastModifiedTime = DateTimeOffset.ParseExact("Tuesday, 09-Aug-11 18:02:40 GMT", "dddd, dd-MMM-yy HH':'mm':'ss 'GMT'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            expectedItemTwo.ConditionsUsed = null;
+            expectedItemTwo.UserAgentHeader = null;
+            expectedItemTwo.ReferrerHeader = null;
+            expectedItemTwo.ClientRequestId = "8/9/2011 6:02:40 PM ab970a57-4a49-45c4-baa9-20b687941e32";
         
+            CloudAnalyticsClientTests.AssertLogItemsEqual(expectedItemOne, actualItemOne);
+            CloudAnalyticsClientTests.AssertLogItemsEqual(expectedItemTwo, actualItemTwo);
+        }
+#endif
+
         // These tests will only pass on an account that has metrics enabled. 
         // [TestMethod]
         [Description("Check MetricsEntity population")]
@@ -252,24 +358,24 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
             Table.CloudTableClient tableClient = CloudAnalyticsClientTests.GenerateCloudTableClient();
             CloudAnalyticsClient analyticsClient = new CloudAnalyticsClient(blobClient.StorageUri, tableClient.StorageUri, tableClient.Credentials);
 
-            MetricsEntity mEntity = analyticsClient.CreateHourMetricsQuery(StorageService.Blob, StorageLocation.Primary).Execute().First();
-            DynamicTableEntity dtEntity = tableClient.GetTableReference("$MetricsHourPrimaryTransactionsBlob").CreateQuery<DynamicTableEntity>().Execute().First();
+            MetricsEntity metricsEntity = analyticsClient.CreateHourMetricsQuery(StorageService.Blob, StorageLocation.Primary).Execute().First();
+            DynamicTableEntity dynamicEntity = tableClient.GetTableReference("$MetricsHourPrimaryTransactionsBlob").CreateQuery<DynamicTableEntity>().Execute().First();
 
-            IDictionary<string, EntityProperty> mEntityDictionary = mEntity.WriteEntity(null);
-            IDictionary<string, EntityProperty> dtEntityDictionary = dtEntity.Properties;
+            IDictionary<string, EntityProperty> metricsEntityDictionary = metricsEntity.WriteEntity(null);
+            IDictionary<string, EntityProperty> dynamicEntityDictionary = dynamicEntity.Properties;
 
             // Note that the other direction will fail because the PartitionKey/RowKey are not present in dtEntityDictionary
-            foreach (KeyValuePair<string, EntityProperty> pair in mEntityDictionary)
+            foreach (KeyValuePair<string, EntityProperty> pair in metricsEntityDictionary)
             {
                 EntityProperty propertyValue;
-                bool propertyExists = dtEntityDictionary.TryGetValue(pair.Key, out propertyValue);
+                bool propertyExists = dynamicEntityDictionary.TryGetValue(pair.Key, out propertyValue);
                 Assert.IsTrue(propertyExists);
                 Assert.AreEqual(propertyValue, pair.Value);
             }
         }
 
         // These tests will only pass on an account that has metrics enabled.
-        //[TestMethod]
+        // [TestMethod]
         [Description("Check CapacityEntity population")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -281,20 +387,20 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
             Table.CloudTableClient tableClient = CloudAnalyticsClientTests.GenerateCloudTableClient();
             CloudAnalyticsClient analyticsClient = new CloudAnalyticsClient(blobClient.StorageUri, tableClient.StorageUri, tableClient.Credentials);
 
-            CapacityEntity cEntity = analyticsClient.CreateCapacityQuery().Execute().First();
-            DynamicTableEntity dtEntity = tableClient.GetTableReference("$MetricsCapacityBlob").CreateQuery<DynamicTableEntity>().Execute().First();
+            CapacityEntity capacityEntity = analyticsClient.CreateCapacityQuery().Execute().First();
+            DynamicTableEntity dynamicEntity = tableClient.GetTableReference("$MetricsCapacityBlob").CreateQuery<DynamicTableEntity>().Execute().First();
 
-            IDictionary<string, EntityProperty> cEntityDictionary = cEntity.WriteEntity(null);
-            IDictionary<string, EntityProperty> dtEntityDictionary = dtEntity.Properties;
+            IDictionary<string, EntityProperty> capacityEntityDictionary = capacityEntity.WriteEntity(null);
+            IDictionary<string, EntityProperty> dynamicEntityDictionary = dynamicEntity.Properties;
 
             // Note that the other direction will fail because the PartitionKey/RowKey are not present in dtEntityDictionary
-            foreach (KeyValuePair<string, EntityProperty> pair in cEntityDictionary)
+            foreach (KeyValuePair<string, EntityProperty> pair in capacityEntityDictionary)
             {
                 EntityProperty propertyValue;
-                bool propertyExists = dtEntityDictionary.TryGetValue(pair.Key, out propertyValue);
+                bool propertyExists = dynamicEntityDictionary.TryGetValue(pair.Key, out propertyValue);
                 Assert.IsTrue(propertyExists);
                 Assert.AreEqual(propertyValue, pair.Value);
             }
         }
-    }
+    }   
 }
