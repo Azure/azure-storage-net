@@ -44,12 +44,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
-        /// <param name="givenValue">A string containing the value to compare with the property.</param>
+        /// <param name="givenValue">A string containing the value to compare with the property. Quotes in this string will be escaped in the formatted filter</param>
         /// <returns>A string containing the formatted filter condition.</returns>
         public static string GenerateFilterCondition(string propertyName, string operation, string givenValue)
         {
             givenValue = givenValue ?? string.Empty;
-            return GenerateFilterCondition(propertyName, operation, givenValue, EdmType.String);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
 
         /// <summary>
@@ -61,8 +61,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A string containing the formatted filter condition.</returns>
         public static string GenerateFilterConditionForBool(string propertyName, string operation, bool givenValue)
         {
-            return GenerateFilterCondition(propertyName, operation, givenValue ? "true" : "false", EdmType.Boolean);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
+
+
 
         /// <summary>
         /// Generates a property filter condition string for the binary value.
@@ -81,16 +83,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             byte[] givenValue)
         {
             CommonUtility.AssertNotNull("value", givenValue);
-
-            StringBuilder sb = new StringBuilder();
-
-            foreach (byte b in givenValue)
-            {
-                sb.AppendFormat("{0:x2}", b);
-            }
-
-            return GenerateFilterCondition(propertyName, operation, sb.ToString(), EdmType.Binary);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
+
+
 
         /// <summary>
         /// Generates a property filter condition string for the <see cref="DateTimeOffset"/> value.
@@ -101,8 +97,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A string containing the formatted filter condition.</returns>
         public static string GenerateFilterConditionForDate(string propertyName, string operation, DateTimeOffset givenValue)
         {
-            return GenerateFilterCondition(propertyName, operation, givenValue.UtcDateTime.ToString("o", CultureInfo.InvariantCulture), EdmType.DateTime);
+            CommonUtility.AssertNotNull("value", givenValue);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
+
 
         /// <summary>
         /// Generates a property filter condition string for the <see cref="double"/> value.
@@ -113,8 +111,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A string containing the formatted filter condition.</returns>
         public static string GenerateFilterConditionForDouble(string propertyName, string operation, double givenValue)
         {
-            return GenerateFilterCondition(propertyName, operation, Convert.ToString(givenValue, CultureInfo.InvariantCulture), EdmType.Double);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
+
 
         /// <summary>
         /// Generates a property filter condition string for an <see cref="int"/> value.
@@ -126,7 +125,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ForInt", Justification = "Reviewed")]
         public static string GenerateFilterConditionForInt(string propertyName, string operation, int givenValue)
         {
-            return GenerateFilterCondition(propertyName, operation, Convert.ToString(givenValue, CultureInfo.InvariantCulture), EdmType.Int32);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
 
         /// <summary>
@@ -138,7 +137,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A string containing the formatted filter condition.</returns>
         public static string GenerateFilterConditionForLong(string propertyName, string operation, long givenValue)
         {
-            return GenerateFilterCondition(propertyName, operation, Convert.ToString(givenValue, CultureInfo.InvariantCulture), EdmType.Int64);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
 
         /// <summary>
@@ -151,48 +150,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public static string GenerateFilterConditionForGuid(string propertyName, string operation, Guid givenValue)
         {
             CommonUtility.AssertNotNull("value", givenValue);
-            return GenerateFilterCondition(propertyName, operation, givenValue.ToString(), EdmType.Guid);
+            return FormatFilter(propertyName, operation, EscapeQueryValue(givenValue));
         }
 
         /// <summary>
-        /// Generates a property filter condition string for the <see cref="EdmType"/> value, formatted as the specified <see cref="EdmType"/>.
+        /// Generates a property filter condition string for a query-escaped value.
         /// </summary>
         /// <param name="propertyName">A string containing the name of the property to compare.</param>
         /// <param name="operation">A string containing the comparison operator to use.</param>
-        /// <param name="givenValue">A string containing the value to compare with the property.</param>
-        /// <param name="edmType">The <see cref="EdmType"/> to format the value as.</param>
+        /// <param name="escapedValue">A string containing the value to compare with the property.</param>
         /// <returns>A string containing the formatted filter condition.</returns>
-        private static string GenerateFilterCondition(string propertyName, string operation, string givenValue, EdmType edmType)
+        private static string FormatFilter(string propertyName, string operation, string escapedValue)
         {
-            string valueOperand = null;
-
-            if (edmType == EdmType.Boolean || edmType == EdmType.Double || edmType == EdmType.Int32)
-            {
-                valueOperand = givenValue;
-            }
-            else if (edmType == EdmType.Int64)
-            {
-                valueOperand = string.Format(CultureInfo.InvariantCulture, "{0}L", givenValue);
-            }
-            else if (edmType == EdmType.DateTime)
-            {
-                valueOperand = string.Format(CultureInfo.InvariantCulture, "datetime'{0}'", givenValue);
-            }
-            else if (edmType == EdmType.Guid)
-            {
-                valueOperand = string.Format(CultureInfo.InvariantCulture, "guid'{0}'", givenValue);
-            }
-            else if (edmType == EdmType.Binary)
-            {
-                valueOperand = string.Format(CultureInfo.InvariantCulture, "X'{0}'", givenValue);
-            }
-            else
-            {
-                // OData readers expect single quote to be escaped in a param value.
-                valueOperand = string.Format(CultureInfo.InvariantCulture, "'{0}'", givenValue.Replace("'", "''"));
-            }
-
-            return string.Format(CultureInfo.InvariantCulture, "{0} {1} {2}", propertyName, operation, valueOperand);
+            return string.Format(CultureInfo.InvariantCulture, "{0} {1} {2}", propertyName, operation, escapedValue);
         }
 
         /// <summary>
@@ -206,6 +176,110 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public static string CombineFilters(string filterA, string operatorString, string filterB)
         {
             return string.Format(CultureInfo.InvariantCulture, "({0}) {1} ({2})", filterA, operatorString, filterB);
+        }
+
+        #endregion
+
+        #region Escape Query Values
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(string givenValue)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "'{0}'", givenValue.Replace("'", "''"));
+        }
+
+
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(bool givenValue)
+        {
+            return givenValue ? "true" : "false";
+        }
+
+
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(int givenValue)
+        {
+            return Convert.ToString(givenValue, CultureInfo.InvariantCulture);
+        }
+
+
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(double givenValue)
+        {
+            return Convert.ToString(givenValue, CultureInfo.InvariantCulture);
+        }
+
+
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(long givenValue)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0}L", Convert.ToString(givenValue, CultureInfo.InvariantCulture));
+        }
+
+
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(Guid givenValue)
+        {
+            CommonUtility.AssertNotNull("value", givenValue);
+            return string.Format(CultureInfo.InvariantCulture, "guid'{0}'", givenValue);
+        }
+
+
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(DateTimeOffset givenValue)
+        {
+            CommonUtility.AssertNotNull("value", givenValue);
+            return string.Format(CultureInfo.InvariantCulture, "datetime'{0}'",
+                givenValue.UtcDateTime.ToString("o", CultureInfo.InvariantCulture));
+        }
+
+
+        /// <summary>
+        /// Formats a value for inclusion in a query filter
+        /// </summary>
+        /// <param name="givenValue"></param>
+        /// <returns></returns>
+        public static string EscapeQueryValue(
+#if WINDOWS_RT
+            [ReadOnlyArray]
+#endif
+byte[] givenValue)
+        {
+            CommonUtility.AssertNotNull("value", givenValue);
+            StringBuilder sb = new StringBuilder();
+
+            foreach (byte b in givenValue)
+            {
+                sb.AppendFormat("{0:x2}", b);
+            }
+            return string.Format(CultureInfo.InvariantCulture, "X'{0}'", sb.ToString());
         }
 
         #endregion
