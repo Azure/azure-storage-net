@@ -140,6 +140,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Lib\WindowsDesktop\Microsoft.WindowsAzure.Storage.csproj">
       <Project>{c6787633-b26a-4913-a762-4c0ffceb6fe3}</Project>
+      <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsDesktop%29</Name>
       <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsDesktop\Microsoft.WindowsAzure.Storage%29</Name>
     </ProjectReference>
     <ProjectReference Include="..\FaultInjection\HttpMangler\HttpMangler.csproj">

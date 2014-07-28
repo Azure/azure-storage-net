@@ -34,6 +34,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Stores the parallelism factor.
         /// </summary>
         private int? parallelOperationThreadCount;
+
+        /// <summary>
+        /// Stores the maximum execution time.
+        /// </summary>
+        private TimeSpan? maximumExecutionTime;
         
         /// <summary>
         /// Initializes a new instance of the <see cref="FileRequestOptions"/> class.
@@ -164,7 +169,23 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Gets or sets the maximum execution time across all potential retries for the request. 
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> representing the maximum execution time for retries for the request.</value>
-        public TimeSpan? MaximumExecutionTime { get; set; }
+        public TimeSpan? MaximumExecutionTime
+        {
+            get
+            {
+                return this.maximumExecutionTime;
+            }
+
+            set
+            {
+                if (value.HasValue)
+                {
+                    CommonUtility.AssertInBounds("MaximumExecutionTime", value.Value, TimeSpan.Zero, Constants.MaxMaximumExecutionTime);
+                }
+
+                this.maximumExecutionTime = value;
+            }
+        }  
 
         /// <summary>
         /// Gets or sets the number of ranges that may be simultaneously uploaded when uploading a file.

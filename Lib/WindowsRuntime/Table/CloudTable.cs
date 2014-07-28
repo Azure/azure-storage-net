@@ -289,7 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         {
                             StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
                             if ((extendedInfo == null) ||
-                                (extendedInfo.ErrorCode == TableErrorCodeStrings.TableNotFound))
+                                (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                             {
                                 return false;
                             }

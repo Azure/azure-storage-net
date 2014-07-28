@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using System;
     using System.Runtime.InteropServices;
 
@@ -68,4 +69,5 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             int dataLen,
             uint flags);
     }
+#endif
 }

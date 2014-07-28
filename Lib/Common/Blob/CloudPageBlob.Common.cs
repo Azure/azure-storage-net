@@ -443,14 +443,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
-                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
+                string errorMessage = string.Format(CultureInfo.InvariantCulture, SR.CannotCreateSASWithoutAccountKey);
                 throw new InvalidOperationException(errorMessage);
-            }
-
-            if (this.SnapshotTime != null)
-            {
-                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASForSnapshot);
-                throw new NotSupportedException(errorMessage);
             }
 
             string resourceName = this.GetCanonicalName(true);

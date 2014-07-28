@@ -1789,5 +1789,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             client.GetServiceProperties(options, context);
             Assert.IsNull(timeout);
         }
+
+        [TestMethod]
+        [Description("Check for invalid delimiter \\")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientDelimiterCheck()
+        {
+            try
+            {
+                CloudBlobClient client = GenerateCloudBlobClient();
+                client.DefaultDelimiter = "\\";
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(ArgumentException));
+            }
+        }
+
+        [TestMethod]
+        [Description("Check for maximum execution time limit")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientMaximumExecutionTimeCheck()
+        {
+            try
+            {
+                CloudBlobClient client = GenerateCloudBlobClient();
+                client.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromDays(25.0);
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
+            }
+        }
     }
 }

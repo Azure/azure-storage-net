@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 return;
             }
 
-            Assert.Fail("No exception received while while expecting {0}: {1}", expectedStatusCode, operationDescription);
+            Assert.Fail("No exception received while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
 
         private static async Task<uint> FileReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)

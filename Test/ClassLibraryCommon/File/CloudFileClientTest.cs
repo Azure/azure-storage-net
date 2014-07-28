@@ -1052,5 +1052,25 @@ namespace Microsoft.WindowsAzure.Storage.File
             share.Exists(options, context);
             Assert.IsNull(timeout);
         }
+
+        [TestMethod]
+        [Description("Check for maximum execution time limit")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileClientMaximumExecutionTimeCheck()
+        {
+            try
+            {
+                CloudFileClient client = GenerateCloudFileClient();
+                client.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromDays(25.0);
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
+            }
+        }
     }
 }

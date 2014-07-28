@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             byte[] buffer = GetRandomBuffer(blockSize);
             List<string> blocks = GetBlockIdList(blockCount);
-            
+
             foreach (string block in blocks)
             {
                 using (MemoryStream stream = new MemoryStream(buffer))
@@ -116,6 +116,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
+
+        [TestMethod]
+        [Description("Test blob name validation.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobNameValidation()
+        {
+            NameValidator.ValidateBlobName("alpha");
+            NameValidator.ValidateBlobName("4lphanum3r1c");
+            NameValidator.ValidateBlobName("CAPSLOCK");
+            NameValidator.ValidateBlobName("white space");
+            NameValidator.ValidateBlobName("ºth3r(h@racter$");
+            NameValidator.ValidateBlobName(string.Join("/", Enumerable.Repeat("a", 254)));
+
+            TestInvalidBlobHelper(string.Empty, "No empty strings.", "Invalid blob name. The blob name may not be null, empty, or whitespace only.");
+            TestInvalidBlobHelper(null, "No null strings.", "Invalid blob name. The blob name may not be null, empty, or whitespace only.");
+            TestInvalidBlobHelper(new string('n', 1025), "Maximum 1024 characters.", "Invalid blob name length. The blob name must be between 1 and 1024 characters long.");
+            TestInvalidBlobHelper(string.Join("/", Enumerable.Repeat("a", 255)), "Maximum 254 segments.", "The count of URL path segments (strings between '/' characters) as part of the blob name cannot exceed 254.");
+        }
+
+        private void TestInvalidBlobHelper(string blobName, string failMessage, string exceptionMessage)
+        {
+            try
+            {
+                NameValidator.ValidateBlobName(blobName);
+                Assert.Fail(failMessage);
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(exceptionMessage, e.Message);
+            }
+        }
 
         [TestMethod]
         [Description("Get a block blob reference using its constructor")]
@@ -534,7 +568,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobFetchAttributesTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            try 
+            try
             {
                 container.CreateAsync().Wait();
 
@@ -844,11 +878,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 OperationContext context = new OperationContext();
                 context.SendingRequest += (sender, e) =>
-                    {
-                        e.Request.Headers["x-ms-meta-key1"] = string.Empty;
-                    };
+                {
+                    e.Request.Headers["x-ms-meta-key1"] = string.Empty;
+                };
 
-                blob.SetMetadata(operationContext:context);
+                blob.SetMetadata(operationContext: context);
                 blob2.FetchAttributes();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual(string.Empty, blob2.Metadata["key1"]);
@@ -1260,7 +1294,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         }
                     }
                     blob.PutBlockListAsync(blocks).Wait();
-                    
+
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
@@ -3542,6 +3576,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.DoTextUploadDownload("test", false, true);
             this.DoTextUploadDownload("char中文test", true, true);
             this.DoTextUploadDownload("", false, true);
+        }
+
+        [TestMethod]
+        [Description("Generate SAS for Snapshots")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobGenerateSASForSnapshot()
+        {
+            // Client with shared key access.
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(GetRandomContainerName());
+            MemoryStream memoryStream = new MemoryStream();
+            try
+            {
+                container.Create();
+                CloudBlockBlob blob = container.GetBlockBlobReference("Testing");
+                blob.UploadFromStream(new MemoryStream(GetRandomBuffer(10)));
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                };
+                CloudBlockBlob snapshot = blob.CreateSnapshot();
+                string sas = snapshot.GetSharedAccessSignature(policy);
+                Assert.IsNotNull(sas);
+                StorageCredentials credentials = new StorageCredentials(sas);
+                Uri snapshotUri = snapshot.SnapshotQualifiedUri;
+                CloudBlockBlob blob1 = new CloudBlockBlob(snapshotUri, credentials);
+                blob1.DownloadToStream(memoryStream);
+                Assert.IsNotNull(memoryStream);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+                memoryStream.Close();
+            }
         }
 
 #if TASK

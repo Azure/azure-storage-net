@@ -148,6 +148,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test container name validation.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerNameValidation()
+        {
+            NameValidator.ValidateContainerName("alpha");
+            NameValidator.ValidateContainerName("4lphanum3r1c");
+            NameValidator.ValidateContainerName("middle-dash");
+            NameValidator.ValidateContainerName("$root");
+            NameValidator.ValidateContainerName("$logs");
+
+            TestInvalidContainerHelper(null, "Null containers invalid.", "Invalid container name. The container name may not be null, empty, or whitespace only.");
+            TestInvalidContainerHelper("$ROOT", "Root container case sensitive.", "Invalid container name. Check MSDN for more information about valid container naming.");
+            TestInvalidContainerHelper("double--dash", "Double dashes not allowed.", "Invalid container name. Check MSDN for more information about valid container naming.");
+            TestInvalidContainerHelper("CapsLock", "Lowercase only.", "Invalid container name. Check MSDN for more information about valid container naming.");
+            TestInvalidContainerHelper("illegal$char", "Only alphanumeric and hyphen characters.", "Invalid container name. Check MSDN for more information about valid container naming.");
+            TestInvalidContainerHelper("illegal!char", "Only alphanumeric and hyphen characters.", "Invalid container name. Check MSDN for more information about valid container naming.");
+            TestInvalidContainerHelper("white space", "Only alphanumeric and hyphen characters.", "Invalid container name. Check MSDN for more information about valid container naming.");
+            TestInvalidContainerHelper("2c", "Root container case sensitive.", "Invalid container name length. The container name must be between 3 and 63 characters long.");
+            TestInvalidContainerHelper(new string('n', 64), "Between 3 and 64 characters.", "Invalid container name length. The container name must be between 3 and 63 characters long.");
+        }
+
+        private void TestInvalidContainerHelper(string containerName, string failMessage, string exceptionMessage)
+        {
+            try
+            {
+                NameValidator.ValidateContainerName(containerName);
+                Assert.Fail(failMessage);
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(exceptionMessage, e.Message);
+            }
+        }
+
+        [TestMethod]
         [Description("Validate container references")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]

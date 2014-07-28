@@ -163,21 +163,26 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the queue.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="timeToLiveInSeconds">The message time-to-live, in seconds.</param>
+        /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
+        /// <param name="content">The contents of the HTTP request message.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage AddMessage(Uri uri, int? timeout, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, HttpContent content, OperationContext operationContext)
+        public static HttpRequestMessage AddMessage(Uri uri, int? timeout, int? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, HttpContent content, OperationContext operationContext)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Post, uri, timeout, null, content, operationContext);
+            UriQueryBuilder builder = new UriQueryBuilder();
 
-            if (timeToLive != null)
+            if (timeToLiveInSeconds != null)
             {
-                request.Headers.Add(Constants.QueryConstants.MessageTimeToLive, timeToLive.Value.TotalSeconds.ToString());
+                builder.Add(Constants.QueryConstants.MessageTimeToLive, timeToLiveInSeconds.Value.ToString());
             }
 
-            if (initialVisibilityDelay != null)
+            if (visibilityTimeoutInSeconds != null)
             {
-                request.Headers.Add(Constants.QueryConstants.VisibilityTimeout, initialVisibilityDelay.Value.TotalSeconds.ToString());
+                builder.Add(Constants.QueryConstants.VisibilityTimeout, visibilityTimeoutInSeconds.Value.ToString());
             }
 
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Post, uri, timeout, builder, content, operationContext);
             return request;
         }
 

@@ -18,6 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
@@ -213,6 +214,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             set
             {
                 CommonUtility.AssertNotNullOrEmpty("DefaultDelimiter", value);
+                CommonUtility.AssertNotNullOrEmpty("DefaultDelimiter", value);
+                if (value == "\\")
+                {
+                    throw new ArgumentException(SR.InvalidDelimiter);
+                }       
+
                 this.defaultDelimiter = value;
             }
         }

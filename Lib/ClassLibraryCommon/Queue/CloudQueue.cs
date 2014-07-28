@@ -2553,15 +2553,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             int? timeToLiveInSeconds = null;
             int? initialVisibilityDelayInSeconds = null;
 
-            if (timeToLive != null)
+            if (timeToLive.HasValue)
             {
-                CommonUtility.AssertInBounds<TimeSpan>("timeToLive", timeToLive.Value, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
+                CommonUtility.AssertInBounds("timeToLive", timeToLive.Value, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
                 timeToLiveInSeconds = (int)timeToLive.Value.TotalSeconds;
             }
 
-            if (initialVisibilityDelay != null)
+            if (initialVisibilityDelay.HasValue)
             {
-                CommonUtility.AssertInBounds<TimeSpan>("initialVisibilityDelay", initialVisibilityDelay.Value, TimeSpan.Zero, timeToLive ?? CloudQueueMessage.MaxTimeToLive);
+                CommonUtility.AssertInBounds("initialVisibilityDelay", initialVisibilityDelay.Value, TimeSpan.Zero, timeToLive ?? CloudQueueMessage.MaxTimeToLive);
                 initialVisibilityDelayInSeconds = (int)initialVisibilityDelay.Value.TotalSeconds;
             }
 
@@ -2621,7 +2621,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CommonUtility.AssertNotNull("message", message);
             CommonUtility.AssertNotNullOrEmpty("messageId", message.Id);
             CommonUtility.AssertNotNullOrEmpty("popReceipt", message.PopReceipt);
-            CommonUtility.AssertInBounds<TimeSpan>("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
+            CommonUtility.AssertInBounds("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
 
             if ((updateFields & MessageUpdateFields.Visibility) == 0)
             {

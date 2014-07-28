@@ -88,6 +88,44 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Test file directory name validation.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryNameValidation()
+        {
+            NameValidator.ValidateDirectoryName("alpha");
+            NameValidator.ValidateDirectoryName("4lphanum3r1c");
+            NameValidator.ValidateDirectoryName("middle-dash");
+            NameValidator.ValidateDirectoryName("CAPS");
+            NameValidator.ValidateDirectoryName("$root");
+            NameValidator.ValidateDirectoryName("..");
+            NameValidator.ValidateDirectoryName("CLOCK$");
+            NameValidator.ValidateDirectoryName("endslash/");
+
+            TestInvalidDirectoryHelper(null, "No null.", "Invalid directory name. The directory name may not be null, empty, or whitespace only.");
+            TestInvalidDirectoryHelper("middle/slash", "Slashes only at the end.", "Invalid directory name. Check MSDN for more information about valid directory naming.");
+            TestInvalidDirectoryHelper("illegal\"char", "Illegal character.", "Invalid directory name. Check MSDN for more information about valid directory naming.");
+            TestInvalidDirectoryHelper("illegal:char?", "Illegal character.", "Invalid directory name. Check MSDN for more information about valid directory naming.");
+            TestInvalidDirectoryHelper(string.Empty, "Between 1 and 255 characters.", "Invalid directory name. The directory name may not be null, empty, or whitespace only.");
+            TestInvalidDirectoryHelper(new string('n', 256), "Between 1 and 255 characters.", "Invalid directory name length. The directory name must be between 1 and 255 characters long.");
+        }
+
+        private void TestInvalidDirectoryHelper(string directoryName, string failMessage, string exceptionMessage)
+        {
+            try
+            {
+                NameValidator.ValidateDirectoryName(directoryName);
+                Assert.Fail(failMessage);
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(exceptionMessage, e.Message);
+            }
+        }
+
+        [TestMethod]
         [Description("Get a directory reference using its constructor")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

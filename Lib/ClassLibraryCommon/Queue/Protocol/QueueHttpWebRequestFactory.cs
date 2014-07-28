@@ -412,12 +412,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
 
             if (timeToLiveInSeconds != null)
             {
-                builder.Add(Constants.QueryConstants.MessageTimeToLive, timeToLiveInSeconds.ToString());
+                builder.Add(Constants.QueryConstants.MessageTimeToLive, timeToLiveInSeconds.Value.ToString(CultureInfo.InvariantCulture));
             }
 
             if (visibilityTimeoutInSeconds != null)
             {
-                builder.Add(Constants.QueryConstants.VisibilityTimeout, visibilityTimeoutInSeconds.ToString());
+                builder.Add(Constants.QueryConstants.VisibilityTimeout, visibilityTimeoutInSeconds.Value.ToString(CultureInfo.InvariantCulture));
             }
 
             HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Post, uri, timeout, builder, useVersionHeader, operationContext);

@@ -57,6 +57,42 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         [TestMethod]
+        [Description("Test queue name validation.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueNameValidation()
+        {
+            NameValidator.ValidateQueueName("alpha");
+            NameValidator.ValidateQueueName("4lphanum3r1c");
+            NameValidator.ValidateQueueName("middle-dash");
+
+            TestInvalidQueueHelper(null, "Null not allowed.", "Invalid queue name. The queue name may not be null, empty, or whitespace only.");
+            TestInvalidQueueHelper("$root", "Alphanumeric or dashes only.", "Invalid queue name. Check MSDN for more information about valid queue naming.");
+            TestInvalidQueueHelper("double--dash", "No double dash.", "Invalid queue name. Check MSDN for more information about valid queue naming.");
+            TestInvalidQueueHelper("CapsLock", "Lowercase only.", "Invalid queue name. Check MSDN for more information about valid queue naming.");
+            TestInvalidQueueHelper("illegal$char", "Alphanumeric or dashes only.", "Invalid queue name. Check MSDN for more information about valid queue naming.");
+            TestInvalidQueueHelper("illegal!char", "Alphanumeric or dashes only.", "Invalid queue name. Check MSDN for more information about valid queue naming.");
+            TestInvalidQueueHelper("white space", "Alphanumeric or dashes only.", "Invalid queue name. Check MSDN for more information about valid queue naming.");
+            TestInvalidQueueHelper("2c", "Between 3 and 63 characters.", "Invalid queue name length. The queue name must be between 3 and 63 characters long.");
+            TestInvalidQueueHelper(new string('n', 64), "Between 3 and 63 characters.", "Invalid queue name length. The queue name must be between 3 and 63 characters long.");
+        }
+
+        private void TestInvalidQueueHelper(string queueName, string failMessage, string exceptionMessage)
+        {
+            try
+            {
+                NameValidator.ValidateQueueName(queueName);
+                Assert.Fail(failMessage);
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(exceptionMessage, e.Message);
+            }
+        }
+
+        [TestMethod]
         [Description("Create and delete a queue")]
         [TestCategory(ComponentCategory.Queue)]
         [TestCategory(TestTypeCategory.UnitTest)]

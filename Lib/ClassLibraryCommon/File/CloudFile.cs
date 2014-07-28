@@ -574,19 +574,6 @@ namespace Microsoft.WindowsAzure.Storage.File
             catch (Exception)
             {
                 fileStream.Dispose();
-                if (mode == FileMode.Create || mode == FileMode.CreateNew)
-                {
-                    try
-                    {
-                        File.Delete(path);
-                    }
-                    catch (Exception)
-                    {
-                        // Best effort to clean up in the event that download was unsuccessful.
-                        // Do not throw as we want to throw original exception.
-                    }
-                }
-
                 throw;
             }
         }
@@ -600,6 +587,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult.AsyncState;
             Exception exception = null;
             bool tryFileDelete = false;
+            string filePath = null;
 
             try
             {
@@ -616,6 +604,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 FileStream fileStream = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item1;
+                filePath = fileStream.Name;
                 fileStream.Dispose();
             }
             catch (Exception e)
@@ -630,8 +619,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     FileMode mode = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item2;
                     if (mode == FileMode.Create || mode == FileMode.CreateNew)
                     {
-                        string path = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item1.Name;
-                        File.Delete(path);
+                        File.Delete(filePath);
                     }
                 }
                 catch (Exception)

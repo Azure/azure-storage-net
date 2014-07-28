@@ -19,7 +19,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 {
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
 
     /// <summary>
@@ -28,6 +30,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
     public sealed class TableRequestOptions : IRequestOptions
     {
         private TablePayloadFormat? payloadFormat = null;
+
+        /// <summary>
+        /// Stores the maximum execution time.
+        /// </summary>
+        private TimeSpan? maximumExecutionTime;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableRequestOptions"/> class.
@@ -156,7 +163,23 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Gets or sets the maximum execution time for all potential retries for the request.
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> representing the maximum execution time for retries for the request.</value>
-        public TimeSpan? MaximumExecutionTime { get; set; }
+        public TimeSpan? MaximumExecutionTime
+        {
+            get
+            {
+                return this.maximumExecutionTime;
+            }
+
+            set
+            {
+                if (value.HasValue)
+                {
+                    CommonUtility.AssertInBounds("MaximumExecutionTime", value.Value, TimeSpan.Zero, Constants.MaxMaximumExecutionTime);
+                }
+
+                this.maximumExecutionTime = value;
+            }
+        } 
 
         /// <summary>
         /// Gets or sets the <see cref="TablePayloadFormat"/> that will be used for the request.
