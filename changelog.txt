@@ -1,3 +1,16 @@
+Changes in 4.2.0 :
+
+  - All: Added the NameValidator class which contains helpers that check to see if resource names are valid.
+  - All: Fixed a bug where the RequestUrl of a LogRecord was not correctly HTML4 decoded.  
+  - All: The maximum allowed MaximumExecutionTime is 24 days.
+  - All: Reworded a log line error.
+  - All (WP): Fixed an issue which caused WindowsPhone applications to fail Windows App Certification that is required to submit apps to the store.
+  - All (WP): Added Windows Phone 8.1 Silverlight support.
+  - Blobs: Added support for generating SAS tokens for blob snapshots.
+  - Blobs: Removed ability to set CloudBlobClient.DefaultDelimiter to "\\".
+  - Queues (RT): Fixed an issue where the messagettl and visibilitytimeout query parameters were not properly set while adding a message to the queue.
+  - Tables: CloudTable.DeleteIfExists and its async counterparts returns false instead of throwing an exception when the table does not exist.
+
 Changes in 4.1.0 :
 
   - All: Added parsing logic and the LogRecord class to further augment the Analytics Client ListLogs methods.

@@ -92,6 +92,46 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
 
+        [TestMethod]
+        [Description("Test table name validation.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableNameValidation()
+        {
+            NameValidator.ValidateTableName("alpha");
+            NameValidator.ValidateTableName("alphanum3r1c");
+            NameValidator.ValidateTableName("CapsLock");
+            NameValidator.ValidateTableName("$MetricsTransactionsBlob");
+            NameValidator.ValidateTableName("$MetricsHourPrimaryTransactionsTable");
+            NameValidator.ValidateTableName("$MetricsMinuteSecondaryTransactionsQueue");
+            NameValidator.ValidateTableName("tables");
+            NameValidator.ValidateTableName("$MetricsCapacityBlob");
+
+            TestInvalidTableHelper(null, "Null not allowed.", "Invalid table name. The table name may not be null, empty, or whitespace only.");
+            TestInvalidTableHelper("1numberstart", "Must start with a letter.", "Invalid table name. Check MSDN for more information about valid table naming.");
+            TestInvalidTableHelper("middle-dash", "Alphanumeric only.", "Invalid table name. Check MSDN for more information about valid table naming.");
+            TestInvalidTableHelper("illegal$char", "Alphanumeric only.", "Invalid table name. Check MSDN for more information about valid table naming.");
+            TestInvalidTableHelper("illegal!char", "Alphanumeric only.", "Invalid table name. Check MSDN for more information about valid table naming.");
+            TestInvalidTableHelper("white space", "Alphanumeric only.", "Invalid table name. Check MSDN for more information about valid table naming.");
+            TestInvalidTableHelper("cc", "Between 3 and 63 characters.", "Invalid table name length. The table name must be between 3 and 63 characters long.");
+            TestInvalidTableHelper(new string('n', 64), "Between 3 and 63 characters.", "Invalid table name length. The table name must be between 3 and 63 characters long.");
+        }
+
+        private void TestInvalidTableHelper(string tableName, string failMessage, string exceptionMessage)
+        {
+            try
+            {
+                NameValidator.ValidateTableName(tableName);
+                Assert.Fail(failMessage);
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(exceptionMessage, e.Message);
+            }
+        }
+
         #region Table Create
 
         #region Sync
@@ -838,13 +878,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableDeleteIfExistsSync()
         {
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.Json);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.AtomPub);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.Json, false);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonNoMetadata, false);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonFullMetadata, false);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.AtomPub, false);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.Json, true);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonNoMetadata, true);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonFullMetadata, true);
+            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.AtomPub, true);
         }
 
-        private void DoCloudTableDeleteIfExistsSync(TablePayloadFormat format)
+        private void DoCloudTableDeleteIfExistsSync(TablePayloadFormat format, bool simulateParallelDelete)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
             tableClient.DefaultRequestOptions.PayloadFormat = format;
@@ -857,8 +901,23 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.IsFalse(tableRef.DeleteIfExists());
                 tableRef.Create();
                 Assert.IsTrue(tableRef.Exists());
-                Assert.IsTrue(tableRef.DeleteIfExists());
-                Assert.IsFalse(tableRef.DeleteIfExists());
+                if (simulateParallelDelete)
+                {
+                    OperationContext context = new OperationContext();
+                    context.SendingRequest += (sender, e) =>
+                        {
+                            if (e.Request.Method == "DELETE")
+                            {
+                                tableRef.Delete();
+                            }
+                        };
+                    Assert.IsFalse(tableRef.DeleteIfExists(null /* requestOptions */, context));
+                }
+                else
+                {
+                    Assert.IsTrue(tableRef.DeleteIfExists());
+                    Assert.IsFalse(tableRef.DeleteIfExists());
+                }
             }
             finally
             {
@@ -878,7 +937,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableDeleteIfExistsAPM()
         {
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.Json, false);
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonNoMetadata, false);
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonFullMetadata, false);
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.AtomPub, false);
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.Json, true);
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonNoMetadata, true);
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonFullMetadata, true);
+            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.AtomPub, true);
+        }
+
+        private void DoCloudTableDeleteIfExistsAPM(TablePayloadFormat format, bool simulateParallelDelete)
+        {
             CloudTableClient tableClient = GenerateCloudTableClient();
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string tableName = GenerateRandomTableName();
             CloudTable tableRef = tableClient.GetTableReference(tableName);
 
@@ -886,7 +958,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // Assert Table does not exist
                 Assert.IsFalse(tableRef.Exists());
-                using (ManualResetEvent evt = new ManualResetEvent(false))
+                using (AutoResetEvent evt = new AutoResetEvent(false))
                 {
                     IAsyncResult result = null;
                     tableRef.BeginDeleteIfExists((res) =>
@@ -899,29 +971,61 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                     // Table should not have been deleted as it doesnt exist
                     Assert.IsFalse(tableRef.EndDeleteIfExists(result));
-                }
 
-                // Assert Table exists
-                tableRef.Create();
-                Assert.IsTrue(tableRef.Exists());
+                    // Assert Table exists
+                    tableRef.Create();
+                    Assert.IsTrue(tableRef.Exists());
 
-                using (ManualResetEvent evt = new ManualResetEvent(false))
-                {
-                    IAsyncResult result = null;
-                    tableRef.BeginDeleteIfExists((res) =>
+                    if (simulateParallelDelete)
                     {
-                        result = res;
-                        evt.Set();
-                    }, null);
+                        OperationContext context = new OperationContext();
+                        context.SendingRequest += (sender, e) =>
+                        {
+                            if (e.Request.Method == "DELETE")
+                            {
+                                tableRef.Delete();
+                            }
+                        };
 
-                    evt.WaitOne();
+                        result = null;
+                        tableRef.BeginDeleteIfExists(null /* requestOptions */, context, (res) =>
+                        {
+                            result = res;
+                            evt.Set();
+                        }, null);
 
-                    // Table should have been deleted
-                    Assert.IsTrue(tableRef.EndDeleteIfExists(result));
+                        evt.WaitOne();
+
+                        // Table should have been deleted
+                        Assert.IsFalse(tableRef.EndDeleteIfExists(result));
+                    }
+                    else
+                    {
+                        result = null;
+                        tableRef.BeginDeleteIfExists((res) =>
+                        {
+                            result = res;
+                            evt.Set();
+                        }, null);
+
+                        evt.WaitOne();
+
+                        // Table should have been deleted
+                        Assert.IsTrue(tableRef.EndDeleteIfExists(result));
+
+                        result = null;
+                        tableRef.BeginDeleteIfExists((res) =>
+                        {
+                            result = res;
+                            evt.Set();
+                        }, null);
+
+                        evt.WaitOne();
+
+                        // Assert Table Was Deleted
+                        Assert.IsFalse(tableRef.EndDeleteIfExists(result));
+                    }
                 }
-
-                // Assert Table Was Deleted
-                Assert.IsFalse(tableRef.DeleteIfExists());
             }
             finally
             {

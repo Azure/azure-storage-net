@@ -17,8 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
+    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
 
     /// <summary>
@@ -26,6 +29,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// </summary>
     public sealed class QueueRequestOptions : IRequestOptions
     {
+        /// <summary>
+        /// Stores the maximum execution time.
+        /// </summary>
+        private TimeSpan? maximumExecutionTime;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="QueueRequestOptions"/> class.
         /// </summary>
@@ -118,6 +126,22 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Gets or sets the maximum execution time across all potential retries for the request. 
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> representing the maximum execution time for retries for the request.</value>
-        public TimeSpan? MaximumExecutionTime { get; set; }
+        public TimeSpan? MaximumExecutionTime
+        {
+            get
+            {
+                return this.maximumExecutionTime;
+            }
+
+            set
+            {
+                if (value.HasValue)
+                {
+                    CommonUtility.AssertInBounds("MaximumExecutionTime", value.Value, TimeSpan.Zero, Constants.MaxMaximumExecutionTime);
+                }
+
+                this.maximumExecutionTime = value;
+            }
+        }  
     }
 }

@@ -23,7 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     public enum DeleteSnapshotsOption
     {
         /// <summary>
-        /// Delete blobs but not snapshots.
+        /// Delete the blob only. If the blob has snapshots, this option will result in an error from the service.
         /// </summary>
         None,
 

@@ -80,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage
                 Assert.Fail("Invalid exception {0} for operation: {1}", ex.GetType(), operationDescription);
             }
 
-            Assert.Fail("No exception received while while expecting {0}: {1}", typeof(T).ToString(), operationDescription);
+            Assert.Fail("No exception received while expecting {0}: {1}", typeof(T).ToString(), operationDescription);
             return null;
         }
 
@@ -107,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage
                 return;
             }
 
-            Assert.Fail("No Storage exception received while while expecting {0}: {1}", expectedStatusCode, operationDescription);
+            Assert.Fail("No Storage exception received while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
     }
 }

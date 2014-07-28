@@ -1105,5 +1105,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
             client.GetServiceProperties(options, context);
             Assert.IsNull(timeout);
         }
+
+        [TestMethod]
+        [Description("Check for maximum execution time limit")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableClientMaximumExecutionTimeCheck()
+        {
+            try
+            {
+                CloudTableClient client = GenerateCloudTableClient();
+                client.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromDays(25.0);
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
+            }
+        }
     }
 }

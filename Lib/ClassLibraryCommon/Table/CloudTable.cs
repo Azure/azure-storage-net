@@ -1377,7 +1377,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                     {
                         if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableNotFound))
+                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                         {
                             return false;
                         }
@@ -1475,7 +1475,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                     if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                                     {
                                         if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableNotFound))
+                                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                                         {
                                             storageAsyncResult.Result = false;
                                             storageAsyncResult.OnComplete();

@@ -200,11 +200,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.IsNull(file.Properties.ContentMD5);
 
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
+
                 await file2.FetchAttributesAsync();
                 Assert.AreEqual(1024, file2.Properties.Length);
                 Assert.AreEqual(file.Properties.ETag, file2.Properties.ETag);
                 Assert.AreEqual(file.Properties.LastModified, file2.Properties.LastModified);
-                Assert.IsNull(file2.Properties.CacheControl);
                 Assert.IsNull(file2.Properties.ContentEncoding);
                 Assert.IsNull(file2.Properties.ContentLanguage);
                 Assert.AreEqual("application/octet-stream", file2.Properties.ContentType);

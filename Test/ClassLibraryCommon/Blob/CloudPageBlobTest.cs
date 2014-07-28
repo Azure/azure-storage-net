@@ -2225,7 +2225,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
-        
+
         [TestMethod]
         [Description("Upload pages to a page blob and then verify the contents")]
         [TestCategory(ComponentCategory.Blob)]
@@ -3554,6 +3554,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             finally
             {
                 container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Generate SAS for Snapshots")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobGenerateSASForSnapshot()
+        {
+            // Client with shared key access.
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(GetRandomContainerName());
+            MemoryStream memoryStream = new MemoryStream();
+            try
+            {
+                container.Create();
+                CloudPageBlob blob = container.GetPageBlobReference("Testing");
+                blob.Create(0);
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                };
+                CloudPageBlob snapshot = blob.CreateSnapshot();
+                string sas = snapshot.GetSharedAccessSignature(policy);
+                Assert.IsNotNull(sas);
+                StorageCredentials credentials = new StorageCredentials(sas);
+                Uri snapshotUri = snapshot.SnapshotQualifiedUri;
+                CloudPageBlob blob1 = new CloudPageBlob(snapshotUri, credentials);
+                blob1.DownloadToStream(memoryStream);
+                Assert.IsNotNull(memoryStream);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+                memoryStream.Close();
             }
         }
     }

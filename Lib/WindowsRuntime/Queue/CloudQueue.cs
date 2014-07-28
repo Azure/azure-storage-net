@@ -876,6 +876,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand"/> that sets the permissions.</returns>
         private RESTCommand<NullType> AddMessageImpl(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options)
         {
+            int? timeToLiveInSeconds = null;
+            int? initialVisibilityDelayInSeconds = null;
+
+            if (timeToLive.HasValue)
+            {
+                CommonUtility.AssertInBounds("timeToLive", timeToLive.Value, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
+                timeToLiveInSeconds = (int)timeToLive.Value.TotalSeconds;
+            }
+
+            if (initialVisibilityDelay.HasValue)
+            {
+                CommonUtility.AssertInBounds("initialVisibilityDelay", initialVisibilityDelay.Value, TimeSpan.Zero, timeToLive ?? CloudQueueMessage.MaxTimeToLive);
+                initialVisibilityDelayInSeconds = (int)initialVisibilityDelay.Value.TotalSeconds;
+            }
+
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
             QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage), memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
@@ -885,7 +900,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(putCmd);
             putCmd.Handler = this.ServiceClient.AuthenticationHandler;
             putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.AddMessage(uri, serverTimeout, timeToLive, initialVisibilityDelay, cnt, ctx);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, cnt, ctx);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -910,7 +925,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CommonUtility.AssertNotNull("message", message);
             CommonUtility.AssertNotNullOrEmpty("messageId", message.Id);
             CommonUtility.AssertNotNullOrEmpty("popReceipt", message.PopReceipt);
-            CommonUtility.AssertInBounds<TimeSpan>("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
+            CommonUtility.AssertInBounds("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
 
             if ((updateFields & MessageUpdateFields.Visibility) == 0)
             {

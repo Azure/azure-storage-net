@@ -138,6 +138,7 @@
     <Content Include="..\Common\TestConfigurations.xml">
       <Link>TestConfigurations.xml</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
     <Content Include="Images\UnitTestLogo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -159,6 +160,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj">
       <Project>{42cb7861-70bb-4f34-a815-4355e6ea2589}</Project>
+      <Name>RT %28Lib\WindowsRuntime%29</Name>
       <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage%29</Name>
     </ProjectReference>
   </ItemGroup>

@@ -72,6 +72,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const long MaxBlobSize = MaxBlockNumber * MaxBlockSize;
 
         /// <summary>
+        /// Constant for the max value of MaximumExecutionTime.
+        /// </summary>
+        public static readonly TimeSpan MaxMaximumExecutionTime = TimeSpan.FromDays(24.0);
+
+        /// <summary>
         /// Default client side timeout for all service clients.
         /// </summary>
         public static readonly TimeSpan DefaultClientSideTimeout = TimeSpan.FromMinutes(5);
@@ -755,7 +760,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "4.1.0";
+            public const string UserAgentProductVersion = "4.2.0";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.

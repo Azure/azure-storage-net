@@ -52,6 +52,44 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Test file name validation.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileNameValidation()
+        {
+            NameValidator.ValidateFileName("alpha");
+            NameValidator.ValidateFileName("4lphanum3r1c");
+            NameValidator.ValidateFileName("middle-dash");
+            NameValidator.ValidateFileName("CAPS");
+            NameValidator.ValidateFileName("$root");
+
+            TestInvalidFileHelper(null, "No null.", "Invalid file name. The file name may not be null, empty, or whitespace only.");
+            TestInvalidFileHelper("..", "Reserved.", "Invalid file name. This file name is reserved.");
+            TestInvalidFileHelper("Clock$", "Reserved.", "Invalid file name. This file name is reserved.");
+            TestInvalidFileHelper("endslash/", "No slashes.", "Invalid file name. Check MSDN for more information about valid file naming.");
+            TestInvalidFileHelper("middle/slash", "No slashes.", "Invalid file name. Check MSDN for more information about valid file naming.");
+            TestInvalidFileHelper("illegal\"char", "Illegal characters.", "Invalid file name. Check MSDN for more information about valid file naming.");
+            TestInvalidFileHelper("illegal:char?", "Illegal characters.", "Invalid file name. Check MSDN for more information about valid file naming.");
+            TestInvalidFileHelper(string.Empty, "Between 1 and 255 characters.", "Invalid file name. The file name may not be null, empty, or whitespace only.");
+            TestInvalidFileHelper(new string('n', 256), "Between 1 and 255 characters.", "Invalid file name length. The file name must be between 1 and 255 characters long.");
+        }
+
+        private void TestInvalidFileHelper(string fileName, string failMessage, string exceptionMessage)
+        {
+            try
+            {
+                NameValidator.ValidateFileName(fileName);
+                Assert.Fail(failMessage);
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(exceptionMessage, e.Message);
+            }
+        }
+
+        [TestMethod]
         [Description("Create a zero-length file and then delete it")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

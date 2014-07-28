@@ -961,5 +961,25 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             client.GetServiceProperties(options, context);
             Assert.IsNull(timeout);
         }
+
+        [TestMethod]
+        [Description("Check for maximum execution time limit")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientMaximumExecutionTimeCheck()
+        {
+            try
+            {
+                CloudQueueClient client = GenerateCloudQueueClient();
+                client.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromDays(25.0);
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
+            }
+        }
     }
 }

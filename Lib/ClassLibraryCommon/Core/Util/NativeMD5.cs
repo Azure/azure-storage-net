@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-#if WINDOWS_DESKTOP && ! WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;

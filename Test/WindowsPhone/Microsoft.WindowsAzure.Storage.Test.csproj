@@ -114,51 +114,23 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Blob\BlobAnalyticsUnitTests.cs" />
-    <Compile Include="Blob\BlobCancellationUnitTests.cs" />
-    <Compile Include="Blob\BlobReadStreamTest.cs" />
-    <Compile Include="Blob\BlobStreamTests.cs" />
-    <Compile Include="Blob\BlobTestBase.cs" />
-    <Compile Include="Blob\BlobUploadDownloadTest.cs" />
-    <Compile Include="Blob\BlobWriteStreamTest.cs" />
-    <Compile Include="Blob\CloudBlobClientTest.cs" />
-    <Compile Include="Blob\CloudBlobContainerTest.cs" />
-    <Compile Include="Blob\CloudBlockBlobTest.cs" />
-    <Compile Include="Blob\CloudBlobDirectoryTest.cs" />
-    <Compile Include="Blob\CloudPageBlobTest.cs" />
-    <Compile Include="Blob\CopyBlobTest.cs" />
-    <Compile Include="Blob\LeaseTests.cs" />
-    <Compile Include="Blob\MD5FlagsTest.cs" />
-    <Compile Include="Blob\SASTests.cs" />
-    <Compile Include="File\FileCancellationUnitTests.cs" />
-    <Compile Include="File\FileReadStreamTest.cs" />
-    <Compile Include="File\FileStreamTests.cs" />
-    <Compile Include="File\FileTestBase.cs" />
-    <Compile Include="File\FileUploadDownloadTest.cs" />
-    <Compile Include="File\FileWriteStreamTest.cs" />
-    <Compile Include="File\CloudFileClientTest.cs" />
-    <Compile Include="File\CloudFileDirectoryTest.cs" />
-    <Compile Include="File\CloudFileShareTest.cs" />
-    <Compile Include="File\CloudFileTest.cs" />
-    <Compile Include="File\MD5FlagsTest.cs" />
-    <Compile Include="Core\SecondaryTests.cs" />
-    <Compile Include="Queue\CloudQueueClientTest.cs" />
-    <Compile Include="Queue\QueueAnalyticsUnitTests.cs" />
-    <Compile Include="Queue\CloudQueueMessageTest.cs" />
-    <Compile Include="Queue\CloudQueueTest.cs" />
-    <Compile Include="Table\CloudTableClientTaskTest.cs" />
-    <Compile Include="Table\CloudTableCRUDUnitTaskTests.cs" />
-    <Compile Include="Table\TableAnalyticsUnitTaskTests.cs" />
-    <Compile Include="Table\TableBatchOperationTaskTest.cs" />
-    <Compile Include="Table\TableEntitySerializationTests.cs" />
-    <Compile Include="Table\TableEscapingTaskTests.cs" />
-    <Compile Include="Table\TableOperationUnitTaskTests.cs" />
-    <Compile Include="Table\TableQueryableTests.cs" />
-    <Compile Include="Table\TableQueryGenericTaskTests.cs" />
-    <Compile Include="Table\TableQueryTaskTests.cs" />
-    <Compile Include="Table\TableTestBase.cs" />
-    <Compile Include="TestBase.cs" />
-    <Compile Include="TestHelper.cs" />
+    <Compile Include="..\WindowsPhoneCommon\Blob\*.cs">
+      <Link>Blob\Blob</Link>
+    </Compile>
+    <Compile Include="..\WindowsPhoneCommon\File\*.cs">
+      <Link>File\File</Link>
+    </Compile>
+    <Compile Include="..\WindowsPhoneCommon\Core\*.cs">
+      <Link>Core\Core</Link>
+    </Compile>
+    <Compile Include="..\WindowsPhoneCommon\Queue\*.cs">
+      <Link>Queue\Queue</Link>
+    </Compile>
+    <Compile Include="..\WindowsPhoneCommon\Table\*.cs">
+      <Link>Table\Table</Link>
+    </Compile>
+    <Compile Include="..\WindowsPhoneCommon\TestBase.cs" />
+    <Compile Include="..\WindowsPhoneCommon\TestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\Common\Readme.txt">
@@ -174,9 +146,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DescriptionAttribute.cs" />
+    <Compile Include="..\WindowsPhoneCommon\DescriptionAttribute.cs" />
+    <Compile Include="..\WindowsPhoneCommon\SampleTest.cs" />
     <Compile Include="LocalizedStrings.cs" />
-    <Compile Include="SampleTest.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -231,6 +203,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Lib\WindowsPhone\Microsoft.WindowsAzure.Storage.csproj">
       <Project>{CF1D432A-380F-434A-BC43-FC39AC8B61A8}</Project>
+      <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsPhone%29</Name>
       <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsPhone\Microsoft.WindowsAzure.Storage%29</Name>
     </ProjectReference>
   </ItemGroup>

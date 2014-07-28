@@ -292,7 +292,7 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
             }
             else
             {
-                return new Uri(temp);
+                return new Uri(WebUtility.HtmlDecode(temp));
             }
         }
 

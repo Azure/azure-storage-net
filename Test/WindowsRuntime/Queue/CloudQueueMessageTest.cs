@@ -85,6 +85,58 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         [TestMethod]
+        [Description("Test add message with full parameter.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudQueueAddMessageFullParameterAsync()
+        {
+            CloudQueueMessage futureMessage = new CloudQueueMessage("This message is for the future.");
+            CloudQueueMessage presentMessage = new CloudQueueMessage("This message is for the present.");
+
+            CloudQueueClient client = GenerateCloudQueueClient();
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+
+            try
+            {
+                await queue.CreateIfNotExistsAsync();
+
+                await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromDays(2), null, null);
+
+                // We should not be able to see the future message yet.
+                CloudQueueMessage retrievedMessage = await queue.GetMessageAsync();
+                Assert.IsNull(retrievedMessage);
+
+                await queue.AddMessageAsync(presentMessage, null, TimeSpan.Zero, null, null);
+                await queue.AddMessageAsync(presentMessage, TimeSpan.FromDays(1), null, null, null);
+
+                // We should be able to see the present message.
+                retrievedMessage = await queue.GetMessageAsync();
+                Assert.IsNotNull(retrievedMessage);
+                Assert.AreEqual<string>(presentMessage.AsString, retrievedMessage.AsString);
+
+                await queue.AddMessageAsync(futureMessage, TimeSpan.FromDays(2), TimeSpan.FromDays(1), null, null);
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                            async () => await queue.AddMessageAsync(futureMessage, TimeSpan.FromDays(1), TimeSpan.FromDays(2), null, null),
+                            "Using a visibility timeout longer than the time to live should fail");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                            async () => await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromDays(8), null, null),
+                            "Using a visibility longer than the maximum time to live should fail");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                            async () => await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromMinutes(-1), null, null),
+                            "Using a negative visibility should fail");
+            }
+            finally
+            {
+                queue.DeleteIfExistsAsync().AsTask().Wait();
+            }
+        }
+
+        [TestMethod]
         [Description("Test add/delete message")]
         [TestCategory(ComponentCategory.Queue)]
         [TestCategory(TestTypeCategory.UnitTest)]
