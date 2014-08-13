@@ -262,7 +262,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         private void ParseQueryAndVerify(StorageUri address, StorageCredentials credentials)
         {
             this.attributes.StorageUri = address;
-            this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials);
+            if (this.ServiceClient == null)
+            {
+                this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials);
+            }
+            
             this.Name = NavigationHelper.GetFileName(this.Uri, this.ServiceClient.UsePathStyleUris);
         }
     }

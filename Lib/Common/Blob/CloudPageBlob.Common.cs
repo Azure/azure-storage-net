@@ -512,7 +512,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 this.SnapshotTime = parsedSnapshot;
             }
 
-            this.ServiceClient = new CloudBlobClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials ?? parsedCredentials);
+            if (this.ServiceClient == null)
+            {
+                this.ServiceClient = new CloudBlobClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials ?? parsedCredentials);
+            }
+
             this.Name = NavigationHelper.GetBlobName(this.Uri, this.ServiceClient.UsePathStyleUris);
         }
     }
