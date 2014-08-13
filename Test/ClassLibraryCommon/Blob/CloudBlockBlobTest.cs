@@ -3751,5 +3751,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
+
+        [TestMethod]
+        [Description("Test server failure retry case.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobFailoverRetry()
+        {
+            OperationContext opContext = new OperationContext();
+            CloudBlobClient badPrimaryClient = new CloudBlobClient(new StorageUri(new Uri("http://1.2.3.4/x//"), new Uri(TargetTenantConfig.BlobServiceSecondaryEndpoint)), TestBase.StorageCredentials);
+            CloudBlockBlob secondaryBlob = badPrimaryClient.GetContainerReference(GetRandomContainerName()).GetBlockBlobReference("testblob");
+            badPrimaryClient.DefaultRequestOptions.RetryPolicy = new RetryPolicies.LinearRetry(TimeSpan.Zero, 1);
+            badPrimaryClient.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryThenSecondary;
+            try
+            {
+                secondaryBlob.DownloadText(operationContext: opContext);
+            }
+            catch (StorageException)
+            {
+                Assert.IsTrue(opContext.RequestResults.Count > 1);
+                Assert.AreEqual(StorageLocation.Secondary, opContext.LastResult.TargetLocation);
+            }
+        }
     }
 }
