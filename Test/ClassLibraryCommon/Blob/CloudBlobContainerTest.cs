@@ -2060,7 +2060,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlobContainerListBlobs()
         {
-            CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlobClient client = GenerateCloudBlobClient();
+            client.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryThenSecondary;
+            CloudBlobContainer container = client.GetContainerReference(GetRandomContainerName());
             try
             {
                 container.Create();
@@ -2072,6 +2074,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     Assert.IsInstanceOfType(blobItem, typeof(CloudPageBlob));
                     Assert.IsTrue(blobNames.Remove(((CloudPageBlob)blobItem).Name));
+                    Assert.AreEqual(RetryPolicies.LocationMode.PrimaryThenSecondary, ((CloudPageBlob)blobItem).ServiceClient.DefaultRequestOptions.LocationMode);
                 }
             }
             finally

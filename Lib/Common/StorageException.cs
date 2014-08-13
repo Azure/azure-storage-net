@@ -252,7 +252,7 @@ namespace Microsoft.WindowsAzure.Storage
             else if (ex is TimeoutException)
             {
                 reqResult.HttpStatusMessage = null;
-                reqResult.HttpStatusCode = (int)HttpStatusCode.Unused;
+                reqResult.HttpStatusCode = (int)HttpStatusCode.RequestTimeout;
                 reqResult.ExtendedErrorInformation = null;
                 return new StorageException(reqResult, ex.Message, ex);
             }
@@ -309,7 +309,7 @@ namespace Microsoft.WindowsAzure.Storage
             else if (ex is TimeoutException)
             {
                 reqResult.HttpStatusMessage = null;
-                reqResult.HttpStatusCode = (int)HttpStatusCode.Unused;
+                reqResult.HttpStatusCode = (int)HttpStatusCode.RequestTimeout;
                 reqResult.ExtendedErrorInformation = null;
                 return new StorageException(reqResult, ex.Message, ex);
             }
@@ -351,6 +351,13 @@ namespace Microsoft.WindowsAzure.Storage
                 string tempDate = HttpWebUtility.TryGetHeader(response, "Date", null);
                 reqResult.RequestDate = string.IsNullOrEmpty(tempDate) ? DateTime.Now.ToString("R", CultureInfo.InvariantCulture) : tempDate;
                 reqResult.Etag = response.Headers[HttpResponseHeader.ETag];
+#endif
+            }
+
+            if (response.ContentLength > 0) 
+            {
+#if !WINDOWS_RT
+                reqResult.IngressBytes += response.ContentLength;
 #endif
             }
         }
