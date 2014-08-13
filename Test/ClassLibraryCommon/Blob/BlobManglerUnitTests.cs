@@ -114,6 +114,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 });
 
                 Assert.AreEqual(blob.Properties.Length, 98765 + 1024 + 1);
+
+                // Error Case
+                CloudBlockBlob nullBlob = container.GetBlockBlobReference("null");
+                OperationContext errorContext = new OperationContext();
+                try
+                {
+                    nullBlob.DownloadToStream(Stream.Null, null, new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, errorContext);
+                    Assert.Fail("Null blob, null stream, no download possible.");
+                }
+                catch (StorageException)
+                {
+                    Assert.IsTrue(errorContext.LastResult.IngressBytes > 0);
+                }
             }
             finally
             {

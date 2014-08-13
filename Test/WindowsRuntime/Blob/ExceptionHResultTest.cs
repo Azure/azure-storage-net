@@ -102,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             catch (Exception e)
             {
-                Assert.AreEqual(WindowsAzureErrorCode.TimeoutException, e.HResult);
+                Assert.AreEqual(WindowsAzureErrorCode.HttpRequestTimeout, e.HResult);
             }
             finally
             {

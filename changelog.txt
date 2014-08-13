@@ -1,3 +1,9 @@
+Changes in 4.2.1 : 
+
+ - All: Fixed a bug where a TimeoutException was not properly retried.
+ - All: Fixed a bug where the IngressBytes of a RequestResult was not properly set in the exception case.
+ - All: Fixed a bug where default request options were overwritten on the resulting objects returned from a ListBlobs call.
+
 Changes in 4.2.0 :
 
   - All: Added the NameValidator class which contains helpers that check to see if resource names are valid.
