@@ -1,7 +1,7 @@
 Changes in 4.3.0 : 
 
  - All: Support building Universal and Windows Runtime based Windows Phone applications.
- - All: Update OData dependencies to v5.6.2 and Netonsoft.Json dependency to v5.0.8
+ - All: Update OData dependencies to v5.6.2 and Newtonsoft.Json dependency to v5.0.8
 
 Changes in 4.2.1 : 
 
