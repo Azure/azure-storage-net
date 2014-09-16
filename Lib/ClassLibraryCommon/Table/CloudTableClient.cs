@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Threading;
     using System.Threading.Tasks;
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Microsoft.WindowsAzure.Storage.Table.DataServices;
 #endif
 
@@ -729,7 +729,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
         /// <summary>
         /// Creates a new <see cref="TableServiceContext"/> object for performing operations against the Table service.
         /// </summary>

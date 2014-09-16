@@ -181,7 +181,7 @@ namespace Microsoft.WindowsAzure.Storage
                             storageExtendedError.AdditionalDetails[Constants.ErrorExceptionStackTrace] = error.InnerError.StackTrace;
                         }
 
-#if !WINDOWS_PHONE
+#if !(WINDOWS_PHONE && WINDOWS_DESKTOP)
                         if (error.InstanceAnnotations.Count > 0)
                         {
                             foreach (ODataInstanceAnnotation annotation in error.InstanceAnnotations)

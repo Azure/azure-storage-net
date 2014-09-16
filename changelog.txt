@@ -1,8 +1,13 @@
+Changes in 4.3.0 : 
+
+ - All: Support building Universal and Windows Runtime based Windows Phone applications.
+ - All: Update OData dependencies to v5.6.2 and Netonsoft.Json dependency to v5.0.8
+
 Changes in 4.2.1 : 
 
  - All: Fixed a bug where a TimeoutException was not properly retried.
  - All: Fixed a bug where the IngressBytes of a RequestResult was not properly set in the exception case.
- - All: Fixed a bug where default request options were overwritten on the resulting objects returned from a ListBlobs call.
+ - All: Fixed a bug where default request options were overwritten on the resulting objects returned from a List* or GetBlobReferenceFromServer call.
 
 Changes in 4.2.0 :
 

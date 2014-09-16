@@ -69,7 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             this.DefaultRequestOptions = new TableRequestOptions();
             this.DefaultRequestOptions.RetryPolicy = new ExponentialRetry();
             this.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryOnly;
-#if WINDOWS_DESKTOP || WINDOWS_PHONE
+#if !WINDOWS_RT
             this.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.Json;
 #else
             this.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;

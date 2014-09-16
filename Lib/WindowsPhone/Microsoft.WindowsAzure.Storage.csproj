@@ -98,20 +98,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Data.Edm.Portable">
-      <HintPath>Dependencies\Microsoft.Data.Edm.Portable.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Data.OData.Portable">
-      <HintPath>Dependencies\Microsoft.Data.OData.Portable.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>Dependencies\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Spatial.Portable">
-      <HintPath>Dependencies\System.Spatial.Portable.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shared\Protocol\HttpResponseHeader.cs" />
     <Compile Include="Shared\Protocol\WebHeaderCollectionExtensions.cs" />
@@ -119,7 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\ClassLibraryCommon\*.cs" />
-	<Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
+    <Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
       <Link>Analytics\Analytics</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Auth\*.cs">
@@ -225,6 +211,27 @@
     <Compile Include="..\Common\Shared\Protocol\*.cs">
       <Link>Shared\Protocol\Protocol</Link>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Data.Edm, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.Data.Edm.5.6.2\lib\portable-net40+sl5+wp8+win8+wpa\Microsoft.Data.Edm.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.OData, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.Data.OData.5.6.2\lib\portable-net40+sl5+wp8+win8+wpa\Microsoft.Data.OData.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Newtonsoft.Json.5.0.8\lib\portable-net45+wp80+win8\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Spatial, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\System.Spatial.5.6.2\lib\portable-net40+sl5+wp8+win8+wpa\System.Spatial.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />

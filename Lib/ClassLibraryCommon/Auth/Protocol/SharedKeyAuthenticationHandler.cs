@@ -67,17 +67,16 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
             if (this.credentials.IsSharedKey)
             {
-                string message = this.canonicalizer.CanonicalizeHttpRequest(request, this.accountName);
-                Logger.LogVerbose(operationContext, SR.TraceStringToSign, message);
-
                 StorageAccountKey accountKey = this.credentials.Key;
-                string signature = CryptoUtility.ComputeHmac256(accountKey.KeyValue, message);
-
                 if (!string.IsNullOrEmpty(accountKey.KeyName))
                 {
                     request.Headers.Add(Constants.HeaderConstants.KeyNameHeader, accountKey.KeyName);
                 }
 
+                string message = this.canonicalizer.CanonicalizeHttpRequest(request, this.accountName);
+                Logger.LogVerbose(operationContext, SR.TraceStringToSign, message);
+                string signature = CryptoUtility.ComputeHmac256(accountKey.KeyValue, message);
+                
                 request.Headers.Add(
                     "Authorization",
                     string.Format(CultureInfo.InvariantCulture, "{0} {1}:{2}", this.canonicalizer.AuthorizationScheme, this.credentials.AccountName, signature));

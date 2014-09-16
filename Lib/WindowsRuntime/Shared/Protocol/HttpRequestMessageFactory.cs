@@ -44,6 +44,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 builder.Add("timeout", timeout.ToString());
             }
 
+#if WINDOWS_PHONE
+            // Windows Phone does not allow the caller to disable caching, so a random GUID
+            // is added to every URI to make it look like a different request.
+            builder.Add("randomguid", Guid.NewGuid().ToString("N"));
+#endif
+
             Uri uriRequest = builder.AddToUri(uri);
 
             HttpRequestMessage msg = new HttpRequestMessage(method, uriRequest);
@@ -82,6 +88,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             builder.Add(Constants.QueryConstants.Component, "acl");
 
             HttpRequestMessage request = CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+
+#if WINDOWS_PHONE
+            // Windows phone adds */* as the Accept type when we don't set one explicitly.
+            request.Headers.Add(Constants.HeaderConstants.PayloadAcceptHeader, Constants.XMLAcceptHeaderValue);
+#endif
             return request;
         }
 
@@ -102,6 +113,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             builder.Add(Constants.QueryConstants.Component, "acl");
 
             HttpRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+
+#if WINDOWS_PHONE
+            // Windows phone adds */* as the Accept type when we don't set one explicitly.
+            request.Headers.Add(Constants.HeaderConstants.PayloadAcceptHeader, Constants.XMLAcceptHeaderValue);
+#endif
             return request;
         }
 

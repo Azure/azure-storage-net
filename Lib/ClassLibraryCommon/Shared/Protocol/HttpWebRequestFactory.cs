@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             // Set the Content-Length of requests to 0 by default. If we do not upload
             // a body, signing requires it to be 0. On Windows Phone, all requests except
             // GET need this. On desktop, however, only PUT requests need it.
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
             if (method.Equals(WebRequestMethods.Http.Put, StringComparison.OrdinalIgnoreCase))
 #else
             if (!method.Equals(WebRequestMethods.Http.Get, StringComparison.OrdinalIgnoreCase))
@@ -82,7 +82,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 request.Headers[Constants.HeaderConstants.StorageVersionHeader] = Constants.HeaderConstants.TargetStorageVersion;
             }
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
             request.KeepAlive = true;
 
             // Disable the Expect 100-Continue

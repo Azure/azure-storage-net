@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Blob;
     using System;

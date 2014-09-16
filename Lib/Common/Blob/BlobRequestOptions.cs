@@ -95,7 +95,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
 
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
             modifiedOptions.DisableContentMD5Validation = true;
             modifiedOptions.StoreBlobContentMD5 = false;
             modifiedOptions.UseTransactionalMD5 = false;
@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets a value to calculate and send/validate content MD5 for transactions.
         /// </summary>
         /// <value>Use <c>true</c> to calculate and send/validate content MD5 for transactions; otherwise, <c>false</c>.</value>       
-#if WINDOWS_PHONE
+#if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? UseTransactionalMD5
@@ -243,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             set
             {
-#if WINDOWS_PHONE
+#if  WINDOWS_PHONE && WINDOWS_DESKTOP
                 if (value.HasValue && value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
@@ -259,7 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets a value to indicate that an MD5 hash will be calculated and stored when uploading a blob.
         /// </summary>
         /// <value>Use <c>true</c> to calculate and store an MD5 hash when uploading a blob; otherwise, <c>false</c>.</value>
-#if WINDOWS_PHONE
+#if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? StoreBlobContentMD5
@@ -271,7 +271,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             set
             {
-#if WINDOWS_PHONE
+#if  WINDOWS_PHONE && WINDOWS_DESKTOP
                 if (value.HasValue && value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
@@ -287,7 +287,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets a value to indicate that MD5 validation will be disabled when downloading blobs.
         /// </summary>
         /// <value>Use <c>true</c> to disable MD5 validation; <c>false</c> to enable MD5 validation.</value>
-#if WINDOWS_PHONE
+#if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? DisableContentMD5Validation
@@ -299,7 +299,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             set
             {
-#if WINDOWS_PHONE
+#if  WINDOWS_PHONE && WINDOWS_DESKTOP
                 if (value.HasValue && !value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);

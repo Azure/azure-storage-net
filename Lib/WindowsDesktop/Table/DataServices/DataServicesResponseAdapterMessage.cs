@@ -65,7 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
                 return null;
             }
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
             if (headerName == "Content-Encoding")
             {
                 return this.responseHeaders["ContentEncoding"];

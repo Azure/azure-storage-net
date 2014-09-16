@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
-#if WINDOWS_DESKTOP && ! WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;

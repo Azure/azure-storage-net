@@ -731,8 +731,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         {
             static HeaderConstants()
             {
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; Windows Phone {1})", Environment.Version, Environment.OSVersion.Version);
+#elif WINDOWS_PHONE && WINDOWS_RT
+                UserAgentComment = "(Windows Runtime Phone)";
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
 #else
@@ -760,7 +762,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "4.2.1";
+            public const string UserAgentProductVersion = "4.3.0";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.

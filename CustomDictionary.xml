@@ -47,8 +47,8 @@
       <Word>EntityProperty</Word>
       <Word>Etag</Word>
       <Word>OData</Word>
-    <Word>Cors</Word>
-    <Word>MaxAgeInSeconds</Word>
+      <Word>Cors</Word>
+      <Word>MaxAgeInSeconds</Word>
     </Recognized>
     <Compound>
       <Term CompoundAlternate="TableQuery">Tablequery</Term>
@@ -65,6 +65,6 @@
     <DiscreteExceptions>
       <Term>etag</Term>
       <Term>Etag</Term>
-  </DiscreteExceptions>
+    </DiscreteExceptions>
   </Words>
 </Dictionary>

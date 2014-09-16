@@ -110,6 +110,7 @@ UpgradeLog*.XML
 
 # NuGet
 AppPackages/
+Packages/
 
 # Test Results
 TestResults/

@@ -95,7 +95,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
         internal static void ExecuteAPMMethodWithCancellation(int cancellationDelayInMS,
           ProxyBehavior[] behaviors,
           Func<IRequestOptions,

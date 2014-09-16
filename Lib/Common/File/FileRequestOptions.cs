@@ -87,7 +87,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
 
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
             modifiedOptions.DisableContentMD5Validation = true;
             modifiedOptions.StoreFileContentMD5 = false;
             modifiedOptions.UseTransactionalMD5 = false;
@@ -213,7 +213,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Gets or sets a value to calculate and send/validate content MD5 for transactions.
         /// </summary>
         /// <value>Use <c>true</c> to calculate and send/validate content MD5 for transactions; otherwise, <c>false</c>.</value>       
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? UseTransactionalMD5
@@ -225,7 +225,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             set
             {
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
                 if (value.HasValue && value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
@@ -241,7 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Gets or sets a value to indicate that an MD5 hash will be calculated and stored when uploading a file.
         /// </summary>
         /// <value>Use true to calculate and store an MD5 hash when uploading a file; otherwise, false.</value>
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? StoreFileContentMD5
@@ -253,7 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             set
             {
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
                 if (value.HasValue && value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
@@ -269,7 +269,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Gets or sets a value to indicate that MD5 validation will be disabled when downloading files.
         /// </summary>
         /// <value>Use true to disable MD5 validation; false to enable MD5 validation.</value>
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? DisableContentMD5Validation
@@ -281,7 +281,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             set
             {
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
                 if (value.HasValue && !value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
