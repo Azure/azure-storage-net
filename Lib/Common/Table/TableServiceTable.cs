@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#if WINDOWS_DESKTOP && ! WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Table.Protocol;
     using System;

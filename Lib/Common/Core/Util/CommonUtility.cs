@@ -175,7 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="val">The value of the parameter.</param>
         /// <param name="min">The minimum value for the parameter.</param>
         /// <param name="max">The maximum value for the parameter.</param>
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoOptimization)]
 #endif
         internal static void AssertInBounds<T>(string paramName, T val, T min, T max)
@@ -199,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="paramName">The name of the parameter.</param>
         /// <param name="val">The value of the parameter.</param>
         /// <param name="min">The minimum value for the parameter.</param>
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoOptimization)]
 #endif
         internal static void AssertInBounds<T>(string paramName, T val, T min)
@@ -350,7 +350,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 request.ContentLength = length;
             }
 
-#if !WINDOWS_PHONE
+#if !(WINDOWS_PHONE && WINDOWS_DESKTOP)
             // Disable the Expect 100-Continue
             request.ServicePoint.Expect100Continue = false;
 #endif

@@ -322,7 +322,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     try
                     {
                         state.ReqTimedOut = timedOut;
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
                         state.Req.Abort();
 #endif
                     }

@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
-#if WINDOWS_DESKTOP && ! WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Microsoft.WindowsAzure.Storage.Table.DataServices;
     using System;
     using System.Diagnostics.CodeAnalysis;

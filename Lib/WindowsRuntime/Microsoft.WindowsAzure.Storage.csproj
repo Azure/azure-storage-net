@@ -39,15 +39,18 @@
     <CodeAnalysisRuleSet>CodeAnalysisWindowsRuntime.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Data.Edm.Portable">
-      <HintPath>Dependencies\Microsoft.Data.Edm.Portable.dll</HintPath>
+    <Reference Include="Microsoft.Data.Edm, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.Data.Edm.5.6.2\lib\portable-net40+sl5+wp8+win8+wpa\Microsoft.Data.Edm.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Data.OData.Portable">
-      <HintPath>Dependencies\Microsoft.Data.OData.Portable.dll</HintPath>
+    <Reference Include="Microsoft.Data.OData, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.Data.OData.5.6.2\lib\portable-net40+sl5+wp8+win8+wpa\Microsoft.Data.OData.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Spatial.Portable">
-      <HintPath>Dependencies\System.Spatial.Portable.dll</HintPath>
+    <Reference Include="System.Spatial, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\System.Spatial.5.6.2\lib\portable-net40+sl5+wp8+win8+wpa\System.Spatial.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +184,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="MSSharedLibKey.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' ">
     <VisualStudioVersion>11.0</VisualStudioVersion>

@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage
     /// <summary>
     /// Represents an exception thrown by the Windows Azure storage service.
     /// </summary>
-#if !WINDOWS_RT && !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
     [Serializable]
 #endif
 
@@ -80,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
         }
 
-#if !WINDOWS_RT && !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageException"/> class with serialized data.
         /// </summary>

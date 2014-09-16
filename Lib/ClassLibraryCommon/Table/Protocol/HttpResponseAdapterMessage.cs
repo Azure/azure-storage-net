@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
             }
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
             if (headerName == "Content-Encoding")
             {
                 return this.resp.ContentEncoding;

@@ -199,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string UsingDefaultPropertyResolver = "Using the default property resolver to deserialize the entity.";
         public const string UsingUserProvidedPropertyResolver = "Using the property resolver provided via TableRequestOptions to deserialize the entity.";
 
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         public const string WindowsPhoneDoesNotSupportMD5 = "MD5 is not supported on Windows Phone";
 #endif
         // Table IQueryable Exception messages

@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
 #if WINDOWS_RT
         private CryptographicHash hash = null;
-#elif WINDOWS_PHONE
+#elif WINDOWS_PHONE && WINDOWS_DESKTOP
 
 #else
         private MD5 hash = null;
@@ -69,7 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
 #if WINDOWS_RT
                 this.hash.Append(input.AsBuffer(offset, count));
-#elif WINDOWS_PHONE
+#elif WINDOWS_PHONE && WINDOWS_DESKTOP
                 throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
 #else
                 this.hash.TransformBlock(input, offset, count, null, 0);
@@ -86,7 +86,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #if WINDOWS_RT
             IBuffer md5HashBuff = this.hash.GetValueAndReset();
             return CryptographicBuffer.EncodeToBase64String(md5HashBuff);
-#elif WINDOWS_PHONE
+#elif WINDOWS_PHONE && WINDOWS_DESKTOP
             throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
 #else
             this.hash.TransformFinalBlock(new byte[0], 0, 0);

@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (4.2.1)
+# Microsoft Azure Storage SDK for .NET (4.3.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -31,7 +31,7 @@ For the best development experience, developers should use the official Microsof
 
 - .NET Framework 4.0: As of October 2012, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4 release and above.
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
-- Windows Phone 8 for Windows Phone app development: Storage Client Libraries are available for Windows Phone applications.
+- Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
  
 ## Requirements
 
@@ -66,7 +66,7 @@ within your project you can also have them installed by the .NET package manager
 
 ### OData
 
-This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.6.0) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
+This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.6.2) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
 
 The ODataLib libraries can be downloaded directly or referenced by your code project through NuGet.  
 

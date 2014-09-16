@@ -206,7 +206,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.AreEqual(1024, file2.Properties.Length);
                 Assert.AreEqual(file.Properties.ETag, file2.Properties.ETag);
                 Assert.AreEqual(file.Properties.LastModified, file2.Properties.LastModified);
+#if WINDOWS_RT && !WINDOWS_PHONE
                 Assert.IsNull(file2.Properties.CacheControl);
+#endif
                 Assert.IsNull(file2.Properties.ContentEncoding);
                 Assert.IsNull(file2.Properties.ContentLanguage);
                 Assert.AreEqual("application/octet-stream", file2.Properties.ContentType);

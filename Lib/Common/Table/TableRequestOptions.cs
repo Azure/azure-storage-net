@@ -73,7 +73,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
             modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
             modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
-#if WINDOWS_DESKTOP || WINDOWS_PHONE
+#if !WINDOWS_RT
             modifiedOptions.PayloadFormat = (modifiedOptions.PayloadFormat 
                                                 ?? serviceClient.DefaultRequestOptions.PayloadFormat)
                                                 ?? TablePayloadFormat.Json;

@@ -347,7 +347,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             // Read this value now and not later so that the cache is either used or not used for the entire query response parsing.
             bool disablePropertyResolverCache = false;
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
             if (TableEntity.DisablePropertyResolverCache)
             {
                 disablePropertyResolverCache = TableEntity.DisablePropertyResolverCache;
@@ -445,7 +445,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 Dictionary<string, string> properties = serializer.Deserialize<Dictionary<string, string>>(reader);
                 if (operation.OperationType == TableOperationType.Retrieve)
                 {
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
                     result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx, TableEntity.DisablePropertyResolverCache);
 #else
                     // doesn't matter what is passed for disablePropertyResolverCache for windows phone because it is not read.
@@ -505,7 +505,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             if (type != null)
             {
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
                 if (!disablePropertyResolverCache)
                 {
                     propertyResolverDictionary = TableEntity.PropertyResolverCache.GetOrAdd(type, TableOperationHttpResponseParsers.CreatePropertyResolverDictionary);
@@ -650,7 +650,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             // Try to add the dictionary to the cache only if it is not a DynamicTableEntity. If DisablePropertyResolverCache is true, then just use reflection and generate dictionaries for each entity.
             if (entity.GetType() != typeof(DynamicTableEntity))
             {
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
                 if (!TableEntity.DisablePropertyResolverCache)
                 {
                     propertyResolverDictionary = TableEntity.PropertyResolverCache.GetOrAdd(entity.GetType(), TableOperationHttpResponseParsers.CreatePropertyResolverDictionary);

@@ -23,12 +23,12 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
     internal static partial class Logger
     {
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
         private static TraceSource traceSource = new TraceSource(Constants.LogSourceName);
         private static volatile bool isClosed = false;
 #endif
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
         static Logger()
         {
             AppDomain.CurrentDomain.DomainUnload += new EventHandler(Logger.AppDomainUnloadEvent);
@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if !WINDOWS_PHONE
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
         private static void Close()
         {
             Logger.isClosed = true;

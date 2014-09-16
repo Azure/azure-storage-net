@@ -23,7 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 {
     public partial class TestLogListener
     {
-#if !WINDOWS_PHONE
+#if !(WINDOWS_PHONE && WINDOWS_DESKTOP)
         private const int LogEntryFieldCount = 2;
 
         private static IList<string> requestIDs = new List<string>();

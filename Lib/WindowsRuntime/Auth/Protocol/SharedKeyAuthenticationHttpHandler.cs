@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
@@ -50,16 +51,14 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
             if (this.credentials.IsSharedKey)
             {
-                string message = this.canonicalizer.CanonicalizeHttpRequest(request, this.accountName);
-
                 StorageAccountKey accountKey = this.credentials.Key;
-
-                string signature = CryptoUtility.ComputeHmac256(accountKey.KeyValue, message);
-
                 if (!string.IsNullOrEmpty(accountKey.KeyName))
                 {
                     request.Headers.Add(Constants.HeaderConstants.KeyNameHeader, accountKey.KeyName);
                 }
+
+                string message = this.canonicalizer.CanonicalizeHttpRequest(request, this.accountName);
+                string signature = CryptoUtility.ComputeHmac256(accountKey.KeyValue, message);
 
                 request.Headers.Authorization = new AuthenticationHeaderValue(
                     this.canonicalizer.AuthorizationScheme,
