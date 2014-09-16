@@ -9,6 +9,7 @@
     <StorageSln Include=".\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj" />
     <StorageSln Include=".\Lib\WindowsRuntimeTable\Microsoft.WindowsAzure.Storage.Table.csproj" />
     <StorageSln Include=".\Lib\WindowsPhone\Microsoft.WindowsAzure.Storage.csproj" />
+    <StorageSln Include=".\Lib\WindowsPhoneRT\WindowsPhoneRT.csproj"/>
   </ItemGroup>
   
   <!-- Clean the build in all configurations -->
