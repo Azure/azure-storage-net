@@ -851,7 +851,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             Uri transformedUri = executionState.RestCMD.Credentials.TransformUri(uri);
             Logger.LogInformational(executionState.OperationContext, startLogMessage, transformedUri);
             UriQueryBuilder builder = new UriQueryBuilder(executionState.RestCMD.Builder);
-            executionState.Req = executionState.RestCMD.BuildRequestDelegate(transformedUri, builder, executionState.Cmd.ServerTimeoutInSeconds, !executionState.RestCMD.Credentials.IsSAS, executionState.OperationContext);
+
+            // Note - The service accepts both api-version and x-ms-version and therefore it is ok to add x-ms-version to all requests.
+            executionState.Req = executionState.RestCMD.BuildRequestDelegate(transformedUri, builder, executionState.Cmd.ServerTimeoutInSeconds, true, executionState.OperationContext);
             executionState.CancelDelegate = executionState.Req.Abort;
 
             // 2. Set Headers
