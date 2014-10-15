@@ -62,8 +62,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 bool shouldRetry = false;
                 TimeSpan delay = TimeSpan.Zero;
 
+                // Note - The service accepts both api-version and x-ms-version and therefore it is ok to add x-ms-version to all requests.
                 // Create a new client
-                HttpClient client = cmd.BuildClient(cmd, cmd.Handler, !cmd.Credentials.IsSAS, executionState.OperationContext);
+                HttpClient client = cmd.BuildClient(cmd, cmd.Handler, true, executionState.OperationContext);
                 client.Timeout = TimeSpan.FromMilliseconds(int.MaxValue);
 
                 do
