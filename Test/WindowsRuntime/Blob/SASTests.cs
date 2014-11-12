@@ -26,7 +26,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class SASTests : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        public SASTests()
+        {
+            TestInitialize();
+        }
+        public void Dispose()
+        {
+            TestCleanup();
+        }
+#endif
         private CloudBlobContainer testContainer;
 
         [TestInitialize]
@@ -34,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             this.testContainer = GetRandomContainerReference();
             this.testContainer.CreateAsync().AsTask().Wait();
-            
+
             if (TestBase.BlobBufferManager != null)
             {
                 TestBase.BlobBufferManager.OutstandingBufferCount = 0;
@@ -338,7 +353,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CacheControl = "no-transform",
                     ContentDisposition = "attachment",
+#if !ASPNET_K
                     ContentEncoding = "gzip",
+#endif
                     ContentLanguage = "tr,en",
                     ContentType = "text/html"
                 };
@@ -363,7 +380,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CacheControl = "no-transform",
                     ContentDisposition = "attachment",
+#if !ASPNET_K
                     ContentEncoding = "gzip",
+#endif
                     ContentLanguage = "tr,en",
                     ContentType = "text/html"
                 };

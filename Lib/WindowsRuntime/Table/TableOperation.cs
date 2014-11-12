@@ -25,16 +25,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Net;
     using System.Net.Http;
-    using System.Runtime.InteropServices.WindowsRuntime;
-    using System.Threading.Tasks;
+#if ASPNET_K
+    using System.Threading;
+#else
     using Windows.Foundation;
+    using System.Runtime.InteropServices.WindowsRuntime;
+#endif
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Represents a single table operation.
     /// </summary>
     public sealed partial class TableOperation
     {
+#if ASPNET_K
+        internal Task<TableResult> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+#else
         internal IAsyncOperation<TableResult> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
+#endif
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, client);
             operationContext = operationContext ?? new OperationContext();
@@ -90,11 +98,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new NotSupportedException();
             }
 
+#if ASPNET_K
+            return Task.Run(() => Executor.ExecuteAsync(
+                                            cmdToExecute,
+                                            modifiedOptions.RetryPolicy,
+                                            operationContext,                                                                       
+                                            cancellationToken), cancellationToken);
+#else
             return AsyncInfo.Run((cancellationToken) => Executor.ExecuteAsync(
                                                                        cmdToExecute,
                                                                        modifiedOptions.RetryPolicy,
                                                                        operationContext,
                                                                        cancellationToken));
+#endif
+
         }
 
         private static RESTCommand<TableResult> InsertImpl(TableOperation operation, CloudTableClient client, string tableName, TableRequestOptions requestOptions)

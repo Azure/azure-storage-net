@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// By default, a query will return all properties from the table entity.</remarks>
         public TableQuery<TElement> Select(IList<string> columns)
         {
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
             if (this.Expression != null)
             {
                 throw new NotSupportedException(SR.TableQueryFluentMethodNotAllowed);
@@ -96,7 +96,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", MessageId = "0#", Justification = "Reviewed.")]
         public TableQuery<TElement> Take(int? take)
         {
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
             if (this.Expression != null)
             {
                 throw new NotSupportedException(SR.TableQueryFluentMethodNotAllowed);
@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A <see cref="TableQuery"/> instance set with the filter on entities to return.</returns>
         public TableQuery<TElement> Where(string filter)
         {
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
             if (this.Expression != null)
             {
                 throw new NotSupportedException(SR.TableQueryFluentMethodNotAllowed);
@@ -125,9 +125,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             this.FilterString = filter;
             return this;
         }
-        #endregion
+#endregion
 
-        #region Impl
+#region Impl
 
         internal UriQueryBuilder GenerateQueryBuilder()
         {
@@ -198,6 +198,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return builder;
         }
-        #endregion
+#endregion
     }
 }

@@ -145,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             {
                 if (this.reader != null)
                 {
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
                     this.reader.Dispose();
 #else
                     this.reader.Close();
@@ -195,7 +195,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 yield return item;
             }
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             this.reader.Dispose();
 #else
             this.reader.Close();

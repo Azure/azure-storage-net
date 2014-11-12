@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Linq;
     using System.Xml;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
     using System.Net;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #endif
@@ -331,7 +331,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
         }
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
         /// <summary>
         /// Applies the request optimizations such as disabling buffering and 100 continue.
         /// </summary>

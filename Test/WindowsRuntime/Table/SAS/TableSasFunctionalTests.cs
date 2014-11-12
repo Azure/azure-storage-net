@@ -25,11 +25,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
 {
     [TestClass]
     public class TableSasFunctionalTests : TableTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
-        #region Locals + Ctors
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
         public TableSasFunctionalTests()
         {
+            MyTestInitialize();
         }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+        #region Locals + Ctors
 
         private TestContext testContextInstance;
 

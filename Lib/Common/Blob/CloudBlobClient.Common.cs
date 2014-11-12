@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Blob service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
         public static CloudBlobClient Create(StorageUri storageUri, StorageCredentials credentials)
         {

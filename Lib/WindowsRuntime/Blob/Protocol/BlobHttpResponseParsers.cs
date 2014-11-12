@@ -23,7 +23,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using System.Collections.Generic;
     using System.Net.Http;
 
-    internal static partial class BlobHttpResponseParsers
+#if ASPNET_K
+    public
+#else
+    internal
+#endif
+        static partial class BlobHttpResponseParsers
     {
         /// <summary>
         /// Gets the blob's properties from the response.

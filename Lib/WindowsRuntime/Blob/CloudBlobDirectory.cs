@@ -17,7 +17,12 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+#if ASPNET_K
+    using System.Threading;
+    using System.Threading.Tasks;
+#else
     using Windows.Foundation;
+#endif
 
     /// <summary>
     /// Represents a virtual directory of blobs, designated by a delimiter character.
@@ -32,7 +37,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="currentToken">A <see cref="BlobContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
+#if ASPNET_K
+        public Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken)
+#else
         public IAsyncOperation<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken)
+#endif
         {
             return this.ListBlobsSegmentedAsync(false, BlobListingDetails.None, null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
         }
@@ -50,9 +59,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
+#if ASPNET_K
+        public Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.ListBlobsSegmentedAsync(useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, CancellationToken.None);
+        }
+#else
         public IAsyncOperation<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.Container.ListBlobsSegmentedAsync(this.Prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext);
         }
+#endif
+
+#if ASPNET_K
+        /// <summary>
+        /// Returns a result segment containing a collection of blob items 
+        /// in the container.
+        /// </summary>
+        /// <param name="useFlatBlobListing">Whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory.</param>
+        /// <param name="blobListingDetails">A <see cref="BlobListingDetails"/> enumeration describing which items to include in the listing.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
+        /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
+        [DoesServiceRequest]
+        public Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.Container.ListBlobsSegmentedAsync(this.Prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken);
+        }
+#endif
     }
 }

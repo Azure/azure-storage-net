@@ -21,13 +21,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using System.Globalization;
+#else
 using Windows.Globalization;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class CloudFileShareTest : FileTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public CloudFileShareTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -234,8 +255,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudFileShareRegionalSetMetadataAsync()
         {
+#if ASPNET_K
+            CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
+#else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "sk-SK";
+#endif
 
             CloudFileShare share = GetRandomShareReference();
             try
@@ -246,7 +272,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
+#if ASPNET_K
+                CultureInfo.CurrentCulture = currentCulture;
+#else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
+#endif
                 share.DeleteIfExistsAsync().AsTask().Wait();
             }
         }

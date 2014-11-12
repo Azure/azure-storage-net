@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.IO;
     using System.Threading;
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
     using System.Threading.Tasks;
 #endif
 
@@ -47,7 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
         }
 
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K)
         /// <summary>
         /// Reads synchronously the specified content of the stream and writes it to the given output stream.
         /// </summary>
@@ -234,7 +234,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 #endif
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <summary>
         /// Asynchronously reads the entire content of the stream and writes it to the given output stream.
         /// </summary>
@@ -270,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
 
             if (executionState.OperationExpiryTime.HasValue)
-            {                
+            {
                 // Setup token for timeout
                 CancellationTokenSource cts = new CancellationTokenSource(executionState.RemainingTimeout);
                 CancellationToken tokenWithTimeout = cts.Token;
@@ -341,7 +341,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
         }
 
-#elif WINDOWS_DESKTOP
+#elif WINDOWS_DESKTOP 
         /// <summary>
         /// Asynchronously reads the entire content of the stream and writes it to the given output stream.
         /// </summary>

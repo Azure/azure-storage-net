@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Queue service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudQueueClient"/> object.</returns>
         public static CloudQueueClient Create(StorageUri storageUri, StorageCredentials credentials)
         {

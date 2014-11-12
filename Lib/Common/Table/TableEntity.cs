@@ -361,7 +361,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // properties with [IgnoreAttribute]
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             if (property.GetCustomAttribute(typeof(IgnorePropertyAttribute)) != null)
 #else
             if (Attribute.IsDefined(property, typeof(IgnorePropertyAttribute)))

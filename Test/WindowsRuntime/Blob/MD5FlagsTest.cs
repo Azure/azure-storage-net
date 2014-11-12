@@ -20,7 +20,10 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -142,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blockBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, null);
                     await blockBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
 
-                    using (IRandomAccessStreamWithContentType blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         int read;
@@ -153,7 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         while (read > 0);
                     }
 
-                    using (IRandomAccessStreamWithContentType blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         int read;
@@ -175,7 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         HttpStatusCode.OK);
                     await blockBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
 
-                    using (IRandomAccessStreamWithContentType blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         TestHelper.ExpectedException<IOException>(
@@ -191,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             "Downloading a blob with invalid MD5 should fail");
                     }
 
-                    using (IRandomAccessStreamWithContentType blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         int read;
@@ -214,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await pageBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, null);
                     await pageBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
 
-                    using (IRandomAccessStreamWithContentType blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         int read;
@@ -225,7 +228,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         while (read > 0);
                     }
 
-                    using (IRandomAccessStreamWithContentType blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         int read;
@@ -247,8 +250,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         HttpStatusCode.OK);
                     await pageBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
 
-                    using (IRandomAccessStreamWithContentType blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
+
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         TestHelper.ExpectedException<IOException>(
                             () =>
@@ -263,7 +267,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             "Downloading a blob with invalid MD5 should fail");
                     }
 
-                    using (IRandomAccessStreamWithContentType blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         int read;

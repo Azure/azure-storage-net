@@ -24,19 +24,38 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class LeaseTests : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
+{
+
+#if XUNIT
+    // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+    public LeaseTests()
     {
-        /// <summary>
-        /// The prefix to use for the current test. New containers and blobs in the root container begin with this prefix
-        /// to avoid conflicting with other tests or concurrent runs of the same test. This also allows a test to easily
-        /// clean itself up and to have a persistent recoverable state if a test fails.
-        /// </summary>
-        private string prefix;
+        TestInitialize();
+    }
+    public void Dispose()
+    {
+        TestCleanup();
+    }
+#endif
+
+    /// <summary>
+    /// The prefix to use for the current test. New containers and blobs in the root container begin with this prefix
+    /// to avoid conflicting with other tests or concurrent runs of the same test. This also allows a test to easily
+    /// clean itself up and to have a persistent recoverable state if a test fails.
+    /// </summary>
+    private string prefix;
 
         /// <summary>
         /// The client for the blob service.
@@ -1233,7 +1252,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 expectedStatusCode,
                 expectedErrorCode);
 
-            IOutputStream writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, operationContext);
+            var writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, operationContext);
             Stream stream = writeStream.AsStreamForWrite();
             await TestHelper.ExpectedExceptionAsync(
                 async () =>
@@ -1266,7 +1285,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await testBlob.FetchAttributesAsync();
             }
 
-            IOutputStream writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, null);
+            var writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, null);
             Stream stream = writeStream.AsStreamForWrite();
             stream.WriteByte(0);
             await stream.FlushAsync();
@@ -1363,7 +1382,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await (await testBlob.CreateSnapshotAsync(null /* metadata */, testAccessCondition, null /* options */, null)).DeleteAsync();
             await DownloadTextAsync(testBlob, Encoding.UTF8, testAccessCondition, null /* options */, null);
 
-            IRandomAccessStreamWithContentType readStream = await testBlob.OpenReadAsync(testAccessCondition, null /* options */, null);
+            var readStream = await testBlob.OpenReadAsync(testAccessCondition, null /* options */, null);
             Stream stream = readStream.AsStreamForRead();
             stream.ReadByte();
         }

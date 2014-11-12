@@ -42,7 +42,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="shareAddress">The absolute URI to the share.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudFileShare"/> object.</returns>
         public static CloudFileShare Create(StorageUri shareAddress, StorageCredentials credentials)
         {

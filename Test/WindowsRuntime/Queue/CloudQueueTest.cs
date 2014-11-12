@@ -22,13 +22,33 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using System.Globalization;
+#else
 using Windows.Globalization;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
     [TestClass]
     public class CloudQueueTest : QueueTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        public CloudQueueTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -309,8 +329,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task QueueRegionalSASTestAsync()
         {
+#if ASPNET_K
+            CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = new CultureInfo("it");
+#else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "it";
+#endif
 
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
@@ -352,7 +377,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
+#if ASPNET_K
+                CultureInfo.CurrentCulture = currentCulture;
+#else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
+#endif
                 queue.DeleteAsync().AsTask().Wait();
             }
         }

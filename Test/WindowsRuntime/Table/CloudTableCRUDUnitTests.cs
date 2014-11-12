@@ -27,11 +27,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     [TestClass]
     public class CloudTableCRUDUnitTests : TableTestBase
+
+#if XUNIT
+, IDisposable
+#endif
     {
-        #region Locals + Ctors
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
         public CloudTableCRUDUnitTests()
         {
+            MyTestInitialize();
         }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+        #region Locals + Ctors
 
         private TestContext testContextInstance;
 

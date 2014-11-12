@@ -27,12 +27,25 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
     [TestClass]
     public class QueueAnalyticsUnitTests : TestBase
+#if XUNIT
+, IDisposable
+#endif
     {
-        #region Locals + Ctors
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
         public QueueAnalyticsUnitTests()
         {
+            MyClassInitialize(null);
+            MyTestInitialize();
         }
-
+        public void Dispose()
+        {
+            MyClassCleanup();
+            MyTestCleanup();
+        }
+#endif
+        #region Locals + Ctors
         private TestContext testContextInstance;
 
         /// <summary>
@@ -72,7 +85,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [ClassCleanup()]
         public static void MyClassCleanup()
         {
+#if ASPNET_K
+            client.SetServicePropertiesAsync(startProperties).Wait();
+#else
             client.SetServicePropertiesAsync(startProperties).AsTask().Wait();
+#endif
         }
 
         //
@@ -635,9 +652,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             ruleManyHeaders.AllowedHeaders.Remove("x-ms-meta-toomany*");
         }
-        #endregion
+#endregion
 
-        #region Test Helpers
+#region Test Helpers
         private async Task TestCorsRulesAsync(CloudQueueClient client, OperationContext context, IList<CorsRule> corsProps)
         {
             props.Cors.CorsRules.Clear();

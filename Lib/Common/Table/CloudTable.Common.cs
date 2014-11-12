@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="tableAddress">A <see cref="StorageUri"/> containing the absolute URI to the table at both the primary and secondary locations.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudTable"/> object.</returns>
         public static CloudTable Create(StorageUri tableAddress, StorageCredentials credentials)
         {

@@ -22,7 +22,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
     using System.Collections.Generic;
     using System.Net.Http;
 
-    internal static partial class QueueHttpResponseParsers
+#if ASPNET_K
+    public
+#else
+    internal
+#endif
+        static partial class QueueHttpResponseParsers
     {
         /// <summary>
         /// Gets the approximate message count for the queue.

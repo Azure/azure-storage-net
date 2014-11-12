@@ -88,7 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 FileRequestOptions requestOptions = new FileRequestOptions()
                 {
-                    MaximumExecutionTime = TimeSpan.FromSeconds(1),
+                    MaximumExecutionTime = TimeSpan.FromMilliseconds(10),
                     RetryPolicy = new NoRetry()
                 };
 
@@ -101,7 +101,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             catch (Exception e)
             {
+#if ASPNET_K
+                Assert.AreEqual(WindowsAzureErrorCode.TimeoutException, e.InnerException.InnerException.HResult);
+#else
                 Assert.AreEqual(WindowsAzureErrorCode.HttpRequestTimeout, e.InnerException.InnerException.HResult);
+#endif
             }
             finally
             {
@@ -134,13 +138,17 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 new Task(() =>
                 {
-                    new System.Threading.ManualResetEvent(false).WaitOne(100);
+                    new System.Threading.ManualResetEvent(false).WaitOne(10);
                     cts.Cancel(false);
                 }).Start();
 
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
+#if ASPNET_K
+                    file.UploadFromStreamAsync(ms, ms.Length, null, requestOptions, null, token).Wait();
+#else
                     file.UploadFromStreamAsync(ms.AsInputStream(), null, requestOptions, null).AsTask(token).Wait();
+#endif
                 }
 
                 Assert.Fail();

@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K)
     using Microsoft.WindowsAzure.Storage.Analytics;
 #endif
     using Microsoft.WindowsAzure.Storage.Auth;
@@ -247,7 +247,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="queueStorageUri">A <see cref="StorageUri"/> specifying the Queue service endpoint or endpoints.</param>
         /// <param name="tableStorageUri">A <see cref="StorageUri"/> specifying the Table service endpoint or endpoints.</param>
         /// <param name="fileStorageUri">A <see cref="StorageUri"/> specifying the File service endpoint or endpoints.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudStorageAccount"/> instance for the specific credentials and service endpoints.</returns>
         public static CloudStorageAccount Create(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
         {
@@ -545,7 +545,7 @@ namespace Microsoft.WindowsAzure.Storage
             return new CloudBlobClient(this.BlobStorageUri, this.Credentials);
         }
 
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K)
         /// <summary>
         /// Creates an analytics client.
         /// </summary>

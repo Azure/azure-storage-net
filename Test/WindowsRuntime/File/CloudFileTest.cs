@@ -21,16 +21,37 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using System.Security.Cryptography;
+#else
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class CloudFileTest : FileTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public CloudFileTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -241,7 +262,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                 await Task.Delay(1000);
 
                 file.Properties.CacheControl = "no-transform";
+#if !ASPNET_K
                 file.Properties.ContentEncoding = "gzip";
+#endif
                 file.Properties.ContentLanguage = "tr,en";
                 file.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 file.Properties.ContentType = "text/html";
@@ -252,7 +275,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
                 await file2.FetchAttributesAsync();
                 Assert.AreEqual("no-transform", file2.Properties.CacheControl);
+#if !ASPNET_K
                 Assert.AreEqual("gzip", file2.Properties.ContentEncoding);
+#endif
                 Assert.AreEqual("tr,en", file2.Properties.ContentLanguage);
                 Assert.AreEqual("MDAwMDAwMDA=", file2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", file2.Properties.ContentType);
@@ -440,9 +465,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         public async Task CloudFileWriteRangeAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
+#if ASPNET_K
+            MD5 md5 = MD5.Create();
+            string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+#else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
             hasher.Append(buffer.AsBuffer());
             string contentMD5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
+#endif
 
             CloudFileShare share = GetRandomShareReference();
             try
@@ -637,9 +667,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         private async Task CloudFileUploadFromStreamAsync(CloudFileShare share, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
         {
             byte[] buffer = GetRandomBuffer(size);
+#if ASPNET_K
+            MD5 hasher = MD5.Create();
+            string md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
+#else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
             hasher.Append(buffer.AsBuffer(startOffset, copyLength.HasValue ? (int)copyLength.Value : buffer.Length - startOffset));
             string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
+#endif
 
             CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
             file.StreamWriteSizeInBytes = 512;

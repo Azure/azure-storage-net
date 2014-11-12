@@ -17,6 +17,25 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
+#if ASPNET_K
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    public abstract class CloudFileStream : Stream
+    {
+        /// <summary>
+        /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying file, and commits the file.
+        /// </summary>
+        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        public abstract Task CommitAsync();
+
+        internal Stream AsStreamForWrite()
+        {
+            return this;
+        }
+    }
+#else
     using Windows.Foundation;
     using Windows.Storage.Streams;
 
@@ -28,4 +47,5 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         IAsyncAction CommitAsync();
     }
+#endif
 }

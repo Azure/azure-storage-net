@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Project
   xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
   ToolsVersion="4.0"
@@ -9,7 +8,7 @@
     <StorageSln Include=".\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj" />
     <StorageSln Include=".\Lib\WindowsRuntimeTable\Microsoft.WindowsAzure.Storage.Table.csproj" />
     <StorageSln Include=".\Lib\WindowsPhone\Microsoft.WindowsAzure.Storage.csproj" />
-    <StorageSln Include=".\Lib\WindowsPhoneRT\WindowsPhoneRT.csproj"/>
+    <StorageSln Include=".\Lib\WindowsPhoneRT\Microsoft.WindowsAzure.Storage.csproj" />
   </ItemGroup>
   
   <!-- Clean the build in all configurations -->

@@ -19,13 +19,33 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobStreamTests : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public BlobStreamTests()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -64,7 +84,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
                     await blob.UploadFromStreamAsync(srcStream.AsInputStream(), null, null, null);
-                    using (IInputStream blobStream = await blob.OpenReadAsync())
+                    using (var blobStream = await blob.OpenReadAsync())
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         blobStreamForRead.Seek(2048, 0);
@@ -95,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
                 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                using (ICloudBlobStream blobStream = await blob.OpenWriteAsync(2048))
+                using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream.AsStreamForWrite();
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -104,7 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     byte[] testBuffer = new byte[2048];
                     MemoryStream dstStream = new MemoryStream(testBuffer);
                     await blob.DownloadRangeToStreamAsync(dstStream.AsOutputStream(), null, null);
-                    
+
                     MemoryStream memStream = new MemoryStream(buffer);
                     TestHelper.AssertStreamsAreEqual(memStream, dstStream);
                 }
@@ -132,9 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
                     await blob.UploadFromStreamAsync(srcStream.AsInputStream());
-
-                    IInputStream dstStream = await blob.OpenReadAsync();
-                    using (Stream dstStreamForRead = dstStream.AsStreamForRead())
+                    using (Stream dstStreamForRead = (await blob.OpenReadAsync()).AsStreamForRead())
                     {
                         TestHelper.AssertStreamsAreEqual(srcStream, dstStreamForRead);
                     }
@@ -161,14 +179,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 
-                using (ICloudBlobStream blobStream = await blob.OpenWriteAsync(2048))
+                using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream.AsStreamForWrite();
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
                     await blobStreamForWrite.FlushAsync();
                 }
 
-                using (IInputStream dstStream = await blob.OpenReadAsync())
+                using (var dstStream = await blob.OpenReadAsync())
                 {
                     Stream dstStreamForRead = dstStream.AsStreamForRead();
                     MemoryStream memoryStream = new MemoryStream(buffer);
@@ -197,7 +215,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
 
                 MemoryStream memoryStream = new MemoryStream(buffer);
-                using (ICloudBlobStream blobStream = await blob.OpenWriteAsync(2048))
+                using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream.AsStreamForWrite();
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -217,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blobStreamForWrite.FlushAsync();
                 }
 
-                using (IInputStream dstStream = await blob.OpenReadAsync())
+                using (var dstStream = await blob.OpenReadAsync())
                 {
                     Stream dstStreamForRead = dstStream.AsStreamForRead();
                     TestHelper.AssertStreamsAreEqual(memoryStream, dstStreamForRead);
@@ -245,7 +263,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 MemoryStream memoryStream = new MemoryStream(buffer);
-                using (IOutputStream blobStream = await blob.OpenWriteAsync(2048))
+                using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream.AsStreamForWrite();
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -288,7 +306,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.UploadFromStreamAsync(srcStream.AsInputStream());
                     bool thrown = false;
                     byte[] testBuffer = new byte[2048];
-                    using (IInputStream blobStream = await blob.OpenReadAsync())
+                    using (var blobStream = await blob.OpenReadAsync())
                     {
                         Stream blobStreamForRead = blobStream.AsStreamForRead();
                         try
@@ -311,4 +329,3 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
     }
 }
-

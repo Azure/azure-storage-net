@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("WindowsPhoneRT.Test")]
+[assembly: AssemblyProduct("Windows Azure Storage")]
 [assembly: AssemblyCopyright("Copyright © 2014 Microsoft Corp.")]
 [assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
 [assembly: AssemblyCulture("")]

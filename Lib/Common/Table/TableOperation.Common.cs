@@ -288,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Creates a new table operation that replaces the contents of
+        /// Creates a new table operation that retrieves the contents of
         /// the given entity in a table.
         /// </summary>
         /// <param name="partitionKey">A string containing the partition key of the entity to be replaced.</param>

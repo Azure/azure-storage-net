@@ -1,0 +1,27 @@
+﻿{
+    "version" : "1.0.0.0",
+    "dependencies": {
+	"Xunit.KRunner": "1.0.0-beta1-*"
+    },
+
+    "commands": {
+        "test": "Xunit.KRunner"
+    },
+
+    "frameworks": {
+        "aspnet50": {
+            "frameworkAssemblies": {
+            }
+        },
+        "aspnetcore50": {
+            "dependencies": {
+                "System.Runtime": "4.0.20-beta-*"
+            }
+        }
+    },
+
+    "compilationOptions": {
+        "define": [ "XUNIT" ]
+    }
+
+}

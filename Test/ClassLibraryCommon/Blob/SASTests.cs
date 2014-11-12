@@ -597,7 +597,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 OperationContext apiVersionCheckContext = new OperationContext();
                 apiVersionCheckContext.SendingRequest += (sender, e) =>
                 {
-                    Assert.IsNull(e.Request.Headers.Get("x-ms-version"));
                     Assert.IsTrue(e.Request.RequestUri.Query.Contains("api-version"));
                 };
 

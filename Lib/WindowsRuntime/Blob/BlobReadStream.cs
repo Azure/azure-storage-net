@@ -22,12 +22,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+#if !ASPNET_K
     using Windows.Storage.Streams;
+#endif
 
     /// <summary>
     /// Provides an input stream to read a given blob resource.
     /// </summary>
-    internal sealed class BlobReadStream : BlobReadStreamBase, IContentTypeProvider
+    internal sealed class BlobReadStream : BlobReadStreamBase
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BlobReadStream"/> class.
