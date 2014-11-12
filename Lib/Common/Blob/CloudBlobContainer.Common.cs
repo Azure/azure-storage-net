@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="containerAddress">A <see cref="System.Uri"/> object specifying the absolute URI to the container.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
         public static CloudBlobContainer Create(StorageUri containerAddress, StorageCredentials credentials)
         {

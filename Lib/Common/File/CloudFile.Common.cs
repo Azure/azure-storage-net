@@ -53,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="fileAbsoluteUri">The absolute URI to the file.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudFile"/> object.</returns>
         public static CloudFile Create(StorageUri fileAbsoluteUri, StorageCredentials credentials)
         {

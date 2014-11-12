@@ -21,7 +21,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;

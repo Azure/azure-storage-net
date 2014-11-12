@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new Uri("http://" + AccountName + FileService + EndpointSuffix),
                 new Uri("http://" + AccountName + SecondarySuffix + FileService + EndpointSuffix));
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             CloudStorageAccount account = CloudStorageAccount.Create(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);
 #else
             CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);

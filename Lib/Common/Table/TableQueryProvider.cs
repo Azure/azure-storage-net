@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K)
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     using Microsoft.WindowsAzure.Storage.Core;

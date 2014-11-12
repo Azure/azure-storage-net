@@ -25,15 +25,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Collections.Generic;
     using System.Net;
+#if ASPNET_K
+    using System.Threading;
+#else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
+#endif
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Represents a batch operation on a table.
     /// </summary>
     public sealed partial class TableBatchOperation : IList<TableOperation>
     {
+#if ASPNET_K
+        internal Task<IList<TableResult>> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+#else
         internal IAsyncOperation<IList<TableResult>> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
+#endif
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, client);
             operationContext = operationContext ?? new OperationContext();
@@ -46,11 +55,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<IList<TableResult>> cmdToExecute = BatchImpl(this, client, tableName, modifiedOptions);
 
+#if ASPNET_K
+            return Task.Run(async () => await Executor.ExecuteAsync(
+                                                            cmdToExecute,
+                                                            modifiedOptions.RetryPolicy,
+                                                            operationContext,
+                                                            cancellationToken), cancellationToken);
+#else
             return AsyncInfo.Run(async (cancellationToken) => await Executor.ExecuteAsync(
                                                                        cmdToExecute,
                                                                        modifiedOptions.RetryPolicy,
                                                                        operationContext,
                                                                        cancellationToken));
+#endif
         }
 
         private static RESTCommand<IList<TableResult>> BatchImpl(TableBatchOperation batch, CloudTableClient client, string tableName, TableRequestOptions requestOptions)

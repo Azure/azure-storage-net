@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.IO;
     using System.Net;
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
     using System.Net.Http;
 #endif
 
@@ -65,16 +65,19 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             get { return this.requestResults; }
         }
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         public HttpClientHandler Handler = null;
 #endif
 
         // Delegate that will be executed in the event of an Exception after signing.
         public Action<StorageCommandBase<T>, Exception, OperationContext> RecoveryAction = null;
 
+#if ASPNET_K
+        public Func<Stream, HttpResponseMessage, string, StorageExtendedErrorInformation> ParseError = null;
+#else
         // Delegate that will be executed in the event of a failure.
         public Func<Stream, HttpWebResponse, string, StorageExtendedErrorInformation> ParseError = null;
-
+#endif
         // Delegate that will be executed in the event of a failure while using the WCF Data Services Client.
         public Func<Stream, IDictionary<string, string>, string, StorageExtendedErrorInformation> ParseDataServiceError = null;
     }

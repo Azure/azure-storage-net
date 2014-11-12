@@ -233,6 +233,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string sigendPermissions = null;
             string signedIdentifier = null;
             string signedVersion = null;
+            string signedKey = null;
             string cacheControl = null;
             string contentType = null;
             string contentEncoding = null;
@@ -272,6 +273,11 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 
                     case Constants.QueryConstants.SignedIdentifier:
                         signedIdentifier = parameter.Value;
+                        sasParameterFound = true;
+                        break;
+
+                    case Constants.QueryConstants.SignedKey:
+                        signedKey = parameter.Value;
                         sasParameterFound = true;
                         break;
 
@@ -359,6 +365,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIdentifier, signedIdentifier);
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, signedVersion);
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, signedKey);
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.Signature, signature);
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.CacheControl, cacheControl);
                 AddEscapedIfNotNull(builder, Constants.QueryConstants.ContentType, contentType);

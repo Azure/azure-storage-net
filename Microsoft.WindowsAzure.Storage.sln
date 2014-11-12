@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{CE1EB2B6-0DA8-43D4-A2E1-001804697009}"
 	ProjectSection(SolutionItems) = preProject
@@ -42,9 +42,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WindowsRuntime", "WindowsRu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.WindowsAzure.StoragePhone81.Test", "Test\WindowsPhone81\Microsoft.WindowsAzure.StoragePhone81.Test.csproj", "{5AD650DA-6FCE-413F-B5E5-D6D436359853}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsPhoneRT", "Lib\WindowsPhoneRT\WindowsPhoneRT.csproj", "{008D78B8-5C78-4BD7-9779-D2A6B2D35091}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WindowsPhoneRuntime", "WindowsPhoneRuntime", "{28E2E0D3-7EA3-4A92-BF2C-02D021D09F51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsPhoneRT.Test", "Test\WindowsPhoneRT.Test\WindowsPhoneRT.Test.csproj", "{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.WindowsAzure.Storage", "Lib\WindowsPhoneRT\Microsoft.WindowsAzure.Storage.csproj", "{008D78B8-5C78-4BD7-9779-D2A6B2D35091}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.WindowsAzure.Storage.PhoneRT.Test", "Test\WindowsPhoneRT.Test\Microsoft.WindowsAzure.Storage.PhoneRT.Test.csproj", "{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -225,7 +227,9 @@ Global
 		{008D78B8-5C78-4BD7-9779-D2A6B2D35091}.Release|x64.ActiveCfg = Release|Any CPU
 		{008D78B8-5C78-4BD7-9779-D2A6B2D35091}.Release|x86.ActiveCfg = Release|Any CPU
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|ARM.ActiveCfg = Debug|x86
+		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|ARM.ActiveCfg = Debug|ARM
+		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|ARM.Build.0 = Debug|ARM
+		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|ARM.Deploy.0 = Debug|ARM
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|Mixed Platforms.Build.0 = Debug|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|Mixed Platforms.Deploy.0 = Debug|x86
@@ -234,7 +238,9 @@ Global
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|x86.Build.0 = Debug|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Debug|x86.Deploy.0 = Debug|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|Any CPU.ActiveCfg = Release|x86
-		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|ARM.ActiveCfg = Release|x86
+		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|ARM.ActiveCfg = Release|ARM
+		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|ARM.Build.0 = Release|ARM
+		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|ARM.Deploy.0 = Release|ARM
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|Mixed Platforms.ActiveCfg = Release|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|Mixed Platforms.Build.0 = Release|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|Mixed Platforms.Deploy.0 = Release|x86
@@ -263,7 +269,8 @@ Global
 		{05A53D9E-8EBD-4F36-8D10-EA070FC3AB8C} = {CD7D43DF-B62D-40B1-927C-AEE326941FEA}
 		{860430A0-3485-4EC2-A7ED-DFEFF1B62F6E} = {CD7D43DF-B62D-40B1-927C-AEE326941FEA}
 		{5AD650DA-6FCE-413F-B5E5-D6D436359853} = {05A53D9E-8EBD-4F36-8D10-EA070FC3AB8C}
-		{008D78B8-5C78-4BD7-9779-D2A6B2D35091} = {A9DE5778-CF31-4C30-B523-A2607118CD5A}
+		{28E2E0D3-7EA3-4A92-BF2C-02D021D09F51} = {CE1EB2B6-0DA8-43D4-A2E1-001804697009}
+		{008D78B8-5C78-4BD7-9779-D2A6B2D35091} = {28E2E0D3-7EA3-4A92-BF2C-02D021D09F51}
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01} = {05A53D9E-8EBD-4F36-8D10-EA070FC3AB8C}
 	EndGlobalSection
 EndGlobal

@@ -19,9 +19,12 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.IO;
 using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
@@ -50,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 using (MemoryStream wholeFile = new MemoryStream(buffer))
                 {
-                    IRandomAccessStreamWithContentType readStream = await file.OpenReadAsync();
+                    var readStream = await file.OpenReadAsync();
                     using (Stream fileStream = readStream.AsStreamForRead())
                     {
                         TestHelper.AssertStreamsAreEqual(wholeFile, fileStream);
@@ -86,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync(null, null, opContext))
+                using (var fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
                     Stream fileStreamForRead = fileStream.AsStreamForRead();
                     await fileStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
@@ -99,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync(null, null, opContext))
+                using (var fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
                     Stream fileStreamForRead = fileStream.AsStreamForRead();
                     long length = fileStreamForRead.Length;
@@ -140,6 +143,18 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 await operation();
             }
+#if ASPNET_K
+            catch (Exception ex)
+            {
+                Assert.AreEqual((int)expectedStatusCode, ((StorageException)ex).RequestInformation.HttpStatusCode, "Http status code is unexpected.");
+                if (!string.IsNullOrEmpty(requestErrorCode))
+                {
+                    Assert.IsNotNull(operationContext.LastResult.ExtendedErrorInformation);
+                    Assert.AreEqual(requestErrorCode, operationContext.LastResult.ExtendedErrorInformation.ErrorCode);
+                }
+                return;
+            }
+#else
             catch (IOException ex)
             {
                 Assert.AreEqual((int)expectedStatusCode, ((StorageException)ex.InnerException).RequestInformation.HttpStatusCode, "Http status code is unexpected.");
@@ -150,17 +165,27 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
                 return;
             }
+#endif
 
             Assert.Fail("No exception received while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
 
+#if ASPNET_K
+        private static async Task<uint> FileReadStreamSeekAndCompareAsync(Stream fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
+#else
         private static async Task<uint> FileReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
+#endif
         {
             byte[] testBuffer = new byte[readSize];
 
+#if ASPNET_K
+            int actualReadSize = await fileStream.ReadAsync(testBuffer, 0, (int)readSize);
+            Assert.AreEqual(expectedReadCount, actualReadSize);
+#else
             IBuffer testBufferAsIBuffer = testBuffer.AsBuffer();
             await fileStream.ReadAsync(testBufferAsIBuffer, readSize, InputStreamOptions.None);
             Assert.AreEqual(expectedReadCount, testBufferAsIBuffer.Length);
+#endif
 
             long bufferOffset = (long)offset;
             for (int i = 0; i < expectedReadCount; i++, bufferOffset++)
@@ -171,7 +196,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             return expectedReadCount;
         }
 
+#if ASPNET_K
+        private static async Task<int> FileReadStreamSeekTestAsync(Stream fileStream, long streamReadSize, byte[] bufferToCompare)
+#else
         private static async Task<int> FileReadStreamSeekTestAsync(IRandomAccessStreamWithContentType fileStream, long streamReadSize, byte[] bufferToCompare)
+#endif
         {
             int attempts = 1;
             ulong position = 0;
@@ -205,6 +234,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.AreEqual(position, fileStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             fileStream.Seek(position);
+#if ASPNET_K
+            //don't know why adding these two line will pass, but this this the same as the desktop test
+            Assert.AreEqual(position, fileStream.Position);
+            position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 512);
+#endif
             Assert.AreEqual(position, fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 1024);
             attempts++;
@@ -246,7 +280,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync(null, null, opContext))
+                using (var fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
                     int attempts = await FileReadStreamSeekTestAsync(fileStream, file.StreamMinimumReadSizeInBytes, buffer);
                     TestHelper.AssertNAttempts(opContext, attempts);

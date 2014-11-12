@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.WindowsAzure.Storage</RootNamespace>
-    <AssemblyName>WindowsPhoneRT.Test</AssemblyName>
+    <AssemblyName>Microsoft.WindowsAzure.Storage.Test</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
@@ -36,8 +36,8 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
     <DelaySign>true</DelaySign>
-	<OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE;NETFX_CORE;WINDOWS_PHONE;WINDOWS_RT</DefineConstants>
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE;NETFX_CORE;WINDOWS_PHONE;WINDOWS_RT;SIGN</DefineConstants>
     <Optimize>true</Optimize>
     <NoWarn>;2008</NoWarn>
     <DebugType>pdbonly</DebugType>
@@ -57,8 +57,11 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|ARM'">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>true</DelaySign>
     <OutputPath>bin\ARM\Release\</OutputPath>
-    <DefineConstants>TRACE;NETFX_CORE;WINDOWS_PHONE;WINDOWS_RT</DefineConstants>
+    <DefineConstants>TRACE;NETFX_CORE;WINDOWS_PHONE;WINDOWS_RT;SIGN</DefineConstants>
     <Optimize>true</Optimize>
     <NoWarn>;2008</NoWarn>
     <DebugType>pdbonly</DebugType>
@@ -139,9 +142,9 @@
     <Content Include="Assets\WideLogo.scale-240.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lib\WindowsPhoneRT\WindowsPhoneRT.csproj">
+    <ProjectReference Include="..\..\Lib\WindowsPhoneRT\Microsoft.WindowsAzure.Storage.csproj">
       <Project>{008d78b8-5c78-4bd7-9779-d2a6b2d35091}</Project>
-      <Name>WindowsPhoneRT</Name>
+      <Name>Microsoft.WindowsAzure.Storage</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

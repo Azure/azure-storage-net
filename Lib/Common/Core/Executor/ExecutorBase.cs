@@ -24,6 +24,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+#if ASPNET_K
+    using System.Net.Http;
+#endif
 
     internal abstract class ExecutorBase
     {
@@ -49,6 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             executionState.ExceptionRef = null;
 
             executionState.Cmd.CurrentResult = new RequestResult() { StartTime = DateTime.Now };
+
             lock (executionState.OperationContext.RequestResults)
             {
                 executionState.OperationContext.RequestResults.Add(executionState.Cmd.CurrentResult);
@@ -150,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         private static RequestEventArgs GenerateRequestEventArgs<T>(ExecutionState<T> executionState)
         {
             RequestEventArgs args = new RequestEventArgs(executionState.Cmd.CurrentResult);
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             args.RequestUri = executionState.Req.RequestUri;
 #else
             args.Request = executionState.Req;
@@ -193,6 +197,22 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         }
 #endif
 
+#if ASPNET_K
+        internal static StorageException TranslateExceptionBasedOnParseError(Exception ex, RequestResult currentResult, HttpResponseMessage response, Func<Stream, HttpResponseMessage, string, StorageExtendedErrorInformation> parseError)
+        {
+            if (parseError != null)
+            {
+                return StorageException.TranslateException(
+                    ex,
+                    currentResult,
+                    (stream) => parseError(stream, response, null), response);
+            }
+            else
+            {
+               return StorageException.TranslateException(ex, currentResult, null, response);
+            }
+        }
+#else
         internal static StorageException TranslateExceptionBasedOnParseError(Exception ex, RequestResult currentResult, HttpWebResponse response, Func<Stream, HttpWebResponse, string, StorageExtendedErrorInformation> parseError)
         {
             if (parseError != null)
@@ -204,9 +224,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             }
             else
             {
-               return StorageException.TranslateException(ex, currentResult, null);
+                return StorageException.TranslateException(ex, currentResult, null);
             }
         }
+#endif
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         internal static StorageException TranslateDataServiceExceptionBasedOnParseError(Exception ex, RequestResult currentResult, Func<Stream, IDictionary<string, string>, string, StorageExtendedErrorInformation> parseDataServiceError)

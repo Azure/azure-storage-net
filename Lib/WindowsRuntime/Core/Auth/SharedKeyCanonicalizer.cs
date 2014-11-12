@@ -78,6 +78,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                 {
                     canonicalizedString.AppendCanonicalizedElement(null);  
                 }
+#elif ASPNET_K && ASPNETCORE50
+                if (request.Method == HttpMethod.Put)
+                {
+                    canonicalizedString.AppendCanonicalizedElement("0");
+                }
+                else
+                {
+                    canonicalizedString.AppendCanonicalizedElement(null);
+                }
 #else
                 if (request.Method == HttpMethod.Put || request.Method == HttpMethod.Delete)
                 {

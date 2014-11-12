@@ -27,11 +27,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
     [TestClass]
     public class BlobAnalyticsUnitTests : TestBase
+#if XUNIT
+, IDisposable
+#endif
     {
-        #region Locals + Ctors
+
+#if XUNIT
         public BlobAnalyticsUnitTests()
         {
+            MyClassInitialize(null);
+            MyTestInitialize();
         }
+        public void Dispose()
+        {
+            MyClassCleanup();
+            MyTestCleanup();
+        }
+#endif
+        #region Locals + Ctors
 
         private TestContext testContextInstance;
 

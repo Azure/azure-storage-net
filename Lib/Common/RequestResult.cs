@@ -70,7 +70,7 @@ namespace Microsoft.WindowsAzure.Storage
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Etag", Justification = "Reviewed: Etag can be used for identifier names.")]
         public string Etag { get; internal set; }
 
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K)
         /// <summary>
         /// The number of bytes read from the response body for the given request
         /// </summary>
@@ -112,14 +112,14 @@ namespace Microsoft.WindowsAzure.Storage
 
             set
             {
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
                 this.ExceptionInfo = (value != null) ? new ExceptionInfo(value) : null;            
 #endif
                 this.exception = value;
             }
         }
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         public DateTimeOffset StartTime { get; internal set; }
 
         public DateTimeOffset EndTime { get; internal set; }
@@ -215,7 +215,7 @@ namespace Microsoft.WindowsAzure.Storage
             this.ContentMd5 = CommonUtility.ReadElementAsString("ContentMd5", reader);
             this.Etag = CommonUtility.ReadElementAsString("Etag", reader);
             this.RequestDate = CommonUtility.ReadElementAsString("RequestDate", reader);
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             this.StartTime = DateTimeOffset.Parse(CommonUtility.ReadElementAsString("StartTime", reader), CultureInfo.InvariantCulture);
             this.EndTime = DateTimeOffset.Parse(CommonUtility.ReadElementAsString("EndTime", reader), CultureInfo.InvariantCulture);
 #else
@@ -225,7 +225,7 @@ namespace Microsoft.WindowsAzure.Storage
             this.ExtendedErrorInformation = new StorageExtendedErrorInformation();
             this.ExtendedErrorInformation.ReadXml(reader);
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             this.ExceptionInfo = ExceptionInfo.ReadFromXMLReader(reader);
 #endif
             // End request Result
@@ -276,7 +276,7 @@ namespace Microsoft.WindowsAzure.Storage
                 writer.WriteFullEndElement();
             }
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             // Exception
             if (this.ExceptionInfo != null)
             {

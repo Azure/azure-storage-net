@@ -19,15 +19,34 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.IO;
 using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobReadStreamTest : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public BlobReadStreamTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -71,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    using (IInputStream blobStream = await blob.OpenReadAsync())
+                    using (var blobStream = await blob.OpenReadAsync())
                     {
                         await TestHelper.AssertStreamsAreEqualAsync(wholeBlob.AsInputStream(), blobStream);
                     }
@@ -105,8 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    IRandomAccessStreamWithContentType readStream = await blob.OpenReadAsync();
-                    using (Stream blobStream = readStream.AsStreamForRead())
+                    using (Stream blobStream = (await blob.OpenReadAsync()).AsStreamForRead())
                     {
                         TestHelper.AssertStreamsAreEqual(wholeBlob, blobStream);
                     }
@@ -141,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream.AsStreamForRead();
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
@@ -154,7 +172,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream.AsStreamForRead();
                     long length = blobStreamForRead.Length;
@@ -204,7 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream.AsStreamForRead();
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
@@ -217,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream.AsStreamForRead();
                     long length = blobStreamForRead.Length;
@@ -244,13 +262,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#if ASPNET_K
+        private static async Task<uint> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
+#else
+
         private static async Task<uint> BlobReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
+#endif
         {
             byte[] testBuffer = new byte[readSize];
 
+#if ASPNET_K
+            int actualReadSize = await blobStream.ReadAsync(testBuffer, 0, (int) readSize);
+            Assert.AreEqual(expectedReadCount, actualReadSize);
+#else
             IBuffer testBufferAsIBuffer = testBuffer.AsBuffer();
             await blobStream.ReadAsync(testBufferAsIBuffer, readSize, InputStreamOptions.None);
             Assert.AreEqual(expectedReadCount, testBufferAsIBuffer.Length);
+#endif
 
             long bufferOffset = (long)offset;
             for (int i = 0; i < expectedReadCount; i++, bufferOffset++)
@@ -261,7 +289,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return expectedReadCount;
         }
 
+#if ASPNET_K
+        private static async Task<int> BlobReadStreamSeekTestAsync(Stream blobStream, long streamReadSize, byte[] bufferToCompare)
+#else
+
         private static async Task<int> BlobReadStreamSeekTestAsync(IRandomAccessStreamWithContentType blobStream, long streamReadSize, byte[] bufferToCompare)
+#endif
         {
             int attempts = 1;
             ulong position = 0;
@@ -295,6 +328,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Assert.AreEqual(position, blobStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             blobStream.Seek(position);
+#if ASPNET_K
+            //don't know why adding these two line will pass, but this this the same as the desktop test
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 512);
+#endif
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             attempts++;
@@ -336,7 +374,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
                     TestHelper.AssertNAttempts(opContext, attempts);
@@ -370,7 +408,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (IRandomAccessStreamWithContentType blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
                     TestHelper.AssertNAttempts(opContext, attempts);

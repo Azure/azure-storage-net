@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
     using System;
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
     using System.Globalization;
     using System.IO;
     using System.Net.Http;
@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
     internal class Exceptions
     {
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         internal async static Task<StorageException> PopulateStorageExceptionFromHttpResponseMessage(HttpResponseMessage response, RequestResult currentResult)
         {
             if (!response.IsSuccessStatusCode)
@@ -91,7 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             };
         }
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
         internal static StorageException GenerateCancellationException(RequestResult res, Exception inner)
         {
             if (res != null)

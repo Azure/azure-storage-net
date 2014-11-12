@@ -24,12 +24,14 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+#if !ASPNET_K
     using Windows.Storage.Streams;
+#endif
 
     /// <summary>
     /// Provides an input stream to read a given file resource.
     /// </summary>
-    internal sealed class FileReadStream : FileReadStreamBase, IContentTypeProvider
+    internal sealed class FileReadStream : FileReadStreamBase
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="FileReadStream"/> class.

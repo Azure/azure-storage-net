@@ -78,7 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAbsoluteUri">The absolute URI to the blob. The service assumes this is the URI for the blob in the primary location.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
         public static CloudPageBlob Create(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
         {

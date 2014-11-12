@@ -1,0 +1,51 @@
+﻿{
+    "version": "4.3.1.0",
+    "dependencies": {
+        "Xunit.KRunner": "1.0.0-beta1-*",
+        "xunit.core": "2.0.0-aspnet-beta1",
+        "Microsoft.WindowsAzure.Storage": "",
+        "XUnitForMsTest": ""
+    },
+
+    "commands": {
+        "test": "Xunit.KRunner"
+    },
+
+    "frameworks": {
+        "aspnet50": {
+            "frameworkAssemblies": {
+                "System.Net.Http": "",
+                "System.ServiceModel": "",
+                "System.Linq": ""
+            }
+        },
+        "aspnetcore50": {
+            "dependencies": {
+                "System.Runtime": "4.0.20-beta-*"
+            }
+        }
+    },
+
+    "compilationOptions": {
+        "define": [ "ASPNET_K", "XUNIT" ]
+    },
+
+    "code": [
+        "**/*.cs",
+        "../../Common/*.cs",
+        "../../Common/Blob/*.cs",
+        "../../Common/Core/*.cs",
+        "../../Common/File/*.cs",
+        "../../Common/Queue/*.cs",
+        "../../Common/Table/*.cs",
+        "../../Common/Table/Entities/*.cs",
+        "../../Common/TestConfigProcess/**/*.cs",
+
+        // do not include "../../WindowsRuntime/Core/*.cs" as they are overriden by *.cs in the project directory
+        "../../WindowsRuntime/Core/**/*.cs",
+        "../../WindowsRuntime/Blob/**/*.cs",
+        "../../WindowsRuntime/Blob/**/*.cs",
+        "../../WindowsRuntime/File/**/*.cs",
+        "../../WindowsRuntime/Table/**/*.cs"
+    ]
+}

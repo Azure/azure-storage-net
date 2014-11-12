@@ -15,6 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if !ASPNET_K
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;
@@ -196,3 +197,4 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
     }
 }
+#endif

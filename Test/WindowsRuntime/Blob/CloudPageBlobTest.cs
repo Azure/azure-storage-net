@@ -21,16 +21,37 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using System.Security.Cryptography;
+#else
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudPageBlobTest : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        public CloudPageBlobTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -376,7 +397,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob.Properties.CacheControl = "no-transform";
                 blob.Properties.ContentDisposition = "attachment";
+#if !ASPNET_K
+                //setting this will cause HttpClient DownloadToStreamAsync error due to ASPNET CLR HttpClient's behavior
                 blob.Properties.ContentEncoding = "gzip";
+#endif
                 blob.Properties.ContentLanguage = "tr,en";
                 blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 blob.Properties.ContentType = "text/html";
@@ -388,7 +412,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
                 Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
+#if !ASPNET_K
+                //HttpClient will not set this property after unzip the content automatically
                 Assert.AreEqual("gzip", blob2.Properties.ContentEncoding);
+#endif
                 Assert.AreEqual("tr,en", blob2.Properties.ContentLanguage);
                 Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", blob2.Properties.ContentType);
@@ -400,6 +427,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         DisableContentMD5Validation = true,
                     };
+
                     await blob3.DownloadToStreamAsync(stream.AsOutputStream(), null, options, null);
                 }
                 AssertAreEqual(blob2.Properties, blob3.Properties);
@@ -616,9 +644,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudPageBlobWritePagesAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
+#if ASPNET_K
+            MD5 md5 = MD5.Create();
+            string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+#else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
             hasher.Append(buffer.AsBuffer());
             string contentMD5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
+#endif
 
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -681,7 +714,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         await blob.DownloadToStreamAsync(blobData.AsOutputStream());
                         Assert.AreEqual(resultingData.Length, blobData.Length);
-
                         Assert.IsTrue(blobData.ToArray().SequenceEqual(resultingData.ToArray()));
                     }
                 }
@@ -820,9 +852,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string md5 = string.Empty;
             if (testMd5)
             {
+#if ASPNET_K
+                MD5 hasher = MD5.Create();
+                md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
+#else
                 CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
                 hasher.Append(buffer.AsBuffer(startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
                 md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset()); 
+#endif
             }
 
             CloudPageBlob blob = container.GetPageBlobReference("blob1");
@@ -841,7 +878,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     };
                     if (copyLength.HasValue)
                     {
-                        await blob.UploadFromStreamAsync(sourceStream.AsInputStream(), copyLength.Value, accessCondition, options, operationContext); 
+                        await blob.UploadFromStreamAsync(sourceStream.AsInputStream(), copyLength.Value, accessCondition, options, operationContext);
                     }
                     else
                     {
@@ -885,6 +922,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 await blob.UploadFromStreamAsync(originalData.AsInputStream());
+
                 Assert.IsFalse(blob.IsSnapshot);
                 Assert.IsNull(blob.SnapshotTime, "Root blob has SnapshotTime set");
                 Assert.IsFalse(blob.SnapshotQualifiedUri.Query.Contains("snapshot"));

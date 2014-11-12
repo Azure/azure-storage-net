@@ -29,7 +29,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
     [TestClass]
     public class CloudBlobDirectoryTest : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        public CloudBlobDirectoryTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         string[] Delimiters = new string[] { ":", "$", "@", "-", "%", "/", "|", "$$", "::", "//" };
 
         private async Task<bool> CloudBlobDirectorySetupWithDelimiterAsync(CloudBlobContainer container, string delimiter = "/")
@@ -232,6 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         Assert.IsTrue(simpleList4.Count == 2);
 
                         IListBlobItem item41 = simpleList4.ElementAt(0);
+
                         Assert.IsTrue(item41.Uri.Equals(container.Uri + "/TopDir1" + delimiter + "MidDir2" + delimiter + "EndDir1" + delimiter + "EndBlob1"));
 
                         IListBlobItem item42 = simpleList4.ElementAt(1);
@@ -424,6 +441,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
+
                     container.DeleteIfExistsAsync().AsTask().Wait();
                 }
             }

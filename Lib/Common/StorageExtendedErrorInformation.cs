@@ -83,7 +83,7 @@ namespace Microsoft.WindowsAzure.Storage
 #else
         public
 #endif
- static StorageExtendedErrorInformation ReadFromStream(Stream inputStream)
+        static StorageExtendedErrorInformation ReadFromStream(Stream inputStream)
         {
             CommonUtility.AssertNotNull("inputStream", inputStream);
 
@@ -117,7 +117,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="response">The web response.</param>
         /// <param name="contentType">The response Content-Type.</param>
         /// <returns>The error details.</returns>
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K)
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpWebResponse response, string contentType)
         {
             CommonUtility.AssertNotNull("inputStream", inputStream);
@@ -160,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="responseMessage">The IODataResponseMessage to parse.</param>
         /// <returns>The error details.</returns>
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K)
         public static StorageExtendedErrorInformation ReadAndParseExtendedError(IODataResponseMessage responseMessage)
         {
             StorageExtendedErrorInformation storageExtendedError = null;
@@ -203,7 +203,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
-        #region IXmlSerializable
+#region IXmlSerializable
 
         /// <summary>
         /// Generates a serializable <see cref="StorageExtendedErrorInformation"/> object from its XML representation.
@@ -214,7 +214,7 @@ namespace Microsoft.WindowsAzure.Storage
 #else
         public
 #endif
- void ReadXml(XmlReader reader)
+        void ReadXml(XmlReader reader)
         {
             CommonUtility.AssertNotNull("reader", reader);
 
@@ -302,6 +302,6 @@ namespace Microsoft.WindowsAzure.Storage
             writer.WriteEndElement();
         }
 
-        #endregion
+#endregion
     }
 }

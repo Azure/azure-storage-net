@@ -22,15 +22,34 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class CloudFileClientTest : FileTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public CloudFileClientTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -277,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = rootDirectory.GetFileReference("file");
                 file.StreamMinimumReadSizeInBytes = 1024 * 1024;
 
-                using (ICloudFileStream fileStream = await file.OpenWriteAsync(8 * 1024 * 1024))
+                using (var fileStream = await file.OpenWriteAsync(8 * 1024 * 1024))
                 {
                     Stream fos = fileStream.AsStreamForWrite();
 
@@ -299,7 +318,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await fileStream.CommitAsync();
                 }
 
-                using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync())
+                using (var fileStream = await file.OpenReadAsync())
                 {
                     Stream fis = fileStream.AsStreamForRead();
 

@@ -22,13 +22,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using System.Globalization;
+using System.Threading;
+#else
 using Windows.Globalization;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobContainerTest : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        public CloudBlobContainerTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -410,8 +432,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlobContainerRegionalSetMetadataAsync()
         {
+#if ASPNET_K
+            CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
+#else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "sk-SK";
+#endif
 
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -422,8 +449,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
                 container.DeleteIfExistsAsync().AsTask().Wait();
+#if ASPNET_K
+                CultureInfo.CurrentCulture = currentCulture;
+#else
+                ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
+#endif
             }
         }
 

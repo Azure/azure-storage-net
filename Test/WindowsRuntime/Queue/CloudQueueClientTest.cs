@@ -28,7 +28,22 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 {
     [TestClass]
     public class CloudQueueClientTest : QueueTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        public CloudQueueClientTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
