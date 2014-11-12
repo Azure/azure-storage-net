@@ -202,6 +202,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
         public const string WindowsPhoneDoesNotSupportMD5 = "MD5 is not supported on Windows Phone";
 #endif
+
         // Table IQueryable Exception messages
         public const string ALinqCouldNotConvert = "Could not convert constant {0} expression to string.";
         public const string ALinqMethodNotSupported = "The method '{0}' is not supported.";

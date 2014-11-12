@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Globalization;
     using System.Linq;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
     using System.Net;
 #endif
 
@@ -99,7 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             return dateTime.UtcDateTime.ToString("R", CultureInfo.InvariantCulture);
         }
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <summary>
         /// Combine all the header values in the IEnumerable to a single comma separated string.
         /// </summary>
@@ -118,7 +118,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 #endif
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
         /// <summary>
         /// Try to get the value of the specified header name.
         /// </summary>

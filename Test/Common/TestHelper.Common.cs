@@ -50,6 +50,23 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 return e;
             }
+#if ASPNET_K
+            catch (AggregateException ex)
+            {
+                ex = ex.Flatten();
+                if (ex.InnerExceptions.Count > 1)
+                {
+                    Assert.Fail("Multiple exceptions {0} for operation: {1}", ex.GetType(), operationDescription);
+                }
+
+                T e = ex.InnerException as T; // Test framework changes the value under debugger
+                if (e != null)
+                {
+                    return e;
+                }
+                Assert.Fail("Invalid exception {0} for operation: {1}", ex.GetType(), operationDescription);
+            }
+#endif
             catch (Exception ex)
             {
                 T e = ex as T; // Test framework changes the value under debugger
@@ -57,6 +74,7 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     return e;
                 }
+
                 Assert.Fail("Invalid exception {0} for operation: {1}", ex.GetType(), operationDescription);
             }
 

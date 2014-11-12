@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using System.Globalization;
     using System.IO;
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
     using System.Threading;
     using System.Threading.Tasks;
 #endif
@@ -175,7 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             return this.ReadInternal(buffer, offset, count);
         }
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
         /// <summary>
         /// Begins an asynchronous read operation.
         /// </summary>
@@ -219,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <summary>
         /// Asynchronously reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
         /// </summary>
@@ -305,7 +305,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             this.length = Math.Max(this.length, this.position);
         }
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
         /// <summary>
         /// Begins an asynchronous write operation.
         /// </summary>
@@ -347,7 +347,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <summary>
         /// Asynchronously writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
         /// </summary>
@@ -369,7 +369,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
         }
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <summary>
         /// Does not perform any operation as it's an in-memory stream.
         /// </summary>
@@ -381,7 +381,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP 
         /// <summary>
         /// Reads the bytes from the current stream and writes them to another stream. This method writes directly to the destination stream, 
         /// rather than copying the data into a temporary buffer.
@@ -544,7 +544,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <summary>
         /// Reads the bytes from the current stream and writes them to another stream. This method writes directly to the destination stream, 
         /// rather than copying the data into a temporary buffer.

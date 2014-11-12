@@ -23,7 +23,12 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
     using System.Collections.Generic;
     using System.Net.Http;
 
-    internal static partial class FileHttpResponseParsers
+#if ASPNET_K
+    public
+#else
+    internal
+#endif
+        static partial class FileHttpResponseParsers
     {
         /// <summary>
         /// Gets the file's properties from the response.

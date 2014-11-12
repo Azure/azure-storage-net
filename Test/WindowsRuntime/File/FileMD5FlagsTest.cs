@@ -20,7 +20,10 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
@@ -118,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await file.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, null);
                     await file.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
 
-                    using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
+                    using (var fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream fileStreamForRead = fileStream.AsStreamForRead();
                         int read;
@@ -129,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         while (read > 0);
                     }
 
-                    using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (var fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream fileStreamForRead = fileStream.AsStreamForRead();
                         int read;
@@ -151,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         HttpStatusCode.OK);
                     await file.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
 
-                    using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
+                    using (var fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream fileStreamForRead = fileStream.AsStreamForRead();
                         TestHelper.ExpectedException<IOException>(
@@ -167,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                             "Downloading a file with invalid MD5 should fail");
                     }
 
-                    using (IRandomAccessStreamWithContentType fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (var fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream fileStreamForRead = fileStream.AsStreamForRead();
                         int read;

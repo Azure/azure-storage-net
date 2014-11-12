@@ -20,13 +20,33 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
 using Windows.Foundation;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobCancellationUnitTests : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public BlobCancellationUnitTests()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -70,9 +90,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
                         OperationContext operationContext = new OperationContext();
+#if ASPNET_K
+                        var tokenSource = new CancellationTokenSource();
+                        Task action = blob.DownloadToStreamAsync(downloadedBlob, null, null, operationContext, tokenSource.Token);
+                        await Task.Delay(100);
+                        tokenSource.Cancel();
+#else
                         IAsyncAction action = blob.DownloadToStreamAsync(downloadedBlob.AsOutputStream(), null, null, operationContext);
                         await Task.Delay(100);
                         action.Cancel();
+#endif
                         try
                         {
                             await action;
@@ -113,9 +140,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (ManualResetEvent waitHandle = new ManualResetEvent(false))
                     {
                         OperationContext operationContext = new OperationContext();
+#if ASPNET_K
+                        var tokenSource = new CancellationTokenSource();
+                        Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, null, null, operationContext, tokenSource.Token);
+                        await Task.Delay(1000); //we need a bit longer time in order to put the cancel output exception to operationContext.LastResult
+                        tokenSource.Cancel();
+#else
                         IAsyncAction action = blob.UploadFromStreamAsync(originalBlob.AsInputStream(), null, null, operationContext);
                         await Task.Delay(100);
                         action.Cancel();
+#endif
                         try
                         {
                             await action;

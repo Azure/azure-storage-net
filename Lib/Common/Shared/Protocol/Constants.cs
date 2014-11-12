@@ -737,6 +737,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 UserAgentComment = "(Windows Runtime Phone)";
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
+#elif ASPNET_K
+#if ASPNETCORE50
+                UserAgentComment = "(ASP.NET Core 5.0)";
+#else
+                UserAgentComment = "(ASP.NET 5.0)";
+#endif
 #else
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
@@ -762,7 +768,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
+#if ASPNET_K
+            public const string UserAgentProductVersion = "4.3.1-preview";
+#else
             public const string UserAgentProductVersion = "4.3.0";
+#endif
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.

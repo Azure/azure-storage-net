@@ -29,11 +29,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
 {
     [TestClass]
     public class TableSasUnitTests : TableTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
-        #region Locals + Ctors
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
         public TableSasUnitTests()
         {
+            MyTestInitialize();
         }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+        #region Locals + Ctors
 
         private TestContext testContextInstance;
 
@@ -487,7 +500,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Action<BaseEntity, OperationContext> queryDelegate = (tableEntity, ctx) =>
             {
                 Task<TableResult> retrieveTask = testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Retrieve<BaseEntity>(tableEntity.PartitionKey, tableEntity.RowKey), null, ctx).AsTask();
-
                 retrieveTask.Wait();
 
                 if (expectSuccess)
@@ -539,7 +551,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // Merge entity
                 tableEntity.A = "10";
                 tableEntity.ETag = "*";
-
                 testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Merge(tableEntity), null, ctx).AsTask().Wait();
             };
 
@@ -582,7 +593,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // replace entity
                 tableEntity.A = "20";
                 tableEntity.ETag = "*";
-
                 testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Replace(tableEntity), null, ctx).AsTask().Wait();
             };
 
@@ -624,7 +634,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // insert entity
                 tableEntity.A = "10";
-
                 testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Insert(tableEntity), null, ctx).AsTask().Wait();
             };
 
@@ -667,7 +676,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // delete entity
                 tableEntity.A = "10";
                 tableEntity.ETag = "*";
-
                 testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Delete(tableEntity), null, ctx).AsTask().Wait();
             };
 
@@ -709,7 +717,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // insert or merge entity
                 tableEntity.A = "10";
-
                 testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.InsertOrMerge(tableEntity), null, ctx).AsTask().Wait();
             };
 
@@ -752,7 +759,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // insert or replace entity
                 tableEntity.A = "10";
-
                 testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.InsertOrReplace(tableEntity), null, ctx).AsTask().Wait();
             };
 

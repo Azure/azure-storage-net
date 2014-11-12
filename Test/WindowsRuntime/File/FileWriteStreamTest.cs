@@ -20,11 +20,17 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.IO;
 using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using Microsoft.WindowsAzure.Storage.Test.Extensions;
+using System.Security.Cryptography;
+#else
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
@@ -51,10 +57,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                     opContext,
                     "Opening a file stream with no size should fail on a file that does not exist",
                     HttpStatusCode.NotFound);
-                using (IOutputStream writeStream = await file.OpenWriteAsync(1024))
+                using (var writeStream = await file.OpenWriteAsync(1024))
                 {
                 }
-                using (IOutputStream writeStream = await file.OpenWriteAsync(null))
+                using (var writeStream = await file.OpenWriteAsync(null))
                 {
                 }
 
@@ -183,7 +189,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             byte[] buffer = GetRandomBuffer(6 * 512);
 
+#if ASPNET_K
+            MD5 hasher = MD5.Create();
+#else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
+#endif
             CloudFileShare share = GetRandomShareReference();
             share.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
 
@@ -200,7 +210,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     {
                         StoreFileContentMD5 = true,
                     };
-                    using (IOutputStream writeStream = await file.OpenWriteAsync(buffer.Length * 3, null, options, null))
+                    using (var writeStream = await file.OpenWriteAsync(buffer.Length * 3, null, options, null))
                     {
                         Stream fileStream = writeStream.AsStreamForWrite();
 
@@ -209,13 +219,19 @@ namespace Microsoft.WindowsAzure.Storage.File
                             await fileStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeFile.Position, fileStream.Position);
+#if !ASPNET_K
                             hasher.Append(buffer.AsBuffer());
+#endif
                         }
 
                         await fileStream.FlushAsync();
                     }
 
+#if ASPNET_K
+                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeFile.ToArray()));
+#else
                     string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
+#endif
                     await file.FetchAttributesAsync();
                     Assert.AreEqual(md5, file.Properties.ContentMD5);
 
@@ -229,7 +245,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         async () => await file.OpenWriteAsync(null, null, options, null),
                         "OpenWrite with StoreFileContentMD5 on an existing file should fail");
 
-                    using (IOutputStream writeStream = await file.OpenWriteAsync(null))
+                    using (var writeStream = await file.OpenWriteAsync(null))
                     {
                         Stream fileStream = writeStream.AsStreamForWrite();
                         fileStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
@@ -281,7 +297,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream wholeFile = new MemoryStream())
                 {
-                    using (IOutputStream writeStream = await file.OpenWriteAsync(buffer.Length))
+                    using (var writeStream = await file.OpenWriteAsync(buffer.Length))
                     {
                         Stream fileStream = writeStream.AsStreamForWrite();
                         await fileStream.WriteAsync(buffer, 0, buffer.Length);
@@ -335,13 +351,18 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     FileRequestOptions options = new FileRequestOptions() { StoreFileContentMD5 = true };
                     OperationContext opContext = new OperationContext();
-                    using (ICloudFileStream fileStream = await file.OpenWriteAsync(4 * 512, null, options, opContext))
+                    using (var fileStream = await file.OpenWriteAsync(4 * 512, null, options, opContext))
                     {
                         for (int i = 0; i < 3; i++)
                         {
                             await fileStream.WriteAsync(buffer.AsBuffer());
                             await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                         }
+
+#if ASPNET_K
+                        // todo: Make some other better logic for this test to be reliable.
+                        System.Threading.Thread.Sleep(500);
+#endif
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);
 

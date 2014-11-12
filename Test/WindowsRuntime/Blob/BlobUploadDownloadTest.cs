@@ -20,13 +20,33 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
 using Windows.Storage;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobUploadDownloadTest : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public BlobUploadDownloadTest()
+        {
+            TestInitialize();
+        }
+        public void Dispose()
+        {
+            TestCleanup();
+        }
+#endif
+
         private CloudBlobContainer testContainer;
 
         [TestInitialize]
@@ -34,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             this.testContainer = GetRandomContainerReference();
             this.testContainer.CreateIfNotExistsAsync().AsTask().Wait();
-            
+
             if (TestBase.BlobBufferManager != null)
             {
                 TestBase.BlobBufferManager.OutstandingBufferCount = 0;
@@ -44,7 +64,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCleanup]
         public void TestCleanup()
         {
+#if ASPNET_K
+            this.testContainer.DeleteIfExistsAsync().Wait();
+#else
             this.testContainer.DeleteIfExistsAsync().AsTask().Wait();
+#endif
             if (TestBase.BlobBufferManager != null)
             {
                 Assert.AreEqual(0, TestBase.BlobBufferManager.OutstandingBufferCount);
@@ -68,21 +92,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 byte[] testBuffer = new byte[1024];
                 MemoryStream blobStream = new MemoryStream(testBuffer);
+
                 Exception ex = await TestHelper.ExpectedExceptionAsync<Exception>(
                     async () => await blob.DownloadRangeToStreamAsync(blobStream.AsOutputStream(), 0, 0),
                     "Requesting 0 bytes when downloading range should not work");
                 Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
                 await blob.DownloadRangeToStreamAsync(blobStream.AsOutputStream(), 0, 1024);
+
                 Assert.AreEqual(blobStream.Position, 1024);
                 TestHelper.AssertStreamsAreEqualAtIndex(blobStream, wholeBlob, 0, 0, 1024);
 
                 CloudPageBlob blob2 = this.testContainer.GetPageBlobReference("blob1");
                 MemoryStream blobStream2 = new MemoryStream(testBuffer);
+
                 ex = await TestHelper.ExpectedExceptionAsync<Exception>(
                     async () => await blob2.DownloadRangeToStreamAsync(blobStream.AsOutputStream(), 1024, 0),
                     "Requesting 0 bytes when downloading range should not work");
                 Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
                 await blob2.DownloadRangeToStreamAsync(blobStream2.AsOutputStream(), 1024, 1024);
+
                 TestHelper.AssertStreamsAreEqualAtIndex(blobStream2, wholeBlob, 0, 1024, 1024);
 
                 AssertAreEqual(blob, blob2);
@@ -180,6 +208,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private async Task DoUploadDownloadFileAsync(ICloudBlob blob, int fileSize)
         {
+#if ASPNET_K
+            string inputFileName = Path.GetTempFileName();
+            string outputFileName = Path.GetTempFileName();
+            if (System.IO.File.Exists(outputFileName))
+            {
+                System.IO.File.Delete(outputFileName);
+            }
+
+            try
+            {
+                byte[] buffer = GetRandomBuffer(fileSize);
+                using (FileStream file = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    await file.WriteAsync(buffer, 0, buffer.Length);
+                }
+
+                await blob.UploadFromFileAsync(inputFileName, FileMode.Open);
+
+                OperationContext context = new OperationContext();
+                await blob.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                context = new OperationContext();
+                await blob.DownloadToFileAsync(outputFileName, FileMode.CreateNew, null, null, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                using (FileStream inputFile = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                    outputFile = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqual(inputFile, outputFile);
+                }
+            }
+            finally
+            {
+                System.IO.File.Delete(inputFileName);
+                System.IO.File.Delete(outputFileName);
+            }
+#else
             StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
             StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
             StorageFile outputFile = await tempFolder.CreateFileAsync("output.file", CreationCollisionOption.GenerateUniqueName);
@@ -213,6 +279,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 inputFile.DeleteAsync().AsTask().Wait();
                 outputFile.DeleteAsync().AsTask().Wait();
             }
+#endif
         }
 
         [TestMethod]
@@ -522,7 +589,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        #region Negative tests
+#region Negative tests
         [TestMethod]
         [Description("Single put blob and get blob")]
         [TestCategory(ComponentCategory.Blob)]
@@ -571,6 +638,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
             }
         }
-        #endregion
+#endregion
     }
 }

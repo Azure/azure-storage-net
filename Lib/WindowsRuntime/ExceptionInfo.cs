@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage
             this.Type = ex.GetType().Name;
             this.Message = ex.Message;
             this.StackTrace = ex.StackTrace;
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             this.HResult = ex.HResult;
 #endif
 
@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
             writer.WriteStartElement("ExceptionInfo");
             writer.WriteElementString("Type", this.Type);
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             writer.WriteElementString("HResult", Convert.ToString(this.HResult));
 #endif
             writer.WriteElementString("Message", this.Message);
@@ -129,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage
             reader.ReadStartElement("ExceptionInfo");
             this.Type = CommonUtility.ReadElementAsString("Type", reader);
 
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
             this.HResult = int.Parse(CommonUtility.ReadElementAsString("HResult", reader));
 #endif
             this.Message = CommonUtility.ReadElementAsString("Message", reader);
@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage
             // End ExceptionInfo
             reader.ReadEndElement();
         }
-        
+
         #endregion
     }
 }

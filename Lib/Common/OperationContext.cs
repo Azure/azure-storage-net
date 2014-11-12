@@ -177,7 +177,7 @@ namespace Microsoft.WindowsAzure.Storage
         #endregion
 
         #region Times
-#if WINDOWS_RT
+#if WINDOWS_RT || ASPNET_K
         /// <summary>
         /// Gets or sets the start time of the operation.
         /// </summary>

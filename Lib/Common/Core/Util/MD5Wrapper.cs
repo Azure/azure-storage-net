@@ -45,6 +45,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         private MD5 hash = null;
 #endif
 
+#if ASPNET_K
+        private System.IO.MemoryStream inputStream = new System.IO.MemoryStream();
+#endif
+
         [SuppressMessage("Microsoft.Cryptographic.Standard", "CA5350:MD5CannotBeUsed", Justification = "Used as a hash, not encryption")]
         internal MD5Wrapper()
         {
@@ -52,6 +56,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             this.hash = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
 #elif WINDOWS_PHONE
             throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
+#elif ASPNET_K
+            this.hash = MD5.Create();
 #else
             this.hash = this.version1MD5 ? MD5.Create() : new NativeMD5();
 #endif
@@ -71,6 +77,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 this.hash.Append(input.AsBuffer(offset, count));
 #elif WINDOWS_PHONE && WINDOWS_DESKTOP
                 throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
+#elif ASPNET_K
+                inputStream.Write(input, offset, count);
 #else
                 this.hash.TransformBlock(input, offset, count, null, 0);
 #endif
@@ -88,6 +96,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             return CryptographicBuffer.EncodeToBase64String(md5HashBuff);
 #elif WINDOWS_PHONE && WINDOWS_DESKTOP
             throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
+#elif ASPNET_K
+            return Convert.ToBase64String(this.hash.ComputeHash(inputStream.ToArray()));
 #else
             this.hash.TransformFinalBlock(new byte[0], 0, 0);
             return Convert.ToBase64String(this.hash.Hash);
@@ -96,12 +106,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public void Dispose()
         {
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
+#if (WINDOWS_DESKTOP && !WINDOWS_PHONE) || ASPNET_K
             if (this.hash != null)
             {
                 ((IDisposable)this.hash).Dispose();
                 this.hash = null;
             }
+#endif
+
+#if ASPNET_K
+            this.inputStream.Dispose();
+            this.inputStream = null;
 #endif
         }
     }

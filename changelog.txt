@@ -1,3 +1,8 @@
+Changes in 4.3.1 Preview :
+
+ - All: Support building ASP.NET 5 based applications, in preview.
+ - All: All requests add x-ms-version header.
+ 
 Changes in 4.3.0 : 
 
  - All: Support building Universal and Windows Runtime based Windows Phone applications.

@@ -20,13 +20,32 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+
+#if !ASPNET_K
 using Windows.Storage;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class FileUploadDownloadTest : FileTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public FileUploadDownloadTest()
+        {
+            TestInitialize();
+        }
+        public void Dispose()
+        {
+            TestCleanup();
+        }
+#endif
         private CloudFileShare testShare;
 
         [TestInitialize]
@@ -181,10 +200,46 @@ namespace Microsoft.WindowsAzure.Storage.File
 
         private async Task DoUploadDownloadFileAsync(CloudFile file, int fileSize)
         {
+#if ASPNET_K
+            string inputFileName = Path.GetTempFileName();
+            string outputFileName = Path.GetTempFileName();
+            if (System.IO.File.Exists(outputFileName))
+            {
+                System.IO.File.Delete(outputFileName);
+            }
+            try
+            {
+                byte[] buffer = GetRandomBuffer(fileSize);
+                using (FileStream localFile = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    await localFile.WriteAsync(buffer, 0, buffer.Length);
+                }
+
+                await file.UploadFromFileAsync(inputFileName, FileMode.Open);
+
+                OperationContext context = new OperationContext();
+                await file.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                context = new OperationContext();
+                await file.DownloadToFileAsync(outputFileName, FileMode.CreateNew, null, null, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                using (FileStream inputFile = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                    outputFile = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqual(inputFile, outputFile);
+                }
+            }
+            finally
+            {
+                System.IO.File.Delete(inputFileName);
+                System.IO.File.Delete(outputFileName);
+            }
+#else
             StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
             StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
             StorageFile outputFile = await tempFolder.CreateFileAsync("output.file", CreationCollisionOption.GenerateUniqueName);
-
             try
             {
                 byte[] buffer = GetRandomBuffer(fileSize);
@@ -214,6 +269,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 inputFile.DeleteAsync().AsTask().Wait();
                 outputFile.DeleteAsync().AsTask().Wait();
             }
+#endif
         }
 
         [TestMethod]
@@ -426,7 +482,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
-        #region Negative tests
+#region Negative tests
         [TestMethod]
         // [Description("Single put file and get file")]
         [TestCategory(ComponentCategory.File)]
@@ -463,6 +519,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
             }
         }
-        #endregion
+#endregion
     }
 }

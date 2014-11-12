@@ -22,19 +22,39 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using System.Globalization;
+#else
 using Windows.Globalization;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     [TestClass]
     public class TableQueryTests : TableTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public TableQueryTests()
+        {
+            MyClassInitialize(null);
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyClassCleanup();
+            MyTestCleanup();
+        }
+#endif
         readonly CloudTableClient DefaultTableClient = new CloudTableClient(new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint), TestBase.StorageCredentials);
 
         #region Locals + Ctors
-        public TableQueryTests()
-        {
-        }
 
         private TestContext testContextInstance;
 
@@ -356,8 +376,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableRegionalQueryOnSupportedTypesAsync()
         {
+#if ASPNET_K
+            CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = new CultureInfo("tr");
+#else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "tr";
+#endif
 
             CloudTableClient client = GenerateCloudTableClient();
 
@@ -475,7 +500,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
+#if ASPNET_K
+                CultureInfo.CurrentCulture = currentCulture;
+#else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
+#endif
                 table.DeleteIfExistsAsync().AsTask().Wait();
             }
         }
@@ -507,9 +536,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             List<BaseEntity> pocoresults = (await table.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>().Where(TableQuery.GenerateFilterCondition("A", QueryComparisons.Equal, string.Empty)), null)).ToList();
             Assert.AreEqual(1, pocoresults.Count);
         }
-        #endregion
+#endregion
 
-        #region Negative Tests
+#region Negative Tests
 
         [TestMethod]
         [Description("A test with invalid take count")]
@@ -570,9 +599,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Helpers
+#region Helpers
 
         private static List<DynamicTableEntity> ExecuteQuery(CloudTable table, TableQuery query)
         {
@@ -608,6 +637,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ent.RowKey = Guid.NewGuid().ToString();
             return ent;
         }
-        #endregion
+#endregion
     }
 }

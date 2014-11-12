@@ -23,14 +23,37 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using Microsoft.WindowsAzure.Storage.Test.Extensions;
+using System.Threading;
+#else
+using System.Runtime.InteropServices.WindowsRuntime;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobClientTest : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+
+        public CloudBlobClientTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -366,7 +389,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 pageBlob.StreamWriteSizeInBytes = 1024 * 1024;
                 pageBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
 
-                using (ICloudBlobStream bos = await blockBlob.OpenWriteAsync())
+                using (var bos = await blockBlob.OpenWriteAsync())
                 {
                     DateTime start = DateTime.Now;
                     for (int i = 0; i < 7; i++)
@@ -412,7 +435,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
 
-                using (ICloudBlobStream bos = await pageBlob.OpenWriteAsync(8 * 1024 * 1024))
+                using (var bos = await pageBlob.OpenWriteAsync(8 * 1024 * 1024))
                 {
                     DateTime start = DateTime.Now;
                     for (int i = 0; i < 7; i++)

@@ -19,17 +19,34 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using System;
 
+#if ASPNET_K
+using System.Threading.Tasks;
+#endif
+
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     [TestClass]
     public class TableEntitySerializationTests : TableTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        // removed when we support mstest on projectK
+        public TableEntitySerializationTests()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
         readonly CloudTableClient DefaultTableClient = new CloudTableClient(new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint), TestBase.StorageCredentials);
 
         #region Locals + Ctors
-        public TableEntitySerializationTests()
-        {
-        }
 
         private TestContext testContextInstance;
 

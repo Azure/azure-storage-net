@@ -27,7 +27,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class ExceptionHResultTest : TestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+        public ExceptionHResultTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         private readonly CloudBlobClient DefaultBlobClient = new CloudBlobClient(new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint), TestBase.StorageCredentials);
 
         //
@@ -89,7 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 BlobRequestOptions requestOptions = new BlobRequestOptions()
                 {
-                    MaximumExecutionTime = TimeSpan.FromSeconds(1),
+                    MaximumExecutionTime = TimeSpan.FromMilliseconds(500),
                     RetryPolicy = new NoRetry()
                 };
 
@@ -141,7 +157,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
+#if ASPNET_K
+                    blob.UploadFromStreamAsync(ms, ms.Length, null, requestOptions, null, token).Wait();
+#else
                     blob.UploadFromStreamAsync(ms.AsInputStream(), null, requestOptions, null).AsTask(token).Wait();
+#endif
                 }
 
                 Assert.Fail();

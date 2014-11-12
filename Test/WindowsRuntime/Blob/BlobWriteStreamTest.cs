@@ -20,17 +20,40 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+
+#if ASPNET_K
+using Microsoft.WindowsAzure.Storage.Test.Extensions;
+using System.Security.Cryptography;
+using System.Threading;
+#else
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 using Windows.Storage.Streams;
+#endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobWriteStreamTest : BlobTestBase
+#if XUNIT
+, IDisposable
+#endif
     {
+#if XUNIT
+        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
+
+        public BlobWriteStreamTest()
+        {
+            MyTestInitialize();
+        }
+        public void Dispose()
+        {
+            MyTestCleanup();
+        }
+#endif
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -66,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
 
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
-                using (IOutputStream writeStream = await blockBlob.OpenWriteAsync())
+                using (var writeStream = await blockBlob.OpenWriteAsync())
                 {
                 }
 
@@ -82,10 +105,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     opContext,
                     "Opening a page blob stream with no size should fail on a blob that does not exist",
                     HttpStatusCode.NotFound);
-                using (IOutputStream writeStream = await pageBlob.OpenWriteAsync(1024))
+                using (var writeStream = await pageBlob.OpenWriteAsync(1024))
                 {
                 }
-                using (IOutputStream writeStream = await pageBlob.OpenWriteAsync(null))
+                using (var writeStream = await pageBlob.OpenWriteAsync(null))
                 {
                 }
 
@@ -128,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob = container.GetBlockBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                IOutputStream blobStream = await blob.OpenWriteAsync(accessCondition, null, context);
+                var blobStream = await blob.OpenWriteAsync(accessCondition, null, context);
                 blobStream.Dispose();
 
                 blob = container.GetBlockBlobReference("blob4");
@@ -232,6 +255,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob = container.GetBlockBlobReference("blob8");
                 accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value);
                 blobStream = await existingBlob.OpenWriteAsync(accessCondition, null, context);
+#if ASPNET_K
+                Thread.Sleep(1000); //Make the condition invalid for sure
+#endif
                 await existingBlob.SetPropertiesAsync();
                 await TestHelper.ExpectedExceptionAsync(
                     () =>
@@ -277,7 +303,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob = container.GetPageBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                IOutputStream blobStream = await blob.OpenWriteAsync(1024, accessCondition, null, context);
+                var blobStream = await blob.OpenWriteAsync(1024, accessCondition, null, context);
                 blobStream.Dispose();
 
                 blob = container.GetPageBlobReference("blob4");
@@ -361,8 +387,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task BlockBlobWriteStreamBasicTestAsync()
         {
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
-
+#if ASPNET_K
+            MD5 hasher = MD5.Create();
+#else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
+#endif
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             blobClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
             string name = GetRandomContainerName();
@@ -378,7 +407,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         StoreBlobContentMD5 = true,
                     };
-                    using (IOutputStream writeStream = await blob.OpenWriteAsync(null, options, null))
+                    using (var writeStream = await blob.OpenWriteAsync(null, options, null))
                     {
                         Stream blobStream = writeStream.AsStreamForWrite();
 
@@ -387,13 +416,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+#if !ASPNET_K
                             hasher.Append(buffer.AsBuffer());
+#endif
                         }
 
                         await blobStream.FlushAsync();
                     }
 
+#if ASPNET_K
+                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob.ToArray()));
+#else
                     string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
+#endif
                     await blob.FetchAttributesAsync();
                     Assert.AreEqual(md5, blob.Properties.ContentMD5);
 
@@ -424,9 +459,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-                using (IOutputStream writeStream = await blob.OpenWriteAsync())
+                using (var writeStream = await blob.OpenWriteAsync())
                 {
                     Stream blobStream = writeStream.AsStreamForWrite();
+
                     TestHelper.ExpectedException<NotSupportedException>(
                         () => blobStream.Seek(1, SeekOrigin.Begin),
                         "Block blob write stream should not be seekable");
@@ -458,7 +494,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
                     OperationContext opContext = new OperationContext();
-                    using (ICloudBlobStream blobStream = await blob.OpenWriteAsync(null, null, opContext))
+                    using (var blobStream = await blob.OpenWriteAsync(null, null, opContext))
                     {
                         for (int i = 0; i < 3; i++)
                         {
@@ -511,7 +547,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             byte[] buffer = GetRandomBuffer(6 * 512);
 
+#if ASPNET_K
+            MD5 hasher = MD5.Create();
+#else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
+#endif
             CloudBlobContainer container = GetRandomContainerReference();
             container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
 
@@ -529,7 +569,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         StoreBlobContentMD5 = true,
                     };
 
-                    using (IOutputStream writeStream = await blob.OpenWriteAsync(buffer.Length * 3, null, options, null))
+                    using (var writeStream = await blob.OpenWriteAsync(buffer.Length * 3, null, options, null))
                     {
                         Stream blobStream = writeStream.AsStreamForWrite();
 
@@ -538,13 +578,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+#if !ASPNET_K
                             hasher.Append(buffer.AsBuffer());
+#endif
                         }
 
                         await blobStream.FlushAsync();
                     }
 
+#if ASPNET_K
+                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob.ToArray()));
+#else
                     string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
+#endif
                     await blob.FetchAttributesAsync();
                     Assert.AreEqual(md5, blob.Properties.ContentMD5);
 
@@ -558,7 +604,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         async () => await blob.OpenWriteAsync(null, null, options, null),
                         "OpenWrite with StoreBlobContentMD5 on an existing page blob should fail");
 
-                    using (IOutputStream writeStream = await blob.OpenWriteAsync(null))
+                    using (var writeStream = await blob.OpenWriteAsync(null))
                     {
                         Stream blobStream = writeStream.AsStreamForWrite();
                         blobStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
@@ -610,7 +656,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
-                    using (IOutputStream writeStream = await blob.OpenWriteAsync(buffer.Length))
+                    using (var writeStream = await blob.OpenWriteAsync(buffer.Length))
                     {
                         Stream blobStream = writeStream.AsStreamForWrite();
                         TestHelper.ExpectedException<ArgumentOutOfRangeException>(
@@ -667,13 +713,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     BlobRequestOptions options = new BlobRequestOptions() { StoreBlobContentMD5 = true };
                     OperationContext opContext = new OperationContext();
-                    using (ICloudBlobStream blobStream = await blob.OpenWriteAsync(4 * 512, null, options, opContext))
+                    using (var blobStream = await blob.OpenWriteAsync(4 * 512, null, options, opContext))
                     {
                         for (int i = 0; i < 3; i++)
                         {
                             await blobStream.WriteAsync(buffer.AsBuffer());
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                         }
+
+#if ASPNET_K
+                        // todo: Make some other better logic for this test to be reliable.
+                        System.Threading.Thread.Sleep(500);
+#endif
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);
 
