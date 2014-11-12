@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>WindowsAzure.Storage</id>
-    <version>4.3.1-preview</version>
+    <version>4.3.2-preview</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -20,7 +20,6 @@ Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorag
         <dependency id="Microsoft.Data.OData" version="5.6.3" />
         <dependency id="Microsoft.Data.Services.Client" version="5.6.3" />
         <dependency id="System.Spatial" version="5.6.3" />
-        <dependency id="CoreCLR" version="1.0.0-beta1-10164" />
         <dependency id="System.Collections" version="4.0.10-beta-22231" />
         <dependency id="System.Collections.Concurrent" version="4.0.0-beta-22231" />
         <dependency id="System.Collections.Specialized" version="4.0.0-beta-22231" />
@@ -66,7 +65,6 @@ Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorag
         <dependency id="Microsoft.Data.OData" version="5.6.3" />
         <dependency id="Microsoft.Data.Services.Client" version="5.6.3" />
         <dependency id="System.Spatial" version="5.6.3" />
-        <dependency id="CoreCLR" version="1.0.0-beta1-10164" />
       </group>
       <group targetFramework="net40-client">
         <dependency id="Microsoft.Data.OData" version="5.6.2" />
