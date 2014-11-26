@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portable", "Lib\Portable\Portable.csproj", "{0FB72634-4BEC-4826-89A4-B7641F9D5B5C}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Common", "Lib\Common\Common.shproj", "{091AC158-9B51-42F9-8EB4-5C8CF345B52F}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WindowsRuntime", "Lib\WindowsRuntime\WindowsRuntime.shproj", "{85FF3A26-A0ED-4E43-97C0-645AE07CA9F1}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "AspNet", "Lib\AspNet\Microsoft.WindowsAzure.Storage\AspNet.shproj", "{885C336D-2512-423B-9CF0-0CFE312AA535}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Lib\AspNet\Microsoft.WindowsAzure.Storage\AspNet.projitems*{885c336d-2512-423b-9cf0-0cfe312aa535}*SharedItemsImports = 13
+		Lib\Common\Common.projitems*{091ac158-9b51-42f9-8eb4-5c8cf345b52f}*SharedItemsImports = 13
+		Lib\WindowsRuntime\WindowsRuntime.projitems*{85ff3a26-a0ed-4e43-97c0-645ae07ca9f1}*SharedItemsImports = 13
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0FB72634-4BEC-4826-89A4-B7641F9D5B5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FB72634-4BEC-4826-89A4-B7641F9D5B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FB72634-4BEC-4826-89A4-B7641F9D5B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FB72634-4BEC-4826-89A4-B7641F9D5B5C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

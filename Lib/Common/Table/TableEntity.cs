@@ -144,7 +144,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Reviewed")]
         private static void ReflectionRead(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-#if WINDOWS_RT
+#if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
@@ -298,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             Dictionary<string, EntityProperty> retVals = new Dictionary<string, EntityProperty>();
 
-#if WINDOWS_RT
+#if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
@@ -361,7 +361,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // properties with [IgnoreAttribute]
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
             if (property.GetCustomAttribute(typeof(IgnorePropertyAttribute)) != null)
 #else
             if (Attribute.IsDefined(property, typeof(IgnorePropertyAttribute)))

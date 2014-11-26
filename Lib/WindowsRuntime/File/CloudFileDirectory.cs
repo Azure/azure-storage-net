@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -40,9 +40,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Creates the directory.
         /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task CreateAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncAction CreateAsync()
 #endif
         {
@@ -55,12 +55,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task CreateAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.CreateAsync(options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction CreateAsync(FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -72,7 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Creates the directory.
         /// </summary>
@@ -96,9 +96,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> CreateIfNotExistsAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> CreateIfNotExistsAsync()
 #endif
         {
@@ -112,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.CreateIfNotExistsAsync(options, operationContext, CancellationToken.None);
@@ -127,14 +127,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
         public Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
 #endif
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
-#else
+#elif WINDOWS_RT
             return AsyncInfo.Run(async (cancellationToken) =>
 #endif
             {
@@ -171,9 +171,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                         throw;
                     }
                 }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             }, cancellationToken);
-#else
+#elif WINDOWS_RT
             });
 #endif
         }
@@ -182,9 +182,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             /// Deletes the directory.
             /// </summary>
             [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task DeleteAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncAction DeleteAsync()
 #endif
         {
@@ -198,12 +198,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -215,7 +215,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }  
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Deletes the directory.
         /// </summary>
@@ -240,9 +240,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns><c>true</c> if the directory already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> DeleteIfExistsAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> DeleteIfExistsAsync()
 #endif
         {
@@ -257,7 +257,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the directory already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteIfExistsAsync(accessCondition, options, operationContext, CancellationToken.None);
@@ -273,14 +273,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns><c>true</c> if the directory already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
         public Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
 #endif
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
-#else
+#elif WINDOWS_RT
             return AsyncInfo.Run(async (cancellationToken) =>
 #endif
             {
@@ -316,9 +316,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                         throw;
                     }
                 }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             }, cancellationToken);
-#else
+#elif WINDOWS_RT
             });
 #endif
         }
@@ -328,9 +328,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             /// </summary>
             /// <returns><c>true</c> if the directory exists.</returns>
             [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> ExistsAsync()
 #endif
         {
@@ -344,12 +344,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the directory exists.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.ExistsAsync(options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -361,7 +361,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Checks existence of the directory.
         /// </summary>
@@ -385,9 +385,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Populates a directory's properties and metadata.
         /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task FetchAttributesAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncAction FetchAttributesAsync()
 #endif
         {
@@ -401,12 +401,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.FetchAttributesAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -418,7 +418,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Populates a directory's properties and metadata.
         /// </summary>
@@ -445,9 +445,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <returns>A result segment containing objects that implement <see cref="IListFileItem"/>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(FileContinuationToken currentToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(FileContinuationToken currentToken)
 #endif
         {
@@ -465,12 +465,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <returns>A file result segment.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
             return this.ListFilesAndDirectoriesSegmentedAsync(maxResults, currentToken, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -487,7 +487,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of file items 
         /// in the share.

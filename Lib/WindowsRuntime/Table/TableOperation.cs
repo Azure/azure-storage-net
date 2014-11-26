@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Net;
     using System.Net.Http;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
 #else
     using Windows.Foundation;
@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     public sealed partial class TableOperation
     {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         internal Task<TableResult> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         internal IAsyncOperation<TableResult> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
@@ -98,7 +98,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new NotSupportedException();
             }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(() => Executor.ExecuteAsync(
                                             cmdToExecute,
                                             modifiedOptions.RetryPolicy,

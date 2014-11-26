@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>85ff3a26-a0ed-4e43-97c0-645ae07ca9f1</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Microsoft.WindowsAzure.Storage</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Auth\Protocol\NoOpAuthenticationHttpHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Auth\Protocol\SharedKeyAuthenticationHttpHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobReadStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobReadStreamHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobWriteStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobWriteStreamHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlobClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlobContainer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlobDirectory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlobSharedImpl.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlockBlob.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudPageBlob.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\ICloudBlob.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\ICloudBlobStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\Protocol\BlobHttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\Protocol\BlobHttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\Protocol\ContainerHttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\Protocol\ContainerHttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Auth\ICanonicalizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Auth\SharedKeyCanonicalizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Auth\SharedKeyLiteCanonicalizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Auth\SharedKeyLiteTableCanonicalizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Auth\SharedKeyTableCanonicalizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Executor\Executor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Logger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\StorageEventSource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Util\AsyncSemaphore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Util\CultureStringComparer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Util\HttpResponseMessageUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Util\WindowsAzureErrorCode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExceptionInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFileClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFileDirectory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFileShare.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileReadStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileReadStreamHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileWriteStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileWriteStreamHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\ICloudFileStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\Protocol\DirectoryHttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\Protocol\DirectoryHttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\Protocol\FileHttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\Protocol\FileHttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\Protocol\ShareHttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\Protocol\ShareHttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\CloudQueue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\CloudQueueClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\CloudQueueMessage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\Protocol\QueueHttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\Protocol\QueueHttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Protocol\CappedLengthReadOnlyStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Protocol\HttpClientFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Protocol\HttpContentFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Protocol\HttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Protocol\HttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Protocol\RequestMessageExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Protocol\RetryableStreamContent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\CloudTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\CloudTableClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Protocol\HttpRequestAdapterMessage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Protocol\HttpResponseAdapterMessage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Protocol\TableHttpRequestMessageFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Protocol\TableOperationHttpRequestFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Protocol\TableOperationHttpResponseParsers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableBatchOperation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableOperation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableQuery.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableQueryGeneric.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableQuerySegmentNonGeneric.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WrappedStorageException.cs" />
+  </ItemGroup>
+</Project>

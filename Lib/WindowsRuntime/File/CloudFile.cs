@@ -30,9 +30,9 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
-#else
+#elif WINDOWS_RT
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
     using Windows.Storage;
@@ -46,9 +46,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns>A stream to be used for reading from the file.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<Stream> OpenReadAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<IRandomAccessStreamWithContentType> OpenReadAsync()
 #endif
         {
@@ -63,12 +63,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A stream to be used for reading from the file.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<Stream> OpenReadAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.OpenReadAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<IRandomAccessStreamWithContentType> OpenReadAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             operationContext = operationContext ?? new OperationContext();
@@ -82,7 +82,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Opens a stream for reading from the file.
         /// </summary>
@@ -111,9 +111,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="size">The size of the write operation, in bytes.</param>
         /// <returns>A stream to be used for writing to the file.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<CloudFileStream> OpenWriteAsync(long? size)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ICloudFileStream> OpenWriteAsync(long? size)
 #endif
         {
@@ -129,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A stream to be used for writing to the file.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<CloudFileStream> OpenWriteAsync(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.OpenWriteAsync(size, accessCondition, options, operationContext, CancellationToken.None);
@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns>A stream to be used for writing to the file.</returns>
         [DoesServiceRequest]
         public Task<CloudFileStream> OpenWriteAsync(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ICloudFileStream> OpenWriteAsync(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
 #endif
         {
@@ -158,7 +158,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 throw new ArgumentException(SR.MD5NotPossible);
             }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 if (createNew)
@@ -168,7 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 else
                 {
                     await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken);
-#else
+#elif WINDOWS_RT
             return AsyncInfo.Run(async (token) =>
             {
                 if (createNew)
@@ -187,11 +187,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                     accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
                 }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                 CloudFileStream stream = new FileWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext);
                 return stream;
             }, cancellationToken);
-#else
+#elif WINDOWS_RT
                 ICloudFileStream stream = new FileWriteStreamHelper(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext);
                 return stream;
             });
@@ -204,9 +204,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="source">The stream providing the file content.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task UploadFromStreamAsync(Stream source)
-#else
+#elif WINDOWS_RT
         public IAsyncAction UploadFromStreamAsync(IInputStream source)
 #endif
         {
@@ -218,11 +218,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="source">The stream providing the file content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromStreamAsync(Stream source, long length)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UploadFromStreamAsync(IInputStream source, long length)
@@ -238,11 +238,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UploadFromStreamAsync(IInputStream source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -259,11 +259,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UploadFromStreamAsync(IInputStream source, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -272,7 +272,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             return this.UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext);
         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Uploads a stream to a file. 
         /// </summary>
@@ -313,7 +313,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -333,7 +333,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal IAsyncAction UploadFromStreamAsyncHelper(IInputStream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -360,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 using (CloudFileStream fileStream = await this.OpenWriteAsync(length, accessCondition, options, operationContext, cancellationToken))
@@ -371,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await fileStream.CommitAsync();
                 }
             }, cancellationToken);
-#else
+#elif WINDOWS_RT
             return AsyncInfo.Run(async (token) =>
             {
                 using (ICloudFileStream fileStream = await this.OpenWriteAsync(length, accessCondition, options, operationContext).AsTask(token))
@@ -385,10 +385,10 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
         }
 
+#if ASPNET_K
         /// <summary>
         /// Uploads a file to the Windows Azure File Service. 
         /// </summary>
-#if ASPNET_K
         /// <param name="path">A string containing the path to the target file.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
@@ -397,7 +397,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.UploadFromFileAsync(path, mode, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
-#else
+#elif WINDOWS_RT
+        /// <summary>
+        /// Uploads a file to the Windows Azure File Service. 
+        /// </summary>
         /// <param name="source">The file providing the file content.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
@@ -407,10 +410,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
+#if ASPNET_K
         /// <summary>
         /// Uploads a file to a file. 
         /// </summary>
-#if ASPNET_K
         /// <param name="path">A string containing the path to the target file.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
@@ -422,7 +425,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.UploadFromFileAsync(path, mode, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
+        /// <summary>
+        /// Uploads a file to a file. 
+        /// </summary>
         /// <param name="source">The file providing the file content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
@@ -475,11 +481,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the file.</param>
         /// <param name="count">The number of bytes to be written to the file.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UploadFromByteArrayAsync([ReadOnlyArray] byte[] buffer, int index, int count)
@@ -497,14 +503,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UploadFromByteArrayAsync([ReadOnlyArray] byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -516,7 +522,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Uploads the contents of a byte array to a file.
         /// </summary>
@@ -542,11 +548,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Uploads a string of text to a file. 
         /// </summary>
         /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadTextAsync(string content)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UploadTextAsync(string content)
@@ -562,14 +568,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadTextAsync(string content, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.UploadTextAsync(content, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction UploadTextAsync(string content, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -582,7 +588,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Uploads a string of text to a file. 
         /// </summary>
@@ -606,11 +612,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Downloads the contents of a file to a stream.
         /// </summary>
         /// <param name="target">The target stream.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction DownloadToStreamAsync(IOutputStream target)
@@ -626,14 +632,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DownloadToStreamAsync(target, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction DownloadToStreamAsync(IOutputStream target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -643,7 +649,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Downloads the contents of a file to a stream.
         /// </summary>
@@ -660,10 +666,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
+#if ASPNET_K
         /// <summary>
         /// Downloads the contents of a file to a file.
         /// </summary>
-#if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
@@ -672,7 +678,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.DownloadToFileAsync(path, mode, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
-#else
+#elif WINDOWS_RT
+        /// <summary>
+        /// Downloads the contents of a file to a file.
+        /// </summary>
         /// <param name="target">The target file.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
@@ -682,10 +691,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
+#if ASPNET_K
         /// <summary>
         /// Downloads the contents of a file to a file.
         /// </summary>
-#if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
@@ -697,7 +706,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
+        /// <summary>
+        /// Downloads the contents of a file to a file.
+        /// </summary>
         /// <param name="target">The target file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
@@ -752,9 +764,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="index">The starting offset in the byte array.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<int> DownloadToByteArrayAsync(byte[] target, int index)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<int> DownloadToByteArrayAsync([WriteOnlyArray] byte[] target, int index)
 #endif
         {
@@ -771,19 +783,19 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DownloadToByteArrayAsync(target, index, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<int> DownloadToByteArrayAsync([WriteOnlyArray] byte[] target, int index, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DownloadRangeToByteArrayAsync(target, index, null /* fileOffset */, null /* length */, accessCondition, options, operationContext);
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Downloads the contents of a file to a byte array.
         /// </summary>
@@ -807,11 +819,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="target">The target stream.</param>
         /// <param name="offset">The offset at which to begin downloading the file, in bytes.</param>
         /// <param name="length">The length of the data to download from the file, in bytes.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction DownloadRangeToStreamAsync(IOutputStream target, long? offset, long? length)
@@ -824,9 +836,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Downloads the file's contents as a string.
         /// </summary>
         /// <returns>The contents of the file, as a string.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<string> DownloadTextAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<string> DownloadTextAsync()
 #endif
         {
@@ -840,12 +852,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The contents of the file, as a string.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DownloadTextAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return AsyncInfo.Run(async (token) =>
@@ -860,7 +872,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Downloads the file's contents as a string.
         /// </summary>
@@ -892,14 +904,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction DownloadRangeToStreamAsync(IOutputStream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -918,7 +930,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Downloads the contents of a file to a stream.
         /// </summary>
@@ -956,9 +968,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="length">The length of the data range, in bytes.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? fileOffset, long? length)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<int> DownloadRangeToByteArrayAsync([WriteOnlyArray] byte[] target, int index, long? fileOffset, long? length)
 #endif
         {
@@ -977,12 +989,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<int> DownloadRangeToByteArrayAsync([WriteOnlyArray] byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return AsyncInfo.Run(async (token) =>
@@ -996,7 +1008,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Downloads the contents of a file to a byte array.
         /// </summary>
@@ -1028,9 +1040,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="size">The maximum size of the file, in bytes.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task CreateAsync(long size)
-#else
+#elif WINDOWS_RT
         public IAsyncAction CreateAsync(long size)
 #endif
         {
@@ -1045,12 +1057,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task CreateAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.CreateAsync(size, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction CreateAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1062,7 +1074,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Creates a file.
         /// </summary>
@@ -1088,9 +1100,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns><c>true</c> if the file exists.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> ExistsAsync()
 #endif
         {
@@ -1104,12 +1116,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the file exists.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.ExistsAsync(options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1121,7 +1133,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Checks existence of the file.
         /// </summary>
@@ -1145,9 +1157,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Populates a file's properties and metadata.
         /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task FetchAttributesAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncAction FetchAttributesAsync()
 #endif
         {
@@ -1161,12 +1173,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.FetchAttributesAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1178,7 +1190,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Populates a file's properties and metadata.
         /// </summary>
@@ -1202,9 +1214,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Deletes the file.
         /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task DeleteAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncAction DeleteAsync()
 #endif
         {
@@ -1218,12 +1230,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1235,7 +1247,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Deletes the file.
         /// </summary>
@@ -1260,9 +1272,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns><c>true</c> if the file already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> DeleteIfExistsAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> DeleteIfExistsAsync()
 #endif
         {
@@ -1277,7 +1289,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the file already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteIfExistsAsync(accessCondition, options, operationContext, CancellationToken.None);
@@ -1293,18 +1305,18 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns><c>true</c> if the file already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
         public Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
 #endif
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
-#else
+#elif WINDOWS_RT
             return AsyncInfo.Run(async (token) =>
             {
                 bool exists = await this.ExistsAsync(modifiedOptions, operationContext).AsTask(token);
@@ -1316,9 +1328,9 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 try
                 {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                     await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);
-#else
+#elif WINDOWS_RT
                     await this.DeleteAsync(accessCondition, modifiedOptions, operationContext).AsTask(token);
 #endif
                     return true;
@@ -1343,9 +1355,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                         throw;
                     }
                 }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             }, cancellationToken);
-#else
+#elif WINDOWS_RT
             });
 #endif
         }
@@ -1354,9 +1366,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns>An enumerable collection of ranges.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<IEnumerable<FileRange>> ListRangesAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<IEnumerable<FileRange>> ListRangesAsync()
 #endif
         {
@@ -1373,12 +1385,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of ranges.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<IEnumerable<FileRange>> ListRangesAsync(long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.ListRangesAsync(offset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<IEnumerable<FileRange>> ListRangesAsync(long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1390,7 +1402,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
 
         /// <summary>
         /// Gets a collection of valid ranges and their starting and ending bytes.
@@ -1418,9 +1430,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Updates the file's properties.
         /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task SetPropertiesAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncAction SetPropertiesAsync()
 #endif
         {
@@ -1434,12 +1446,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SetPropertiesAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1451,7 +1463,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Updates the file's properties.
         /// </summary>
@@ -1476,9 +1488,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="size">The maximum size of the file, in bytes.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task ResizeAsync(long size)
-#else
+#elif WINDOWS_RT
         public IAsyncAction ResizeAsync(long size)
 #endif
         {
@@ -1493,12 +1505,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task ResizeAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.ResizeAsync(size, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction ResizeAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1510,7 +1522,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Resizes a file.
         /// </summary>
@@ -1535,9 +1547,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Updates the file's metadata.
         /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task SetMetadataAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncAction SetMetadataAsync()
 #endif
         {
@@ -1551,12 +1563,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SetMetadataAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1568,7 +1580,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Updates the file's metadata.
         /// </summary>
@@ -1595,11 +1607,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
         /// on the file. May be <code>null</code> or an empty string.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction WriteRangeAsync(IInputStream rangeData, long startOffset, string contentMD5)
@@ -1618,7 +1630,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -1639,7 +1651,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction WriteRangeAsync(IInputStream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
@@ -1652,7 +1664,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
 #else
             return AsyncInfo.Run(async (cancellationToken) =>
@@ -1696,9 +1708,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                     modifiedOptions.RetryPolicy,
                     operationContext,
                     cancellationToken);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             }, cancellationToken);
-#else
+#elif WINDOWS_RT
             });
 #endif
         }
@@ -1709,9 +1721,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             /// <param name="startOffset">The offset at which to begin clearing file ranges, in bytes.</param>
             /// <param name="length">The length of the data range to be cleared, in bytes.</param>
             [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task ClearRangeAsync(long startOffset, long length)
-#else
+#elif WINDOWS_RT
         public IAsyncAction ClearRangeAsync(long startOffset, long length)
 #endif
         {
@@ -1727,12 +1739,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task ClearRangeAsync(long startOffset, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.ClearRangeAsync(startOffset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncAction ClearRangeAsync(long startOffset, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -1744,7 +1756,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Clears ranges from a file.
         /// </summary>

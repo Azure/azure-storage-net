@@ -14,7 +14,7 @@
 //    limitations under the License.
 // </copyright>
 //-----------------------------------------------------------------------
-#if !ASPNET_K
+#if WINDOWS_RT
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;

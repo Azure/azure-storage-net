@@ -208,7 +208,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns>A task that represents the asynchronous commit operation.</returns>
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public override async Task CommitAsync()
 #else
         public async Task CommitAsync()

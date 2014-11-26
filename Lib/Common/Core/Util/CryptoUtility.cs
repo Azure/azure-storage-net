@@ -21,6 +21,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using Windows.Security.Cryptography;
     using Windows.Security.Cryptography.Core;
     using Windows.Storage.Streams;
+#elif PORTABLE
+    using PCLCrypto;
+    using System.Text;
 #else
     using System;
     using System.Security.Cryptography;
@@ -38,6 +41,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             IBuffer messageBuffer = CryptographicBuffer.ConvertStringToBinary(message, BinaryStringEncoding.Utf8);
             IBuffer signedMessage = CryptographicEngine.Sign(hmacKey, messageBuffer);
             return CryptographicBuffer.EncodeToBase64String(signedMessage);
+#elif PORTABLE
+            IMacAlgorithmProvider macAlgorithmProvider = WinRTCrypto.MacAlgorithmProvider.OpenAlgorithm(MacAlgorithm.HmacSha256);
+            byte[] keyMaterial = WinRTCrypto.CryptographicBuffer.CreateFromByteArray(key);
+            ICryptographicKey hmacKey = macAlgorithmProvider.CreateKey(keyMaterial);
+            byte[] messageBuffer = WinRTCrypto.CryptographicBuffer.ConvertStringToBinary(message, Encoding.UTF8);
+            byte[] signedMessage = WinRTCrypto.CryptographicEngine.Sign(hmacKey, messageBuffer);
+            return WinRTCrypto.CryptographicBuffer.EncodeToBase64String(signedMessage);
 #else
             using (HashAlgorithm hashAlgorithm = new HMACSHA256(key))
             {

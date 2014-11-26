@@ -737,6 +737,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 UserAgentComment = "(Windows Runtime Phone)";
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
+#elif PORTABLE
+                UserAgentComment = "(Portable)";
 #elif ASPNET_K
 #if ASPNETCORE50
                 UserAgentComment = "(ASP.NET Core 5.0)";

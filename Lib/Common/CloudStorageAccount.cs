@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
     using Microsoft.WindowsAzure.Storage.Analytics;
 #endif
     using Microsoft.WindowsAzure.Storage.Auth;
@@ -545,7 +545,7 @@ namespace Microsoft.WindowsAzure.Storage
             return new CloudBlobClient(this.BlobStorageUri, this.Credentials);
         }
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         /// <summary>
         /// Creates an analytics client.
         /// </summary>

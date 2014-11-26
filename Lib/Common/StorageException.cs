@@ -346,7 +346,7 @@ namespace Microsoft.WindowsAzure.Storage
                 reqResult.ExtendedErrorInformation = null;
                 return new StorageException(reqResult, ex.Message, ex) { IsRetryable = false };
             }
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
             else if (ex is OperationCanceledException)
             {
                 reqResult.HttpStatusMessage = null;
@@ -445,7 +445,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
             }
 
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || PORTABLE)
             if (response.ContentLength > 0) 
             {
                 reqResult.IngressBytes += response.ContentLength;

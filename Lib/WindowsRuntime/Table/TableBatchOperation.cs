@@ -25,9 +25,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Collections.Generic;
     using System.Net;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
-#else
+#elif WINDOWS_RT
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
@@ -38,9 +38,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     public sealed partial class TableBatchOperation : IList<TableOperation>
     {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         internal Task<IList<TableResult>> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         internal IAsyncOperation<IList<TableResult>> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
 #endif
         {
@@ -55,13 +55,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<IList<TableResult>> cmdToExecute = BatchImpl(this, client, tableName, modifiedOptions);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () => await Executor.ExecuteAsync(
                                                             cmdToExecute,
                                                             modifiedOptions.RetryPolicy,
                                                             operationContext,
                                                             cancellationToken), cancellationToken);
-#else
+#elif WINDOWS_RT
             return AsyncInfo.Run(async (cancellationToken) => await Executor.ExecuteAsync(
                                                                        cmdToExecute,
                                                                        modifiedOptions.RetryPolicy,

@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.IO;
     using System.Threading;
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
     using System.Threading.Tasks;
 #endif
 
@@ -47,7 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
         }
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         /// <summary>
         /// Reads synchronously the specified content of the stream and writes it to the given output stream.
         /// </summary>
@@ -234,7 +234,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 #endif
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <summary>
         /// Asynchronously reads the entire content of the stream and writes it to the given output stream.
         /// </summary>
