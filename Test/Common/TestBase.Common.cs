@@ -25,12 +25,15 @@ using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Linq;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || MSTEST_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Table.DataServices;
-using System.ServiceModel.Channels;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
+
+#if WINDOWS_DESKTOP
+using Microsoft.WindowsAzure.Storage.Table.DataServices;
+using System.ServiceModel.Channels;
 #endif
 
 namespace Microsoft.WindowsAzure.Storage

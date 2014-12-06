@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
+    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Core.Util;
 using System;
@@ -24,7 +28,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 #endif

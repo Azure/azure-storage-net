@@ -15,13 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if WINDOWS_RT
 using Windows.Foundation;
 #endif
 
@@ -90,7 +94,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
                         OperationContext operationContext = new OperationContext();
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                         var tokenSource = new CancellationTokenSource();
                         Task action = blob.DownloadToStreamAsync(downloadedBlob, null, null, operationContext, tokenSource.Token);
                         await Task.Delay(100);
@@ -140,7 +144,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (ManualResetEvent waitHandle = new ManualResetEvent(false))
                     {
                         OperationContext operationContext = new OperationContext();
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                         var tokenSource = new CancellationTokenSource();
                         Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, null, null, operationContext, tokenSource.Token);
                         await Task.Delay(1000); //we need a bit longer time in order to put the cancel output exception to operationContext.LastResult

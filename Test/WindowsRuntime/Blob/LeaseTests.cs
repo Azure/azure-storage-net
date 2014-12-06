@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Blob.Protocol;
 using System;
 using System.Collections.Generic;
@@ -25,7 +29,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if WINDOWS_RT
 using Windows.Storage.Streams;
 #endif
 

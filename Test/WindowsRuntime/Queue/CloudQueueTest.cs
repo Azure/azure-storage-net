@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 using System;
@@ -23,9 +27,10 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
 using System.Globalization;
-#else
+using System.Threading;
+#elif WINDOWS_RT
 using Windows.Globalization;
 #endif
 
@@ -329,9 +334,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task QueueRegionalSASTestAsync()
         {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = new CultureInfo("it");
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("it");
 #else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "it";
@@ -377,8 +382,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
-#if ASPNET_K
-                CultureInfo.CurrentCulture = currentCulture;
+#if ASPNET_K || PORTABLE
+                Thread.CurrentThread.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif

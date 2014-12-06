@@ -17,7 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
+#if MSTEST_DESKTOP
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
@@ -45,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference("test" + DateTime.UtcNow.Ticks.ToString());
             CancellationTokenSource token = new CancellationTokenSource();
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             Task task = container.FetchAttributesAsync(null, options, context, token.Token);
 #else
             Task task = container.FetchAttributesAsync(null, options, context).AsTask(token.Token);

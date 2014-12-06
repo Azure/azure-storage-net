@@ -15,12 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || MSTEST_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
+
 namespace Microsoft.WindowsAzure.Storage.Table.Entities
 {
     public class BaseEntity : TableEntity

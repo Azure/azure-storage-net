@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using System;
 

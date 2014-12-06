@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>47272a75-1b54-4fda-9b7e-83c21cff678f</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Microsoft.WindowsAzure.Storage</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobTestBase.Common.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\NonSeekableMemoryStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\AlwaysRetry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\CloudStorageAccountTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\OldStyleAlwaysRetry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\StorageUriTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\TestLogListener.Common.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\UtilityTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileTestBase.Common.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GeneralTestSample.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MockBufferManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\QueueTestBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Entities\BaseEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Entities\ComplexEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Entities\IgnoreEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Entities\POCOAdapter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Entities\ShapeEntity.cs" />
+    <Content Include="$(MSBuildThisFileDirectory)Readme.txt" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestBase.Common.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestCategoryConstants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestConfigProcess\TenantConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestConfigProcess\TenantType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestConfigProcess\TestConfigurations.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestHelper.Common.cs" />
+    <Content Include="$(MSBuildThisFileDirectory)TestConfigurations.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

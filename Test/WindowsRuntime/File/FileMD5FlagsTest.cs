@@ -15,13 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if WINDOWS_RT
 using Windows.Storage.Streams;
 #endif
 

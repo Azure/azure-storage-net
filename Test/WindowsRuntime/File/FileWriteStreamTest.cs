@@ -15,17 +15,21 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
 using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Security.Cryptography;
-#else
+#elif WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
@@ -189,7 +193,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             byte[] buffer = GetRandomBuffer(6 * 512);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             MD5 hasher = MD5.Create();
 #else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
@@ -219,7 +223,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                             await fileStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeFile.Position, fileStream.Position);
-#if !ASPNET_K
+#if !(ASPNET_K || PORTABLE)
                             hasher.Append(buffer.AsBuffer());
 #endif
                         }
@@ -227,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         await fileStream.FlushAsync();
                     }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                     string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeFile.ToArray()));
 #else
                     string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());

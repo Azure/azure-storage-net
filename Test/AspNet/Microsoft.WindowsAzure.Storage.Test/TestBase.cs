@@ -17,7 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
+#if WINDOWS_DESKTOP || MSTEST_DESKTOP
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
     using System.IO;
     using System.Xml.Linq;
 

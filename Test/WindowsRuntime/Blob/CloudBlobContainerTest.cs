@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Auth;
 using System;
 using System.Collections.Generic;
@@ -23,10 +27,10 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
 using System.Globalization;
 using System.Threading;
-#else
+#elif WINDOWS_RT
 using Windows.Globalization;
 #endif
 
@@ -155,10 +159,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             await container.CreateAsync();
             OperationContext operationContext = new OperationContext();
-            Assert.ThrowsException<AggregateException>(
-                () => container.CreateAsync(null, operationContext).AsTask().Wait(),
-                "Creating already exists container should fail");
-            Assert.AreEqual((int)HttpStatusCode.Conflict, operationContext.LastResult.HttpStatusCode);
+            try
+            {
+                container.CreateAsync(null, operationContext).AsTask().Wait();
+                Assert.Fail("Creating already exists container should fail");
+            }
+            catch (AggregateException)
+            {
+                Assert.AreEqual((int)HttpStatusCode.Conflict, operationContext.LastResult.HttpStatusCode);
+            }
             await container.DeleteAsync();
         }
 
@@ -435,7 +444,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #if ASPNET_K
             CultureInfo currentCulture = CultureInfo.CurrentCulture;
             CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
-#else
+#elif PORTABLE
+            CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("sk-SK");
+#elif WINDOWS_RT
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "sk-SK";
 #endif
@@ -452,7 +464,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().AsTask().Wait();
 #if ASPNET_K
                 CultureInfo.CurrentCulture = currentCulture;
-#else
+#elif PORTABLE
+                Thread.CurrentThread.CurrentCulture = currentCulture;
+#elif WINDOWS_RT
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif
             }

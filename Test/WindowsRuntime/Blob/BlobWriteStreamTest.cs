@@ -15,18 +15,22 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
 using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Security.Cryptography;
 using System.Threading;
-#else
+#elif WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
@@ -387,7 +391,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task BlockBlobWriteStreamBasicTestAsync()
         {
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             MD5 hasher = MD5.Create();
 #else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
@@ -416,7 +420,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
-#if !ASPNET_K
+#if !(ASPNET_K || PORTABLE)
                             hasher.Append(buffer.AsBuffer());
 #endif
                         }
@@ -424,7 +428,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         await blobStream.FlushAsync();
                     }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                     string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob.ToArray()));
 #else
                     string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
@@ -547,7 +551,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             byte[] buffer = GetRandomBuffer(6 * 512);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             MD5 hasher = MD5.Create();
 #else
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
@@ -578,7 +582,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
-#if !ASPNET_K
+#if !(ASPNET_K || PORTABLE)
                             hasher.Append(buffer.AsBuffer());
 #endif
                         }
@@ -586,7 +590,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         await blobStream.FlushAsync();
                     }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                     string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob.ToArray()));
 #else
                     string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
@@ -721,7 +725,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                         // todo: Make some other better logic for this test to be reliable.
                         System.Threading.Thread.Sleep(500);
 #endif

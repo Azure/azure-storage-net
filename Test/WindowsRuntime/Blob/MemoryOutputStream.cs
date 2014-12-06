@@ -16,14 +16,14 @@
 // -----------------------------------------------------------------------------------------
 
 using System.IO;
-#if !ASPNET_K
+#if WINDOWS_RT
 using Windows.Foundation;
 using Windows.Storage.Streams;
 #endif
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     internal sealed class MemoryOutputStream : MemoryStream
     {
         public MemoryStream UnderlyingStream {

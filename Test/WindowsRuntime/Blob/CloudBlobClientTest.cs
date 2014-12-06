@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
@@ -25,7 +29,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
 using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Threading;
 #else

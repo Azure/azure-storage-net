@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
+    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,9 +27,9 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
 using System.Security.Cryptography;
-#else
+#elif WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
@@ -354,17 +358,26 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 OperationContext operationContext = new OperationContext();
                 file.Metadata["key1"] = null;
-
-                Assert.ThrowsException<AggregateException>(
-                    () => file.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
-                    "Metadata keys should have a non-null value");
-                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                try
+                {
+                    file.SetMetadataAsync(null, null, operationContext).AsTask().Wait();
+                    Assert.Fail("Metadata keys should have a non-null value");
+                }
+                catch (AggregateException)
+                {
+                    Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                }
 
                 file.Metadata["key1"] = "";
-                Assert.ThrowsException<AggregateException>(
-                    () => file.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
-                    "Metadata keys should have a non-empty value");
-                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                try
+                {
+                    file.SetMetadataAsync(null, null, operationContext).AsTask().Wait();
+                    Assert.Fail("Metadata keys should have a non-empty value");
+                }
+                catch (AggregateException)
+                {
+                    Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                }
 
                 file.Metadata["key1"] = "value1";
                 await file.SetMetadataAsync();
@@ -465,7 +478,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public async Task CloudFileWriteRangeAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             MD5 md5 = MD5.Create();
             string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
 #else
@@ -667,7 +680,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         private async Task CloudFileUploadFromStreamAsync(CloudFileShare share, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
         {
             byte[] buffer = GetRandomBuffer(size);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             MD5 hasher = MD5.Create();
             string md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
 #else

@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
+    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
@@ -144,7 +148,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 using (MemoryStream ms = new MemoryStream(buffer))
                 {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                     file.UploadFromStreamAsync(ms, ms.Length, null, requestOptions, null, token).Wait();
 #else
                     file.UploadFromStreamAsync(ms.AsInputStream(), null, requestOptions, null).AsTask(token).Wait();

@@ -65,6 +65,9 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+  </ItemGroup>
   <Import Project="..\AspNet\Microsoft.WindowsAzure.Storage\AspNet.projitems" Label="AspNet" />
   <Import Project="..\Common\Common.projitems" Label="Common" />
   <Import Project="..\WindowsRuntime\WindowsRuntime.projitems" Label="WindowsRuntime" />

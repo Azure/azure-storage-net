@@ -15,13 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if MSTEST_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 #endif
@@ -262,7 +266,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         private static async Task<uint> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
 #else
 
@@ -271,9 +275,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             byte[] testBuffer = new byte[readSize];
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             int actualReadSize = await blobStream.ReadAsync(testBuffer, 0, (int) readSize);
-            Assert.AreEqual(expectedReadCount, actualReadSize);
+            Assert.AreEqual(expectedReadCount, (uint)actualReadSize);
 #else
             IBuffer testBufferAsIBuffer = testBuffer.AsBuffer();
             await blobStream.ReadAsync(testBufferAsIBuffer, readSize, InputStreamOptions.None);
@@ -289,7 +293,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return expectedReadCount;
         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         private static async Task<int> BlobReadStreamSeekTestAsync(Stream blobStream, long streamReadSize, byte[] bufferToCompare)
 #else
 
@@ -298,57 +302,57 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             int attempts = 1;
             ulong position = 0;
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             attempts++;
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 512, 512);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position = (ulong)(bufferToCompare.Length - 128);
             blobStream.Seek(position);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 128);
             attempts++;
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position = 4096;
             blobStream.Seek(position);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             attempts++;
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += 4096;
             blobStream.Seek(position);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position -= 4096;
             blobStream.Seek(position);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 128, 128);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             blobStream.Seek(position);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             //don't know why adding these two line will pass, but this this the same as the desktop test
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 512);
 #endif
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             attempts++;
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position -= 1024;
             blobStream.Seek(position);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 2048, 2048);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position = (ulong)(bufferToCompare.Length - 128);
             blobStream.Seek(position);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 128);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual(position, (ulong)blobStream.Position);
             return attempts;
         }
 

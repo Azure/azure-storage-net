@@ -17,7 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
+#if MSTEST_DESKTOP
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
     using Microsoft.WindowsAzure.Storage.Blob;
     using System;
     using System.Threading.Tasks;
