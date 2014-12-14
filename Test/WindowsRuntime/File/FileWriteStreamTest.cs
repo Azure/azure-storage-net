@@ -363,7 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                             await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                         // todo: Make some other better logic for this test to be reliable.
                         System.Threading.Thread.Sleep(500);
 #endif
