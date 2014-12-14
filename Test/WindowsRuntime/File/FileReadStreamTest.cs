@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 await operation();
             }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             catch (Exception ex)
             {
                 Assert.AreEqual((int)expectedStatusCode, ((StorageException)ex).RequestInformation.HttpStatusCode, "Http status code is unexpected.");
