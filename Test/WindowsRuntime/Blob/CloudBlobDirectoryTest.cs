@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-#if MSTEST_DESKTOP
+#if WINDOWS_DESKTOP
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;

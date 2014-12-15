@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage
 {
     using System;
 
-#if !MSTEST_DESKTOP
+#if !WINDOWS_DESKTOP
     public sealed class DescriptionAttribute : Attribute
     {
         public DescriptionAttribute(string description)

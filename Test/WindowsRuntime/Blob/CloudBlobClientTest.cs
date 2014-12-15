@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if MSTEST_DESKTOP
+#if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -29,10 +29,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-#if ASPNET_K || PORTABLE
+#if ASPNET_K || WINDOWS_DESKTOP
 using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Threading;
-#else
+#elif WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 #endif
 
@@ -398,7 +398,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     DateTime start = DateTime.Now;
                     for (int i = 0; i < 7; i++)
                     {
+#if PORTABLE
+                        await bos.WriteAsync(buffer);
+#else
                         await bos.WriteAsync(buffer.AsBuffer());
+#endif
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last write
@@ -409,7 +413,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         await Task.Delay(msRemaining);
                     }
 
+#if PORTABLE
+                    await bos.WriteAsync(buffer);
+#else
                     await bos.WriteAsync(buffer.AsBuffer());
+#endif
                     await bos.CommitAsync();
                 }
 
@@ -444,7 +452,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     DateTime start = DateTime.Now;
                     for (int i = 0; i < 7; i++)
                     {
+#if PORTABLE
+                        await bos.WriteAsync(buffer);
+#else
                         await bos.WriteAsync(buffer.AsBuffer());
+#endif
                     }
 
                     // Sleep to ensure we are over the Max execution time when we do the last write
@@ -455,7 +467,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         await Task.Delay(msRemaining);
                     }
 
+#if PORTABLE
+                    await bos.WriteAsync(buffer);
+#else
                     await bos.WriteAsync(buffer.AsBuffer());
+#endif
                     await bos.CommitAsync();
                 }
 

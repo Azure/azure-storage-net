@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if MSTEST_DESKTOP
+#if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -27,7 +27,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K || PORTABLE
+#if ASPNET_K || WINDOWS_DESKTOP
 using System.Security.Cryptography;
 #elif WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -667,10 +667,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudPageBlobWritePagesAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
-#if ASPNET_K || PORTABLE
+#if ASPNET_K || WINDOWS_DESKTOP
             MD5 md5 = MD5.Create();
             string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
-#else
+#elif WINDOWS_RT
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
             hasher.Append(buffer.AsBuffer());
             string contentMD5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
@@ -875,10 +875,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string md5 = string.Empty;
             if (testMd5)
             {
-#if ASPNET_K || PORTABLE
+#if ASPNET_K || WINDOWS_DESKTOP
                 MD5 hasher = MD5.Create();
                 md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
-#else
+#elif WINDOWS_RT
                 CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
                 hasher.Append(buffer.AsBuffer(startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
                 md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset()); 

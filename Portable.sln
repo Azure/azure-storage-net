@@ -23,17 +23,22 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WindowsRuntime.Test", "Test
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "AspNet.Test", "Test\AspNet\Microsoft.WindowsAzure.Storage.Test\AspNet.Test.shproj", "{9413AE2D-5C91-4BB8-A13E-DAA22F402F63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portable.Win8.Test", "Test\Portable\Win8\Portable.Win8.Test.csproj", "{FDF71941-5838-4380-B78F-93F9AC2475AB}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Lib\AspNet\Microsoft.WindowsAzure.Storage\AspNet.projitems*{885c336d-2512-423b-9cf0-0cfe312aa535}*SharedItemsImports = 13
 		Lib\Common\Common.projitems*{091ac158-9b51-42f9-8eb4-5c8cf345b52f}*SharedItemsImports = 13
 		Test\Common\Common.Test.projitems*{47272a75-1b54-4fda-9b7e-83c21cff678f}*SharedItemsImports = 13
 		Test\AspNet\Microsoft.WindowsAzure.Storage.Test\AspNet.Test.projitems*{9413ae2d-5c91-4bb8-a13e-daa22f402f63}*SharedItemsImports = 13
+		Test\Common\Common.Test.projitems*{fdf71941-5838-4380-b78f-93f9ac2475ab}*SharedItemsImports = 4
+		Test\AspNet\Microsoft.WindowsAzure.Storage.Test\AspNet.Test.projitems*{fdf71941-5838-4380-b78f-93f9ac2475ab}*SharedItemsImports = 4
+		Test\WindowsRuntime\WindowsRuntime.Test.projitems*{fdf71941-5838-4380-b78f-93f9ac2475ab}*SharedItemsImports = 4
 		Test\WindowsRuntime\WindowsRuntime.Test.projitems*{9db056e1-96ae-4414-adaf-32d442f82597}*SharedItemsImports = 13
 		Lib\WindowsRuntime\WindowsRuntime.projitems*{85ff3a26-a0ed-4e43-97c0-645ae07ca9f1}*SharedItemsImports = 13
+		Test\Common\Common.Test.projitems*{c1fb91d5-5d2c-49e4-8dc3-ecda7c43a15f}*SharedItemsImports = 4
 		Test\AspNet\Microsoft.WindowsAzure.Storage.Test\AspNet.Test.projitems*{c1fb91d5-5d2c-49e4-8dc3-ecda7c43a15f}*SharedItemsImports = 4
 		Test\WindowsRuntime\WindowsRuntime.Test.projitems*{c1fb91d5-5d2c-49e4-8dc3-ecda7c43a15f}*SharedItemsImports = 4
-		Test\Common\Common.Test.projitems*{c1fb91d5-5d2c-49e4-8dc3-ecda7c43a15f}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +53,12 @@ Global
 		{C1FB91D5-5D2C-49E4-8DC3-ECDA7C43A15F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1FB91D5-5D2C-49E4-8DC3-ECDA7C43A15F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1FB91D5-5D2C-49E4-8DC3-ECDA7C43A15F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDF71941-5838-4380-B78F-93F9AC2475AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDF71941-5838-4380-B78F-93F9AC2475AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDF71941-5838-4380-B78F-93F9AC2475AB}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{FDF71941-5838-4380-B78F-93F9AC2475AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDF71941-5838-4380-B78F-93F9AC2475AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDF71941-5838-4380-B78F-93F9AC2475AB}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,5 +72,6 @@ Global
 		{47272A75-1B54-4FDA-9B7E-83C21CFF678F} = {D2D20A1D-E8C0-4BAC-B7EF-5ADCDDAC2A2C}
 		{9DB056E1-96AE-4414-ADAF-32D442F82597} = {D2D20A1D-E8C0-4BAC-B7EF-5ADCDDAC2A2C}
 		{9413AE2D-5C91-4BB8-A13E-DAA22F402F63} = {D2D20A1D-E8C0-4BAC-B7EF-5ADCDDAC2A2C}
+		{FDF71941-5838-4380-B78F-93F9AC2475AB} = {D2D20A1D-E8C0-4BAC-B7EF-5ADCDDAC2A2C}
 	EndGlobalSection
 EndGlobal

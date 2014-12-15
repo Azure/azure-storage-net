@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-#if WINDOWS_DESKTOP || MSTEST_DESKTOP
+#if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;

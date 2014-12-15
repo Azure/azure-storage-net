@@ -63,5 +63,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Table\TableQueryGenericTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\TableQueryTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\TableTestBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestBase.cs" />
   </ItemGroup>
 </Project>

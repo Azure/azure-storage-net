@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using System.Collections.Generic;
     using System.Net;
 
-#if WINDOWS_DESKTOP || MSTEST_DESKTOP
+#if WINDOWS_DESKTOP
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new Uri("http://" + AccountName + FileService + EndpointSuffix),
                 new Uri("http://" + AccountName + SecondarySuffix + FileService + EndpointSuffix));
 
-#if WINDOWS_RT || ASPNET_K
+#if (WINDOWS_RT || ASPNET_K) && !PORTABLE
             CloudStorageAccount account = CloudStorageAccount.Create(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);
 #else
             CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);

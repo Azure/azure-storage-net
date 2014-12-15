@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if MSTEST_DESKTOP
+#if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -27,7 +27,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K || PORTABLE
+#if ASPNET_K || WINDOWS_DESKTOP
 using System.Globalization;
 using System.Threading;
 #elif WINDOWS_RT
@@ -444,7 +444,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #if ASPNET_K
             CultureInfo currentCulture = CultureInfo.CurrentCulture;
             CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
-#elif PORTABLE
+#elif WINDOWS_DESKTOP
             CultureInfo currentCulture = CultureInfo.CurrentCulture;
             Thread.CurrentThread.CurrentCulture = new CultureInfo("sk-SK");
 #elif WINDOWS_RT
@@ -464,7 +464,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().AsTask().Wait();
 #if ASPNET_K
                 CultureInfo.CurrentCulture = currentCulture;
-#elif PORTABLE
+#elif WINDOWS_DESKTOP
                 Thread.CurrentThread.CurrentCulture = currentCulture;
 #elif WINDOWS_RT
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;

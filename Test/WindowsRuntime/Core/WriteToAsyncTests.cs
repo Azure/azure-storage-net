@@ -21,7 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-#if MSTEST_DESKTOP
+#if WINDOWS_DESKTOP
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
