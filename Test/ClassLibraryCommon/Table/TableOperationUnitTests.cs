@@ -2824,6 +2824,31 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("TableOperations with entities that have Virtual Properties")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableOpsWithEntitiesVirtualProperties()
+        {
+            var azureObject = new DerivedEntity()
+            {
+                PartitionKey = "PK",
+                RowKey = "RK",
+                VirtualProperty = "Test Virtual Property",
+            };
+
+            IDictionary<string, EntityProperty> properties = azureObject.WriteEntity(null);
+            Assert.AreEqual(1, properties.Count);
+            Assert.AreEqual(azureObject.VirtualProperty, properties["VirtualProperty"].StringValue);
+
+            OperationContext context = new OperationContext();
+            var ent = new DerivedEntity();
+            ent.ReadEntity(properties, context);
+            Assert.AreEqual(properties["VirtualProperty"].StringValue, ent.VirtualProperty);
+        }
+
+        [TestMethod]
         [Description("Simple test to roundtrip a non derived TableEntity with and without CompiledSerializers")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]

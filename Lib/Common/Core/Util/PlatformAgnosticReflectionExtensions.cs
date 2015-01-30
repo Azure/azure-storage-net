@@ -70,7 +70,19 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #if WINDOWS_RT || NETCORE
             return property.GetMethod;
 #else
-            return property.GetGetMethod();
+            var getMethod = property.GetGetMethod();
+            if (getMethod == null)
+            {
+                var setMethod = property.GetSetMethod();
+                if (setMethod.IsVirtual)
+                {
+                    var parentType = setMethod.DeclaringType.BaseType;
+                    var parentProperty = parentType.GetProperty(property.Name, property.PropertyType);
+                    if (parentProperty != null)
+                        return parentProperty.FindGetProp();
+                }
+            }
+            return getMethod;
 #endif
         }
 
@@ -79,7 +91,19 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #if WINDOWS_RT || NETCORE
             return property.SetMethod;
 #else
-            return property.GetSetMethod();
+            var setMethod = property.GetSetMethod();
+            if (setMethod == null)
+            {
+                var getMethod = property.GetGetMethod();
+                if (getMethod.IsVirtual)
+                {
+                    var parentType = getMethod.DeclaringType.BaseType;
+                    var parentProperty = parentType.GetProperty(property.Name, property.PropertyType);
+                    if (parentProperty != null)
+                        return parentProperty.FindSetProp();
+                }
+            }
+            return setMethod;
 #endif
         }
     }
