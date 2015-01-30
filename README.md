@@ -97,7 +97,7 @@ FiddlerCore is required by:
 - Test\FaultInjection\AzureStoreMangler
 - Test\WindowsDesktop
 
-This dependency is not included and must be downloaded from [http://www.fiddler2.com/Fiddler/Core/](http://www.fiddler2.com/Fiddler/Core/).
+This dependency is not included and must be downloaded from [http://www.telerik.com/fiddler/fiddlercore](http://www.telerik.com/fiddler/fiddlercore).
 
 Once installed:
 
