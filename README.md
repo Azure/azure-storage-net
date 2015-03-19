@@ -152,5 +152,5 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 # Learn More
 
 - [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/)
-- [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/library/azure/dn495001(v=azure.10).aspx)
+- [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/wa_storage_30_reference_home.aspx)
 - [Azure Storage Team Blog] (http://blogs.msdn.com/b/windowsazurestorage/)
