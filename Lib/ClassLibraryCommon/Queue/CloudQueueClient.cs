@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// Provides a client-side logical representation of the Windows Azure Queue service. This client is used to configure and execute requests against the Queue service.
     /// </summary>
     /// <remarks>The service client encapsulates the endpoint or endpoints for the Queue service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>
-    public sealed partial class CloudQueueClient
+    public sealed partial class CloudQueueClient : ICloudQueueClient
     {
         private IAuthenticationHandler authenticationHandler;
 
