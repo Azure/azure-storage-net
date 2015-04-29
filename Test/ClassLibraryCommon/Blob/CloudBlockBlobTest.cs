@@ -2519,10 +2519,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
             }
             finally
             {
@@ -2619,10 +2619,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                     Assert.AreEqual(4, blobs.Count);
-                    AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                    AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                    AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                    AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                    AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                    AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                    AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                    AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
                 }
             }
             finally
@@ -2714,10 +2714,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                              .ToList();
 
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
             }
             finally
             {
@@ -3476,7 +3476,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.UncommittedBlobs).ToList();
-                foreach (ICloudBlob blob in blobs)
+                foreach (CloudBlob blob in blobs)
                 {
                     if (committedBlobs.Remove(blob.Name))
                     {
@@ -3601,6 +3601,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
                     Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
                 };
+
                 CloudBlockBlob snapshot = blob.CreateSnapshot();
                 string sas = snapshot.GetSharedAccessSignature(policy);
                 Assert.IsNotNull(sas);

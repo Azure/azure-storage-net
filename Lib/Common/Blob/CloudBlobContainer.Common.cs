@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="containerAddress">A <see cref="System.Uri"/> object specifying the absolute URI to the container.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
         public static CloudBlobContainer Create(StorageUri containerAddress, StorageCredentials credentials)
         {
@@ -175,6 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return string.Format(CultureInfo.InvariantCulture, "/{0}/{1}", accountName, containerName);
         }
 
+#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the container.
         /// </summary>
@@ -203,7 +204,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <param name="groupPolicyIdentifier">A container-level access policy.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, string groupPolicyIdentifier, string sasVersion)
@@ -214,9 +215,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new InvalidOperationException(errorMessage);
             }
 
+            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
             string resourceName = this.GetSharedAccessCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
             string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, validatedSASVersion, accountKey.KeyValue);
             string accountKeyName = accountKey.KeyName;
 
@@ -225,6 +226,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return builder.ToString();
         }
+#endif
 
         /// <summary>
         /// Gets a reference to a page blob in this container.
@@ -268,6 +270,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
             return new CloudBlockBlob(blobName, snapshotTime, this);
+        }
+
+        /// <summary>
+        /// Gets a reference to a blob in this container.
+        /// </summary>
+        /// <param name="blobName">A string containing the name of the blob.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
+        public CloudBlob GetBlobReference(string blobName)
+        {
+            return this.GetBlobReference(blobName, null /* snapshotTime */);
+        }
+
+        /// <summary>
+        /// Gets a reference to a blob in this container.
+        /// </summary>
+        /// <param name="blobName">A string containing the name of the blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
+        public CloudBlob GetBlobReference(string blobName, DateTimeOffset? snapshotTime)
+        {
+            CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
+            return new CloudBlob(blobName, snapshotTime, this);
         }
 
         /// <summary>

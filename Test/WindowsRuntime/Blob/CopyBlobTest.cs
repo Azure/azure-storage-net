@@ -129,6 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob copy = container.GetBlockBlobReference("copy");
                 string copyId = await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source));
+                Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -319,6 +320,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
                 string copyId = await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source));
+                Assert.AreEqual(BlobType.PageBlob, copy.BlobType);
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);

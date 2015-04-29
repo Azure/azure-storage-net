@@ -15,26 +15,30 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
     public partial class FileTestBase : TestBase
     {
-        public static List<string> CreateFiles(CloudFileShare share, int count)
-        {
-            string name;
-            List<string> files = new List<string>();
-            for (int i = 0; i < count; i++)
-            {
-                name = "ff" + Guid.NewGuid().ToString();
-                CloudFile file = share.GetRootDirectoryReference().GetFileReference(name);
-                file.Create(0);
-                files.Add(name);
-            }
-            return files;
-        }
+        public static List<string> CreateFiles(CloudFileShare share, int count) 
+         { 
+             string name; 
+             List<string> files = new List<string>(); 
+             for (int i = 0; i < count; i++) 
+             { 
+                 name = "ff" + Guid.NewGuid().ToString(); 
+                 CloudFile file = share.GetRootDirectoryReference().GetFileReference(name); 
+                 file.Create(0); 
+                 files.Add(name); 
+             } 
+             return files; 
+         } 
 
 #if TASK
         public static List<string> CreateFilesTask(CloudFileShare share, int count)
@@ -49,6 +53,111 @@ namespace Microsoft.WindowsAzure.Storage.File
                 files.Add(name);
             }
             return files;
+        }
+#endif
+
+        public static void UploadText(CloudFile file, string text, Encoding encoding, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            byte[] textAsBytes = encoding.GetBytes(text);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                stream.Write(textAsBytes, 0, textAsBytes.Length);
+                stream.Seek(0, SeekOrigin.Begin);
+                file.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+                file.UploadFromStream(stream, accessCondition, options, operationContext);
+            }
+        }
+
+        public static void UploadTextAPM(CloudFile file, string text, Encoding encoding, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            byte[] textAsBytes = encoding.GetBytes(text);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                stream.Write(textAsBytes, 0, textAsBytes.Length);
+
+                stream.Seek(0, SeekOrigin.Begin);
+                file.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = file.BeginUploadFromStream(stream, accessCondition, options, operationContext,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    file.EndUploadFromStream(result);
+                }
+            }
+        }
+
+#if TASK
+        public static void UploadTextTask(CloudFile file, string text, Encoding encoding, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            byte[] textAsBytes = encoding.GetBytes(text);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                stream.Write(textAsBytes, 0, textAsBytes.Length);
+
+                stream.Seek(0, SeekOrigin.Begin);
+                file.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+                try
+                {
+                    file.UploadFromStreamAsync(stream, accessCondition, options, operationContext).Wait();
+                }
+                catch (AggregateException ex)
+                {
+                    if (ex.InnerException != null)
+                    {
+                        throw ex.InnerException;
+                    }
+
+                    throw;
+                }
+            }
+        }
+#endif
+
+        public static string DownloadText(CloudFile file, Encoding encoding, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                file.DownloadToStream(stream, accessCondition, options, operationContext);
+                return encoding.GetString(stream.ToArray());
+            }
+        }
+
+        public static string DownloadTextAPM(CloudFile file, Encoding encoding, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = file.BeginDownloadToStream(stream, accessCondition, options, operationContext, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    file.EndDownloadToStream(result);
+                    return encoding.GetString(stream.ToArray());
+                }
+            }
+        }
+
+#if TASK
+        public static string DownloadTextTask(CloudFile file, Encoding encoding, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                try
+                {
+                    file.DownloadToStreamAsync(stream, accessCondition, options, operationContext).Wait();
+                }
+                catch (AggregateException ex)
+                {
+                    if (ex.InnerException != null)
+                    {
+                        throw ex.InnerException;
+                    }
+
+                    throw;
+                }
+                return encoding.GetString(stream.ToArray());
+            }
         }
 #endif
     }

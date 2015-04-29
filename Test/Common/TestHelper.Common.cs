@@ -25,8 +25,12 @@ using System.Threading.Tasks;
 
 #if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.File;
+using Microsoft.WindowsAzure.Storage.File.Protocol;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.WindowsAzure.Storage.File.Protocol;
+using Microsoft.WindowsAzure.Storage.File;
 #endif
 
 namespace Microsoft.WindowsAzure.Storage
@@ -217,7 +221,18 @@ namespace Microsoft.WindowsAzure.Storage
 
             for (int i = 0; i < src.Length; i++)
             {
-                Assert.AreEqual(src[i], dst[i]);
+                Assert.AreEqual(src[i], dst[i], "Mismatch of data at index : " + i);
+            }
+        }
+
+        /// <summary>
+        /// Compares two byte buffers.
+        /// </summary>
+        internal static void AssertBuffersAreEqualUptoIndex(byte[] src, byte[] dst, int index)
+        {
+            for (int i = 0; i <= index; i++)
+            {
+                Assert.AreEqual(src[i], dst[i], "Mismatch of data at index : " + i);
             }
         }
 
@@ -293,6 +308,27 @@ namespace Microsoft.WindowsAzure.Storage
             else
             {
                 return blob;
+            }
+        }
+
+        /// <summary>
+        /// Remove the local fiddler proxy from a file reference.
+        /// </summary>
+        /// <param name="file">The file to change.</param>
+        /// <returns>A file reference without the local fiddler proxy.
+        ///     If no fiddler proxy is present, the old file reference is returned.</returns>
+        internal static CloudFile Defiddler(CloudFile file)
+        {
+            Uri oldUri = file.Uri;
+            Uri newUri = Defiddler(oldUri);
+
+            if (newUri != oldUri)
+            {
+                return new CloudFile(newUri, file.ServiceClient.Credentials);
+            }
+            else
+            {
+                return file;
             }
         }
 

@@ -47,7 +47,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <returns><c>true</c> if the entry should be logged; otherwise <c>false</c>.</returns>
         private static bool ShouldLog(LogLevel level, OperationContext operationContext)
         {
+#if !PORTABLE
             return (operationContext == null) || (level <= operationContext.LogLevel);
+#else 
+            return false;
+#endif
         }
     }
 }

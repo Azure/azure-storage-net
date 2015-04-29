@@ -31,6 +31,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Indicates the message object stores the Base64-Encoded representation of the raw data. 
         /// </summary>
-        Base64Encoded
+        Base64Encoded,
+
+        /// <summary>
+        /// Indicates the message object stores the raw binary data.
+        /// </summary>
+        RawBytes
     }
 }

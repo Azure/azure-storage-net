@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Globalization;
     using System.IO;
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
     using System.Net.Http;
 #else
     using System.Net;
@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     // This class encapsulates a StorageCommand and stores state about its execution.
     // Note conceptually there is some overlap between ExecutionState and operationContext, however the 
     // operationContext is the user visible object and the ExecutionState is an internal object used to coordinate execution.
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
     internal class ExecutionState<T> : IDisposable
 #else
     // If we are exposing APM then derive this class from the StorageCommandAsyncResult
@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             this.OperationContext = operationContext ?? new OperationContext();
             this.InitializeLocation();
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
             if (this.OperationContext.StartTime == DateTimeOffset.MinValue)
             {
                 this.OperationContext.StartTime = DateTimeOffset.Now;
@@ -82,16 +82,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             this.Req = null;
             this.resp = null;
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             this.ReqTimedOut = false;
             this.CancelDelegate = null;
 #endif
         }
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         public void Dispose()
         {
             this.CheckDisposeSendStream();
+            this.CheckDisposeAction();
         }
 #else
         protected override void Dispose(bool disposing)
@@ -106,6 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 }
 
                 this.CheckDisposeSendStream();
+                this.CheckDisposeAction();
             }
 
             base.Dispose(disposing);
@@ -173,7 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             set
             {
                 this.reqStream =
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
                     value;
 #else
                     value == null ? null : value.WrapWithByteCountingStream(this.Cmd.CurrentResult);
@@ -237,7 +239,27 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             }
         }
 
-#if WINDOWS_RT || ASPNET_K
+        private void CheckDisposeAction()
+        {
+            RESTCommand<T> cmd = this.RestCMD;
+            if (cmd != null && cmd.DisposeAction != null)
+            {
+                Logger.LogInformational(this.OperationContext, SR.TraceDispose);
+
+                try
+                {
+                    cmd.DisposeAction(cmd);
+                }
+                catch (Exception ex)
+                {
+                    // Ignore the error thrown by the dispose action in the error case so the original error that caused it can be exposed
+                    // to the user. Just log this here for debugging service.
+                    Logger.LogWarning(this.OperationContext, SR.TraceDisposeError, ex.Message);
+                }
+            }
+        }
+
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         internal HttpClient Client { get; set; }
 
         internal HttpRequestMessage Req { get; set; }

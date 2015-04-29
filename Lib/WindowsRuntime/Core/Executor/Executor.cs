@@ -173,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                                 cmd.ErrorStream = new MemoryStream();
                                 await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), token);
                                 cmd.ErrorStream.Seek(0, SeekOrigin.Begin);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                                 executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, null /* parseError */, cmd.ErrorStream, executionState.Resp);
 #else
                                 executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, null /* parseError */, cmd.ErrorStream);
@@ -241,7 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                             e = new TimeoutException(SR.TimeoutExceptionMessage, e);
                         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                         StorageException translatedException = StorageException.TranslateException(e, executionState.Cmd.CurrentResult, null, executionState.Resp);
 #else
                         StorageException translatedException = StorageException.TranslateException(e, executionState.Cmd.CurrentResult, null);
@@ -303,7 +303,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     if (!shouldRetry || (executionState.OperationExpiryTime.HasValue && (DateTime.Now + delay).CompareTo(executionState.OperationExpiryTime.Value) > 0))
                     {
                         Logger.LogError(executionState.OperationContext, shouldRetry ? SR.TraceRetryDecisionTimeout : SR.TraceRetryDecisionPolicy, executionState.ExceptionRef.Message);
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
                         // Need to throw wrapped Exception with message as serialized exception info stuff. 
                         int hResult = WrappedStorageException.GenerateHResult(executionState.ExceptionRef, executionState.Cmd.CurrentResult);
                         throw new WrappedStorageException(executionState.Cmd.CurrentResult.WriteAsXml(), executionState.ExceptionRef, hResult);

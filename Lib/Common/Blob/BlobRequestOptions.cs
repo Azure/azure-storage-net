@@ -24,6 +24,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+    using System.Security.Cryptography;
+#endif
     
     /// <summary>
     /// Represents a set of timeout and retry policy options that may be specified for a request against the Blob service.
@@ -61,6 +64,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if (other != null)
             {
                 this.RetryPolicy = other.RetryPolicy;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                this.EncryptionPolicy = other.EncryptionPolicy;
+#endif
                 this.LocationMode = other.LocationMode;
                 this.ServerTimeout = other.ServerTimeout;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
@@ -78,6 +84,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = new BlobRequestOptions(options);
 
             modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
+#endif
+
             modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
                                             ?? serviceClient.DefaultRequestOptions.LocationMode) 
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
@@ -95,7 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
 
-#if WINDOWS_PHONE && WINDOWS_DESKTOP
+#if (WINDOWS_PHONE && WINDOWS_DESKTOP) || PORTABLE
             modifiedOptions.DisableContentMD5Validation = true;
             modifiedOptions.StoreBlobContentMD5 = false;
             modifiedOptions.UseTransactionalMD5 = false;
@@ -105,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                                             ?? false;
             modifiedOptions.StoreBlobContentMD5 = (modifiedOptions.StoreBlobContentMD5 
                                                     ?? serviceClient.DefaultRequestOptions.StoreBlobContentMD5)
-                                                    ?? (blobType == BlobType.BlockBlob);
+                                                    ?? blobType == BlobType.BlockBlob;
             modifiedOptions.UseTransactionalMD5 = (modifiedOptions.UseTransactionalMD5 
                                                     ?? serviceClient.DefaultRequestOptions.UseTransactionalMD5)
                                                     ?? false;
@@ -136,6 +146,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        internal void AssertNoEncryptionPolicy()
+        {
+            if (this.EncryptionPolicy != null)
+            {
+                throw new InvalidOperationException(SR.EncryptionNotSupportedForOperation);
+            }
+        }
+#endif
+
         /// <summary>
         ///  Gets or sets the absolute expiry time across all potential retries for the request. 
         /// </summary>
@@ -146,6 +166,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        /// <summary>
+        /// Gets or sets the encryption policy for the request.
+        /// </summary>
+        /// <value>An object of type <see cref="EncryptionPolicy"/>.</value>
+        public BlobEncryptionPolicy EncryptionPolicy { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets the location mode of the request.
@@ -233,6 +261,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>Use <c>true</c> to calculate and send/validate content MD5 for transactions; otherwise, <c>false</c>.</value>       
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
+#elif PORTABLE
+        /// <remarks>This property is not supported for Portable Class Library.</remarks>
 #endif
         public bool? UseTransactionalMD5
         {
@@ -248,6 +278,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
                 }
+#elif PORTABLE
+                if (value.HasValue && value.Value)
+                {
+                    throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
+                }
 #endif
                 this.useTransactionalMD5 = value;
             }
@@ -261,6 +296,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>Use <c>true</c> to calculate and store an MD5 hash when uploading a blob; otherwise, <c>false</c>.</value>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
+#elif PORTABLE
+        /// <remarks>This property is not supported for Portable Class Library.</remarks>
 #endif
         public bool? StoreBlobContentMD5
         {
@@ -276,6 +313,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
                 }
+#elif PORTABLE
+                if (value.HasValue && value.Value)
+                {
+                    throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
+                }
 #endif
                 this.storeBlobContentMD5 = value;
             }
@@ -289,6 +331,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>Use <c>true</c> to disable MD5 validation; <c>false</c> to enable MD5 validation.</value>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
+#elif PORTABLE
+        /// <remarks>This property is not supported for Portable Class Library.</remarks>
 #endif
         public bool? DisableContentMD5Validation
         {
@@ -303,6 +347,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (value.HasValue && !value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
+                }
+#elif PORTABLE
+                if (value.HasValue && !value.Value)
+                {
+                    throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
                 }
 #endif
                 this.disableContentMD5Validation = value;

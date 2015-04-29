@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (4.3.2-Preview)
+# Microsoft Azure Storage SDK for .NET (4.4.0-Preview)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -33,6 +33,7 @@ For the best development experience, developers should use the official Microsof
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
 - ASP.NET 5: Storage Client Libraries for .NET are available to support ASP.NET 5 application development. This support is currently in preview. 
+- Portable Class Library Profile 111: Storage Client Libraries are available to support building PCL Profile 111 applications, as well as for Xamarin application development. This support is currently in preview.
  
 ## Requirements
 
@@ -89,6 +90,12 @@ The desktop library depends on WCF Data Services Client, which can be downloaded
 
 - [Microsoft.Data.Services.Client] (http://www.nuget.org/packages/Microsoft.Data.Services.Client/)
 
+### Key Vault
+
+The client-side encryption support, currently in preview, depends on the KeyVault.Core package, which can be downloaded directly or referenced by your code project through Nuget.
+
+- [KeyVault.Core] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
+
 ### Test Dependencies
 
 FiddlerCore is required by:
@@ -103,6 +110,10 @@ Once installed:
 
 - Copy `FiddlerCore.dll` `\azure-storage-net\Test\FaultInjection\Dependencies\DotNet2`
 - Copy `FiddlerCore4.dll` to `azure-storage-net\Test\FaultInjection\Dependencies\DotNet4`
+
+Tests for the client-side encryption preview support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
+
+- [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
 ## Code Samples
 

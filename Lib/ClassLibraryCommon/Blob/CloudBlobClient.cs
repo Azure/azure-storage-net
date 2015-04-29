@@ -616,7 +616,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public ICancellableAsyncResult BeginGetBlobReferenceFromServer(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             CommonUtility.AssertNotNull("blobUri", blobUri);
-
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
             return Executor.BeginExecuteAsync(
                 this.GetBlobReferenceImpl(blobUri, accessCondition, modifiedOptions),
@@ -799,7 +798,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     SnapshotTime = parsedSnapshot,
                 };
 
-                CloudBlobSharedImpl.UpdateAfterFetchAttributes(attributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(attributes, resp, false);
 
                 switch (attributes.Properties.BlobType)
                 {

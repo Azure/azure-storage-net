@@ -42,8 +42,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="content">The content of the message as a byte array.</param>
         public void SetMessageContent(byte[] content)
         {
-            this.RawString = Convert.ToBase64String(content);
-            this.MessageType = QueueMessageType.Base64Encoded;
+            this.RawBytes = content;
+            this.MessageType = QueueMessageType.RawBytes;
         }
     }
 }

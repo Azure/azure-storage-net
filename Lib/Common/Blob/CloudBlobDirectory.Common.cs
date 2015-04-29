@@ -155,6 +155,30 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Gets a reference to a blob in this virtual directory.
+        /// </summary>
+        /// <param name="blobName">A string containing the name of the blob.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
+        public CloudBlob GetBlobReference(string blobName)
+        {
+            return this.GetBlobReference(blobName, null /* snapshotTime */);
+        }
+
+        /// <summary>
+        /// Gets a reference to a blob in this virtual directory.
+        /// </summary>
+        /// <param name="blobName">A string containing the name of the blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
+        public CloudBlob GetBlobReference(string blobName, DateTimeOffset? snapshotTime)
+        {
+            CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
+
+            StorageUri blobUri = NavigationHelper.AppendPathToUri(this.StorageUri, blobName, this.ServiceClient.DefaultDelimiter);
+            return new CloudBlob(blobUri, snapshotTime, this.ServiceClient.Credentials);
+        }
+
+        /// <summary>
         /// Returns a virtual subdirectory within this virtual directory.
         /// </summary>
         /// <param name="itemName">The name of the virtual subdirectory.</param>

@@ -53,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        private static async Task CreateForTestAsync(CloudBlockBlob blob, int blockCount, int blockSize, bool commit = true)
+        internal static async Task CreateForTestAsync(CloudBlockBlob blob, int blockCount, int blockSize, bool commit = true)
         {
             byte[] buffer = GetRandomBuffer(blockSize);
             List<string> blocks = GetBlockIdList(blockCount);
@@ -1015,10 +1015,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 BlobResultSegment resultSegment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null);
                 List<IListBlobItem> blobs = resultSegment.Results.ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
             }
             finally
             {
@@ -1500,7 +1500,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 BlobResultSegment resultSegment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.UncommittedBlobs, null, null, null, null);
                 List<IListBlobItem> blobs = resultSegment.Results.ToList();
-                foreach (ICloudBlob blob in blobs)
+                foreach (CloudBlob blob in blobs)
                 {
                     if (committedBlobs.Remove(blob.Name))
                     {
@@ -1533,12 +1533,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlockBlobUploadTextAsync()
         {
-            await this.DoTextUploadDownloadAsync("test");
-            await this.DoTextUploadDownloadAsync("char中文test");
-            await this.DoTextUploadDownloadAsync("");
+            await this.DoTextUploadDownloadAsync("test", false);
+            await this.DoTextUploadDownloadAsync("char中文test", true);
+            await this.DoTextUploadDownloadAsync("", false);
         }
 
-        private async Task DoTextUploadDownloadAsync(string text)
+        private async Task DoTextUploadDownloadAsync(string text, bool checkDifferentEncoding)
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -1546,9 +1546,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateIfNotExistsAsync();
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
 
+                // Default Encoding
                 await blob.UploadTextAsync(text);
                 Assert.AreEqual(text, await blob.DownloadTextAsync());
+                if (checkDifferentEncoding)
+                {
+                    Assert.AreNotEqual(text, await blob.DownloadTextAsync(Encoding.Unicode, null, null, null));
+                }
 
+                // Custom Encoding
+                await blob.UploadTextAsync(text, Encoding.Unicode, null, null, null);
+                Assert.AreEqual(text, await blob.DownloadTextAsync(Encoding.Unicode, null, null, null));
+                if (checkDifferentEncoding)
+                {
+                    Assert.AreNotEqual(text, await blob.DownloadTextAsync());
+                }
+
+                // Number of service calls
                 OperationContext context = new OperationContext();
                 await blob.UploadTextAsync(text, null, null, context);
                 Assert.AreEqual(1, context.RequestResults.Count);

@@ -535,6 +535,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<T, RESULT_TYPE>(TableQuery<T> query, TableContinuationToken token, CloudTableClient client, CloudTable table, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions)
         {
+            // If encryption policy is set, then add the encryption metadata column to Select columns in order to be able to decrypt properties.
+            if (requestOptions.EncryptionPolicy != null)
+            {
+                query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails);
+                query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails);
+            }
+
             UriQueryBuilder builder = query.GenerateQueryBuilder();
 
             if (token != null)

@@ -50,10 +50,22 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string ContentMD5NotCalculated = "The operation requires a response body but no data was copied to the destination buffer.";
         public const string CopyAborted = "The copy operation has been aborted by the user.";
         public const string CopyFailed = "The copy operation failed with the following error message: {0}";
+        public const string CryptoError = "Cryptographic error occurred. Please check the inner exception for more details.";
         public const string CryptoFunctionFailed = "Crypto function failed with error code '{0}'";
+        public const string DecryptionLogicError = "Decryption logic threw error. Please check the inner exception for more details.";
         public const string DeleteSnapshotsNotValidError = "The option '{0}' must be 'None' to delete a specific snapshot specified by '{1}'";
         public const string Directory = "directory";
         public const string EmptyBatchOperation = "Cannot execute an empty batch operation";
+        public const string EncryptedMessageTooLarge = "Encrypted Messages cannot be larger than {0} bytes. Please note that encrypting queue messages can increase their size.";
+        public const string EncryptionDataNotPresentError = "Encryption data does not exist. If you do not want to decrypt the data, please do not set the encryption policy on request options.";
+        public const string EncryptionLogicError = "Encryption logic threw error. Please check the inner exception for more details.";
+        public const string EncryptedMessageDeserializingError = "Error while de-serializing the encrypted queue message string from the wire. Please check inner exception for more details.";
+        public const string EncryptionNotSupportedForOperation = "Encryption is not supported for the current operation. Please ensure that EncryptionPolicy is not set on RequestOptions.";
+        public const string EncryptingNullPropertiesNotAllowed = "Null properties cannot be encrypted. Please assign a default value to the property if you wish to encrypt it.";
+        public const string EncryptionMetadataError = "Error while de-serializing the encryption metadata string from the wire.";
+        public const string EncryptionNotSupportedForExistingBlobs = "Encryption is not supported for a blob that already exists. Please do not specify an encryption policy.";
+        public const string EncryptionNotSupportedForPageBlobsOnPhone = "Encryption is not supported for PageBlobs on Windows Phone.";
+        public const string EncryptionProtocolVersionInvalid = "Invalid Encryption Agent. This version of the client library does not understand the Encryption Agent set on the blob.";
         public const string ETagMissingForDelete = "Delete requires an ETag (which may be the '*' wildcard).";
         public const string ETagMissingForMerge = "Merge requires an ETag (which may be the '*' wildcard).";
         public const string ETagMissingForReplace = "Replace requires an ETag (which may be the '*' wildcard).";
@@ -72,6 +84,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidBlobListItem = "Invalid blob list item returned";
         public const string InvalidCorsRule = "A CORS rule must contain at least one allowed origin and allowed method, and MaxAgeInSeconds cannot have a value less than zero.";
         public const string InvalidDelimiter = "\\ is an invalid delimiter.";
+        public const string InvalidEncryptionAlgorithm = "Invalid Encryption Algorithm found on the resource. This version of the client library does not support the specified encryption algorithm.";
+        public const string InvalidEncryptionMode = "Invalid BlobEncryptionMode set on the policy. Please set it to FullBlob when the policy is used with UploadFromStream.";
         public const string InvalidFileListItem = "Invalid file list item returned";
         public const string InvalidGeoReplicationStatus = "Invalid geo-replication status in response: '{0}'";
         public const string InvalidHeaders = "Headers are not supported in the 2012-02-12 version.";
@@ -90,6 +104,9 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string IQueryableExtensionObjectMustBeTableQuery = "Query must be a TableQuery<T>";
         public const string JsonNotSupportedOnRT = "JSON payloads are not supported in Windows Runtime.";
         public const string JsonReaderNotInCompletedState = "The JSON reader has not yet reached the completed state.";
+        public const string KeyMismatch = "Key mismatch. The key id stored on the service does not match the specified key.";
+        public const string KeyMissingError = "Key is not initialized. Encryption requires it to be initialized.";
+        public const string KeyOrResolverMissingError = "Key and Resolver are not initialized. Decryption requires either of them to be initialized.";
         public const string LeaseConditionOnSource = "A lease condition cannot be specified on the source of a copy.";
         public const string LeaseTimeNotReceived = "Valid lease time expected but not received from the service.";
         public const string LengthNotInRange = "The length provided is out of range. The range must be between 0 and the length of the byte array.";
@@ -101,7 +118,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string LogVersionUnsupported = "A storage log version of {0} is unsupported.";
         public const string LoggingVersionNull = "The logging version is null or empty.";
         public const string MD5MismatchError = "Calculated MD5 does not match existing property";
-        public const string MD5NotPossible = "MD5 cannot be calculated for an existing page blob because it would require reading the existing data. Please disable StoreBlobContentMD5.";
+        public const string MD5NotPossible = "MD5 cannot be calculated for an existing blob because it would require reading the existing data. Please disable StoreBlobContentMD5.";
         public const string MD5NotPresentError = "MD5 does not exist. If you do not want to force validation, please disable UseTransactionalMD5.";
         public const string MessageTooLarge = "Messages cannot be larger than {0} bytes.";
         public const string MetricVersionNull = "The metrics version is null or empty.";
@@ -113,6 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string MissingLeaseIDRenewing = "A lease ID must be specified when renewing a lease.";
         public const string MissingMandatoryParametersForSAS = "Missing mandatory parameters for valid Shared Access Signature";
         public const string MissingShareInformation = "Invalid file address '{0}', missing share information";
+        public const string MissingWrappingIV = "A key wrapping IV must be present in the encryption metadata while decrypting.";
         public const string StorageUriMustMatch = "Primary and secondary location URIs in a StorageUri must point to the same resource.";
         public const string MultipleCredentialsProvided = "Cannot provide credentials as part of the address and as constructor parameter. Either pass in the address or use a different constructor.";
         public const string MultipleSnapshotTimesProvided = "Multiple different snapshot times provided as part of query '{0}' and as constructor parameter '{1}'.";
@@ -129,8 +147,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string PropertyResolverCacheDisabled = "Property resolver cache is disabled.";
         public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details";
         public const string PutBlobNeedsStoreBlobContentMD5 = "When uploading a blob in a single request, StoreBlobContentMD5 must be set to true if UseTransactionalMD5 is true, because the MD5 calculated for the transaction will be stored in the blob.";
+        public const string QueryBuilderKeyNotFound = "'{0}' key not found in the query builder.";
         public const string Queue = "queue";
         public const string QueueEndPointNotConfigured = "No queue endpoint configured.";
+        public const string RangeDownloadNotPermittedOnPhone = "Windows Phone does not support downloading closed ranges from an encrypted blob. Please download the full blob or an open range (by specifying length as null)";
         public const string RelativeAddressNotPermitted = "Address '{0}' is a relative address. Only absolute addresses are permitted.";
         public const string ResourceConsumed = "Resource consumed";
         public const string ResourceNameEmpty = "Invalid {0} name. The {0} name may not be null, empty, or whitespace only.";
@@ -157,6 +177,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceAbort = "Aborting pending request due to timeout.";
         public const string TraceAbortError = "Could not abort pending request because of {0}.";
         public const string TraceAbortRetry = "Aborting pending retry due to user request.";
+        public const string TraceDispose = "Disposing action invoked.";
+        public const string TraceDisposeError = "Disposing action threw an exception : {0}.";
         public const string TraceDownload = "Downloading response body.";
         public const string TraceDownloadError = "Downloading error response body.";
         public const string TraceRetryInfo = "The extended retry policy set the next location to {0} and updated the location mode to {1}.";
@@ -195,12 +217,16 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string UnexpectedLocation = "Unexpected Location '{0}'";
         public const string UnexpectedResponseCode = "Unexpected response code, Expected:{0}, Received:{1}";
         public const string UnexpectedResponseCodeForOperation = "Unexpected response code for operation : ";
+        public const string UnsupportedPropertyTypeForEncryption = "Unsupported type : {0} encountered during encryption. Only string properties can be encrypted on the client side.";
         public const string UpdateMessageVisibilityRequired = "Calls to UpdateMessage must include the Visibility flag.";
         public const string UsingDefaultPropertyResolver = "Using the default property resolver to deserialize the entity.";
         public const string UsingUserProvidedPropertyResolver = "Using the property resolver provided via TableRequestOptions to deserialize the entity.";
 
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
         public const string WindowsPhoneDoesNotSupportMD5 = "MD5 is not supported on Windows Phone";
+#elif PORTABLE
+        public const string PortableDoesNotSupportMD5 = "MD5 is not supported using the PCL.";
+        public const string PortableDoesNotSupportSharedKey = "Shared Key is not supported using the PCL. Please use a SAS token.";
 #endif
 
         // Table IQueryable Exception messages

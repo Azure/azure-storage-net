@@ -17,14 +17,16 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
     using Microsoft.WindowsAzure.Storage.Analytics;
 #endif
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+#if !PORTABLE
     using Microsoft.WindowsAzure.Storage.File;
+#endif
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.Table;
     using System;
@@ -219,10 +221,12 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         private static readonly AccountSetting SharedAccessSignatureSetting = Setting(SharedAccessSignatureSettingString);
 
+#if !PORTABLE
         /// <summary>
         /// Singleton instance for the development storage account.
         /// </summary>
         private static CloudStorageAccount devStoreAccount;
+#endif 
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
@@ -247,7 +251,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="queueStorageUri">A <see cref="StorageUri"/> specifying the Queue service endpoint or endpoints.</param>
         /// <param name="tableStorageUri">A <see cref="StorageUri"/> specifying the Table service endpoint or endpoints.</param>
         /// <param name="fileStorageUri">A <see cref="StorageUri"/> specifying the File service endpoint or endpoints.</param>
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <returns>A <see cref="CloudStorageAccount"/> instance for the specific credentials and service endpoints.</returns>
         public static CloudStorageAccount Create(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
         {
@@ -301,6 +305,7 @@ namespace Microsoft.WindowsAzure.Storage
             this.DefaultEndpoints = true;
         }
 
+#if !PORTABLE
         /// <summary>
         /// Gets a <see cref="CloudStorageAccount"/> object that references the well-known development storage account.
         /// </summary>
@@ -317,6 +322,7 @@ namespace Microsoft.WindowsAzure.Storage
                 return devStoreAccount;
             }
         }
+#endif 
 
         /// <summary>
         /// Indicates whether this account is a development storage account.
@@ -545,7 +551,7 @@ namespace Microsoft.WindowsAzure.Storage
             return new CloudBlobClient(this.BlobStorageUri, this.Credentials);
         }
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         /// <summary>
         /// Creates an analytics client.
         /// </summary>
@@ -571,6 +577,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
+#if !PORTABLE
         /// <summary>
         /// Creates the File service client.
         /// </summary>
@@ -589,6 +596,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             return new CloudFileClient(this.FileStorageUri, this.Credentials);
         }
+#endif
 
         /// <summary>
         /// Returns a connection string for this storage account, without sensitive data.
@@ -653,6 +661,7 @@ namespace Microsoft.WindowsAzure.Storage
             return string.Join(";", listOfSettings);
         }
 
+#if !PORTABLE
         /// <summary>
         /// Returns a <see cref="CloudStorageAccount"/> with development storage credentials using the specified proxy Uri.
         /// </summary>
@@ -705,6 +714,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             return account;
         }
+#endif
 
         /// <summary>
         /// Internal implementation of Parse/TryParse.
@@ -725,6 +735,7 @@ namespace Microsoft.WindowsAzure.Storage
                 return false;
             }
 
+#if !PORTABLE
             // devstore case
             if (MatchesSpecification(
                 settings,
@@ -744,6 +755,7 @@ namespace Microsoft.WindowsAzure.Storage
                 accountInformation.Settings = ValidCredentials(settings);
                 return true;
             }
+#endif
 
             // automatic case
             if (MatchesSpecification(
@@ -1105,7 +1117,11 @@ namespace Microsoft.WindowsAzure.Storage
 
             if (accountName != null && accountKey != null && sharedAccessSignature == null)
             {
+#if PORTABLE
+                throw new NotSupportedException(SR.PortableDoesNotSupportSharedKey);
+#else
                 return new StorageCredentials(accountName, accountKey, accountKeyName);
+#endif
             }
 
             if (accountName == null && accountKey == null && accountKeyName == null && sharedAccessSignature != null)
