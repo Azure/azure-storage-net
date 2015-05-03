@@ -145,9 +145,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 {
                     return Encoding.UTF8.GetBytes(this.RawString);
                 }
-                else
+                else if (this.MessageType == QueueMessageType.Base64Encoded)
                 {
                     return Convert.FromBase64String(this.RawString);
+                }
+                else
+                {
+                    return this.RawBytes;
                 }
             }
         }
@@ -194,10 +198,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 {
                     return this.RawString;
                 }
-                else
+                else if (this.MessageType == QueueMessageType.Base64Encoded)
                 {
                     byte[] messageData = Convert.FromBase64String(this.RawString);
                     return utf8Encoder.GetString(messageData, 0, messageData.Length);
+                }
+                else
+                {
+                    return utf8Encoder.GetString(this.RawBytes, 0, this.RawBytes.Length);
                 }
             }
         }
@@ -220,19 +228,47 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         internal string RawString { get; set; }
 
         /// <summary>
+        /// Gets or sets the original binary data.
+        /// </summary>
+        /// <value>The original binary data.</value>
+        internal byte[] RawBytes { get; set; }
+
+        /// <summary>
         /// Gets the content of the message for transfer (internal use only).
         /// </summary>
         /// <param name="shouldEncodeMessage">Indicates if the message should be encoded.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>The message content as a string.</returns>
-        internal string GetMessageContentForTransfer(bool shouldEncodeMessage)
+        internal string GetMessageContentForTransfer(bool shouldEncodeMessage, QueueRequestOptions options = null)
         {
-            if (!shouldEncodeMessage && this.MessageType == QueueMessageType.Base64Encoded)
+            if (!shouldEncodeMessage && this.MessageType != QueueMessageType.RawString)
             {
                 throw new ArgumentException(SR.BinaryMessageShouldUseBase64Encoding);
             }
 
             string outgoingMessageString = null;
-            if (this.MessageType == QueueMessageType.RawString)
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            if (options != null && options.EncryptionPolicy != null)
+            {
+                // Create an encrypted message that will hold the message contents along with encryption related metadata and return it.
+                // The encrypted message is already Base 64 encoded. So no need to process further in this method.
+                string encryptedMessageString = options.EncryptionPolicy.EncryptMessage(this.AsBytes);
+
+                // the size of Base64 encoded string is the number of bytes this message will take up on server.
+                if (encryptedMessageString.Length > CloudQueueMessage.MaxMessageSize)
+                {
+                    throw new ArgumentException(string.Format(
+                        CultureInfo.InvariantCulture,
+                        SR.EncryptedMessageTooLarge,
+                        CloudQueueMessage.MaxMessageSize));
+                }
+
+                return encryptedMessageString;
+            }
+#endif
+
+            if (this.MessageType != QueueMessageType.Base64Encoded)
             {
                 if (shouldEncodeMessage)
                 {

@@ -902,10 +902,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 BlobResultSegment resultSegment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null);
                 List<IListBlobItem> blobs = resultSegment.Results.ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
             }
             finally
             {

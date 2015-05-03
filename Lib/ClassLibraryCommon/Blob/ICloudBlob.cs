@@ -1738,7 +1738,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Starts an operation to start copying another blob's contents, properties, and metadata to this blob.
+        /// Begins an operation to start copying another blob's contents, properties, and metadata to this blob.
         /// </summary>
         /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob.</param>

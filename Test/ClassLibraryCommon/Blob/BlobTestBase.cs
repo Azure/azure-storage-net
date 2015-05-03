@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     public partial class BlobTestBase : TestBase
     {
-        public static void WaitForCopy(ICloudBlob blob)
+        public static void WaitForCopy(CloudBlob blob)
         {
             bool copyInProgress = true;
             while (copyInProgress)
@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
 #if TASK
-        public static void WaitForCopyTask(ICloudBlob blob)
+        public static void WaitForCopyTask(CloudBlob blob)
         {
             bool copyInProgress = true;
             while (copyInProgress)
@@ -103,7 +103,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        public static void UploadText(ICloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static void UploadText(CloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             byte[] textAsBytes = encoding.GetBytes(text);
             using (MemoryStream stream = new MemoryStream())
@@ -121,11 +121,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 stream.Seek(0, SeekOrigin.Begin);
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
-                blob.UploadFromStream(stream, accessCondition, options, operationContext);
+                if (blob.BlobType == BlobType.PageBlob)
+                {
+                    CloudPageBlob pageBlob = blob as CloudPageBlob;
+                    pageBlob.UploadFromStream(stream, accessCondition, options, operationContext);
+                }
+                else
+                {
+                    CloudBlockBlob blockBlob = blob as CloudBlockBlob;
+                    blockBlob.UploadFromStream(stream, accessCondition, options, operationContext);
+                }
             }
         }
 
-        public static void UploadTextAPM(ICloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static void UploadTextAPM(CloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             byte[] textAsBytes = encoding.GetBytes(text);
             using (MemoryStream stream = new MemoryStream())
@@ -145,17 +154,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    IAsyncResult result = blob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
+                    IAsyncResult result;
+                    if (blob.BlobType == BlobType.PageBlob)
+                    {
+                        CloudPageBlob pageBlob = blob as CloudPageBlob;
+                        result = pageBlob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
                         ar => waitHandle.Set(),
                         null);
-                    waitHandle.WaitOne();
-                    blob.EndUploadFromStream(result);
+                        waitHandle.WaitOne();
+                        pageBlob.EndUploadFromStream(result);
+                    }
+                    else
+                    {
+                        CloudBlockBlob blockBlob = blob as CloudBlockBlob;
+                        result = blockBlob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
+                        ar => waitHandle.Set(),
+                        null);
+                        waitHandle.WaitOne();
+                        blockBlob.EndUploadFromStream(result);
+                    }
                 }
             }
         }
 
 #if TASK
-        public static void UploadTextTask(ICloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static void UploadTextTask(CloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             byte[] textAsBytes = encoding.GetBytes(text);
             using (MemoryStream stream = new MemoryStream())
@@ -175,7 +198,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
                 try
                 {
-                    blob.UploadFromStreamAsync(stream, accessCondition, options, operationContext).Wait();
+                    if (blob.BlobType == BlobType.PageBlob)
+                    {
+                        CloudPageBlob pageBlob = blob as CloudPageBlob;
+                        pageBlob.UploadFromStreamAsync(stream, accessCondition, options, operationContext).Wait();
+                    }
+                    else
+                    {
+                        CloudBlockBlob blockBlob = blob as CloudBlockBlob;
+                        blockBlob.UploadFromStreamAsync(stream, accessCondition, options, operationContext).Wait();
+                    }
                 }
                 catch (AggregateException ex)
                 {
@@ -190,7 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        public static string DownloadText(ICloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static string DownloadText(CloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -199,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        public static string DownloadTextAPM(ICloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static string DownloadTextAPM(CloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -214,7 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
 #if TASK
-        public static string DownloadTextTask(ICloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static string DownloadTextTask(CloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {

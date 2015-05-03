@@ -51,6 +51,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             if (other != null)
             {
                 this.RetryPolicy = other.RetryPolicy;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                this.EncryptionPolicy = other.EncryptionPolicy;
+#endif
                 this.ServerTimeout = other.ServerTimeout;
                 this.LocationMode = other.LocationMode;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
@@ -63,6 +66,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = new QueueRequestOptions(options);
             
             modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
+#endif
             modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
                                             ?? serviceClient.DefaultRequestOptions.LocationMode)
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
@@ -109,6 +115,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        /// <summary>
+        /// Gets or sets the encryption policy for the request.
+        /// </summary>
+        /// <value>An object of type <see cref="EncryptionPolicy"/>.</value>
+        public QueueEncryptionPolicy EncryptionPolicy { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets the location mode of the request.

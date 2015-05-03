@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.IO;
     using System.Threading.Tasks;
 

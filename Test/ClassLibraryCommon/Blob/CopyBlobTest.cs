@@ -160,6 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 // Start copy and wait for completion
                 string copyId = copyDestination.StartCopyFromBlob(TestHelper.Defiddler(copySource));
+                Assert.AreEqual(BlobType.BlockBlob, copyDestination.BlobType);
                 WaitForCopy(destination);
                 
                 // Check original blob references for equality
@@ -282,6 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         null);
                     waitHandle.WaitOne();
                     string copyId = copy.EndStartCopyFromBlob(result);
+                    Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
                     WaitForCopy(copy);
                     Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                     Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -354,6 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob copy = container.GetBlockBlobReference("copy");
                 string copyId = copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source)).Result;
+                Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
                 WaitForCopyTask(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -541,6 +544,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
                 string copyId = copy.StartCopyFromBlob(TestHelper.Defiddler(source));
+                Assert.AreEqual(BlobType.PageBlob, copy.BlobType);
                 WaitForCopy(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -613,6 +617,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         null);
                     waitHandle.WaitOne();
                     string copyId = copy.EndStartCopyFromBlob(result);
+                    Assert.AreEqual(BlobType.PageBlob, copy.BlobType);
                     WaitForCopy(copy);
                     Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                     Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -685,6 +690,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
                 string copyId = copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source)).Result;
+                Assert.AreEqual(BlobType.PageBlob, copy.BlobType);
                 WaitForCopyTask(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);

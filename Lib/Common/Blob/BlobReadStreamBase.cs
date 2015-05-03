@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
     internal abstract class BlobReadStreamBase : Stream
     {
-        protected ICloudBlob blob;
+        protected CloudBlob blob;
         protected BlobProperties blobProperties;
         protected long currentOffset;
         protected MultiBufferMemoryStream internalBuffer;
@@ -46,7 +46,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        protected BlobReadStreamBase(ICloudBlob blob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        protected BlobReadStreamBase(CloudBlob blob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             if (options.UseTransactionalMD5.Value)
             {

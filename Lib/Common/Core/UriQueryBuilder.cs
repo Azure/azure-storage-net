@@ -57,6 +57,26 @@ namespace Microsoft.WindowsAzure.Storage.Core
         private Dictionary<string, string> parameters;
 
         /// <summary>
+        /// Gets the query string value associated with the given name.
+        /// </summary>
+        /// <param name="name">The query string name.</param>
+        public string this[string name]
+        {
+            get
+            {
+                string value;
+                if (this.parameters.TryGetValue(name, out value))
+                {
+                    return value;
+                }
+                else
+                {
+                    throw new KeyNotFoundException(string.Format(SR.QueryBuilderKeyNotFound, name));
+                }
+            }
+        }
+
+        /// <summary>
         /// Add the query string value with URI escaping.
         /// </summary>
         /// <param name="name">The query string name.</param>

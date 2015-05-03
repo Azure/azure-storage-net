@@ -727,6 +727,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constants for HTTP headers.
         /// </summary>
         [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Justification = "Reviewed.")]
+        [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed.")]
         public static class HeaderConstants
         {
             static HeaderConstants()
@@ -743,6 +744,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #else
                 UserAgentComment = "(ASP.NET 5.0)";
 #endif
+#elif PORTABLE
+                UserAgentComment = "(Portable Class Library)";
 #else
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
@@ -768,10 +771,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-#if ASPNET_K
-            public const string UserAgentProductVersion = "4.3.2-preview";
+#if ASPNET_K || PORTABLE
+            public const string UserAgentProductVersion = "4.4.0-preview";
 #else
-            public const string UserAgentProductVersion = "4.3.0";
+            public const string UserAgentProductVersion = "4.4.0-preview";
 #endif
 
             /// <summary>
@@ -1474,6 +1477,38 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Constant for default metrics version.
             /// </summary>
             public const string MetricsVersionV1 = "1.0";
+        }
+
+        /// <summary>
+        /// Constants for client encryption.
+        /// </summary>
+        [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Justification = "Reviewed.")]
+        public static class EncryptionConstants
+        {
+            /// <summary>
+            /// Constant for the encryption protocol.
+            /// </summary>
+            internal const string EncryptionProtocolV1 = "1.0";
+
+            /// <summary>
+            /// Encryption metadata key for key wrapping IV.
+            /// </summary>
+            internal const string KeyWrappingIV = "KeyWrappingIV";
+
+            /// <summary>
+            /// Metadata header to store encryption materials.
+            /// </summary>
+            public const string BlobEncryptionData = "encryptiondata";
+
+            /// <summary>
+            /// Property name to store the encryption metadata.
+            /// </summary>
+            public const string TableEncryptionKeyDetails = "_ClientEncryptionMetadata1";
+
+            /// <summary>
+            /// Additional property name to store the encryption metadata.
+            /// </summary>
+            public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
         }
     }
 }

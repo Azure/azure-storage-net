@@ -1,3 +1,13 @@
+Changes in 4.4.0 Preview:
+
+ - All: Added preview support for client side encryption for blobs, queues and tables.
+ - All: Added preview support for building applications via Portable Class Library (Profile 111), as well as Xamarin.iOS and Xamarin.Android.
+ - All: Added StringToSign to the client logs in the Shared Access Signature case. 
+ - Blobs: Created a CloudBlob instantiable class. Users can now get/set properties, metadata, download blobs, create snapshots, copy blobs and perform leasing actions on blobs without knowing the type of the blob. CloudPageBlob and CloudBlockBlob now derive from this class.
+ - Blobs: Added GetBlobReference on CloudBlobContainer to get a reference to a CloudBlob object that can be used for common operations across blob types. This api does not make a service call.
+ - Blobs (ASP.NET): Added missing overloads for StartCopyFromBlob in CloudBlockBlob and CloudPageBlob.
+ - Blobs (Windows Runtime): Added missing custom encoding support for UploadTextAsync() and DownloadTextAsync() API in CloudBlockBlob.
+
 Changes in 4.3.2 Preview :
 
  - All: Removed incorrect dependencies.

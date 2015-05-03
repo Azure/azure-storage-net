@@ -28,7 +28,9 @@ namespace Microsoft.WindowsAzure.Storage
     {
         static OperationContext()
         {
+#if !PORTABLE
             OperationContext.DefaultLogLevel = LogLevel.Verbose;
+#endif
         }
 
         /// <summary>
@@ -37,7 +39,9 @@ namespace Microsoft.WindowsAzure.Storage
         public OperationContext()
         {
             this.ClientRequestID = Guid.NewGuid().ToString();
+#if !PORTABLE
             this.LogLevel = OperationContext.DefaultLogLevel;
+#endif
         }
 
         #region Headers
@@ -57,6 +61,7 @@ namespace Microsoft.WindowsAzure.Storage
 
         #endregion
 
+#if !PORTABLE
         #region Logging
 
         /// <summary>
@@ -72,6 +77,7 @@ namespace Microsoft.WindowsAzure.Storage
         public LogLevel LogLevel { get; set; } 
 
         #endregion
+#endif
         
         #region Events
 
@@ -177,7 +183,7 @@ namespace Microsoft.WindowsAzure.Storage
         #endregion
 
         #region Times
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <summary>
         /// Gets or sets the start time of the operation.
         /// </summary>

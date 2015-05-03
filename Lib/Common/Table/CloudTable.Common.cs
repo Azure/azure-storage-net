@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="tableAddress">A <see cref="StorageUri"/> containing the absolute URI to the table at both the primary and secondary locations.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <returns>A <see cref="CloudTable"/> object.</returns>
         public static CloudTable Create(StorageUri tableAddress, StorageCredentials credentials)
         {
@@ -113,6 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <value>An object of type <see cref="StorageUri"/> containing the table's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
+#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the table.
         /// </summary>
@@ -191,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="startRowKey">A string specifying the start row key, or <c>null</c>.</param>
         /// <param name="endPartitionKey">A string specifying the end partition key, or <c>null</c>.</param>
         /// <param name="endRowKey">A string specifying the end row key, or <c>null</c>.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         /// <exception cref="InvalidOperationException">Thrown if the current credentials don't support creating a shared access signature.</exception>
@@ -210,9 +211,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new InvalidOperationException(errorMessage);
             }
 
+            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
             string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
          
             string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
@@ -239,6 +240,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return builder.ToString();
         }
+#endif
 
         /// <summary>
         /// Returns the name of the table.
@@ -270,7 +272,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Gets the canonical name of the table, formatted as /&lt;account-name&gt;/&lt;table-name&gt;.
+        /// Gets the canonical name of the table, formatted as table/&lt;account-name&gt;/&lt;table-name&gt;.
         /// </summary>
         /// <returns>The canonical name of the table.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.String.ToLower", Justification = "ToLower(CultureInfo) is not present in RT and ToLowerInvariant() also violates FxCop")]

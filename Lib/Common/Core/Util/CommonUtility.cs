@@ -20,7 +20,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
+#if !PORTABLE
     using Microsoft.WindowsAzure.Storage.File;
+#endif
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -78,6 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
 
+#if !PORTABLE
         /// <summary>
         /// Create an ExecutionState object that can be used for pre-request operations
         /// such as buffering user's data.
@@ -94,6 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
+#endif
 
         /// <summary>
         /// Returns the larger of two time spans.
@@ -236,6 +240,26 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         internal static int RoundUpToSeconds(this TimeSpan timeSpan)
         {
             return (int)Math.Ceiling(timeSpan.TotalSeconds);
+        }
+
+        /// <summary>
+        /// Computes an XOR of 2 byte arrays.
+        /// </summary>
+        /// <param name="arr1">First array.</param>
+        /// <param name="arr2">Second array.</param>
+        /// <returns>The result byte array.</returns>
+        internal static byte[] BinaryXor(byte[] arr1, byte[] arr2)
+        {
+            int longLen = Math.Max(arr1.Length, arr2.Length);
+            byte[] result = new byte[longLen];
+            Array.Copy(arr1.Length >= arr2.Length ? arr1 : arr2, result, longLen);
+            int shortLen = Math.Min(arr1.Length, arr2.Length);
+            for (int i = 0; i < shortLen; i++)
+            {
+                result[i] = (byte)(arr1[i] ^ arr2[i]);
+            }
+
+            return result;
         }
 
         /// <summary>

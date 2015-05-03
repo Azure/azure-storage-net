@@ -17,7 +17,9 @@
       <Value>Md</Value>
       <Value>myblob</Value>
       <Value>mycontainer</Value>
+      <Value>myfile</Value>
       <Value>myfolder</Value>
+      <Value>myshare</Value>
       <Value>parsable</Value>
       <Value>PostCondition</Value>
       <Value>Retryable</Value>

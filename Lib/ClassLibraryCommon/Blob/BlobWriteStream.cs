@@ -34,6 +34,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private volatile bool flushPending = false;
 
         /// <summary>
+        /// This value is used mainly to provide async commit functionality(BeginCommit) to BlobEncryptedWriteStream. CryptoStream does not provide begin/end 
+        /// flush. It only provides a blocking sync FlushFinalBlock call which calls the underlying stream's flush method (BlobWriteStream in this case). 
+        /// By setting this to true while initiliazing the write stream, it is ensured that BlobWriteStream's Flush does not do anything and
+        /// just returns. Therefore BeginCommit first just flushes all the data from the crypto stream's buffer to the blob write stream's buffer. The client 
+        /// library then sets this property to false and calls BeginCommit on the write stream and returns the async result back to the user. This time flush actually
+        /// does its work and sends the buffered data over to the service. 
+        /// </summary>
+        internal bool IgnoreFlush { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the BlobWriteStream class for a block blob.
         /// </summary>
         /// <param name="blockBlob">Blob reference to write to.</param>
@@ -190,22 +200,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         public override void Flush()
         {
-            if (this.lastException != null)
+            if (!this.IgnoreFlush)
             {
-                throw this.lastException;
-            }
+                if (this.lastException != null)
+                {
+                    throw this.lastException;
+                }
 
-            if (this.committed)
-            {
-                throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
-            }
+                if (this.committed)
+                {
+                    throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
+                }
 
-            this.DispatchWrite(null /* asyncResult */);
-            this.noPendingWritesEvent.Wait();
+                this.DispatchWrite(null /* asyncResult */);
+                this.noPendingWritesEvent.Wait();
 
-            if (this.lastException != null)
-            {
-                throw this.lastException;
+                if (this.lastException != null)
+                {
+                    throw this.lastException;
+                }
             }
         }
 
@@ -230,31 +243,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new InvalidOperationException(SR.BlobStreamFlushPending);
             }
 
+            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
+
             try
             {
-                this.flushPending = true;
-                this.DispatchWrite(null /* asyncResult */);
-
-                StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
-                if ((this.lastException != null) || this.noPendingWritesEvent.Wait(0))
+                if (this.IgnoreFlush)
                 {
-                    storageAsyncResult.OnComplete(this.lastException);
+                    storageAsyncResult.OnComplete();
                 }
                 else
                 {
-                    RegisteredWaitHandle waitHandle = ThreadPool.RegisterWaitForSingleObject(
-                        this.noPendingWritesEvent.WaitHandle,
-                        this.WaitForPendingWritesCallback,
-                        storageAsyncResult,
-                        -1,
-                        true);
+                    this.flushPending = true;
+                    this.DispatchWrite(null /* asyncResult */);
 
-                    storageAsyncResult.OperationState = waitHandle;
-                    storageAsyncResult.CancelDelegate = () =>
+                    if ((this.lastException != null) || this.noPendingWritesEvent.Wait(0))
                     {
-                        waitHandle.Unregister(null /* waitObject */);
                         storageAsyncResult.OnComplete(this.lastException);
-                    };
+                    }
+                    else
+                    {
+                        RegisteredWaitHandle waitHandle = ThreadPool.RegisterWaitForSingleObject(
+                            this.noPendingWritesEvent.WaitHandle,
+                            this.WaitForPendingWritesCallback,
+                            storageAsyncResult,
+                            -1,
+                            true);
+
+                        storageAsyncResult.OperationState = waitHandle;
+                        storageAsyncResult.CancelDelegate = () =>
+                        {
+                            waitHandle.Unregister(null /* waitObject */);
+                            storageAsyncResult.OnComplete(this.lastException);
+                        };
+                    }
                 }
 
                 return storageAsyncResult;
@@ -362,6 +383,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     if (this.blobMD5 != null)
                     {
                         this.pageBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+
                         this.pageBlob.SetProperties(
                             this.accessCondition,
                             this.options,
@@ -442,6 +464,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         if (this.blobMD5 != null)
                         {
                             this.pageBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+
                             ICancellableAsyncResult result = this.pageBlob.BeginSetProperties(
                                 this.accessCondition,
                                 this.options,

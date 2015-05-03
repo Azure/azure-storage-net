@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
     using System.Collections.Generic;
     using System.Net.Http;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     public
 #else
     internal

@@ -99,7 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             return dateTime.UtcDateTime.ToString("R", CultureInfo.InvariantCulture);
         }
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <summary>
         /// Combine all the header values in the IEnumerable to a single comma separated string.
         /// </summary>

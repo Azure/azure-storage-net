@@ -77,6 +77,7 @@
     <Compile Include="Blob\BlobWriteStreamTest.cs" />
     <Compile Include="Blob\CloudBlobClientTest.cs" />
     <Compile Include="Blob\CloudBlobContainerTest.cs" />
+    <Compile Include="Blob\CloudBlobTest.cs" />
     <Compile Include="Blob\CloudBlockBlobTest.cs" />
     <Compile Include="Blob\CloudBlobDirectoryTest.cs" />
     <Compile Include="Blob\CloudPageBlobTest.cs" />
@@ -161,7 +162,7 @@
     <ProjectReference Include="..\..\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj">
       <Project>{42cb7861-70bb-4f34-a815-4355e6ea2589}</Project>
       <Name>RT %28Lib\WindowsRuntime%29</Name>
-      <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage%29</Name>
+      <Name>Microsoft.WindowsAzure.Storage</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />

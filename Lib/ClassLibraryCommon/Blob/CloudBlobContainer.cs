@@ -2535,8 +2535,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                this.Properties = ContainerHttpResponseParsers.GetProperties(resp);
-                this.Metadata = ContainerHttpResponseParsers.GetMetadata(resp);
+                this.UpdateETagAndLastModified(resp);
                 return NullType.Value;
             };
 

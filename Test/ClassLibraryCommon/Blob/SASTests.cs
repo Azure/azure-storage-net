@@ -55,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private static void TestAccess(string sasToken, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, CloudBlobContainer container, ICloudBlob blob)
+        private static void TestAccess(string sasToken, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, CloudBlobContainer container, CloudBlob blob)
         {
             StorageCredentials credentials = string.IsNullOrEmpty(sasToken) ?
                 new StorageCredentials() :
@@ -166,12 +166,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private static void TestBlobSAS(ICloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers)
+        private static void TestBlobSAS(CloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers)
         {
             TestBlobSAS(testBlob, permissions, headers, null);
         }
 
-        private static void TestBlobSAS(ICloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, string sasVersion)
+        private static void TestBlobSAS(CloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, string sasVersion)
         {
             UploadText(testBlob, "blob", Encoding.UTF8);
 

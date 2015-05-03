@@ -17,11 +17,13 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.IO;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -33,6 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blockBlob">Blob reference to write to.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         internal BlobWriteStream(CloudBlockBlob blockBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : base(blockBlob, accessCondition, options, operationContext)
         {
@@ -46,6 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="createNew">Use <c>true</c> if the page blob is newly created, <c>false</c> otherwise.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>        
         internal BlobWriteStream(CloudPageBlob pageBlob, long pageBlobSize, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : base(pageBlob, pageBlobSize, createNew, accessCondition, options, operationContext)
         {
@@ -207,8 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying blob, and commits the blob.
         /// </summary>
         /// <returns>A task that represents the asynchronous commit operation.</returns>
-
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public override async Task CommitAsync()
 #else
         public async Task CommitAsync()

@@ -104,7 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #if ASPNET_K
                 Assert.AreEqual(WindowsAzureErrorCode.TimeoutException, e.InnerException.InnerException.HResult);
 #else
-                Assert.AreEqual(WindowsAzureErrorCode.HttpRequestTimeout, e.InnerException.InnerException.HResult);
+                Assert.AreEqual(WindowsAzureErrorCode.HttpRequestTimeout, e.HResult);
 #endif
             }
             finally

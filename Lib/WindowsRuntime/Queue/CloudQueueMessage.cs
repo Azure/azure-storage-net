@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 {
     using System;
 
-#if !ASPNET_K
+#if !(ASPNET_K || PORTABLE)
     using System.Runtime.InteropServices.WindowsRuntime;
 #endif
     /// <summary>
@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="content">The content of the message as a byte array.</param>
         /// <returns>The new message as a <see cref="CloudQueueMessage"/> object.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public static CloudQueueMessage CreateCloudQueueMessageFromByteArray(byte[] content)
 #else
         public static CloudQueueMessage CreateCloudQueueMessageFromByteArray([ReadOnlyArray] byte[] content)
@@ -47,7 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Sets the content of this message.
         /// </summary>
         /// <param name="content">The new message content.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public void SetMessageContent(byte[] content)
 #else
         [Windows.Foundation.Metadata.DefaultOverloadAttribute]

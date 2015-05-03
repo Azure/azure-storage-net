@@ -2568,7 +2568,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CommonUtility.AssertNotNull("message", message);
 
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
-            QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage), memoryStream);
+            QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage, options), memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
@@ -2637,7 +2637,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             if ((updateFields & MessageUpdateFields.Content) != 0)
             {
                 MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager, (int)(1 * Constants.KB));
-                QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage), memoryStream);
+                QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage, options), memoryStream);
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
                 putCmd.SendStream = memoryStream;
@@ -2676,7 +2676,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Implementation for the GetPermissions method.
+        /// Implementation for the GetMessages method.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
@@ -2695,7 +2695,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
 
-                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item)).ToList();
+                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item, options)).ToList();
 
                 return messagesList;
             };
@@ -2723,7 +2723,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
 
-                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item)).ToList();
+                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item, options)).ToList();
 
                 return messagesList;
             };
