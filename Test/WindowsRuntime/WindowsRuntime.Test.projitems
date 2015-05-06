@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>9db056e1-96ae-4414-adaf-32d442f82597</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Microsoft.WindowsRuntime.Storage</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobAnalyticsUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobCancellationUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobReadStreamTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobStreamTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobTestBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobUploadDownloadTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\BlobWriteStreamTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlobClientTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlobContainerTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlobDirectoryTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudBlockBlobTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CloudPageBlobTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\CopyBlobTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\ExceptionHResultTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\LeaseTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\MD5FlagsTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\MemoryOutputStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Blob\SASTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\LoggingTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\MultiBufferMemoryStreamTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\OperationContextUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\RetryPoliciesTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\SecondaryTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\TestLogListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\WriteToAsyncTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DescriptionAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFileClientTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFileDirectoryTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFileShareTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\CloudFileTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileExceptionHResultTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileMD5FlagsTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileReadStreamTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileStreamTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileTestBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileUploadDownloadTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)File\FileWriteStreamTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\CloudQueueClientTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\CloudQueueMessageTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\CloudQueueTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\ExceptionHResultTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Queue\QueueAnalyticsUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\CloudTableClientTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\CloudTableCRUDUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\SAS\TableSasFunctionalTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\SAS\TableSasUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableAnalyticsUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableBatchOperationTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableEntitySerializationTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableEscapingTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableOperationUnitTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableQueryGenericTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableQueryTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\TableTestBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestBase.cs" />
+  </ItemGroup>
+</Project>

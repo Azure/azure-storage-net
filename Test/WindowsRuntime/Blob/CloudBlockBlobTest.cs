@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if WINDOWS_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,9 +28,9 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
 using System.Security.Cryptography;
-#else
+#elif WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
@@ -304,11 +308,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 OperationContext operationContext = new OperationContext();
-
-                Assert.ThrowsException<AggregateException>(
-                    () => blob2.FetchAttributesAsync(null, null, operationContext).AsTask().Wait(),
-                    "Fetching attributes of a block blob using a page blob reference should fail");
-                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(InvalidOperationException));
+                try
+                {
+                    blob2.FetchAttributesAsync(null, null, operationContext).AsTask().Wait();
+                    Assert.Fail("Fetching attributes of a block blob using a page blob reference should fail");
+                }
+                catch (AggregateException)
+                {
+                    Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(InvalidOperationException));
+                }
             }
             finally
             {
@@ -365,24 +373,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(0, blob2.Metadata.Count);
 
                 OperationContext operationContext = new OperationContext();
-                blob.Metadata["key1"] = null;
 
-                Assert.ThrowsException<AggregateException>(
-                    () => blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
-                    "Metadata keys should have a non-null value");
-                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                try
+                {
+                    blob.Metadata["key1"] = null;
+                    blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait();
+                    Assert.Fail("Metadata keys should have a non-null value");
+                }
+                catch (AggregateException)
+                {
+                    Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                }
 
-                blob.Metadata["key1"] = "";
-                Assert.ThrowsException<AggregateException>(
-                    () => blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
-                    "Metadata keys should have a non-empty value");
-                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                try
+                {
+                    blob.Metadata["key1"] = "";
+                    blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait();
+                    Assert.Fail("Metadata keys should have a non-empty value");
+                }
+                catch (AggregateException)
+                {
+                    Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));                    
+                }
 
-                blob.Metadata["key1"] = " ";
-                Assert.ThrowsException<AggregateException>(
-                    () => blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
-                    "Metadata keys should have a non-whitespace only value");
-                Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                try
+                {
+                    blob.Metadata["key1"] = " ";
+                    blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait();
+                    Assert.Fail("Metadata keys should have a non-whitespace only value");
+                }
+                catch (AggregateException)
+                {
+                    Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
+                }
 
                 blob.Metadata["key1"] = "value1";
                 await blob.SetMetadataAsync();
@@ -874,10 +897,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string md5 = string.Empty;
             if (testMd5)
             {
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
                 MD5 hasher = MD5.Create();
                 md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
-#else
+#elif WINDOWS_RT
                 CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
                 hasher.Append(buffer.AsBuffer(startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
                 md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset()); 
@@ -1248,10 +1271,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudBlockBlobPutBlockAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
             MD5 md5 = MD5.Create();
             string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
-#else
+#elif WINDOWS_RT
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
             hasher.Append(buffer.AsBuffer());
             string contentMD5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());

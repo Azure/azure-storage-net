@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if WINDOWS_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 using System;
@@ -23,9 +27,10 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
 using System.Globalization;
-#else
+using System.Threading;
+#elif WINDOWS_RT
 using Windows.Globalization;
 #endif
 
@@ -329,10 +334,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task QueueRegionalSASTestAsync()
         {
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
             CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = new CultureInfo("it");
-#else
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("it");
+#elif WINDOWS_RT
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "it";
 #endif
@@ -377,9 +382,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
-#if ASPNET_K
-                CultureInfo.CurrentCulture = currentCulture;
-#else
+#if ASPNET_K || WINDOWS_DESKTOP
+                Thread.CurrentThread.CurrentCulture = currentCulture;
+#elif WINDOWS_RT
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif
                 queue.DeleteAsync().AsTask().Wait();

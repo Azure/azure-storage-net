@@ -15,13 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if WINDOWS_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if WINDOWS_RT
 using Windows.Storage;
 #endif
 
@@ -184,6 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
+#if !PORTABLE
         [TestMethod]
         /// [Description("Upload from file to a file")]
         [TestCategory(ComponentCategory.File)]
@@ -236,7 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 System.IO.File.Delete(inputFileName);
                 System.IO.File.Delete(outputFileName);
             }
-#else
+#elif WINDOWS_RT
             StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
             StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
             StorageFile outputFile = await tempFolder.CreateFileAsync("output.file", CreationCollisionOption.GenerateUniqueName);
@@ -271,6 +276,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
 #endif
         }
+#endif
 
         [TestMethod]
         /// [Description("Upload a file using a byte array")]

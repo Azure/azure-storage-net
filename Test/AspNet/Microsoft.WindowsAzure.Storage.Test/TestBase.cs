@@ -15,9 +15,15 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if ASPNET_K || WINDOWS_DESKTOP
+
 namespace Microsoft.WindowsAzure.Storage
 {
+#if WINDOWS_DESKTOP
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
     using System.IO;
     using System.Xml.Linq;
 
@@ -45,3 +51,4 @@ namespace Microsoft.WindowsAzure.Storage
     }
 }
 
+#endif

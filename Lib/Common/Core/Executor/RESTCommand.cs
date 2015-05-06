@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
     using System.Net.Http;
     using System.Threading.Tasks;
 #else
@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             set
             {
                 this.responseStream =
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
                     value;
 #else
                     value == null ? null : value.WrapWithByteCountingStream(this.CurrentResult);
@@ -96,7 +96,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         public Stream StreamToDispose { get; set; }
         
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         public Func<RESTCommand<T>, HttpMessageHandler, bool, OperationContext, HttpClient> BuildClient;
 
         public Func<RESTCommand<T>, OperationContext, HttpContent> BuildContent;

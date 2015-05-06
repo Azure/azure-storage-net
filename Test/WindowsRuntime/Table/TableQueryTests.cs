@@ -15,7 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if WINDOWS_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
@@ -23,9 +27,10 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
 using System.Globalization;
-#else
+using System.Threading;
+#elif WINDOWS_RT
 using Windows.Globalization;
 #endif
 
@@ -379,7 +384,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if ASPNET_K
             CultureInfo currentCulture = CultureInfo.CurrentCulture;
             CultureInfo.CurrentCulture = new CultureInfo("tr");
-#else
+#elif WINDOWS_DESKTOP
+            CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("tr");
+#elif WINDOWS_RT
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "tr";
 #endif
@@ -500,9 +508,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-#if ASPNET_K
+#if ASPNET_K 
                 CultureInfo.CurrentCulture = currentCulture;
-#else
+#elif WINDOWS_DESKTOP
+                Thread.CurrentThread.CurrentCulture = currentCulture;
+#elif WINDOWS_RT
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif
                 table.DeleteIfExistsAsync().AsTask().Wait();

@@ -154,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         private static RequestEventArgs GenerateRequestEventArgs<T>(ExecutionState<T> executionState)
         {
             RequestEventArgs args = new RequestEventArgs(executionState.Cmd.CurrentResult);
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
             args.RequestUri = executionState.Req.RequestUri;
 #else
             args.Request = executionState.Req;

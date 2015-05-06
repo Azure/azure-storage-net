@@ -27,9 +27,9 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
-#else
+#elif WINDOWS_RT
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
@@ -83,9 +83,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken)
 #endif
         {
@@ -99,9 +99,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken)
 #endif
         {
@@ -119,12 +119,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
             return this.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
             return AsyncInfo.Run(async (token) =>
@@ -141,7 +141,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of shares
         /// whose names begin with the specified prefix.

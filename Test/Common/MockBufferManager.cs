@@ -23,12 +23,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-#if WINDOWS_DESKTOP
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-#endif
-
 namespace Microsoft.WindowsAzure.Storage
 {
     public class MockBufferManager : IBufferManager

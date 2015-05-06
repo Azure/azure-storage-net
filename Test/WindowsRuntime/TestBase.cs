@@ -15,6 +15,8 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if WINDOWS_RT
+
 using Microsoft.WindowsAzure.Storage.Auth;
 using System;
 using System.Xml.Linq;
@@ -38,3 +40,5 @@ namespace Microsoft.WindowsAzure.Storage
         }
     }
 }
+
+#endif

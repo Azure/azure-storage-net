@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             return this;
         }
     }
-#else
+#elif WINDOWS_RT
     using Windows.Foundation;
     using Windows.Storage.Streams;
 

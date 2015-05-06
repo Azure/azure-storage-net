@@ -65,7 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
         }
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         /// <summary>
         /// Begins an asynchronous read operation.
         /// </summary>

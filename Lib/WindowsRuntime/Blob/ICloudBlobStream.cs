@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.IO;
     using System.Threading.Tasks;
 
@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         public abstract Task CommitAsync();
     }
-#else
+#elif WINDOWS_RT
     using Windows.Foundation;
     using Windows.Storage.Streams;
 

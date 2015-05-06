@@ -15,13 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if WINDOWS_DESKTOP
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 #endif
@@ -143,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 await operation();
             }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             catch (Exception ex)
             {
                 Assert.AreEqual((int)expectedStatusCode, ((StorageException)ex).RequestInformation.HttpStatusCode, "Http status code is unexpected.");
@@ -170,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.Fail("No exception received while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         private static async Task<uint> FileReadStreamSeekAndCompareAsync(Stream fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
 #else
         private static async Task<uint> FileReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
@@ -178,9 +182,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             byte[] testBuffer = new byte[readSize];
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             int actualReadSize = await fileStream.ReadAsync(testBuffer, 0, (int)readSize);
-            Assert.AreEqual(expectedReadCount, actualReadSize);
+            Assert.AreEqual(expectedReadCount, (uint)actualReadSize);
 #else
             IBuffer testBufferAsIBuffer = testBuffer.AsBuffer();
             await fileStream.ReadAsync(testBufferAsIBuffer, readSize, InputStreamOptions.None);
@@ -196,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             return expectedReadCount;
         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         private static async Task<int> FileReadStreamSeekTestAsync(Stream fileStream, long streamReadSize, byte[] bufferToCompare)
 #else
         private static async Task<int> FileReadStreamSeekTestAsync(IRandomAccessStreamWithContentType fileStream, long streamReadSize, byte[] bufferToCompare)
@@ -204,57 +208,57 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             int attempts = 1;
             ulong position = 0;
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 1024);
             attempts++;
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 512, 512);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position = (ulong)(bufferToCompare.Length - 128);
             fileStream.Seek(position);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 128);
             attempts++;
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position = 4096;
             fileStream.Seek(position);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 1024);
             attempts++;
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += 4096;
             fileStream.Seek(position);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 1024);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position -= 4096;
             fileStream.Seek(position);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 128, 128);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             fileStream.Seek(position);
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             //don't know why adding these two line will pass, but this this the same as the desktop test
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 512);
 #endif
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 1024);
             attempts++;
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 1024);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position -= 1024;
             fileStream.Seek(position);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 2048, 2048);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position = (ulong)(bufferToCompare.Length - 128);
             fileStream.Seek(position);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 128);
-            Assert.AreEqual(position, fileStream.Position);
+            Assert.AreEqual(position, (ulong)fileStream.Position);
             return attempts;
         }
 

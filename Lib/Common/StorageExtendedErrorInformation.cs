@@ -117,7 +117,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="response">The web response.</param>
         /// <param name="contentType">The response Content-Type.</param>
         /// <returns>The error details.</returns>
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpWebResponse response, string contentType)
         {
             CommonUtility.AssertNotNull("inputStream", inputStream);

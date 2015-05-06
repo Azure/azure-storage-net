@@ -50,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 return e;
             }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             catch (AggregateException ex)
             {
                 ex = ex.Flatten();

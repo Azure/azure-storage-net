@@ -17,10 +17,10 @@
 
 #if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
+
 namespace Microsoft.WindowsAzure.Storage.Table.Entities
 {
     public class BaseEntity : TableEntity

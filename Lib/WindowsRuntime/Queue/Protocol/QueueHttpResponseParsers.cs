@@ -22,10 +22,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
     using System.Collections.Generic;
     using System.Net.Http;
 
-#if ASPNET_K
-    public
-#else
+#if WINDOWS_RT
     internal
+#else
+    public
 #endif
         static partial class QueueHttpResponseParsers
     {

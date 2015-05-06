@@ -27,10 +27,13 @@ using System.Linq;
 
 #if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Table.DataServices;
-using System.ServiceModel.Channels;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
+
+#if WINDOWS_DESKTOP && !PORTABLE
+using Microsoft.WindowsAzure.Storage.Table.DataServices;
+using System.ServiceModel.Channels;
 #endif
 
 namespace Microsoft.WindowsAzure.Storage
@@ -57,7 +60,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP && !PORTABLE
         public static WCFBufferManagerAdapter BlobBufferManager = new WCFBufferManagerAdapter(BufferManager.CreateBufferManager(512 * (int)Constants.MB, 64 * (int)Constants.KB), 64 * (int)Constants.KB);
 
         public static WCFBufferManagerAdapter FileBufferManager = new WCFBufferManagerAdapter(BufferManager.CreateBufferManager(512 * (int)Constants.MB, 64 * (int)Constants.KB), 64 * (int)Constants.KB);
@@ -156,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage
             return client;
         }
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP && !PORTABLE
         [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public static void SetPayloadFormatOnDataServiceContext(TableServiceContext ctx, TablePayloadFormat format, CloudTableClient tableClient)
         {

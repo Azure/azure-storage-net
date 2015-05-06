@@ -195,7 +195,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying file, and commits the file.
         /// </summary>
         /// <returns>A task that represents the asynchronous commit operation.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public override async Task CommitAsync()
 #else
         public async Task CommitAsync()

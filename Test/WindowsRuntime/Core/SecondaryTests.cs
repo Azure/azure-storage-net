@@ -17,7 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
+#if WINDOWS_DESKTOP
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;

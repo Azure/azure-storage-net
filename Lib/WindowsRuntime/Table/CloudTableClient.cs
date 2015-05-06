@@ -28,9 +28,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Linq;
     using System.Net;
     using System.Net.Http;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
-#else
+#elif WINDOWS_RT
     using Windows.Foundation;
     using System.Runtime.InteropServices.WindowsRuntime;
 #endif
@@ -84,14 +84,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         #region TableOperation Execute Methods
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         internal Task<TableResult> ExecuteAsync(string tableName, TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("operation", operation);
 
             return operation.ExecuteAsync(this, tableName, requestOptions, operationContext, cancellationToken);
         }
-#else
+#elif WINDOWS_RT
         internal IAsyncOperation<TableResult> ExecuteAsync(string tableName, TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("operation", operation);
@@ -102,13 +102,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
         #endregion
 
         #region TableQuery Execute Methods
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         internal Task<TableQuerySegment> ExecuteQuerySegmentedAsync(string tableName, TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("query", query);
             return query.ExecuteQuerySegmentedAsync(token, this, tableName, requestOptions, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         internal IAsyncOperation<TableQuerySegment> ExecuteQuerySegmentedAsync(string tableName, TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("query", query);
@@ -116,7 +116,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         internal Task<TableQuerySegment> ExecuteQuerySegmentedAsync(string tableName, TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("query", query);
@@ -150,9 +150,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="currentToken">A <see cref="TableContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>The result segment containing the collection of tables.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableResultSegment> ListTablesSegmentedAsync(TableContinuationToken currentToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<TableResultSegment> ListTablesSegmentedAsync(TableContinuationToken currentToken)
 #endif
         {
@@ -165,9 +165,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="prefix">The table name prefix.</param>
         /// <param name="currentToken">A <see cref="TableContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>The result segment containing the collection of tables.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, TableContinuationToken currentToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<TableResultSegment> ListTablesSegmentedAsync(string prefix, TableContinuationToken currentToken)
 #endif
         {
@@ -184,7 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that provides information on how the operation executed.</param>
         /// <returns>The result segment containing the collection of tables.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ListTablesSegmentedAsync(prefix, maxResults, currentToken, requestOptions, operationContext, CancellationToken.None);
@@ -202,7 +202,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The result segment containing the collection of tables.</returns>
         public Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
 #endif
         {
@@ -211,11 +211,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableQuery query = this.GenerateListTablesQuery(prefix, maxResults);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 TableQuerySegment seg = await this.ExecuteQuerySegmentedAsync(TableConstants.TableServiceTablesName, query, currentToken, requestOptions, operationContext, cancellationToken);
-#else
+#elif WINDOWS_RT
             return AsyncInfo.Run(async (cancellationToken) =>
             {
                 TableQuerySegment seg = await this.ExecuteQuerySegmentedAsync(TableConstants.TableServiceTablesName, query, currentToken, requestOptions, operationContext).AsTask(cancellationToken);
@@ -224,9 +224,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TableResultSegment retSegment = new TableResultSegment(seg.Results.Select(tbl => new CloudTable(tbl.Properties[TableConstants.TableName].StringValue, this)).ToList());
                 retSegment.ContinuationToken = seg.ContinuationToken;
                 return retSegment;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             }, cancellationToken);
-#else
+#elif WINDOWS_RT
             });
 #endif
         }
@@ -262,9 +262,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <returns>The table service properties as a <see cref="ServiceProperties"/> object.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<ServiceProperties> GetServicePropertiesAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync()
 #endif
         {
@@ -278,12 +278,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>The table service properties as a <see cref="ServiceProperties"/> object.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<ServiceProperties> GetServicePropertiesAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(requestOptions, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
@@ -297,7 +297,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the properties of the table service.
         /// </summary>
@@ -345,10 +345,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="properties">The table service properties.</param>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task SetServicePropertiesAsync(ServiceProperties properties)
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties)
 #endif
@@ -362,14 +362,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="properties">The table service properties.</param>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext)
@@ -384,7 +384,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the properties of the table service.
         /// </summary>
@@ -437,9 +437,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <returns>The table service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<ServiceStats> GetServiceStatsAsync()
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ServiceStats> GetServiceStatsAsync()
 #endif
         {
@@ -453,12 +453,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The table service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<ServiceStats> GetServiceStatsAsync(TableRequestOptions options, OperationContext operationContext)
         {
             return this.GetServiceStatsAsync(options, operationContext, CancellationToken.None);
         }
-#else
+#elif WINDOWS_RT
         public IAsyncOperation<ServiceStats> GetServiceStatsAsync(TableRequestOptions options, OperationContext operationContext)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(options, this);
@@ -473,7 +473,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the stats of the table service.
         /// </summary>

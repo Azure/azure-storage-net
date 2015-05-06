@@ -15,17 +15,21 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if WINDOWS_DESKTOP 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
 using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Security.Cryptography;
-#else
+#elif WINDOWS_RT
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
@@ -189,9 +193,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             byte[] buffer = GetRandomBuffer(6 * 512);
 
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
             MD5 hasher = MD5.Create();
-#else
+#elif WINDOWS_RT
             CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
 #endif
             CloudFileShare share = GetRandomShareReference();
@@ -219,7 +223,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                             await fileStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeFile.Position, fileStream.Position);
-#if !ASPNET_K
+#if WINDOWS_RT
                             hasher.Append(buffer.AsBuffer());
 #endif
                         }
@@ -227,9 +231,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                         await fileStream.FlushAsync();
                     }
 
-#if ASPNET_K
+#if ASPNET_K || WINDOWS_DESKTOP
                     string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeFile.ToArray()));
-#else
+#elif WINDOWS_RT
                     string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
 #endif
                     await file.FetchAttributesAsync();
@@ -355,14 +359,16 @@ namespace Microsoft.WindowsAzure.Storage.File
                     {
                         for (int i = 0; i < 3; i++)
                         {
+#if PORTABLE
+                            await fileStream.WriteAsync(buffer);
+#else
                             await fileStream.WriteAsync(buffer.AsBuffer());
+#endif
                             await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                         }
 
-#if ASPNET_K
                         // todo: Make some other better logic for this test to be reliable.
-                        System.Threading.Thread.Sleep(500);
-#endif
+                        await Task.Delay(500);
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);
 
@@ -374,7 +380,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
 
+#if PORTABLE
+                        await fileStream.WriteAsync(buffer);
+#else
                         await fileStream.WriteAsync(buffer.AsBuffer());
+#endif
                         await wholeFile.WriteAsync(buffer, 0, buffer.Length);
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
