@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         const string BlobName = "blob1";
 #if XUNIT
         // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        public CloudBlockBlobTest()
+        public CloudBlobTest()
         {
             MyTestInitialize();
         }
@@ -48,7 +48,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             MyTestCleanup();
         }
 #endif
-        
+        internal static async Task CreateForTestAsync(CloudBlockBlob blob, int blockCount, int blockSize, bool commit = true)
+        {
+            byte[] buffer = GetRandomBuffer(blockSize);
+            List<string> blocks = GetBlockIdList(blockCount);
+
+            foreach (string block in blocks)
+            {
+                using (MemoryStream stream = new MemoryStream(buffer))
+                {
+                    await blob.PutBlockAsync(block, stream.AsInputStream(), null);
+                }
+            }
+
+            if (commit)
+            {
+                await blob.PutBlockListAsync(blocks);
+            }
+        }
+
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
         public void MyTestInitialize()

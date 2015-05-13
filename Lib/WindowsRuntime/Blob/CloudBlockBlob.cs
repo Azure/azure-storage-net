@@ -1278,7 +1278,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
             BlobRequest.WriteBlockListBody(blocks, memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
-            string contentMD5 = memoryStream.ComputeMD5Hash();
+            string contentMD5 = null;
+
+#if !PORTABLE
+            if (options.UseTransactionalMD5.HasValue && options.UseTransactionalMD5.Value)
+            {
+                contentMD5 = memoryStream.ComputeMD5Hash();
+            }
+#endif
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 

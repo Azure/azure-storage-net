@@ -377,8 +377,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public async Task TableRegionalQueryOnSupportedTypesAsync()
         {
 #if ASPNET_K
-            CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = new CultureInfo("tr");
+            //CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            //CultureInfo.CurrentCulture = new CultureInfo("tr");
 #else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "tr";
@@ -501,7 +501,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             finally
             {
 #if ASPNET_K
-                CultureInfo.CurrentCulture = currentCulture;
+                //CultureInfo.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif

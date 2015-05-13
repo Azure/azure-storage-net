@@ -130,7 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 // Throw if neither the key nor the key resolver are set.
                 if (this.Key == null && this.KeyResolver == null)
                 {
-                    throw new StorageException(SR.KeyOrResolverMissingError, null) { IsRetryable = false };
+                    throw new StorageException(SR.KeyAndResolverMissingError, null) { IsRetryable = false };
                 }
 
                 byte[] contentEncryptionKey = null;
@@ -142,10 +142,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 // locally. No service call is made.
                 if (this.KeyResolver != null)
                 {
-                    IKey kek = this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).Result;
+                    IKey keyEncryptionKey = this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).Result;
 
-                    CommonUtility.AssertNotNull("kek", kek);
-                    contentEncryptionKey = kek.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
+                    CommonUtility.AssertNotNull("keyEncryptionKey", keyEncryptionKey);
+                    contentEncryptionKey = keyEncryptionKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
                 }
                 else
                 {

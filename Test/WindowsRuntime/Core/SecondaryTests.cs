@@ -289,6 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             public void Dispose()
             {
+                TimeSpan epsilon = TimeSpan.FromMilliseconds(2.0);
                 Assert.IsNull(this.error, this.error);
                 Assert.AreEqual(this.initialLocation, this.OperationContext.RequestResults[0].TargetLocation);
                 Assert.AreEqual(this.retryInfoList.Count + 1, this.OperationContext.RequestResults.Count);
@@ -297,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                     Assert.AreEqual(this.retryInfoList[i].TargetLocation, this.OperationContext.RequestResults[i + 1].TargetLocation);
 
                     TimeSpan retryInterval = this.OperationContext.RequestResults[i + 1].StartTime - this.OperationContext.RequestResults[i].EndTime;
-                    Assert.IsTrue(this.retryInfoList[i].RetryInterval <= retryInterval);
+                    Assert.IsTrue(this.retryInfoList[i].RetryInterval <= retryInterval.Add(epsilon));
                 }
             }
         }

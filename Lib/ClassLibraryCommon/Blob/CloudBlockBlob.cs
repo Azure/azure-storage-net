@@ -2282,9 +2282,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
             BlobRequest.WriteBlockListBody(blocks, memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
+
 #if !WINDOWS_PHONE
-            string contentMD5 = memoryStream.ComputeMD5Hash();
-            memoryStream.Seek(0, SeekOrigin.Begin);
+            string contentMD5 = null;
+            if (options.UseTransactionalMD5.HasValue && options.UseTransactionalMD5.Value)
+            {
+                contentMD5 = memoryStream.ComputeMD5Hash();
+                memoryStream.Seek(0, SeekOrigin.Begin);
+            }
 #endif
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
@@ -2294,7 +2299,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.SetHeaders = (r, ctx) =>
             {
 #if !WINDOWS_PHONE
-                r.Headers[HttpRequestHeader.ContentMd5] = contentMD5;
+                if (contentMD5 != null)
+                {
+                    r.Headers[HttpRequestHeader.ContentMd5] = contentMD5;
+                }
 #endif
                 BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             };

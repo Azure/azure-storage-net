@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata minClientVersion="2.8.3">
     <id>WindowsAzure.Storage</id>
-    <version>4.4.0-preview</version>
+    <version>4.4.1-preview</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -17,7 +17,6 @@ Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorag
     <tags>Microsoft, Azure, Storage, Table, Blob, File, Queue, Scalable, windowsazureofficial</tags>
     <dependencies>
       <group targetFramework="ASP.NetCore5.0">
-        <dependency id="KRE-CoreCLR-x86" version="1.0.0-beta1"/>
         <dependency id="Microsoft.Data.OData" version="5.6.3" />
         <dependency id="Microsoft.Data.Services.Client" version="5.6.3" />
         <dependency id="System.Spatial" version="5.6.3" />
@@ -63,7 +62,6 @@ Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorag
         <dependency id="System.Xml.XmlSerializer" version="4.0.0-beta-22231" />
       </group>
       <group targetFramework="ASP.Net5.0">
-        <dependency id="KRE-CLR-x86" version="1.0.0-beta1"/>
         <dependency id="Microsoft.Data.OData" version="5.6.3" />
         <dependency id="Microsoft.Data.Services.Client" version="5.6.3" />
         <dependency id="System.Spatial" version="5.6.3" />

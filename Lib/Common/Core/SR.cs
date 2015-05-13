@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string JsonReaderNotInCompletedState = "The JSON reader has not yet reached the completed state.";
         public const string KeyMismatch = "Key mismatch. The key id stored on the service does not match the specified key.";
         public const string KeyMissingError = "Key is not initialized. Encryption requires it to be initialized.";
-        public const string KeyOrResolverMissingError = "Key and Resolver are not initialized. Decryption requires either of them to be initialized.";
+        public const string KeyAndResolverMissingError = "Key and Resolver are not initialized. Decryption requires either of them to be initialized.";
         public const string LeaseConditionOnSource = "A lease condition cannot be specified on the source of a copy.";
         public const string LeaseTimeNotReceived = "Valid lease time expected but not received from the service.";
         public const string LengthNotInRange = "The length provided is out of range. The range must be between 0 and the length of the byte array.";

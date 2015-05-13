@@ -433,8 +433,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudBlobContainerRegionalSetMetadataAsync()
         {
 #if ASPNET_K
-            CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
+            //CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            //CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
 #else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "sk-SK";
@@ -451,7 +451,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.DeleteIfExistsAsync().AsTask().Wait();
 #if ASPNET_K
-                CultureInfo.CurrentCulture = currentCulture;
+                //CultureInfo.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif

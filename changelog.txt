@@ -1,3 +1,10 @@
+Changes in 4.4.1 Preview:
+
+- All: Refreshed ASP.NET 5 targets to work with latest RC bits (DNX 4.5.1 and DNX Core 5.0, beta4). 
+- All: Renamed some constructors for blob, container, queue, table, and account in the ASP.NET 5 and Portable libraries. 
+- All: Changed StorageException to public in the ASP.NET 5 and Portable libraries. 
+- Blobs: Fixed a bug where MD5 was calculated for a PutBlockList even though UseTransactionalMD5 was set to false.
+
 Changes in 4.4.0 Preview:
 
  - All: Added preview support for client side encryption for blobs, queues and tables.

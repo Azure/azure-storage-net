@@ -2,6 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.22122.0
+VisualStudioVersion = 14.0.22807.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{0F3C778A-0BBD-4318-A8EE-A7C015C309B2}"
 EndProject
@@ -13,11 +14,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Nuget.config = Nuget.config
 	EndProjectSection
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.WindowsAzure.Storage", "Lib\AspNet\Microsoft.WindowsAzure.Storage\Microsoft.WindowsAzure.Storage.kproj", "{10851280-F6EA-4988-80B0-4B0CAEE23196}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.WindowsAzure.Storage", "Lib\AspNet\Microsoft.WindowsAzure.Storage\Microsoft.WindowsAzure.Storage.xproj", "{10851280-F6EA-4988-80B0-4B0CAEE23196}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.WindowsAzure.Storage.Test", "Test\AspNet\Microsoft.WindowsAzure.Storage.Test\Microsoft.WindowsAzure.Storage.Test.kproj", "{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.WindowsAzure.Storage.Test", "Test\AspNet\Microsoft.WindowsAzure.Storage.Test\Microsoft.WindowsAzure.Storage.Test.xproj", "{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "XUnitForMsTest", "Test\AspNet\XUnitForMsTest\XUnitForMsTest.kproj", "{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "XUnitForMsTest", "Test\AspNet\XUnitForMsTest\XUnitForMsTest.xproj", "{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

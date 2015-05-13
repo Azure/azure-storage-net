@@ -771,11 +771,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-#if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "4.4.0-preview";
-#else
-            public const string UserAgentProductVersion = "4.4.0-preview";
-#endif
+            public const string UserAgentProductVersion = "4.4.1-preview";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.
