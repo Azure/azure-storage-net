@@ -134,7 +134,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudBlobUploadCancellationAsync()
         {
             CloudBlobContainer container = DefaultBlobClient.GetContainerReference(Guid.NewGuid().ToString("N"));
-            byte[] buffer = BlobTestBase.GetRandomBuffer(4 * 1024 * 1024);
+            byte[] buffer = BlobTestBase.GetRandomBuffer(16 * 1024 * 1024);
 
             try
             {

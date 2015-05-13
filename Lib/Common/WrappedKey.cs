@@ -17,11 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-
     /// <summary>
     /// Represents the envelope key details stored on the service.
     /// </summary>

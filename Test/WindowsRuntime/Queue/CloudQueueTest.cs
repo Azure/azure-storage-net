@@ -330,8 +330,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         public async Task QueueRegionalSASTestAsync()
         {
 #if ASPNET_K
-            CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = new CultureInfo("it");
+            //CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            //CultureInfo.CurrentCulture = new CultureInfo("it");
 #else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "it";
@@ -378,7 +378,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             finally
             {
 #if ASPNET_K
-                CultureInfo.CurrentCulture = currentCulture;
+                //CultureInfo.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif

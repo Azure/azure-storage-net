@@ -52,7 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Table service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT
         /// <returns>A <see cref="CloudTableClient"/> object.</returns>
         public static CloudTableClient Create(StorageUri storageUri, StorageCredentials credentials)
         {

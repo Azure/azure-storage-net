@@ -50,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Gets or sets a value indicating whether the FISMA MD5 setting will be used.
         /// </summary>
         /// <value><c>false</c> to use the FISMA MD5 setting; <c>true</c> to use the .NET default implementation.</value>
-#if WINDOWS_PHONE
+#if WINDOWS_PHONE || PORTABLE
         internal
 #else
         public
@@ -251,7 +251,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="queueStorageUri">A <see cref="StorageUri"/> specifying the Queue service endpoint or endpoints.</param>
         /// <param name="tableStorageUri">A <see cref="StorageUri"/> specifying the Table service endpoint or endpoints.</param>
         /// <param name="fileStorageUri">A <see cref="StorageUri"/> specifying the File service endpoint or endpoints.</param>
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT
         /// <returns>A <see cref="CloudStorageAccount"/> instance for the specific credentials and service endpoints.</returns>
         public static CloudStorageAccount Create(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
         {

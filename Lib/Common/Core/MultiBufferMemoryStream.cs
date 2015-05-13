@@ -591,7 +591,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if !(WINDOWS_PHONE && WINDOWS_DESKTOP)
+#if !((WINDOWS_PHONE && WINDOWS_DESKTOP) || PORTABLE)
         /// <summary>
         /// Computes the hash value for this stream.
         /// </summary>

@@ -44,7 +44,7 @@ namespace Microsoft.WindowsAzure.Storage
     [Serializable]
 #endif
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT
     internal class StorageException : COMException
 #else
     public class StorageException : Exception

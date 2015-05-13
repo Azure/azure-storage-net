@@ -4,18 +4,19 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
   </PropertyGroup>
-  <Import Project="$(VSToolsPath)\AspNet\Microsoft.Web.AspNet.Props" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(VSToolsPath)\DNX\Microsoft.DNX.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>4a6f2277-85aa-47d3-acba-25e256debda9</ProjectGuid>
+    <ProjectGuid>c5b83a60-c8d9-425b-bb44-2e878cf8a1c4</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Microsoft.WindowsAzure.Storage</RootNamespace>
+    <RootNamespace>ClassLibrary1</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\..\Common\**\*.cs" />
-    <Compile Include="..\..\WindowsRuntime\**\*.cs" />
-  </ItemGroup>
-  <Import Project="$(VSToolsPath)\AspNet\Microsoft.Web.AspNet.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(VSToolsPath)\DNX\Microsoft.DNX.Targets" Condition="'$(VSToolsPath)' != ''" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties project_1json__JSONSchema="http://www.asp.net/media/4878834/project.json" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>
