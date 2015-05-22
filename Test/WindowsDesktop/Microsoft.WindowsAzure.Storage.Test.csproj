@@ -75,6 +75,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Analytics\LogRecordStreamReaderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WCFBufferManagerAdapter.cs" />
   </ItemGroup>
