@@ -15,6 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using System;
 using System.ServiceModel.Channels;
 using System.Threading;
 
@@ -46,16 +47,16 @@ namespace Microsoft.WindowsAzure.Storage
 
         public BufferManager Manager { get; internal set; }
 
-        public void ReturnBuffer(byte[] buffer)
+        public void ReturnBuffer(ArraySegment<byte> buffer)
         {
             Interlocked.Decrement(ref outstandingBufferCount);
-            this.Manager.ReturnBuffer(buffer);
+            this.Manager.ReturnBuffer(buffer.Array);
         }
 
-        public byte[] TakeBuffer(int bufferSize)
+        public ArraySegment<byte> TakeBuffer(int bufferSize)
         {
             Interlocked.Increment(ref outstandingBufferCount);
-            return this.Manager.TakeBuffer(bufferSize);
+            return new ArraySegment<byte>(this.Manager.TakeBuffer(bufferSize));
         }
 
         public int GetDefaultBufferSize()

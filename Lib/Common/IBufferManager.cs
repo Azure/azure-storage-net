@@ -15,6 +15,8 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using System;
+
 namespace Microsoft.WindowsAzure.Storage
 {
 #if WINDOWS_RT
@@ -30,13 +32,13 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Returns a buffer to the pool.
         /// </summary>
-        /// <param name="buffer">A byte array specifying the buffer to return to the pool.</param>
+        /// <param name="buffer">A byte array segment specifying the buffer to return to the pool.</param>
         /// <exception cref="System.ArgumentNullException">Buffer reference cannot be null.</exception>
         /// <exception cref="System.ArgumentException">Length of buffer does not match the pool's buffer length property.</exception>
 #if WINDOWS_RT
-        void ReturnBuffer([ReadOnlyArray] byte[] buffer);
+        void ReturnBuffer(ArraySegment<byte> buffer);
 #else
-        void ReturnBuffer(byte[] buffer);
+        void ReturnBuffer(ArraySegment<byte> buffer);
 #endif
 
         /// <summary>
@@ -44,8 +46,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="bufferSize">The size, in bytes, of the requested buffer.</param>
         /// <exception cref="System.ArgumentOutOfRangeException">The value specified for <paramref name="bufferSize"/> cannot be less than zero.</exception>
-        /// <returns>A byte array that is the requested size of the buffer.</returns>
-        byte[] TakeBuffer(int bufferSize);
+        /// <returns>A byte array segment that is the requested size of the buffer.</returns>
+        ArraySegment<byte> TakeBuffer(int bufferSize);
 
         /// <summary>
         /// Gets the size, in bytes, of the buffers managed by the given pool. Note that the buffer manager must return buffers of the exact size requested by the client.
