@@ -94,7 +94,7 @@ namespace Microsoft.WindowsAzure.Storage
             client.AuthenticationScheme = DefaultAuthenticationScheme;
 
 #if WINDOWS_DESKTOP
-            client.BufferManager = BlobBufferManager;
+            client.BufferManager = TableBufferManager;
 #endif
 
             return client;
@@ -119,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage
             client.AuthenticationScheme = DefaultAuthenticationScheme;
 
 #if WINDOWS_DESKTOP
-            client.BufferManager = TableBufferManager;
+            client.BufferManager = BlobBufferManager;
 #endif
 
             return client;
