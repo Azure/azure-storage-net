@@ -188,6 +188,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
             set { doubleOBj = value; }
         }
 
+        private Double doubleInteger = (Double)1234;
+        public Double DoubleInteger
+        {
+            get { return doubleInteger; }
+            set { doubleInteger = value; }
+        }
+
         private Guid? guidNull = null;
         public Guid? GuidNull
         {
