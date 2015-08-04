@@ -3085,7 +3085,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 // Crypto stream should be closed in order for it to flush the final block of data to the underlying stream and to clear internal buffers. 
                 // It is ok to do this here because we have ensured that we don't end up closing the user provided stream in the process of closing the 
-                // cryptostream by wrapping the user provided stream within the TruncatingNonCloseableStream.
+                // cryptostream by wrapping the user provided stream within the NonCloseableStream.
                 if (decryptStreamCreated)
                 {
                     try

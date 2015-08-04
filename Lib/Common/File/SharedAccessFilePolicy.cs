@@ -121,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
             }
 
-            // Incase we ever change none to be something other than 0
+            // In case we ever change none to be something other than 0
             if (permissions == 0)
             {
                 permissions |= SharedAccessFilePermissions.None;

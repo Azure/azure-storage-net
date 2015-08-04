@@ -1084,7 +1084,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     catch (AggregateException ex)
                     {
-                        Assert.AreEqual(SR.InvalidBlockSize, ex.InnerException.Message);
+                        Assert.AreEqual("Append block data should not exceed the maximum blob size condition value.", ex.InnerException.Message);
                     }
                 }
             }

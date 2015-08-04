@@ -7,7 +7,7 @@ Tracking Breaking Changes since 4.0
 - Blobs: ListBlobs* can return an additional type called CloudAppendBlob in the enumeration.
 - Blobs: Deprecated StartCopyFromBlob() using the Obsolete attribute. Use StartCopy() instead.
 - Blobs: CreateCloudBlobClient does not throw an exception when the credentials are null to support anonymous access.
-- Tables: Removed Serialized attribute and ISerializable implementation from TableEntity. Implement ITabeEntity for your custom entities if you need either.
+- Tables: Removed Serialized attribute and ISerializable implementation from TableEntity. Implement ITableEntity for your custom entities if you need either.
 
 Tracking Breaking Changes since 3.0
 

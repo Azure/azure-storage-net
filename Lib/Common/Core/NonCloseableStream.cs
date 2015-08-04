@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="TruncatingNonCloseableStream.cs" company="Microsoft">
+// <copyright file="NonCloseableStream.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -128,7 +128,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <summary>
         /// Asynchronously reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
         /// </summary>
@@ -173,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             this.wrappedStream.Write(buffer, offset, count);
         }
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <summary>
         /// Asynchronously writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
         /// </summary>

@@ -255,20 +255,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 if (options.EncryptionPolicy != null)
                 {
-                // Create an encrypted message that will hold the message contents along with encryption related metadata and return it.
-                // The encrypted message is already Base 64 encoded. So no need to process further in this method.
-                string encryptedMessageString = options.EncryptionPolicy.EncryptMessage(this.AsBytes);
+                    // Create an encrypted message that will hold the message contents along with encryption related metadata and return it.
+                    // The encrypted message is already Base 64 encoded. So no need to process further in this method.
+                    string encryptedMessageString = options.EncryptionPolicy.EncryptMessage(this.AsBytes);
 
-                // the size of Base64 encoded string is the number of bytes this message will take up on server.
-                if (encryptedMessageString.Length > CloudQueueMessage.MaxMessageSize)
-                {
-                    throw new ArgumentException(string.Format(
-                        CultureInfo.InvariantCulture,
-                        SR.EncryptedMessageTooLarge,
-                        CloudQueueMessage.MaxMessageSize));
-                }
+                    // the size of Base64 encoded string is the number of bytes this message will take up on server.
+                    if (encryptedMessageString.Length > CloudQueueMessage.MaxMessageSize)
+                    {
+                        throw new ArgumentException(string.Format(
+                            CultureInfo.InvariantCulture,
+                            SR.EncryptedMessageTooLarge,
+                            CloudQueueMessage.MaxMessageSize));
+                    }
 
-                return encryptedMessageString;
+                    return encryptedMessageString;
                 }
             }
 #endif

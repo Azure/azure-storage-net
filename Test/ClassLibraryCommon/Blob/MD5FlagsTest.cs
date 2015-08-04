@@ -901,57 +901,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 Assert.AreEqual(9, checkCount);
 
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob2");
-                using (Stream blobStream = appendBlob.OpenWrite(true))
-                {
-                    blobStream.Write(buffer, 0, buffer.Length);
-                    blobStream.Write(buffer, 0, buffer.Length);
-                }
-
-                checkCount = 0;
-                using (Stream stream = new MemoryStream())
-                {
-                    lastCheckMD5 = null;
-                    appendBlob.DownloadToStream(stream, null, optionsWithNoMD5, opContextWithMD5Check);
-                    Assert.IsNotNull(lastCheckMD5);
-
-                    lastCheckMD5 = null;
-                    appendBlob.DownloadToStream(stream, null, optionsWithMD5, opContextWithMD5Check);
-                    Assert.IsNotNull(lastCheckMD5);
-
-                    lastCheckMD5 = "invalid_md5";
-                    blockBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithNoMD5, opContextWithMD5Check);
-                    Assert.IsNull(lastCheckMD5);
-
-                    lastCheckMD5 = "invalid_md5";
-                    appendBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithMD5, opContextWithMD5Check);
-                    Assert.AreEqual(md5, lastCheckMD5);
-
-                    lastCheckMD5 = "invalid_md5";
-                    appendBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoMD5, opContextWithMD5Check);
-                    Assert.IsNull(lastCheckMD5);
-
-                    StorageException storageEx = TestHelper.ExpectedException<StorageException>(
-                        () => appendBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithMD5, opContextWithMD5Check),
-                        "Downloading more than 4MB with transactional MD5 should not be supported");
-                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
-
-                    lastCheckMD5 = null;
-                    using (Stream blobStream = appendBlob.OpenRead(null, optionsWithMD5, opContextWithMD5Check))
-                    {
-                        blobStream.CopyTo(stream);
-                        Assert.IsNotNull(lastCheckMD5);
-                    }
-
-                    lastCheckMD5 = "invalid_md5";
-                    using (Stream blobStream = appendBlob.OpenRead(null, optionsWithNoMD5, opContextWithMD5Check))
-                    {
-                        blobStream.CopyTo(stream);
-                        Assert.IsNull(lastCheckMD5);
-                    }
-                }
-                Assert.AreEqual(9, checkCount);
-
                 CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
                 using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 2))
                 {
@@ -1134,89 +1083,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     Assert.AreEqual(9, checkCount);
-
-                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob2");
-                    using (Stream blobStream = appendBlob.OpenWrite(true))
-                    {
-                        blobStream.Write(buffer, 0, buffer.Length);
-                        blobStream.Write(buffer, 0, buffer.Length);
-                    }
-
-                    checkCount = 0;
-                    using (Stream stream = new MemoryStream())
-                    {
-                        lastCheckMD5 = null;
-                        result = appendBlob.BeginDownloadToStream(stream, null, optionsWithNoMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        appendBlob.EndDownloadRangeToStream(result);
-                        Assert.IsNotNull(lastCheckMD5);
-
-                        lastCheckMD5 = null;
-                        result = appendBlob.BeginDownloadToStream(stream, null, optionsWithMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        appendBlob.EndDownloadRangeToStream(result);
-                        Assert.IsNotNull(lastCheckMD5);
-
-                        lastCheckMD5 = "invalid_md5";
-                        result = appendBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithNoMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        appendBlob.EndDownloadRangeToStream(result);
-                        Assert.IsNull(lastCheckMD5);
-
-                        lastCheckMD5 = "invalid_md5";
-                        result = appendBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        appendBlob.EndDownloadRangeToStream(result);
-                        Assert.AreEqual(md5, lastCheckMD5);
-
-                        lastCheckMD5 = "invalid_md5";
-                        result = appendBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        appendBlob.EndDownloadRangeToStream(result);
-                        Assert.IsNull(lastCheckMD5);
-
-                        result = appendBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        StorageException storageEx = TestHelper.ExpectedException<StorageException>(
-                            () => appendBlob.EndDownloadRangeToStream(result),
-                            "Downloading more than 4MB with transactional MD5 should not be supported");
-                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
-
-                        lastCheckMD5 = null;
-                        result = appendBlob.BeginOpenRead(null, optionsWithMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        using (Stream blobStream = appendBlob.EndOpenRead(result))
-                        {
-                            blobStream.CopyTo(stream);
-                            Assert.IsNotNull(lastCheckMD5);
-                        }
-
-                        lastCheckMD5 = "invalid_md5";
-                        result = appendBlob.BeginOpenRead(null, optionsWithNoMD5, opContextWithMD5Check,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        using (Stream blobStream = appendBlob.EndOpenRead(result))
-                        {
-                            blobStream.CopyTo(stream);
-                            Assert.IsNull(lastCheckMD5);
-                        }
-                    }
-
+                                        
                     CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
                     using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 2))
                     {

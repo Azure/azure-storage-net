@@ -503,8 +503,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Sets permissions for the share.
         /// </summary>
-        /// <param name="permissions">The permissions to apply to the container.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container. If <c>null</c>, no condition is used.</param>
+        /// <param name="permissions">The permissions to apply to the share.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>

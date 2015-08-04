@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             if (!rangeRead)
             {
-                // The user provided stream should be wrapped in a TruncatingNonCloseableStream in order to 
+                // The user provided stream should be wrapped in a NonCloseableStream in order to 
                 // avoid closing the user stream when the crypto stream is closed to flush the final decrypted 
                 // block of data.
                 Stream decryptStream = options.EncryptionPolicy.DecryptBlob(new NonCloseableStream(userProvidedStream), attributes.Metadata, out transform, options.RequireEncryption, null, blob.BlobType == BlobType.PageBlob);

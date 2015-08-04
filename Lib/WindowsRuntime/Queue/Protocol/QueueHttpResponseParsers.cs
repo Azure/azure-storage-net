@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>The approximate count for the queue.</returns>
         public static string GetApproximateMessageCount(HttpResponseMessage response)
         {
-            return response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.LeaseStatus);
+            return response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ApproximateMessagesCount);
         }
 
         /// <summary>
