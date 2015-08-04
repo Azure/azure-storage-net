@@ -18,13 +18,13 @@
         },
         "dnxcore50": {
             "dependencies": {
-                "System.Runtime": "4.0.20-beta-*"
+              "System.Runtime": "4.0.10-beta-*"
             }
         }
     },
 
-    "compilationOptions": {
-        "define": [ "XUNIT" ]
-    }
+	"compilationOptions": {
+		"define": [ "XUNIT" ]
+	}
 
 }

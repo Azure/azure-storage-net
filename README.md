@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (4.4.1-Preview)
+# Microsoft Azure Storage SDK for .NET (5.0.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -45,7 +45,7 @@ For the best development experience, developers should use the official Microsof
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-This version of the Storage Client Library ships with the new storage version 2014-02-14. This storage version provides a preview of the Microsoft Azure File Service. For more details,
+This version of the Storage Client Library ships with the storage version 2015-02-21. This storage version provides a preview of the Microsoft Azure File Service. For more details,
 please see the [Introducing Microsoft Azure File Service blog on MSDN] (http://blogs.msdn.com/b/windowsazurestorage/archive/2014/05/11/introducing-microsoft-azure-file-service.aspx).
 
 ### Via Git
@@ -68,7 +68,7 @@ within your project you can also have them installed by the .NET package manager
 
 ### OData
 
-This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.6.2) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
+This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.6.4) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
 
 The ODataLib libraries can be downloaded directly or referenced by your code project through NuGet.  
 
@@ -92,7 +92,7 @@ The desktop library depends on WCF Data Services Client, which can be downloaded
 
 ### Key Vault
 
-The client-side encryption support, currently in preview, depends on the KeyVault.Core package, which can be downloaded directly or referenced by your code project through Nuget.
+The client-side encryption support depends on the KeyVault.Core package, which can be downloaded directly or referenced by your code project through Nuget.
 
 - [KeyVault.Core] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
 

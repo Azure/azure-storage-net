@@ -126,6 +126,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             foreach (CloudFileShare share in results)
             {
+                Assert.IsTrue(share.Properties.Quota.HasValue);
                 if (shareNames.Remove(share.Name))
                 {
                     share.Delete();

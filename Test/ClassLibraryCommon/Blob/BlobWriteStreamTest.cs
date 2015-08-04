@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -67,7 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                 }
 
-                CloudBlockBlob blockBlob2 = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blockBlob2 = container.GetBlockBlobReference(blockBlob.Name);
                 blockBlob2.FetchAttributes();
                 Assert.AreEqual(0, blockBlob2.Properties.Length);
                 Assert.AreEqual(BlobType.BlockBlob, blockBlob2.Properties.BlobType);
@@ -84,10 +85,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                 }
 
-                CloudPageBlob pageBlob2 = container.GetPageBlobReference("blob2");
+                CloudPageBlob pageBlob2 = container.GetPageBlobReference(pageBlob.Name);
                 pageBlob2.FetchAttributes();
                 Assert.AreEqual(1024, pageBlob2.Properties.Length);
                 Assert.AreEqual(BlobType.PageBlob, pageBlob2.Properties.BlobType);
+
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob3");
+                using (Stream blobStream = appendBlob.OpenWrite(true))
+                {
+                }
+
+                CloudAppendBlob appendBlob2 = container.GetAppendBlobReference(appendBlob.Name);
+                appendBlob2.FetchAttributes();
+                Assert.AreEqual(0, appendBlob2.Properties.Length);
+                Assert.AreEqual(BlobType.AppendBlob, appendBlob2.Properties.BlobType);
             }
             finally
             {
@@ -1655,6 +1666,868 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         blob.DownloadToStream(downloadedBlob);
                         TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using blob stream and verify contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamBasicTest()
+        {
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+
+            MD5 hasher = MD5.Create();
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    BlobRequestOptions options = new BlobRequestOptions()
+                    {
+                        StoreBlobContentMD5 = true,
+                    };
+
+                    using (Stream blobStream = blob.OpenWrite(true, null, options))
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            blobStream.Write(buffer, 0, buffer.Length);
+                            wholeBlob.Write(buffer, 0, buffer.Length);
+                            Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+                        }
+                    }
+
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob));
+                    blob.FetchAttributes();
+                    Assert.AreEqual(md5, blob.Properties.ContentMD5);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        blob.DownloadToStream(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using blob stream and verify contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamOneByteTest()
+        {
+            byte buffer = 127;
+
+            MD5 hasher = MD5.Create();
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 16 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    BlobRequestOptions options = new BlobRequestOptions()
+                    {
+                        StoreBlobContentMD5 = true,
+                    };
+                    using (Stream blobStream = blob.OpenWrite(true, null, options, null))
+                    {
+                        for (int i = 0; i < 1 * 1024 * 1024; i++)
+                        {
+                            blobStream.WriteByte(buffer);
+                            wholeBlob.WriteByte(buffer);
+                            Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+                        }
+                    }
+
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob));
+                    blob.FetchAttributes();
+                    Assert.AreEqual(md5, blob.Properties.ContentMD5);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        blob.DownloadToStream(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Seek in a blob write stream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamSeekTest()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                using (Stream blobStream = blob.OpenWrite(true))
+                {
+                    TestHelper.ExpectedException<NotSupportedException>(
+                        () => blobStream.Seek(1, SeekOrigin.Begin),
+                        "Append blob write stream should not be seekable");
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Create a blob using blob stream by specifying an access condition")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamOpenWithAccessCondition()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.Create();
+
+            try
+            {
+                CloudAppendBlob existingBlob = container.GetAppendBlobReference("blob");
+                existingBlob.CreateOrReplace();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob2");
+                AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                TestHelper.ExpectedException(
+                    () => blob.OpenWrite(true, accessCondition),
+                    "OpenWrite with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                blob = container.GetAppendBlobReference("blob3");
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                Stream blobStream = blob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                blob = container.GetAppendBlobReference("blob4");
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                blobStream = blob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                blob = container.GetAppendBlobReference("blob5");
+                accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                blobStream = blob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                blob = container.GetAppendBlobReference("blob6");
+                accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                blobStream = blob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                blobStream = existingBlob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
+                TestHelper.ExpectedException(
+                    () => existingBlob.OpenWrite(true, accessCondition),
+                    "OpenWrite with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
+                blobStream = existingBlob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                TestHelper.ExpectedException(
+                    () => existingBlob.OpenWrite(true, accessCondition),
+                    "OpenWrite with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                TestHelper.ExpectedException(
+                    () => existingBlob.OpenWrite(true, accessCondition),
+                    "OpenWrite with a non-met condition should fail",
+                    HttpStatusCode.Conflict);
+
+                accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                blobStream = existingBlob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                TestHelper.ExpectedException(
+                    () => existingBlob.OpenWrite(true, accessCondition),
+                    "OpenWrite with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                blobStream = existingBlob.OpenWrite(true, accessCondition);
+                blobStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                TestHelper.ExpectedException(
+                    () => existingBlob.OpenWrite(true, accessCondition),
+                    "OpenWrite with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                container.Delete();
+            }
+        }
+
+        [TestMethod]
+        [Description("Create a blob using blob stream by specifying an access condition")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamOpenAPMWithAccessCondition()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.Create();
+
+            try
+            {
+                CloudAppendBlob existingBlob = container.GetAppendBlobReference("blob");
+                existingBlob.CreateOrReplace();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudAppendBlob blob = container.GetAppendBlobReference("blob2");
+                    AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    IAsyncResult result = blob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    TestHelper.ExpectedException(
+                        () => blob.EndOpenWrite(result),
+                        "OpenWrite with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+
+                    blob = container.GetAppendBlobReference("blob3");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                    result = blob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Stream blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = container.GetAppendBlobReference("blob4");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = blob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = container.GetAppendBlobReference("blob5");
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = blob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = container.GetAppendBlobReference("blob6");
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = blob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    TestHelper.ExpectedException(
+                        () => existingBlob.EndOpenWrite(result),
+                        "OpenWrite with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    TestHelper.ExpectedException(
+                        () => existingBlob.EndOpenWrite(result),
+                        "OpenWrite with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    TestHelper.ExpectedException(
+                        () => existingBlob.EndOpenWrite(result),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.Conflict);
+
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    TestHelper.ExpectedException(
+                        () => existingBlob.EndOpenWrite(result),
+                        "OpenWrite with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = existingBlob.BeginOpenWrite(true, accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    TestHelper.ExpectedException(
+                        () => existingBlob.EndOpenWrite(result),
+                        "OpenWrite with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+                }
+            }
+            finally
+            {
+                container.Delete();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Create a blob using blob stream by specifying an access condition")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamOpenWithAccessConditionTask()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.CreateAsync().Wait();
+
+            try
+            {
+                CloudAppendBlob existingBlob = container.GetAppendBlobReference("blob");
+                existingBlob.CreateOrReplaceAsync().Wait();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob2");
+                AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                TestHelper.ExpectedExceptionTask(
+                    blob.OpenWriteAsync(true, accessCondition, null, null),
+                    "OpenWrite with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                blob = container.GetAppendBlobReference("blob3");
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                Stream blobStream = blob.OpenWriteAsync(true, accessCondition, null, null).Result;
+                blobStream.Dispose();
+
+                blob = container.GetAppendBlobReference("blob4");
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                blobStream = blob.OpenWriteAsync(true, accessCondition, null, null).Result;
+                blobStream.Dispose();
+            }
+            finally
+            {
+                container.DeleteAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Test the effects of blob stream's flush functionality")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamFlushTest()
+        {
+            byte[] buffer = GetRandomBuffer(512 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    BlobRequestOptions options = new BlobRequestOptions() { StoreBlobContentMD5 = true };
+                    OperationContext opContext = new OperationContext();
+                    using (CloudBlobStream blobStream = blob.OpenWrite(true, null, options, opContext))
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            blobStream.Write(buffer, 0, buffer.Length);
+                            wholeBlob.Write(buffer, 0, buffer.Length);
+                        }
+
+                        Assert.AreEqual(2, opContext.RequestResults.Count);
+
+                        blobStream.Flush();
+
+                        Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                        blobStream.Flush();
+
+                        Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                        blobStream.Write(buffer, 0, buffer.Length);
+                        wholeBlob.Write(buffer, 0, buffer.Length);
+
+                        Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                        blobStream.Commit();
+
+                        Assert.AreEqual(5, opContext.RequestResults.Count);
+                    }
+
+                    Assert.AreEqual(5, opContext.RequestResults.Count);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        blob.DownloadToStream(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test the effects of blob stream's flush functionality")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamFlushTestAPM()
+        {
+            byte[] buffer = GetRandomBuffer(512 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    BlobRequestOptions options = new BlobRequestOptions() { StoreBlobContentMD5 = true };
+                    OperationContext opContext = new OperationContext();
+                    using (CloudBlobStream blobStream = blob.OpenWrite(true, null, options, opContext))
+                    {
+                        using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                        {
+                            IAsyncResult result;
+                            for (int i = 0; i < 3; i++)
+                            {
+                                result = blobStream.BeginWrite(
+                                    buffer,
+                                    0,
+                                    buffer.Length,
+                                    ar => waitHandle.Set(),
+                                    null);
+                                waitHandle.WaitOne();
+                                blobStream.EndWrite(result);
+                                wholeBlob.Write(buffer, 0, buffer.Length);
+                            }
+
+                            Assert.AreEqual(2, opContext.RequestResults.Count);
+
+                            ICancellableAsyncResult cancellableResult = blobStream.BeginFlush(
+                                ar => waitHandle.Set(),
+                                null);
+                            Assert.IsFalse(cancellableResult.IsCompleted);
+                            cancellableResult.Cancel();
+                            waitHandle.WaitOne();
+                            blobStream.EndFlush(cancellableResult);
+
+                            result = blobStream.BeginFlush(
+                                ar => waitHandle.Set(),
+                                null);
+                            Assert.IsFalse(result.IsCompleted);
+                            TestHelper.ExpectedException<InvalidOperationException>(
+                                () => blobStream.BeginFlush(null, null),
+                                null);
+                            waitHandle.WaitOne();
+                            TestHelper.ExpectedException<InvalidOperationException>(
+                                () => blobStream.BeginFlush(null, null),
+                                null);
+                            blobStream.EndFlush(result);
+                            Assert.IsFalse(result.CompletedSynchronously);
+
+                            Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                            result = blobStream.BeginFlush(
+                                ar => waitHandle.Set(),
+                                null);
+                            Assert.IsTrue(result.CompletedSynchronously);
+                            waitHandle.WaitOne();
+                            blobStream.EndFlush(result);
+
+                            Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                            result = blobStream.BeginWrite(
+                                buffer,
+                                0,
+                                buffer.Length,
+                                ar => waitHandle.Set(),
+                                null);
+                            waitHandle.WaitOne();
+                            blobStream.EndWrite(result);
+                            wholeBlob.Write(buffer, 0, buffer.Length);
+
+                            Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                            result = blobStream.BeginCommit(
+                                ar => waitHandle.Set(),
+                                null);
+                            waitHandle.WaitOne();
+                            blobStream.EndCommit(result);
+
+                            Assert.AreEqual(5, opContext.RequestResults.Count);
+                        }
+                    }
+
+                    Assert.AreEqual(5, opContext.RequestResults.Count);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        blob.DownloadToStream(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Validate that we use user's access condition for the first attempt write.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamAppendOffsetTest()
+        {
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.CreateOrReplace();
+
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    blob.AppendBlock(new MemoryStream(buffer));
+                    wholeBlob.Write(buffer, 0, buffer.Length);
+
+                    AccessCondition condition = new AccessCondition()
+                    {
+                        IfMatchETag = blob.Properties.ETag
+                    };
+
+                    OperationContext context = new OperationContext();
+                    int count = 0;
+                    context.SendingRequest += (sender, e) =>
+                    {
+                        if (e.Request.Headers["If-Match"] != null)
+                        {
+                            count++;
+                        }
+                        else
+                        {
+                            Assert.AreEqual(buffer.Length, int.Parse(e.Request.Headers["x-ms-blob-condition-appendpos"]));
+                        }
+                    };
+
+                    // Even though the condition does not have an append position set, the client lib will internally
+                    // make a FetchAttributes call to set the correct append position for the first operation.
+                    using (Stream blobStream = blob.OpenWrite(false, condition, null, context))
+                    {
+                        blobStream.Write(buffer, 0, buffer.Length);
+                        wholeBlob.Write(buffer, 0, buffer.Length);
+                    }
+
+                    Assert.AreEqual(1, count);
+
+                    blob.FetchAttributes();
+
+                    // The length is 6MB since we uploaded 3 MB using AppendBlobFromStream and then 3MB using Write.
+                    Assert.AreEqual(6 * 1024 * 1024, blob.Properties.Length);
+
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        blob.DownloadToStream(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Validate that we use user's access condition for the first attempt write.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamAppendOffsetTestAPM()
+        {
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.CreateOrReplace();
+
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    blob.AppendBlock(new MemoryStream(buffer));
+                    wholeBlob.Write(buffer, 0, buffer.Length);
+
+                    AccessCondition condition = new AccessCondition()
+                    {
+                        IfMatchETag = blob.Properties.ETag
+                    };
+
+                    OperationContext context = new OperationContext();
+                    int count = 0;
+                    context.SendingRequest += (sender, e) =>
+                    {
+                        if (e.Request.Headers["If-Match"] != null)
+                        {
+                            count++;
+                        }
+                        else
+                        {
+                            Assert.AreEqual(buffer.Length, int.Parse(e.Request.Headers["x-ms-blob-condition-appendpos"]));
+                        }
+                    };
+
+                    // Even though the condition does not have an append position set, the client lib will internally
+                    // make a FetchAttributes call to set the correct append position for the first operation.
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        IAsyncResult result = blob.BeginOpenWrite(false, condition, null, context,
+                                        ar => waitHandle.Set(),
+                                        null);
+                        waitHandle.WaitOne();
+                        using (Stream blobStream = blob.EndOpenWrite(result))
+                        {
+                            result = blobStream.BeginWrite(
+                                   buffer,
+                                   0,
+                                   buffer.Length,
+                                   ar => waitHandle.Set(),
+                                   null);
+                            waitHandle.WaitOne();
+                            blobStream.EndWrite(result);
+                            wholeBlob.Write(buffer, 0, buffer.Length);
+                        }
+                    }
+
+                    Assert.AreEqual(1, count);
+
+                    blob.FetchAttributes();
+
+                    // The length is 6MB since we uploaded 3 MB using AppendBlobFromStream and then 3MB using Write.
+                    Assert.AreEqual(6 * 1024 * 1024, blob.Properties.Length);
+
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        blob.DownloadToStream(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using blob stream and verify that max conditions is passed through")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamMaxSizeConditionTest()
+        {
+            byte[] buffer = GetRandomBuffer(16 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 16 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    AccessCondition accessCondition = new AccessCondition() { IfMaxSizeLessThanOrEqual = 34 * 1024 };
+                    try
+                    {
+                        using (Stream blobStream = blob.OpenWrite(true, accessCondition, null))
+                        {
+                            for (int i = 0; i < 3; i++)
+                            {
+                                blobStream.Write(buffer, 0, buffer.Length);
+                                wholeBlob.Write(buffer, 0, buffer.Length);
+                                Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+                            }
+                        }
+
+                        Assert.Fail("No exception received while expecting condition failure");
+                    }
+                    catch (IOException ex)
+                    {
+                        Assert.AreEqual(SR.InvalidBlockSize, ex.Message);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using blob stream and verify that max conditions is passed through")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobWriteStreamMaxSizeConditionTestAPM()
+        {
+            byte[] buffer = GetRandomBuffer(16 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 16 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    AccessCondition accessCondition = new AccessCondition() { IfMaxSizeLessThanOrEqual = 34 * 1024 };
+                    try
+                    {
+                        // Even though the condition does not have an append position set, the client lib will internally
+                        // make a FetchAttributes call to set the correct append position for the first operation.
+                        using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                        {
+                            IAsyncResult result = blob.BeginOpenWrite(true, accessCondition, null, null,
+                                                    ar => waitHandle.Set(),
+                                                    null);
+                            waitHandle.WaitOne();
+                            using (Stream blobStream = blob.EndOpenWrite(result))
+                            {
+                                for (int i = 0; i < 3; i++)
+                                {
+                                    result = blobStream.BeginWrite(
+                                           buffer,
+                                           0,
+                                           buffer.Length,
+                                           ar => waitHandle.Set(),
+                                           null);
+                                    waitHandle.WaitOne();
+                                    blobStream.EndWrite(result);
+                                    wholeBlob.Write(buffer, 0, buffer.Length);
+                                    Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+                                }
+                            }
+
+                            Assert.Fail("No exception received while expecting condition failure");
+                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        Assert.AreEqual(SR.InvalidBlockSize, ex.Message);
                     }
                 }
             }

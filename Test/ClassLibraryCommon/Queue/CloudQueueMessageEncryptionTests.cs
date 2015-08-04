@@ -364,5 +364,73 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 queue.DeleteIfExists();
             }
         }
+
+        [TestMethod]
+        [Description("Test adding/retrieving message using RequireEncryption flag.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueMessageEncryptionWithStrictMode()
+        {
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            // Create the resolver to be used for unwrapping.
+            DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+            resolver.Add(aesKey);
+
+            CloudQueueClient client = GenerateCloudQueueClient();
+            string name = GenerateNewQueueName();
+            CloudQueue queue = client.GetQueueReference(name);
+            try
+            {
+                queue.CreateIfNotExists();
+
+                string messageStr = Guid.NewGuid().ToString();
+                CloudQueueMessage message = new CloudQueueMessage(messageStr);
+
+                QueueEncryptionPolicy policy = new QueueEncryptionPolicy(aesKey, null);
+
+                // Add message with policy.
+                QueueRequestOptions createOptions = new QueueRequestOptions() { EncryptionPolicy = policy };
+                createOptions.RequireEncryption = true;
+
+                queue.AddMessage(message, null, null, createOptions, null);
+
+                // Set policy to null and add message while RequireEncryption flag is still set to true. This should throw.
+                createOptions.EncryptionPolicy = null;
+
+                TestHelper.ExpectedException<InvalidOperationException>(
+                    () => queue.AddMessage(message, null, null, createOptions, null),
+                    "Not specifying a policy when RequireEnryption is set to true should throw.");
+
+                // Retrieve message
+                QueueEncryptionPolicy retrPolicy = new QueueEncryptionPolicy(null, resolver);
+                QueueRequestOptions retrieveOptions = new QueueRequestOptions() { EncryptionPolicy = retrPolicy };
+                retrieveOptions.RequireEncryption = true;
+
+                CloudQueueMessage retrMessage = queue.GetMessage(null, retrieveOptions, null);
+
+                // Update message with plain text.
+                string updatedMessage = Guid.NewGuid().ToString("N");
+                retrMessage.SetMessageContent(updatedMessage);
+
+                queue.UpdateMessage(retrMessage, TimeSpan.FromSeconds(0), MessageUpdateFields.Content | MessageUpdateFields.Visibility);
+
+                // Retrieve updated message with RequireEncryption flag but no metadata on the service. This should throw.
+                TestHelper.ExpectedException<StorageException>(
+                    () => queue.GetMessage(null, retrieveOptions, null),
+                    "Retrieving with RequireEncryption set to true and no metadata on the service should fail.");
+
+                // Set RequireEncryption to false and retrieve.
+                retrieveOptions.RequireEncryption = false;
+                queue.GetMessage(null, retrieveOptions, null);
+            }
+            finally
+            {
+                queue.DeleteIfExists();
+            }
+        }
     }
 }

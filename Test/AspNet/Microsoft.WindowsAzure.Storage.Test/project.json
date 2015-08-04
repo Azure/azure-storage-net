@@ -1,36 +1,36 @@
 ﻿{
-    "version": "4.4.1.0",
-    "dependencies": {
-        "xunit": "2.1.0-*",
-        "xunit.runner.dnx": "2.1.0-*",
-        "Microsoft.WindowsAzure.Storage": "",
-        "XUnitForMsTest": ""
-    },
+  "version": "5.0.1.0",
+  "dependencies": {
+    "xunit": "2.1.0-*",
+    "xunit.runner.dnx": "2.1.0-*",
+    "Microsoft.WindowsAzure.Storage": "",
+    "XUnitForMsTest": ""
+  },
 
-    "commands": {
-        "test": "xunit.runner.dnx"
-    },
+  "commands": {
+    "test": "xunit.runner.dnx"
+  },
 
-    "frameworks": {
-        "dnx451": {
-            "frameworkAssemblies": {
-                "System.Net.Http": "",
-                "System.ServiceModel": "",
-                "System.Linq": ""
-            }
-        },
-        "dnxcore50": {
-            "dependencies": {
-                "System.Runtime": "4.0.20-beta-*"
-            }
-        }
+  "frameworks": {
+    "dnx451": {
+      "frameworkAssemblies": {
+        "System.Net.Http": "",
+        "System.ServiceModel": "",
+        "System.Linq": ""
+      }
     },
+    "dnxcore50": {
+      "dependencies": {
+        "System.Runtime": "4.0.20-beta-*"
+      }
+    }
+  },
 
-    "compilationOptions": {
-        "define": [ "ASPNET_K", "XUNIT" ]
-    },
+  "compilationOptions": {
+    "define": [ "ASPNET_K", "XUNIT" ]
+  },
 
-    "compile": [
+  "compile": [
         "**/*.cs",
         "../../Common/*.cs",
         "../../Common/Blob/*.cs",
@@ -46,5 +46,5 @@
         "../../WindowsRuntime/Queue/**/*.cs",
         "../../WindowsRuntime/File/**/*.cs",
         "../../WindowsRuntime/Table/**/*.cs"
-    ]
+  ]
 }

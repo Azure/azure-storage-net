@@ -352,7 +352,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="properties">The table service properties.</param>
         [DoesServiceRequest]
 #if ASPNET_K 
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task SetServicePropertiesAsync(ServiceProperties properties)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -369,7 +369,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
 #if ASPNET_K 
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -398,7 +398,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -428,6 +428,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx);
             retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            retCmd.StreamToDispose = memoryStream;
             retCmd.Handler = this.AuthenticationHandler;
             retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =

@@ -469,6 +469,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         {
             string pk = null;
             string rk = null;
+            byte[] cek = null;
             DateTimeOffset ts = new DateTimeOffset();
             Dictionary<string, EntityProperty> properties = new Dictionary<string, EntityProperty>();
 
@@ -494,19 +495,30 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
 
             // If encryption policy is set on options, try to decrypt the entity.
+            EntityProperty propertyDetailsProperty;
+            EntityProperty keyProperty;
+
             if (options.EncryptionPolicy != null)
             {
-                // Deserialize the metadata property value to get the names of encrypted properties.
-                EntityProperty propertyDetailsProperty;
-                HashSet<string> encryptedPropertyDetailsSet = null;
-
-                if (properties.TryGetValue(Constants.EncryptionConstants.TableEncryptionPropertyDetails, out propertyDetailsProperty))
+                if (properties.TryGetValue(Constants.EncryptionConstants.TableEncryptionPropertyDetails, out propertyDetailsProperty)
+                    && properties.TryGetValue(Constants.EncryptionConstants.TableEncryptionKeyDetails, out keyProperty))
                 {
-                    byte[] binaryVal = propertyDetailsProperty.BinaryValue;
-                    encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
-                }
+                    // Decrypt the metadata property value to get the names of encrypted properties.
+                    EncryptionData encryptionData = null;
+                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData);
 
-                properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet);
+                    byte[] binaryVal = propertyDetailsProperty.BinaryValue;
+                    HashSet<string> encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+
+                    properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData);
+                }
+                else
+                {
+                    if (options.RequireEncryption.HasValue && options.RequireEncryption.Value)
+                    {
+                        throw new StorageException(SR.EncryptionDataNotPresentError, null) { IsRetryable = false };
+                    }
+                }
             }
 
             return resolver(pk, rk, ts, properties, entry.ETag);
@@ -516,6 +528,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         {
             string pk = null;
             string rk = null;
+            byte[] cek = null;
+            EncryptionData encryptionData = null;
             DateTimeOffset ts = new DateTimeOffset();
             Dictionary<string, EntityProperty> properties = new Dictionary<string, EntityProperty>();
             Dictionary<string, EdmType> propertyResolverDictionary = null;
@@ -537,15 +551,34 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 #endif
             }
 
-            // Deserialize the metadata property value to get the names of encrypted properties so that they can be parsed correctly below.
-            string metadataValue = null;
-            if (entityAttributes.TryGetValue(Constants.EncryptionConstants.TableEncryptionPropertyDetails, out metadataValue))
+            // Decrypt the metadata property value to get the names of encrypted properties so that they can be parsed correctly below.
+            if (options.EncryptionPolicy != null)
             {
-                EntityProperty propertyDetailsProperty = EntityProperty.CreateEntityPropertyFromObject(metadataValue, EdmType.Binary);
-                properties.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails, propertyDetailsProperty);
+                string metadataValue = null;
+                string keyPropertyValue = null;
 
-                byte[] binaryVal = propertyDetailsProperty.BinaryValue;
-                encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+                if (entityAttributes.TryGetValue(Constants.EncryptionConstants.TableEncryptionPropertyDetails, out metadataValue)
+                && entityAttributes.TryGetValue(Constants.EncryptionConstants.TableEncryptionKeyDetails, out keyPropertyValue))
+                {
+                    EntityProperty propertyDetailsProperty = EntityProperty.CreateEntityPropertyFromObject(metadataValue, EdmType.Binary);
+                    EntityProperty keyProperty = EntityProperty.CreateEntityPropertyFromObject(keyPropertyValue, EdmType.String);
+
+                    entityAttributes.TryGetValue(TableConstants.PartitionKey, out pk);
+                    entityAttributes.TryGetValue(TableConstants.RowKey, out rk);
+                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData);
+
+                    properties.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails, propertyDetailsProperty);
+
+                    byte[] binaryVal = propertyDetailsProperty.BinaryValue;
+                    encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+                }
+                else
+                {
+                    if (options.RequireEncryption.HasValue && options.RequireEncryption.Value)
+                    {
+                        throw new StorageException(SR.EncryptionDataNotPresentError, null) { IsRetryable = false };
+                    }
+                }
             }
             
             foreach (KeyValuePair<string, string> prop in entityAttributes)
@@ -574,7 +607,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
                 else if (prop.Key == Constants.EncryptionConstants.TableEncryptionPropertyDetails)
                 {
-                    // do nothing. Already handled above.
+                    if (!properties.ContainsKey(Constants.EncryptionConstants.TableEncryptionPropertyDetails))
+                    {
+                        // If encryption policy is not set, then add the value as-is to the dictionary.
+                        properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, EdmType.Binary));
+                    }
+                    else
+                    {
+                        // Do nothing. Already handled above. 
+                    }
                 }
                 else
                 {
@@ -623,9 +664,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
 
             // If encryption policy is set on options, try to decrypt the entity.
-            if (options.EncryptionPolicy != null)
+            if (options.EncryptionPolicy != null && encryptionData != null)
             {
-                properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet);
+                properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData);
             }
 
             return resolver(pk, rk, ts, properties, etag);

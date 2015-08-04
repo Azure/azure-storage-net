@@ -20,14 +20,17 @@
 
 namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Net;
 
     /// <summary>
-    /// Provides a set of methods for parsing a response containing file data from the File service.
+    /// Provides methods for parsing responses to operations on files in the File service.
     /// </summary>
     public static partial class FileHttpResponseParsers
     {
@@ -101,6 +104,16 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static IDictionary<string, string> GetMetadata(HttpWebResponse response)
         {
             return HttpResponseParsers.GetMetadata(response);
+        }
+
+        /// <summary>
+        /// Extracts a <see cref="CopyState"/> object from the headers of a web response.
+        /// </summary>
+        /// <param name="response">The HTTP web response.</param>
+        /// <returns>A <see cref="CopyState"/> object, or <c>null</c> if the web response does not include copy state.</returns>
+        public static CopyState GetCopyAttributes(HttpWebResponse response)
+        {
+            return BlobHttpResponseParsers.GetCopyAttributes(response);
         }
     }
 }

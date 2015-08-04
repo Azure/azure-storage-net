@@ -2504,6 +2504,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.SetAcl(uri, serverTimeout, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
+            putCmd.StreamToDispose = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2576,6 +2577,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
+            putCmd.StreamToDispose = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SetHeaders = (r, ctx) =>
             {
@@ -2641,6 +2643,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
                 putCmd.SendStream = memoryStream;
+                putCmd.StreamToDispose = memoryStream;
                 putCmd.RecoveryAction = RecoveryActions.RewindStream;
             }
 
@@ -2684,6 +2687,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand{T}"/> that gets the permissions.</returns>
         private RESTCommand<IEnumerable<CloudQueueMessage>> GetMessagesImpl(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options)
         {
+            options.AssertPolicyIfRequired();
+
             RESTCommand<IEnumerable<CloudQueueMessage>> getCmd = new RESTCommand<IEnumerable<CloudQueueMessage>>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(getCmd);
@@ -2711,6 +2716,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand{T}"/> that gets the permissions.</returns>
         private RESTCommand<IEnumerable<CloudQueueMessage>> PeekMessagesImpl(int messageCount, QueueRequestOptions options)
         {
+            options.AssertPolicyIfRequired();
+
             RESTCommand<IEnumerable<CloudQueueMessage>> getCmd = new RESTCommand<IEnumerable<CloudQueueMessage>>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(getCmd);

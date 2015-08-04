@@ -65,9 +65,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             this.DoCloudBlobEncryption(BlobType.BlockBlob, false);
             this.DoCloudBlobEncryption(BlobType.PageBlob, false);
+            this.DoCloudBlobEncryption(BlobType.AppendBlob, false);
 
             this.DoCloudBlobEncryption(BlobType.BlockBlob, true);
             this.DoCloudBlobEncryption(BlobType.PageBlob, true);
+            this.DoCloudBlobEncryption(BlobType.AppendBlob, true);
         }
 
         private void DoCloudBlobEncryption(BlobType type, bool partial)
@@ -90,9 +92,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     blob = container.GetBlockBlobReference("blockblob");
                 }
-                else
+                else if (type == BlobType.PageBlob)
                 {
                     blob = container.GetPageBlobReference("pageblob");
+                }
+                else
+                {
+                    blob = container.GetAppendBlobReference("appendblob");
                 }
 
                 // Create the Key to be used for wrapping.
@@ -155,9 +161,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             DoCloudBlobEncryptionAPM(BlobType.BlockBlob, false);
             DoCloudBlobEncryptionAPM(BlobType.PageBlob, false);
+            DoCloudBlobEncryptionAPM(BlobType.AppendBlob, false);
 
             DoCloudBlobEncryptionAPM(BlobType.BlockBlob, true);
             DoCloudBlobEncryptionAPM(BlobType.PageBlob, true);
+            DoCloudBlobEncryptionAPM(BlobType.AppendBlob, true);
         }
 
         private static void DoCloudBlobEncryptionAPM(BlobType type, bool partial)
@@ -229,6 +237,186 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 // Compare that the decrypted contents match the input data.
                 byte[] outputArray = outputStream.ToArray();
                 TestHelper.AssertBuffersAreEqualUptoIndex(outputArray, buffer, size - 1);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload and download encrypted blob from/to a file.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionWithFile()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                int size = 5 * 1024 * 1024;
+                byte[] buffer = GetRandomBuffer(size);
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the resolver to be used for unwrapping.
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+
+                string inputFileName = Path.GetTempFileName();
+                string outputFileName = Path.GetTempFileName();
+
+                using (FileStream file = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    file.Write(buffer, 0, buffer.Length);
+                }
+
+                // Upload the encrypted contents to the blob.
+                blob.UploadFromFile(inputFileName, FileMode.Open, null, uploadOptions, null);
+
+                // Download the encrypted blob.
+                // Create the decryption policy to be used for download. There is no need to specify the
+                // key when the policy is only going to be used for downloads. Resolver is sufficient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+
+                // Set the decryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions() { EncryptionPolicy = downloadPolicy };
+
+                // Download and decrypt the encrypted contents from the blob.
+                blob.DownloadToFile(outputFileName, FileMode.Create, null, downloadOptions, null);
+
+                // Compare that the decrypted contents match the input data.
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                        outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqual(inputFileStream, outputFileStream);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload and download encrypted blob from/to a byte array.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionWithByteArray()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                int size = 5 * 1024 * 1024;
+                byte[] buffer = GetRandomBuffer(size);
+                byte[] outputBuffer = new byte[size];
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the resolver to be used for unwrapping.
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+
+                // Upload the encrypted contents to the blob.
+                blob.UploadFromByteArray(buffer, 0, buffer.Length, null, uploadOptions, null);
+
+                // Download the encrypted blob.
+                // Create the decryption policy to be used for download. There is no need to specify the
+                // key when the policy is only going to be used for downloads. Resolver is sufficient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+
+                // Set the decryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions() { EncryptionPolicy = downloadPolicy };
+
+                // Download and decrypt the encrypted contents from the blob.
+                blob.DownloadToByteArray(outputBuffer, 0, null, downloadOptions, null);
+
+                // Compare that the decrypted contents match the input data.
+                TestHelper.AssertBuffersAreEqual(buffer, outputBuffer);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload and download encrypted blob from/to text.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionWithText()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                string data = "String data";
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the resolver to be used for unwrapping.
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+
+                // Upload the encrypted contents to the blob.
+                blob.UploadText(data, null, null, uploadOptions, null);
+
+                // Download the encrypted blob.
+                // Create the decryption policy to be used for download. There is no need to specify the
+                // key when the policy is only going to be used for downloads. Resolver is sufficient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+
+                // Set the decryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions() { EncryptionPolicy = downloadPolicy };
+
+                // Download and decrypt the encrypted contents from the blob.
+                string outputData = blob.DownloadText(null, null, downloadOptions, null);
+
+                // Compare that the decrypted contents match the input data.
+                Assert.AreEqual(data, outputData);
             }
             finally
             {
@@ -498,6 +686,35 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.ValidateRangeDecryption(BlobType.PageBlob, 1024, 0, 512);
         }
 
+        [TestMethod]
+        [Description("Validate range download of encrypted blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobEncryptionValidateRangeDecryption()
+        {
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 2 * 512, 1 * 512, 1 * 512);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 2 * 512, null, null);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 2 * 512, 1 * 512, null);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 2 * 512, 0, 1 * 512);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 2 * 512, 4, 1 * 512);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1325, 368, 495);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1325, 369, 495);
+
+            // Edge cases
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1024, 1023, 1);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1024, 0, 1);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1024, 512, 1);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1024, 0, 512);
+
+            // Check cases outside the blob size but within the padded size
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1025, 1023, 4, 2);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1025, 1023, 16, 2);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1025, 1023, 17, 2);
+            this.ValidateRangeDecryption(BlobType.AppendBlob, 1025, 1024, 16, 1);
+        }
+
         private void ValidateRangeDecryption(BlobType type, int blobSize, int? blobOffset, int? length, int? verifyLength = null)
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -565,6 +782,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             DoBlobEncryptedWriteStreamTest(BlobType.BlockBlob);
             DoBlobEncryptedWriteStreamTest(BlobType.PageBlob);
+            DoBlobEncryptedWriteStreamTest(BlobType.AppendBlob);
         }
 
         private void DoBlobEncryptedWriteStreamTest(BlobType type)
@@ -601,6 +819,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     blob.StreamWriteSizeInBytes = 16 * 1024;
                     blobStream = ((CloudPageBlob)blob).OpenWrite(40 * 1024, null, uploadOptions, opContext);
                 }
+                else
+                {
+                    blob = container.GetAppendBlobReference("blob1");
+                    blob.StreamWriteSizeInBytes = 16 * 1024;
+                    blobStream = ((CloudAppendBlob)blob).OpenWrite(true, null, uploadOptions, opContext);
+                }
 
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
@@ -612,7 +836,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             wholeBlob.Write(buffer, 0, buffer.Length);
                         }
 
-                        // Page blobs have one extra call due to create.
+                        // Append and Page blobs have one extra call due to create.
                         if (type == BlobType.BlockBlob)
                         {
                             Assert.AreEqual(1, opContext.RequestResults.Count);
@@ -628,7 +852,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         blobStream.Write(buffer, 0, buffer.Length);
                         wholeBlob.Write(buffer, 0, buffer.Length);
 
-                        // Page blobs have one extra call due to create.
+                        // Append and Page blobs have one extra call due to create.
                         if (type == BlobType.BlockBlob)
                         {
                             Assert.AreEqual(2, opContext.RequestResults.Count);
@@ -669,6 +893,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             DoBlobEncryptedWriteStreamTestAPM(BlobType.BlockBlob);
             DoBlobEncryptedWriteStreamTestAPM(BlobType.PageBlob);
+            DoBlobEncryptedWriteStreamTestAPM(BlobType.AppendBlob);
         }
 
         private void DoBlobEncryptedWriteStreamTestAPM(BlobType type)
@@ -712,6 +937,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         waitHandle.WaitOne();
                         blobStream = ((CloudPageBlob)blob).EndOpenWrite(result);
                     }
+                    else
+                    {
+                        blob = container.GetAppendBlobReference("blob1");
+                        blob.StreamWriteSizeInBytes = 16 * 1024;
+                        result = ((CloudAppendBlob)blob).BeginOpenWrite(true, null, uploadOptions, opContext, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        blobStream = ((CloudAppendBlob)blob).EndOpenWrite(result);
+                    }
                 }
 
                 using (MemoryStream wholeBlob = new MemoryStream())
@@ -734,7 +967,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 wholeBlob.Write(buffer, 0, buffer.Length);
                             }
 
-                            // Page blobs have one extra call due to create.
+                            // Append and Page blobs have one extra call due to create.
                             if (type == BlobType.BlockBlob)
                             {
                                 Assert.AreEqual(1, opContext.RequestResults.Count);
@@ -764,7 +997,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             blobStream.EndWrite(result);
                             wholeBlob.Write(buffer, 0, buffer.Length);
 
-                            // Page blobs have one extra call due to create.
+                            // Append and Page blobs have one extra call due to create.
                             if (type == BlobType.BlockBlob)
                             {
                                 Assert.AreEqual(2, opContext.RequestResults.Count);
@@ -829,6 +1062,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         () => blockBlob.PutBlock(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), stream, null, null, uploadOptions, null),
                         "PutBlock does not support encryption.");
 
+                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("appendblob");
+                    TestHelper.ExpectedException<InvalidOperationException>(
+                        () => appendBlob.AppendBlock(stream, null, null, uploadOptions, null),
+                        "AppendBlock does not support encryption.");
+
                     CloudPageBlob pageBlob = container.GetPageBlobReference("pageblob");
                     TestHelper.ExpectedException<InvalidOperationException>(
                         () => pageBlob.WritePages(stream, 0, null, null, uploadOptions, null),
@@ -845,6 +1083,237 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        [TestMethod]
+        [Description("Validate that default request options correctly set encryption policy.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void BlobUploadWorksWithDefaultRequestOptions()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            byte[] buffer = GetRandomBuffer(16 * 1024);
+
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            // Create the encryption policy to be used for upload.
+            BlobEncryptionPolicy policy = new BlobEncryptionPolicy(aesKey, null);
+
+            // Set the encryption policy on the request options.
+            BlobRequestOptions options = new BlobRequestOptions() { EncryptionPolicy = policy };
+
+            // Set default request options
+            container.ServiceClient.DefaultRequestOptions = options;
+
+            try
+            {
+                container.Create();
+
+                using (MemoryStream stream = new MemoryStream(buffer))
+                {
+                    CloudBlockBlob blockBlob = container.GetBlockBlobReference("blockblob");
+                    blockBlob.UploadFromStream(stream, buffer.Length);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Validate encryption/decryption with RequireEncryption flag.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionWithStrictMode()
+        {
+            this.DoCloudBlobEncryptionWithStrictMode(BlobType.BlockBlob);
+            this.DoCloudBlobEncryptionWithStrictMode(BlobType.PageBlob);
+        }
+
+        private void DoCloudBlobEncryptionWithStrictMode(BlobType type)
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                int size = 5 * 1024 * 1024;
+                byte[] buffer = GetRandomBuffer(size);
+
+                ICloudBlob blob;
+
+                if (type == BlobType.BlockBlob)
+                {
+                    blob = container.GetBlockBlobReference("blob1");
+                }
+                else
+                {
+                    blob = container.GetPageBlobReference("blob1");
+                }
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the resolver to be used for unwrapping.
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+
+                // Set RequireEncryption flag to true.
+                uploadOptions.RequireEncryption = true;
+
+                // Upload an encrypted blob with the policy set.
+                MemoryStream stream = new MemoryStream(buffer);
+                blob.UploadFromStream(stream, size, null, uploadOptions, null);
+
+                // Upload the blob when RequireEncryption is true and no policy is set. This should throw an error.
+                uploadOptions.EncryptionPolicy = null;
+
+                stream = new MemoryStream(buffer);
+                TestHelper.ExpectedException<InvalidOperationException>( 
+                    () => blob.UploadFromStream(stream, size, null, uploadOptions, null),
+                    "Not specifying a policy when RequireEnryption is set to true should throw.");
+
+                // Create the encryption policy to be used for download.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions() { EncryptionPolicy = downloadPolicy };
+
+                // Set RequireEncryption flag to true.
+                downloadOptions.RequireEncryption = true;
+
+                // Download the encrypted blob.
+                MemoryStream outputStream = new MemoryStream();
+                blob.DownloadToStream(outputStream, null, downloadOptions, null);
+
+                blob.Metadata.Clear();
+
+                // Upload a plain text blob.
+                stream = new MemoryStream(buffer);
+                blob.UploadFromStream(stream, size);
+
+                // Try to download an encrypted blob with RequireEncryption set to true. This should throw.
+                outputStream = new MemoryStream();
+                TestHelper.ExpectedException<StorageException>(
+                    () => blob.DownloadToStream(outputStream, null, downloadOptions, null),
+                    "Downloading with RequireEncryption set to true and no metadata on the service should fail.");
+
+                // Set RequireEncryption to false and download.
+                downloadOptions.RequireEncryption = false;
+                blob.DownloadToStream(outputStream, null, downloadOptions, null);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Validate partial blob encryption with RequireEncryption flag.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionWithStrictModeOnPartialBlob()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            int size = 5 * 1024 * 1024;
+            byte[] buffer = GetRandomBuffer(size);
+
+            ICloudBlob blob;
+            MemoryStream stream = new MemoryStream(buffer);
+            String blockId = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+
+            BlobRequestOptions options = new BlobRequestOptions()
+            {
+                RequireEncryption = true
+            };
+
+            blob = container.GetBlockBlobReference("blob1");
+            try
+            {
+                ((CloudBlockBlob)blob).PutBlock(blockId, stream, null, null, options, null);
+                Assert.Fail("PutBlock with RequireEncryption on should fail.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionPolicyMissingInStrictMode);
+            }
+
+            blob = container.GetPageBlobReference("blob1");
+            try
+            {
+                ((CloudPageBlob)blob).WritePages(stream, 0, null, null, options, null);
+                Assert.Fail("WritePages with RequireEncryption on should fail.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionPolicyMissingInStrictMode);
+            }
+
+            blob = container.GetAppendBlobReference("blob1");
+            try
+            {
+                ((CloudAppendBlob)blob).AppendBlock(stream, null, null, options, null);
+                Assert.Fail("AppendBlock with RequireEncryption on should fail.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionPolicyMissingInStrictMode);
+            }
+
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+            options.EncryptionPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+            blob = container.GetBlockBlobReference("blob1");
+            try
+            {
+                ((CloudBlockBlob)blob).PutBlock(blockId, stream, null, null, options, null);
+                Assert.Fail("PutBlock with an EncryptionPolicy should fail.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionNotSupportedForOperation);
+            }
+
+            blob = container.GetPageBlobReference("blob1");
+            try
+            {
+                ((CloudPageBlob)blob).WritePages(stream, 0, null, null, options, null);
+                Assert.Fail("WritePages with an EncryptionPolicy should fail.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionNotSupportedForOperation);
+            }
+
+            blob = container.GetAppendBlobReference("blob1");
+            try
+            {
+                ((CloudAppendBlob)blob).AppendBlock(stream, null, null, options, null);
+                Assert.Fail("AppendBlock with an EncryptionPolicy should fail.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionNotSupportedForOperation);
+            }
+        }
+
         private static ICloudBlob GetCloudBlobReference(BlobType type, CloudBlobContainer container)
         {
             ICloudBlob blob;
@@ -852,9 +1321,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 blob = container.GetBlockBlobReference("blockblob");
             }
-            else
+            else if (type == BlobType.PageBlob)
             {
                 blob = container.GetPageBlobReference("pageblob");
+            }
+            else
+            {
+                blob = container.GetAppendBlobReference("appendblob");
             }
 
             return blob;

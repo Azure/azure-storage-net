@@ -516,6 +516,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                 catch (Exception e)
                 {
                     this.lastException = e;
+                    this.noPendingWritesEvent.Decrement();
+                    this.parallelOperationSemaphore.Release();
                 }
                 finally
                 {

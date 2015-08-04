@@ -1,0 +1,27 @@
+<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
+  <TemplateData>
+    <Name>Azure Storage Queues</Name>
+    <Description>Demonstrates include inserting, peeking, getting, and deleting queue messages, as well as creating and deleting queues using the Azure Storage Client for .NET.</Description>
+    <DefaultName>DataStorageQueue</DefaultName>
+    
+    <ProjectType>CSharp</ProjectType>
+    <ProjectSubType></ProjectSubType>
+    <SortOrder>1000</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>    
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <Icon>sw-file-icon.png</Icon>
+    
+    <!-- Indicates how many parent folders this item template should appear in -->
+    <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="DataStorageQueue.csproj" File="DataStorageQueue.csproj" ReplaceParameters="true">      
+    </Project>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>ProjectWizard, Version=1.0.0.0, Culture=Neutral, PublicKeyToken=caa87a55fd76d99d</Assembly>
+    <FullClassName>ProjectWizard.Wizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

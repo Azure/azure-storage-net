@@ -97,6 +97,9 @@
     <Compile Include="..\Common\Blob\BlockSearchMode.cs">
       <Link>Blob\BlockSearchMode.cs</Link>
     </Compile>
+    <Compile Include="..\Common\Blob\CloudAppendBlob.Common.cs">
+      <Link>Blob\CloudAppendBlob.Common.cs</Link>
+    </Compile>
     <Compile Include="..\Common\Blob\CloudBlob.Common.cs">
       <Link>Blob\CloudBlob.Common.cs</Link>
     </Compile>
@@ -603,6 +606,9 @@
     </Compile>
     <Compile Include="..\WindowsRuntime\Blob\CloudBlob.cs">
       <Link>Blob\CloudBlob.cs</Link>
+    </Compile>
+    <Compile Include="..\WindowsRuntime\Blob\CloudAppendBlob.cs">
+      <Link>Blob\CloudAppendBlob.cs</Link>
     </Compile>
     <Compile Include="..\WindowsRuntime\Blob\CloudBlobClient.cs">
       <Link>Blob\CloudBlobClient.cs</Link>

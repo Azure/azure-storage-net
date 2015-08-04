@@ -160,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Copies each key in the key/<see cref="SharedAccessBlobPolicy"/> value pair to a compatible one-dimensional array, starting at the specified index
         /// of the target array.
         /// </summary>
-        /// <param name="array">The one-dimensional array of <see cref="SharedAccessBlobPolicy"/> objects that is the destination of the elements copied from the shared access policies collection.</param>
+        /// <param name="array">A one-dimensional array of <see cref="SharedAccessBlobPolicy"/> objects that serves as the destination for the elements copied from the shared access policies collection.</param>
         /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
         public void CopyTo(KeyValuePair<string, SharedAccessBlobPolicy>[] array, int arrayIndex)
         {

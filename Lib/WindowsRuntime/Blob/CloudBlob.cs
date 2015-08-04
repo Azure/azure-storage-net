@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
     /// <summary>
-    /// Represents a blob object.
+    /// Represents a blob.
     /// </summary>
     public partial class CloudBlob : IListBlobItem
     {
@@ -109,7 +109,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="target">The target stream.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target)
 #else
@@ -129,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
 #else
@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -162,10 +162,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
-#if ASPNET_K
+#if ASPNET_K 
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToFileAsync(string path, FileMode mode)
         {
@@ -190,7 +190,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -243,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }, cancellationToken);
         }
 #endif
-#endif
+#endif 
 
         /// <summary>
         /// Downloads the contents of a blob to a byte array.
@@ -305,7 +305,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
         /// <param name="length">The length of the data to download from the blob, in bytes.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length)
 #else
@@ -327,7 +327,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -363,7 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -456,7 +456,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }, cancellationToken);
         }
 #endif
-
         /// <summary>
         /// Checks existence of the blob.
         /// </summary>
@@ -540,7 +539,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Populates a blob's properties and metadata.
         /// </summary>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync()
 #else
@@ -559,7 +558,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -587,7 +586,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -601,7 +600,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync()
 #else
@@ -620,7 +619,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -649,7 +648,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -667,7 +666,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Updates the blob's properties.
         /// </summary>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetPropertiesAsync()
 #else
@@ -686,7 +685,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetPropertiesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -732,7 +731,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Deletes the blob.
         /// </summary>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync()
 #else
@@ -752,7 +751,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -781,7 +780,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -965,7 +964,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob, including a required lease ID.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task RenewLeaseAsync(AccessCondition accessCondition)
 #else
@@ -984,7 +983,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">The options for this operation. If <c>null</c>, default options will be used.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task RenewLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -1012,7 +1011,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">The options for this operation. If <c>null</c>, default options will be used.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task RenewLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1094,7 +1093,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob, including a required lease ID.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ReleaseLeaseAsync(AccessCondition accessCondition)
 #else
@@ -1113,7 +1112,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">The options for this operation. If <c>null</c>, default options will be used.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ReleaseLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -1141,7 +1140,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">The options for this operation. If <c>null</c>, default options will be used.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ReleaseLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1296,6 +1295,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// This method fetches the blob's ETag, last modified time, and part of the copy state.
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                
         [DoesServiceRequest]
 #if ASPNET_K || PORTABLE
         public Task<string> StartCopyFromBlobAsync(Uri source)
@@ -1316,6 +1316,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// This method fetches the blob's ETag, last modified time, and part of the copy state.
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                
         [DoesServiceRequest]
 #if ASPNET_K || PORTABLE
         public Task<string> StartCopyFromBlobAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -1345,6 +1346,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// This method fetches the blob's ETag, last modified time, and part of the copy state.
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]        
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1439,7 +1441,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="copyId">A string identifying the copy operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task AbortCopyAsync(string copyId)
 #else
@@ -1459,7 +1461,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K || PORTABLE
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task AbortCopyAsync(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -1489,11 +1491,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task AbortCopyAsync(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.AbortCopyImpl(this.attributes, copyId, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
@@ -1505,6 +1507,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Implements getting the blob.
         /// </summary>
+        /// 
         /// <param name="attributes">The blob's attributes.</param>
         /// <param name="destStream">The target stream.</param>
         /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
@@ -2057,6 +2060,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             attributes.Properties.ETag = parsedProperties.ETag ?? attributes.Properties.ETag;
             attributes.Properties.LastModified = parsedProperties.LastModified ?? attributes.Properties.LastModified;
             attributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? attributes.Properties.PageBlobSequenceNumber;
+            attributes.Properties.AppendBlobCommittedBlockCount = parsedProperties.AppendBlobCommittedBlockCount ?? attributes.Properties.AppendBlobCommittedBlockCount;
 
             if (updateLength)
             {

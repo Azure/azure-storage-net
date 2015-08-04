@@ -1,5 +1,5 @@
 ﻿{
-    "version": "4.4.1.0",
+    "version": "5.0.1.0",
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for ASP.NET 5 Preview",
     "dependencies": {
@@ -10,7 +10,6 @@
     "frameworks": {
         "dnxcore50": {
             "dependencies": {
-                "dnx-coreclr-win-x86": "1.0.0-beta4",
                 "System.Collections": "4.0.10-beta-*",
                 "System.Collections.Concurrent": "4.0.0-beta-*",
                 "System.Collections.Specialized": "4.0.0-beta-*",
@@ -62,9 +61,6 @@
                 "System.Xml.Linq": "",
                 "System.Runtime.Serialization.Xml": "",
                 "System.Net.Http": ""
-            },
-            "dependencies": {
-                "dnx-clr-win-x86": "1.0.0-beta4"
             }
         }
     },

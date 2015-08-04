@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>WindowsAzure.Storage</id>
-    <version>4.3.0</version>
+    <version>5.0.0</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -17,20 +17,19 @@ Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorag
     <tags>Microsoft, Azure, Storage, Table, Blob, File, Queue, Scalable, windowsazureofficial</tags>
     <dependencies>
       <group targetFramework="net40-client">
-        <dependency id="Microsoft.Data.OData" version="5.6.2" />
-        <dependency id="Newtonsoft.Json" version="5.0.8" />
-        <dependency id="Microsoft.Data.Services.Client" version="5.6.2" />
-        <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="1.8.0.0" />
+        <dependency id="Microsoft.Data.OData" version="5.6.4" />
+        <dependency id="Newtonsoft.Json" version="6.0.8" />
+        <dependency id="Microsoft.Data.Services.Client" version="5.6.4" />
       </group>
       <group targetFramework="win8">
-        <dependency id="Microsoft.Data.OData" version="5.6.2" />
+        <dependency id="Microsoft.Data.OData" version="5.6.4" />
       </group>
       <group targetFramework="wpa">
-        <dependency id="Microsoft.Data.OData" version="5.6.2" />
+        <dependency id="Microsoft.Data.OData" version="5.6.4" />
       </group>
       <group targetFramework="wp8">
-        <dependency id="Microsoft.Data.OData" version="5.6.2" />
-        <dependency id="Newtonsoft.Json" version="5.0.8" />
+        <dependency id="Microsoft.Data.OData" version="5.6.4" />
+        <dependency id="Newtonsoft.Json" version="6.0.8" />
       </group> 
     </dependencies>
     <frameworkAssemblies>

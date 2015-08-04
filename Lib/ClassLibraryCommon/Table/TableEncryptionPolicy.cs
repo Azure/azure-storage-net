@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Threading;
 
     /// <summary>
-    /// Represents a table encryption policy that is used to perform envelope encryption/decryption of Azure table entities.
+    /// Represents an encryption policy for performing envelope encryption/decryption of entities in Azure tables.
     /// </summary>
     public class TableEncryptionPolicy
     {
@@ -40,7 +40,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the key resolver used to select the correct key for decrypting existing table entities.
         /// </summary>
-        /// <value>A resolver that returns an <see cref="IKey"/> given a keyId.</value>
+        /// <value>A resolver that returns an <see cref="IKeyResolver"/>, given a key ID.</value>
         public IKeyResolver KeyResolver { get; private set; }
 
         /// <summary>
@@ -48,11 +48,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="key">An object of type <see cref="IKey"/> that is used to wrap/unwrap the content encryption key.</param>
         /// <param name="keyResolver">The key resolver used to select the correct key for decrypting existing table entities.</param>
-        /// <remarks>If the generated policy is intended to be used for encryption, users are expected to provide a key at the minimum.
-        /// The absence of key will cause an exception to be thrown during encryption.
-        /// If the generated policy is intended to be used for decryption, users can provide a keyResolver. The client library will -
-        /// 1. Invoke the key resolver if specified to get the key.
-        /// 2. If resolver is not specified but a key is specified, match the key id on the key and use it.</remarks>
+        /// <remarks>If the generated policy is to be used for encryption, users are expected to provide a key at the minimum.
+        /// The absence of key will cause an exception to be thrown during encryption.<br/>
+        /// If the generated policy is intended to be used for decryption, users can provide a key resolver. The client library will:<br/>
+        /// 1. Invoke the key resolver, if specified, to get the key.<br/>
+        /// 2. If resolver is not specified but a key is specified, the client library will match the key ID against the key and use the key.</remarks> 
         public TableEncryptionPolicy(IKey key, IKeyResolver keyResolver)
         {
             this.Key = key;
@@ -116,10 +116,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                             // Throw if users try to encrypt non-string properties.
                             if (kvp.Value.PropertyType != EdmType.String)
                             {
-                                throw new InvalidOperationException(SR.UnsupportedPropertyTypeForEncryption);
+                                throw new InvalidOperationException(string.Format(SR.UnsupportedPropertyTypeForEncryption, kvp.Value.PropertyType));
                             }
 
-                            byte[] columnIV = sha256.ComputeHash(CommonUtility.BinaryXor(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(kvp.Key)));
+                            byte[] columnIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(string.Join(partitionKey, rowKey, kvp.Key))));
                             Array.Resize<byte>(ref columnIV, 16);
                             myAes.IV = columnIV;
 
@@ -147,38 +147,37 @@ namespace Microsoft.WindowsAzure.Storage.Table
                             encryptedProperties.Add(kvp.Key, kvp.Value);
                         }
                     }
+
+                    // Encrypt the property details set and add it to entity properties.
+                    byte[] metadataIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(string.Join(partitionKey, rowKey, Constants.EncryptionConstants.TableEncryptionPropertyDetails))));
+                    Array.Resize<byte>(ref metadataIV, 16);
+                    myAes.IV = metadataIV;
+
+                    using (ICryptoTransform transform = myAes.CreateEncryptor())
+                    {
+                        byte[] src = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(encryptionPropertyDetailsSet));
+                        byte[] dest = transform.TransformFinalBlock(src, 0, src.Length);
+                        encryptedProperties.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails, new EntityProperty(dest));
+                    }
                 }
             }
 
+            // Add the key details to entity properties.
             encryptedProperties.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails, new EntityProperty(JsonConvert.SerializeObject(encryptionData)));
-            encryptedProperties.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails, new EntityProperty(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(encryptionPropertyDetailsSet))));
             return encryptedProperties;
         }
 
-        /// <summary>
-        /// Return a decrypted entity. This method is used for decrypting entity properties.
-        /// </summary>
-        internal Dictionary<string, EntityProperty> DecryptEntity(IDictionary<string, EntityProperty> properties, HashSet<string> encryptedPropertyDetailsSet)
+        internal byte[] DecryptMetadataAndReturnCEK(string partitionKey, string rowKey, EntityProperty encryptionKeyProperty, EntityProperty propertyDetailsProperty, out EncryptionData encryptionData)
         {
-            EntityProperty encryptionKeyProperty;
-
             // Throw if neither the key nor the resolver are set.
             if (this.Key == null && this.KeyResolver == null)
             {
                 throw new StorageException(SR.KeyAndResolverMissingError, null) { IsRetryable = false };
             }
 
-            // If encryption policy is set but the encryption metadata is absent, throw
-            // an exception.
-            if (!properties.TryGetValue(Constants.EncryptionConstants.TableEncryptionKeyDetails, out encryptionKeyProperty) ||
-                encryptedPropertyDetailsSet == null)
-            {
-                throw new StorageException(SR.EncryptionDataNotPresentError, null) { IsRetryable = false };
-            }
-
             try
             {
-                EncryptionData encryptionData = JsonConvert.DeserializeObject<EncryptionData>(encryptionKeyProperty.StringValue);
+                encryptionData = JsonConvert.DeserializeObject<EncryptionData>(encryptionKeyProperty.StringValue);
 
                 CommonUtility.AssertNotNull("ContentEncryptionIV", encryptionData.ContentEncryptionIV);
                 CommonUtility.AssertNotNull("EncryptedKey", encryptionData.WrappedContentKey.EncryptedKey);
@@ -216,6 +215,53 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     }
                 }
 
+                // Decrypt the property details set and add it to entity properties.
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
+                using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
+                {
+                    using (SHA256CryptoServiceProvider sha256 = new SHA256CryptoServiceProvider())
+#else
+                using (AesManaged myAes = new AesManaged())
+                {
+                    using (SHA256Managed sha256 = new SHA256Managed())
+#endif
+                    {
+                        byte[] metadataIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(string.Join(partitionKey, rowKey, Constants.EncryptionConstants.TableEncryptionPropertyDetails))));
+                        Array.Resize<byte>(ref metadataIV, 16);
+                        myAes.IV = metadataIV;
+                        myAes.Key = contentEncryptionKey;
+
+                        using (ICryptoTransform transform = myAes.CreateDecryptor())
+                        {
+                            byte[] src = propertyDetailsProperty.BinaryValue;
+                            propertyDetailsProperty.BinaryValue = transform.TransformFinalBlock(src, 0, src.Length);
+                        }
+                    }
+                }
+
+                return contentEncryptionKey;
+            }
+            catch (JsonException ex)
+            {
+                throw new StorageException(SR.EncryptionMetadataError, ex) { IsRetryable = false };
+            }
+            catch (StorageException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new StorageException(SR.DecryptionLogicError, ex) { IsRetryable = false };
+            }
+        }
+
+        /// <summary>
+        /// Return a decrypted entity. This method is used for decrypting entity properties.
+        /// </summary>
+        internal Dictionary<string, EntityProperty> DecryptEntity(IDictionary<string, EntityProperty> properties, HashSet<string> encryptedPropertyDetailsSet, string partitionKey, string rowKey, byte[] contentEncryptionKey, EncryptionData encryptionData)
+        {
+            try
+            {
                 Dictionary<string, EntityProperty> decryptedProperties = new Dictionary<string, EntityProperty>();
 
                 switch (encryptionData.EncryptionAgent.EncryptionAlgorithm)
@@ -241,7 +287,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                     }
                                     else if (encryptedPropertyDetailsSet.Contains(kvp.Key))
                                     {
-                                        byte[] columnIV = sha256.ComputeHash(CommonUtility.BinaryXor(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(kvp.Key)));
+                                        byte[] columnIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(string.Join(partitionKey, rowKey, kvp.Key))));
                                         Array.Resize<byte>(ref columnIV, 16);
                                         myAes.IV = columnIV;
 
@@ -260,6 +306,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                 }
                             }
                         }
+
                         return decryptedProperties;
 
                     default:

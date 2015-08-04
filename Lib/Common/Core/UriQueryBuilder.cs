@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Text;
 
     /// <summary>
@@ -71,7 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 }
                 else
                 {
-                    throw new KeyNotFoundException(string.Format(SR.QueryBuilderKeyNotFound, name));
+                    throw new KeyNotFoundException(string.Format(CultureInfo.InvariantCulture, SR.QueryBuilderKeyNotFound, name));
                 }
             }
         }

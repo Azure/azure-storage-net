@@ -243,21 +243,18 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 
         /// <summary>
-        /// Computes an XOR of 2 byte arrays.
+        /// Appends 2 byte arrays.
         /// </summary>
         /// <param name="arr1">First array.</param>
         /// <param name="arr2">Second array.</param>
         /// <returns>The result byte array.</returns>
-        internal static byte[] BinaryXor(byte[] arr1, byte[] arr2)
+        internal static byte[] BinaryAppend(byte[] arr1, byte[] arr2)
         {
-            int longLen = Math.Max(arr1.Length, arr2.Length);
-            byte[] result = new byte[longLen];
-            Array.Copy(arr1.Length >= arr2.Length ? arr1 : arr2, result, longLen);
-            int shortLen = Math.Min(arr1.Length, arr2.Length);
-            for (int i = 0; i < shortLen; i++)
-            {
-                result[i] = (byte)(arr1[i] ^ arr2[i]);
-            }
+            int newLen = arr1.Length + arr2.Length;
+            byte[] result = new byte[newLen];
+
+            Array.Copy(arr1, result, arr1.Length);
+            Array.Copy(arr2, 0, result, arr1.Length, arr2.Length);
 
             return result;
         }

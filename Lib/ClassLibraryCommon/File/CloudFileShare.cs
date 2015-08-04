@@ -23,6 +23,8 @@ namespace Microsoft.WindowsAzure.Storage.File
     using Microsoft.WindowsAzure.Storage.File.Protocol;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -922,6 +924,228 @@ namespace Microsoft.WindowsAzure.Storage.File
 
 #if SYNC
         /// <summary>
+        /// Gets the permissions settings for the share.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="FileSharePermissions"/> object.</returns>
+        [DoesServiceRequest]
+        public FileSharePermissions GetPermissions(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteSync(
+                this.GetPermissionsImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous request to get the permissions settings for the share.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginGetPermissions(AsyncCallback callback, object state)
+        {
+            return this.BeginGetPermissions(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous request to get the permissions settings for the share.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginGetPermissions(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.GetPermissionsImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Returns the asynchronous result of the request to get the permissions settings for the share.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="FileSharePermissions"/> object.</returns>
+        public FileSharePermissions EndGetPermissions(IAsyncResult asyncResult)
+        {
+            return Executor.EndExecuteAsync<FileSharePermissions>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation that gets the permissions settings for the share.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="FileSharePermissions"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<FileSharePermissions> GetPermissionsAsync()
+        {
+            return this.GetPermissionsAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation that gets the permissions settings for the share.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="FileSharePermissions"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<FileSharePermissions> GetPermissionsAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetPermissions, this.EndGetPermissions, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation that gets the permissions settings for the share.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="FileSharePermissions"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.GetPermissionsAsync(accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation that gets the permissions settings for the share.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="FileSharePermissions"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetPermissions, this.EndGetPermissions, accessCondition, options, operationContext, cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Gets stats for the share.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="ShareStats"/> object.</returns>
+        [DoesServiceRequest]
+        public ShareStats GetStats(FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            options = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteSync(
+                this.GetStatsImpl(options),
+                options.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to get stats for the share.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginGetStats(AsyncCallback callback, object state)
+        {
+            return this.BeginGetStats(null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to get stats for the share.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginGetStats(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            options = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.BeginExecuteAsync(
+                this.GetStatsImpl(options),
+                options.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to get stats for the share.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="ShareStats"/> object.</returns>
+        public ShareStats EndGetStats(IAsyncResult asyncResult)
+        {
+            return Executor.EndExecuteAsync<ShareStats>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to get stats for the share.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="ShareStats"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareStats> GetStatsAsync()
+        {
+            return this.GetStatsAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get stats for the share.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="ShareStats"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareStats> GetStatsAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetStats, this.EndGetStats, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get stats for the share.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="ShareStats"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.GetStatsAsync(options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get stats for the share.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="ShareStats"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetStats, this.EndGetStats, options, operationContext, cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
         /// Sets the share's user-defined metadata.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
@@ -1030,6 +1254,233 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
+#if SYNC
+        /// <summary>
+        /// Sets permissions for the share.
+        /// </summary>
+        /// <param name="permissions">A <see cref="FileSharePermissions"/> object.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public void SetPermissions(FileSharePermissions permissions, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            Executor.ExecuteSync(
+                this.SetPermissionsImpl(permissions, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous request to set permissions for the share.
+        /// </summary>
+        /// <param name="permissions">The permissions to apply to the share.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSetPermissions(FileSharePermissions permissions, AsyncCallback callback, object state)
+        {
+            return this.BeginSetPermissions(permissions, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous request to set permissions for the share.
+        /// </summary>
+        /// <param name="permissions">The permissions to apply to the share.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSetPermissions(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.SetPermissionsImpl(permissions, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Returns the result of an asynchronous request to set permissions for the share.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public void EndSetPermissions(IAsyncResult asyncResult)
+        {
+            Executor.EndExecuteAsync<NullType>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation that sets permissions for the share.
+        /// </summary>
+        /// <param name="permissions">The permissions to apply to the share.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPermissionsAsync(FileSharePermissions permissions)
+        {
+            return this.SetPermissionsAsync(permissions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation that sets permissions for the share.
+        /// </summary>
+        /// <param name="permissions">The permissions to apply to the share.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPermissionsAsync(FileSharePermissions permissions, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPermissions, this.EndSetPermissions, permissions, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation that sets permissions for the share.
+        /// </summary>
+        /// <param name="permissions">The permissions to apply to the share.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.SetPermissionsAsync(permissions, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation that sets permissions for the share.
+        /// </summary>
+        /// <param name="permissions">The permissions to apply to the share.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPermissions, this.EndSetPermissions, permissions, accessCondition, options, operationContext, cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Updates the share's properties.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public void SetProperties(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            Executor.ExecuteSync(
+                this.SetPropertiesImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to update the share's properties.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSetProperties(AsyncCallback callback, object state)
+        {
+            return this.BeginSetProperties(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to update the share's properties.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.SetPropertiesImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to update the share's properties.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public void EndSetProperties(IAsyncResult asyncResult)
+        {
+            Executor.EndExecuteAsync<NullType>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to update the share's properties.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPropertiesAsync()
+        {
+            return this.SetPropertiesAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to update the share's properties.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPropertiesAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetProperties, this.EndSetProperties, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to update the share's properties.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.SetPropertiesAsync(accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to update the share's properties.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetProperties, this.EndSetProperties, accessCondition, options, operationContext, cancellationToken);
+        }
+#endif
+
         /// <summary>
         /// Implementation for the Create method.
         /// </summary>
@@ -1040,20 +1491,19 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.Create(uri, serverTimeout, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.Create(uri, this.Properties, serverTimeout, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => ShareHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                this.Properties = ShareHttpResponseParsers.GetProperties(resp);
-                this.Metadata = ShareHttpResponseParsers.GetMetadata(resp);
+                this.UpdateETagAndLastModified(resp);
                 return NullType.Value;
             };
 
             return putCmd;
         }
-
+                
         /// <summary>
         /// Implementation for the Delete method.
         /// </summary>
@@ -1127,6 +1577,57 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
+        /// Implementation for the GetPermissions method.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that gets the permissions.</returns>
+        private RESTCommand<FileSharePermissions> GetPermissionsImpl(AccessCondition accessCondition, FileRequestOptions options)
+        {
+            FileSharePermissions shareAcl = null;
+
+            RESTCommand<FileSharePermissions> getCmd = new RESTCommand<FileSharePermissions>(this.ServiceClient.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(getCmd);
+            getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            getCmd.RetrieveResponseStream = true;
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.GetAcl(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+                shareAcl = new FileSharePermissions();
+                return shareAcl;
+            };
+            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            {
+                ShareHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, shareAcl);
+                this.UpdateETagAndLastModified(resp);
+                return shareAcl;
+            };
+
+            return getCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the GetStats method.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns></returns>
+        private RESTCommand<ShareStats> GetStatsImpl(FileRequestOptions options)
+        {
+            RESTCommand<ShareStats> retCmd = new RESTCommand<ShareStats>(this.ServiceClient.Credentials, this.StorageUri);
+            options.ApplyToStorageCommand(retCmd);
+            retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            retCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.GetStats(uri, serverTimeout, useVersionHeader, ctx);
+            retCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            retCmd.RetrieveResponseStream = true;
+            retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+            retCmd.PostProcessResponse = (cmd, resp, ctx) => ShareHttpResponseParsers.ReadShareStats(cmd.ResponseStream);
+            return retCmd;
+        }
+
+        /// <summary>
         /// Implementation for the SetMetadata method.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
@@ -1138,6 +1639,63 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            putCmd.SetHeaders = (r, ctx) => ShareHttpWebRequestFactory.AddMetadata(r, this.Metadata);
+            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the SetPermissions method.
+        /// </summary>
+        /// <param name="acl">The permissions to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that sets the permissions.</returns>
+        private RESTCommand<NullType> SetPermissionsImpl(FileSharePermissions acl, AccessCondition accessCondition, FileRequestOptions options)
+        {
+            MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
+            FileRequest.WriteSharedAccessIdentifiers(acl.SharedAccessPolicies, memoryStream);
+            memoryStream.Seek(0, SeekOrigin.Begin);
+
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.SetAcl(uri, serverTimeout, FileSharePublicAccessType.Off, accessCondition, useVersionHeader, ctx);
+            putCmd.SendStream = memoryStream;
+            putCmd.StreamToDispose = memoryStream;
+            putCmd.RecoveryAction = RecoveryActions.RewindStream;
+            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the SetProperties method.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>
+        /// A <see cref="RESTCommand{T}"/> that sets the properties.
+        /// </returns>
+        private RESTCommand<NullType> SetPropertiesImpl(AccessCondition accessCondition, FileRequestOptions options)
+        {
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.SetProperties(uri, serverTimeout, this.Properties, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => ShareHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>

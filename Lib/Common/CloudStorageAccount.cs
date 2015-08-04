@@ -543,11 +543,6 @@ namespace Microsoft.WindowsAzure.Storage
                 throw new InvalidOperationException(SR.BlobEndPointNotConfigured);
             }
 
-            if (this.Credentials == null)
-            {
-                throw new InvalidOperationException(SR.MissingCredentials);
-            }
-
             return new CloudBlobClient(this.BlobStorageUri, this.Credentials);
         }
 

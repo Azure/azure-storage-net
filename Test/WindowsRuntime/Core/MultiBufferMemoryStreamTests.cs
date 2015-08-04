@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Core.Executor;
 using Microsoft.WindowsAzure.Storage.Core.Util;
 using System;
@@ -73,6 +74,39 @@ namespace Microsoft.WindowsAzure.Storage.Core
             TestHelper.AssertStreamsAreEqual(stream4, stream5);
 
             TestHelper.AssertStreamsAreEqual(stream1, stream5);
+        }
+
+        [TestMethod]
+        [Description("Ensure MultiBufferMemoryStream provided by user is not closed after upload.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task EnsureMultiBufferMemoryStreamIsNotClosedAsync()
+        {
+            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(Guid.NewGuid().ToString("N"));
+
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                using (MultiBufferMemoryStream originalBlob = new MultiBufferMemoryStream(null))
+                {
+                    originalBlob.Write(buffer, 0, buffer.Length);
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+
+                    await blob.PutBlockAsync(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), originalBlob.AsInputStream(), null);
+
+                    Assert.IsTrue(originalBlob.CanSeek);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().AsTask().Wait();
+            }
         }
     }
 }

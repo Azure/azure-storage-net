@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
 
     /// <summary>
     /// Contains methods for dealing with navigation.
@@ -138,6 +139,44 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             GetShareNameAndFileName(fileAddress, usePathStyleUris, out shareName, out fileName);
 
             return Uri.UnescapeDataString(fileName);
+        }
+
+        /// <summary>
+        /// Retrieves the file and directory part of a storage Uri.
+        /// </summary>
+        /// <param name="fileAddress">The file address.</param>
+        /// <param name="usePathStyleUris">If set to <c>true</c> use path style Uris.</param>
+        /// <returns>The file name including directories.</returns>
+        internal static string GetFileAndDirectoryName(Uri fileAddress, bool? usePathStyleUris)
+        {
+            CommonUtility.AssertNotNull("fileAddress", fileAddress);
+
+            if (usePathStyleUris == null)
+            {
+                // Automatically determine whether to use path style vs host style uris
+                usePathStyleUris = CommonUtility.UsePathStyleAddressing(fileAddress);
+            }
+
+            string[] addressParts = fileAddress.Segments;
+            int shareIndex = usePathStyleUris.Value ? 2 : 1;
+
+            if (addressParts.Length - 1 < shareIndex)
+            {
+                // No reference appears to any share or file.
+                string error = string.Format(CultureInfo.CurrentCulture, SR.MissingShareInformation, fileAddress);
+                throw new ArgumentException(error, "fileAddress");
+            }
+            else if (addressParts.Length - 1 == shareIndex)
+            {
+                // This is root directory of a share.
+                return string.Empty;
+            }
+            else
+            {
+                // This is a file with directories (the relevant case).
+                // Skip (shareIndex + 1) because Skip takes a count, not an index, as a param.
+                return Uri.UnescapeDataString(string.Concat(addressParts.Skip(shareIndex + 1)));
+            }
         }
 
         /// <summary>
@@ -694,7 +733,91 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 }
             }
 
-            parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters, true);
+            parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters);
+
+            // SAS credentials were passed in the Uri if parsedCredentials is non null.
+            if (parsedCredentials != null)
+            {
+                string signedResource;
+                queryParameters.TryGetValue(Constants.QueryConstants.SignedResource, out signedResource);
+
+                if (string.IsNullOrEmpty(signedResource))
+                {
+                    string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.MissingMandatoryParametersForSAS);
+                    throw new ArgumentException(errorMessage);
+                }
+            }
+
+            return new Uri(address.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped));
+        }
+
+        /// <summary>
+        /// Parse Uri for SAS (Shared access signature) information.
+        /// </summary>
+        /// <param name="address">The complete Uri.</param>
+        /// <param name="parsedCredentials">The credentials to use.</param>
+        /// <returns>The file URI without credentials info</returns>
+        /// <exception cref="System.ArgumentException">address</exception>
+        /// <remarks>
+        /// Validate that no other query parameters are passed in.
+        /// Any SAS information will be recorded as corresponding credentials instance.
+        /// If credentials is passed in and it does not match the SAS information found, an
+        /// exception will be thrown.
+        /// Otherwise a new client is created based on SAS information or as anonymous credentials.
+        /// </remarks>
+        internal static StorageUri ParseFileQueryAndVerify(StorageUri address, out StorageCredentials parsedCredentials)
+        {
+            StorageCredentials secondaryCredentials;
+            return new StorageUri(
+                ParseFileQueryAndVerify(address.PrimaryUri, out parsedCredentials),
+                ParseFileQueryAndVerify(address.SecondaryUri, out secondaryCredentials));
+        }
+
+        /// <summary>
+        /// Parse Uri for SAS (Shared access signature) information.
+        /// </summary>
+        /// <param name="address">The complete Uri.</param>
+        /// <param name="parsedCredentials">The credentials to use.</param>
+        /// <returns>The file URI without credentials info</returns>
+        /// <exception cref="System.ArgumentException">address</exception>
+        /// <remarks>
+        /// Validate that no other query parameters are passed in.
+        /// Any SAS information will be recorded as corresponding credentials instance.
+        /// If credentials is passed in and it does not match the SAS information found, an
+        /// exception will be thrown.
+        /// Otherwise a new client is created based on SAS information or as anonymous credentials.
+        /// </remarks>
+        private static Uri ParseFileQueryAndVerify(Uri address, out StorageCredentials parsedCredentials)
+        {
+            parsedCredentials = null;
+            if (address == null)
+            {
+                return null;
+            }
+
+            if (!address.IsAbsoluteUri)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.RelativeAddressNotPermitted, address.ToString());
+                throw new ArgumentException(errorMessage, "address");
+            }
+
+            IDictionary<string, string> queryParameters = HttpWebUtility.ParseQueryString(address.Query);
+
+            parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters);
+
+            // SAS credentials were passed in the Uri if parsedCredentials is non null.
+            if (parsedCredentials != null)
+            {
+                string signedResource;
+                queryParameters.TryGetValue(Constants.QueryConstants.SignedResource, out signedResource);
+
+                if (string.IsNullOrEmpty(signedResource))
+                {
+                    string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.MissingMandatoryParametersForSAS);
+                    throw new ArgumentException(errorMessage);
+                }
+            }
+
             return new Uri(address.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped));
         }
 
@@ -746,7 +869,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             IDictionary<string, string> queryParameters = HttpWebUtility.ParseQueryString(address.Query);
 
-            parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters, false);
+            parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters);
             return new Uri(address.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped));
         }
 

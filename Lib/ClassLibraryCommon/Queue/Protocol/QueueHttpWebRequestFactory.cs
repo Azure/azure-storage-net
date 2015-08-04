@@ -50,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the Queue service endpoint.</param>
         /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         internal static HttpWebRequest GetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the Queue service endpoint.</param>
         /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         internal static HttpWebRequest SetServiceProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -104,7 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the Queue service endpoint.</param>
         /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         internal static HttpWebRequest GetServiceStats(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -141,7 +141,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -166,7 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Delete(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest ClearMessages(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -218,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -244,7 +244,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetMetadata(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -295,7 +295,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
         /// <param name="detailsIncluded">A <see cref="QueueListingDetails"/> enumeration value that indicates whether to return queue metadata with the listing.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest List(Uri uri, int? timeout, ListingContext listingContext, QueueListingDetails detailsIncluded, bool useVersionHeader, OperationContext operationContext)
@@ -347,7 +347,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetAcl(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -373,7 +373,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetAcl(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -403,7 +403,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="timeToLiveInSeconds">The message time-to-live, in seconds.</param>
         /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest AddMessage(Uri uri, int? timeout, int? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, bool useVersionHeader, OperationContext operationContext)
@@ -445,7 +445,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="timeout">The server timeout interval, in seconds.</param>
         /// <param name="popReceipt">A string specifying the pop receipt of the message.</param>
         /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest UpdateMessage(Uri uri, int? timeout, string popReceipt, int visibilityTimeoutInSeconds, bool useVersionHeader, OperationContext operationContext)
@@ -478,7 +478,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the message to update.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
         /// <param name="popReceipt">A string specifying the pop receipt of the message.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest DeleteMessage(Uri uri, int? timeout, string popReceipt, bool useVersionHeader, OperationContext operationContext)
@@ -511,7 +511,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="numberOfMessages">An integer specifying the number of messages to get.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> value specifying the visibility timeout.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMessages(Uri uri, int? timeout, int numberOfMessages, TimeSpan? visibilityTimeout, bool useVersionHeader, OperationContext operationContext)
@@ -548,7 +548,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="numberOfMessages">An integer specifying the number of messages to peek.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest PeekMessages(Uri uri, int? timeout, int numberOfMessages, bool useVersionHeader, OperationContext operationContext)

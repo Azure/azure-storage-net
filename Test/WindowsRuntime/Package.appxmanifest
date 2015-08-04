@@ -17,6 +17,7 @@
   <Applications>
     <Application Id="vstest.executionengine.App" Executable="vstest.executionengine.appcontainer.exe" EntryPoint="vstest.executionengine.App">
       <VisualElements DisplayName="NoUIEntryPoints" Logo="Images\UnitTestLogo.png" SmallLogo="Images\UnitTestSmallLogo.png" Description="vstest.executionengine.App" ForegroundText="light" BackgroundColor="#0084FF">
+        <DefaultTile ShowName="noLogos" />
         <SplashScreen Image="Images\UnitTestSplashScreen.png" />
       </VisualElements>
     </Application>

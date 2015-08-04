@@ -57,6 +57,10 @@ namespace Microsoft.WindowsAzure.Storage.File
             if (other != null)
             {
                 this.RetryPolicy = other.RetryPolicy;
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                this.RequireEncryption = other.RequireEncryption;
+#endif
                 this.LocationMode = other.LocationMode;
                 this.ServerTimeout = other.ServerTimeout;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
@@ -76,6 +80,10 @@ namespace Microsoft.WindowsAzure.Storage.File
             modifiedOptions.LocationMode = (modifiedOptions.LocationMode
                                             ?? serviceClient.DefaultRequestOptions.LocationMode)
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
+#endif
+
             modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
             modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
             modifiedOptions.ParallelOperationThreadCount = (modifiedOptions.ParallelOperationThreadCount
@@ -158,6 +166,28 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
             }
         }
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        /// <summary>
+        /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
+        /// </summary>
+        /// <value>Use <c>true</c> to specify that data should be encrypted/decrypted for all transactions; otherwise, <c>false</c>.</value>
+        public bool? RequireEncryption 
+        {
+            get
+            {
+                return false;
+            }
+
+            set
+            {
+                if (value.HasValue && value.Value)
+                {
+                    throw new NotSupportedException(SR.EncryptionNotSupportedForFiles);
+                }
+            }
+        }
+#endif
 
         /// <summary>
         /// Gets or sets the server timeout interval for the request.

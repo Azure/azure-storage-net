@@ -219,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates the Table.
         /// </summary>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync()
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -235,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
 #if ASPNET_K 
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.CreateAsync(requestOptions, operationContext, CancellationToken.None);
@@ -247,7 +247,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -371,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Deletes the Table.
         /// </summary>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync()
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -387,7 +387,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
 #if ASPNET_K 
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.DeleteAsync(requestOptions, operationContext, CancellationToken.None);
@@ -399,7 +399,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -614,7 +614,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="permissions">The permissions to apply to the Table.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task SetPermissionsAsync(TablePermissions permissions)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -658,7 +658,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
             /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
             /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-            /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+            /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task SetPermissionsAsync(TablePermissions permissions, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
@@ -690,6 +690,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            putCmd.StreamToDispose = memoryStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);

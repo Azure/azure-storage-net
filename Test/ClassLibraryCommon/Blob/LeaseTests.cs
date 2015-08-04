@@ -4239,7 +4239,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 expectedStatusCode,
                 expectedErrorCode);
             TestHelper.ExpectedException(
-                () => testBlob.StartCopyFromBlob(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */),
+                () => testBlob.StartCopy(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */),
                 description + " (Copy From)",
                 expectedStatusCode,
                 expectedErrorCode);
@@ -4273,7 +4273,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 expectedStatusCode,
                 expectedErrorCode);
             TestHelper.ExpectedExceptionTask(
-                testBlob.StartCopyFromBlobAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, new OperationContext()),
+                testBlob.StartCopyAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, new OperationContext()),
                 description + " (Copy From)",
                 expectedStatusCode,
                 expectedErrorCode);
@@ -4302,7 +4302,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             testBlob.SetMetadata(testAccessCondition, null /* options */);
             testBlob.SetProperties(testAccessCondition, null /* options */);
             UploadText(testBlob, "No Problem", Encoding.UTF8, testAccessCondition, null /* options */);
-            testBlob.StartCopyFromBlob(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */);
+            testBlob.StartCopy(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */);
 
             while (testBlob.CopyState.Status == CopyStatus.Pending)
             {
@@ -4336,9 +4336,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 testBlob.EndSetProperties(result);
 
                 UploadTextAPM(testBlob, "No Problem", Encoding.UTF8, testAccessCondition, null /* options */);
-                result = testBlob.BeginStartCopyFromBlob(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, null /* operationContext */, ar=>waitHandle.Set(), null);
+                result = testBlob.BeginStartCopy(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, null /* operationContext */, ar=>waitHandle.Set(), null);
                 waitHandle.WaitOne();
-                testBlob.EndStartCopyFromBlob(result);
+                testBlob.EndStartCopy(result);
 
                 while (testBlob.CopyState.Status == CopyStatus.Pending)
                 {
@@ -4372,7 +4372,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             testBlob.SetMetadataAsync(testAccessCondition, null /* options */, new OperationContext()).Wait();
             testBlob.SetPropertiesAsync(testAccessCondition, null /* options */, new OperationContext()).Wait();
             UploadTextTask(testBlob, "No Problem", Encoding.UTF8, testAccessCondition, null /* options */, new OperationContext());
-            testBlob.StartCopyFromBlobAsync(
+            testBlob.StartCopyAsync(
                 TestHelper.Defiddler(sourceBlob.Uri),
                 null /* source access condition */,
                 testAccessCondition,

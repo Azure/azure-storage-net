@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
 
     internal static class DirectoryHttpRequestMessageFactory
@@ -62,7 +63,24 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static HttpRequestMessage GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
         {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+
             HttpRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, directoryBuilder, content, operationContext);
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Generates a web request to return the user-defined metadata for this directory.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the directory.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static HttpRequestMessage GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        {
+            UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+
+            HttpRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, directoryBuilder, content, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -76,24 +94,49 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static HttpRequestMessage List(Uri uri, int? timeout, FileListingContext listingContext, HttpContent content, OperationContext operationContext)
         {
-            UriQueryBuilder builder = GetDirectoryUriQueryBuilder();
-            builder.Add(Constants.QueryConstants.Component, "list");
+            UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            directoryBuilder.Add(Constants.QueryConstants.Component, "list");
 
             if (listingContext != null)
             {
                 if (listingContext.Marker != null)
                 {
-                    builder.Add("marker", listingContext.Marker);
+                    directoryBuilder.Add("marker", listingContext.Marker);
                 }
 
                 if (listingContext.MaxResults.HasValue)
                 {
-                    builder.Add("maxresults", listingContext.MaxResults.ToString());
+                    directoryBuilder.Add("maxresults", listingContext.MaxResults.ToString());
                 }
             }
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, directoryBuilder, content, operationContext);
             return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to set user-defined metadata for the directory.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the directory.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        public static HttpRequestMessage SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        {
+            UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            HttpRequestMessage request = HttpRequestMessageFactory.SetMetadata(uri, timeout, directoryBuilder, content, operationContext);
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Adds user-defined metadata to the request as one or more name-value pairs.
+        /// </summary>
+        /// <param name="request">The web request.</param>
+        /// <param name="metadata">The user-defined metadata.</param>
+        public static void AddMetadata(HttpRequestMessage request, IDictionary<string, string> metadata)
+        {
+            HttpRequestMessageFactory.AddMetadata(request, metadata);
         }
 
         /// <summary>

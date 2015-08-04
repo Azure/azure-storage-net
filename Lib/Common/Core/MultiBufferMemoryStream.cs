@@ -102,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
             get
             {
-                return true;
+                return !this.disposed;
             }
         }
 
@@ -114,7 +114,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
             get
             {
-                return true;
+                return !this.disposed;
             }
         }
 
@@ -126,7 +126,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
             get
             {
-                return true;
+                return !this.disposed;
             }
         }
 

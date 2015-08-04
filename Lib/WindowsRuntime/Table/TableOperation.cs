@@ -111,7 +111,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                                                        operationContext,
                                                                        cancellationToken));
 #endif
-
         }
 
         private static RESTCommand<TableResult> InsertImpl(TableOperation operation, CloudTableClient client, string tableName, TableRequestOptions requestOptions)

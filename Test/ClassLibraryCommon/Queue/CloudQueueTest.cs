@@ -230,83 +230,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             queue.Delete();
         }
-
-        [TestMethod]
-        [Description("Create a queue")]
-        [TestCategory(ComponentCategory.Queue)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateUsingDifferentVersionHeader()
-        {
-            string name = GenerateNewQueueName();
-
-            CloudQueueClient client = GenerateCloudQueueClient();
-            CloudQueue queue = client.GetQueueReference(name);
-
-            OperationContext opContext = new OperationContext();
-            opContext.SendingRequest += (obj, args) => args.Request.Headers[Constants.HeaderConstants.StorageVersionHeader] = "2011-08-18";
-
-            queue.Create(null, opContext);
-            Assert.AreEqual((int)HttpStatusCode.Created, opContext.LastResult.HttpStatusCode);
-
-            queue.DeleteIfExists();
-        }
-
-        [TestMethod]
-        [Description("Create a queue with APM")]
-        [TestCategory(ComponentCategory.Queue)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateUsingDifferentVersionHeaderAPM()
-        {
-            string name = GenerateNewQueueName();
-
-            CloudQueueClient client = GenerateCloudQueueClient();
-            CloudQueue queue = client.GetQueueReference(name);
-
-            OperationContext opContext = new OperationContext();
-            opContext.SendingRequest += (obj, args) => args.Request.Headers[Constants.HeaderConstants.StorageVersionHeader] = "2011-08-18";
-
-            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
-            {
-                IAsyncResult result = queue.BeginCreate(null, opContext, ar => waitHandle.Set(), null);
-                waitHandle.WaitOne();
-                queue.EndCreate(result);
-
-                Assert.AreEqual((int)HttpStatusCode.Created, opContext.LastResult.HttpStatusCode);
-
-                result = queue.BeginDeleteIfExists(ar => waitHandle.Set(), null);
-                waitHandle.WaitOne();
-                queue.EndDeleteIfExists(result);
-            }
-        }
-
-#if TASK
-        [TestMethod]
-        [Description("Create a queue")]
-        [TestCategory(ComponentCategory.Queue)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateUsingDifferentVersionHeaderTask()
-        {
-            string name = GenerateNewQueueName();
-
-            CloudQueueClient client = GenerateCloudQueueClient();
-            CloudQueue queue = client.GetQueueReference(name);
-
-            OperationContext opContext = new OperationContext();
-            opContext.SendingRequest += (obj, args) => args.Request.Headers[Constants.HeaderConstants.StorageVersionHeader] = "2011-08-18";
-
-            queue.CreateAsync(null, opContext).Wait();
-            Assert.AreEqual((int)HttpStatusCode.Created, opContext.LastResult.HttpStatusCode);
-
-            queue.DeleteIfExistsAsync().Wait();
-        }
-#endif
-
+      
         [TestMethod]
         [Description("Try to create a queue after it is created")]
         [TestCategory(ComponentCategory.Queue)]
@@ -1510,6 +1434,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]        
         public void CloudQueueOldSASVersion()
         {
             CloudQueueClient client = GenerateCloudQueueClient();

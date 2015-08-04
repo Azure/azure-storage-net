@@ -21,7 +21,10 @@ namespace Microsoft.WindowsAzure.Storage.File
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.File.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
+    using System.Globalization;
 
     /// <summary>
     /// Represents a directory of files, designated by a delimiter character.
@@ -38,6 +41,15 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Stores the parent directory.
         /// </summary>
         private CloudFileDirectory parent;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudFileDirectory"/> class using an absolute URI to the directory.
+        /// </summary>
+        /// <param name="directoryAbsoluteUri">A <see cref="System.Uri"/> object containing the absolute URI to the directory.</param>
+        public CloudFileDirectory(Uri directoryAbsoluteUri)
+            : this(new StorageUri(directoryAbsoluteUri), null /* StorageCredentials */)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFileDirectory"/> class using an absolute URI to the directory.
@@ -66,6 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public CloudFileDirectory(StorageUri directoryAbsoluteUri, StorageCredentials credentials)
 #endif
         {
+            this.Metadata = new Dictionary<string, string>();
             this.Properties = new FileDirectoryProperties();
             this.ParseQueryAndVerify(directoryAbsoluteUri, credentials);
         }
@@ -82,6 +95,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             CommonUtility.AssertNotNull("directoryName", directoryName);
             CommonUtility.AssertNotNull("share", share);
 
+            this.Metadata = new Dictionary<string, string>();
             this.Properties = new FileDirectoryProperties();
             this.StorageUri = uri;
             this.ServiceClient = share.ServiceClient;
@@ -118,6 +132,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>A <see cref="FileDirectoryProperties"/> object.</value>
         public FileDirectoryProperties Properties { get; internal set; }
+
+        /// <summary>
+        /// Gets the user-defined metadata for the directory.
+        /// </summary>
+        /// <value>The directory's metadata, as a collection of name-value pairs.</value>
+        public IDictionary<string, string> Metadata { get; internal set; }
 
         /// <summary>
         /// Gets a <see cref="CloudFileShare"/> object that represents the share for the directory.
@@ -224,8 +244,20 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="credentials">The credentials to use.</param>
         private void ParseQueryAndVerify(StorageUri address, StorageCredentials credentials)
         {
-            this.StorageUri = address;
-            this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials);
+            StorageCredentials parsedCredentials;
+            this.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials);
+
+            if (parsedCredentials != null && credentials != null)
+            {
+                string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
+                throw new ArgumentException(error);
+            }
+
+            if (this.ServiceClient == null)
+            {
+                this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials ?? parsedCredentials);
+            }
+
             this.Name = NavigationHelper.GetFileName(this.Uri, this.ServiceClient.UsePathStyleUris);
         }
     }

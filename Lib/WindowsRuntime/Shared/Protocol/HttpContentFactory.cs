@@ -38,11 +38,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             }
 #endif
 
-            if (stream is MultiBufferMemoryStream)
-            {
-                cmd.StreamToDispose = stream;
-            }
-
             return retContent;
         }
     }

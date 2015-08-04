@@ -138,7 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties);
 
                 CloudBlob snapshotCopy = container.GetBlobReference("blob2");
-                await snapshotCopy.StartCopyFromBlobAsync(TestHelper.Defiddler(snapshot1.Uri));
+                await snapshotCopy.StartCopyAsync(TestHelper.Defiddler(snapshot1.Uri));
                 await WaitForCopyAsync(snapshotCopy);
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 

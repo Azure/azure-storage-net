@@ -2657,6 +2657,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.SetAcl(uri, serverTimeout, acl.PublicAccess, accessCondition, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
+            putCmd.StreamToDispose = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2724,6 +2725,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 else if (attributes.Properties.BlobType == BlobType.PageBlob)
                 {
                     return new CloudPageBlob(attributes, this.ServiceClient);
+                }
+                else if (attributes.Properties.BlobType == BlobType.AppendBlob)
+                {
+                    return new CloudAppendBlob(attributes, this.ServiceClient);
                 }
                 else
                 {

@@ -310,11 +310,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(ent.PartitionKey, retrievedEntity.PartitionKey);
             Assert.AreEqual(ent.RowKey, retrievedEntity.RowKey);
 
-            // Since we store encrypted properties as byte arrays, if a POCO entity is being read as-is, it will not be assign the binary
-            // values to strings.
-            Assert.IsNull(retrievedEntity.foo);
-            Assert.IsNull(retrievedEntity.A);
-            Assert.IsNull(retrievedEntity.B);
+            // Since we store encrypted properties as byte arrays, if a POCO entity is being read as-is, odata will not assign the binary
+            // values to strings. In JSON no metadata, the service does not return the types and the client lib does the parsing and reads the 
+            // base64 encoded string as-is.
+            if (format == TablePayloadFormat.JsonNoMetadata)
+            {
+                Assert.IsNotNull(retrievedEntity.foo);
+                Assert.IsNotNull(retrievedEntity.A);
+                Assert.IsNotNull(retrievedEntity.B);
+                Assert.AreEqual(ent.foo.GetType(), retrievedEntity.foo.GetType());
+                Assert.AreEqual(ent.A.GetType(), retrievedEntity.A.GetType());
+                Assert.AreEqual(ent.B.GetType(), retrievedEntity.B.GetType());
+            }
+            else
+            {
+                Assert.IsNull(retrievedEntity.foo);
+                Assert.IsNull(retrievedEntity.A);
+                Assert.IsNull(retrievedEntity.B);
+            }
 
             // Retrieve entity without decryption and confirm that all 3 properties were encrypted.
             // No need for an encryption resolver while retrieving the entity.
@@ -326,9 +339,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsNotNull(retrievedEntity);
             Assert.AreEqual(ent.PartitionKey, retrievedDynamicEntity.PartitionKey);
             Assert.AreEqual(ent.RowKey, retrievedDynamicEntity.RowKey);
-            Assert.AreNotEqual(ent.foo.GetType(), retrievedDynamicEntity.Properties["foo"].GetType());
-            Assert.AreNotEqual(ent.A.GetType(), retrievedDynamicEntity.Properties["A"].GetType());
-            Assert.AreNotEqual(ent.B.GetType(), retrievedDynamicEntity.Properties["B"].GetType());
+
+            if (format == TablePayloadFormat.JsonNoMetadata)
+            {
+                Assert.AreEqual(EdmType.String, retrievedDynamicEntity.Properties["foo"].PropertyType);
+                Assert.AreEqual(EdmType.String, retrievedDynamicEntity.Properties["A"].PropertyType);
+                Assert.AreEqual(EdmType.String, retrievedDynamicEntity.Properties["B"].PropertyType);
+            }
+            else
+            {
+                Assert.AreEqual(EdmType.Binary, retrievedDynamicEntity.Properties["foo"].PropertyType);
+                Assert.AreEqual(EdmType.Binary, retrievedDynamicEntity.Properties["A"].PropertyType);
+                Assert.AreEqual(EdmType.Binary, retrievedDynamicEntity.Properties["B"].PropertyType);
+            }
 
             // Retrieve entity and decrypt.
             TableRequestOptions retrieveOptions = new TableRequestOptions() { EncryptionPolicy = new TableEncryptionPolicy(null, resolver) };
@@ -524,6 +547,68 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsNotNull(retrievedEntity);
             Assert.AreEqual(replaceEntity.Properties.Count, retrievedEntity.Properties.Count);
             Assert.AreEqual(replaceEntity.Properties["B"], retrievedEntity.Properties["B"]);
+        }
+
+        [TestMethod]
+        [Description("Swap rows and ensure decryption fails.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableEncryptionValidateSwappingPropertiesThrows()
+        {
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                EncryptionPolicy = new TableEncryptionPolicy(aesKey, null),
+
+                EncryptionResolver = (pk, rk, propName) =>
+                {
+                    if (propName == "Prop1")
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+            };
+
+            // Insert Entities
+            DynamicTableEntity baseEntity1 = new DynamicTableEntity("test1", "foo1");
+            baseEntity1.Properties.Add("Prop1", new EntityProperty("Value1"));
+            currentTable.Execute(TableOperation.Insert(baseEntity1), options);
+
+            DynamicTableEntity baseEntity2 = new DynamicTableEntity("test1", "foo2");
+            baseEntity2.Properties.Add("Prop1", new EntityProperty("Value2"));
+            currentTable.Execute(TableOperation.Insert(baseEntity2), options);
+
+            // Retrieve entity1 (Do not set encryption policy)
+            TableResult result = currentTable.Execute(TableOperation.Retrieve(baseEntity1.PartitionKey, baseEntity1.RowKey));
+            DynamicTableEntity retrievedEntity = result.Result as DynamicTableEntity;
+
+            // Replace entity2 with encrypted entity1's properties (Do not set encryption policy).
+            DynamicTableEntity replaceEntity = new DynamicTableEntity(baseEntity2.PartitionKey, baseEntity2.RowKey) { ETag = baseEntity2.ETag };
+            replaceEntity.Properties = retrievedEntity.Properties;
+            currentTable.Execute(TableOperation.Replace(replaceEntity));
+
+            // Try to retrieve entity2
+            // Create the resolver to be used for unwrapping.
+            DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+            resolver.Add(aesKey);
+
+            TableRequestOptions retrieveOptions = new TableRequestOptions() { EncryptionPolicy = new TableEncryptionPolicy(null, resolver) };
+
+            try
+            {
+                result = currentTable.Execute(TableOperation.Retrieve(baseEntity2.PartitionKey, baseEntity2.RowKey), retrieveOptions);
+                Assert.Fail();
+            }
+            catch (StorageException ex)
+            {
+                Assert.IsInstanceOfType(ex.InnerException, typeof(CryptographicException));
+            }
         }
 
         #region batch
@@ -752,10 +837,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(ent.RowKey, retrievedEntity.RowKey);
 
             // Properties having the same value should be encrypted to different values.
-            CollectionAssert.AreNotEqual(retrievedEntity.Properties["encprop"].BinaryValue, retrievedEntity.Properties["encprop2"].BinaryValue);
-            Assert.AreNotEqual(ent.Properties["encprop"].PropertyType, retrievedEntity.Properties["encprop"].PropertyType);
-            Assert.AreNotEqual(ent.Properties["encprop2"].PropertyType, retrievedEntity.Properties["encprop2"].PropertyType);
-            Assert.AreNotEqual(ent.Properties["encprop3"].PropertyType, retrievedEntity.Properties["encprop3"].PropertyType);
+            if (format == TablePayloadFormat.JsonNoMetadata)
+            {
+                // With DTE and Json no metadata, if an encryption policy is not set, the client lib just reads the byte arrays as strings.
+                Assert.AreNotEqual(retrievedEntity.Properties["encprop"].StringValue, retrievedEntity.Properties["encprop2"].StringValue);
+            }
+            else
+            {
+                CollectionAssert.AreNotEqual(retrievedEntity.Properties["encprop"].BinaryValue, retrievedEntity.Properties["encprop2"].BinaryValue);
+                Assert.AreNotEqual(ent.Properties["encprop"].PropertyType, retrievedEntity.Properties["encprop"].PropertyType);
+                Assert.AreNotEqual(ent.Properties["encprop2"].PropertyType, retrievedEntity.Properties["encprop2"].PropertyType);
+                Assert.AreNotEqual(ent.Properties["encprop3"].PropertyType, retrievedEntity.Properties["encprop3"].PropertyType);
+            }
+
             Assert.AreEqual(ent.Properties["notencprop"].Int32Value, retrievedEntity.Properties["notencprop"].Int32Value);
         }
 
@@ -804,6 +898,198 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsInstanceOfType(e.InnerException, typeof(InvalidOperationException));
         }
 #endregion
+
+        [TestMethod]
+        [Description("TableOperation Insert/Get with RequireEncryption flag.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableOperationEncryptionWithStrictMode()
+        {
+            // Insert Entity
+            DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
+            ent.Properties.Add("foo2", new EntityProperty(string.Empty));
+            ent.Properties.Add("foo", new EntityProperty("bar"));
+            ent.Properties.Add("fooint", new EntityProperty(1234));
+
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            // Create the resolver to be used for unwrapping.
+            DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+            resolver.Add(aesKey);
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                EncryptionPolicy = new TableEncryptionPolicy(aesKey, null),
+
+                EncryptionResolver = (pk, rk, propName) =>
+                {
+                    if (propName == "foo" || propName == "foo2")
+                    {
+                        return true;
+                    }
+
+                    return false;
+                },
+
+                RequireEncryption = true
+            };
+
+            currentTable.Execute(TableOperation.Insert(ent), options, null);
+
+            // Insert an entity when RequireEncryption is set to true but no policy is specified. This should throw.
+            options.EncryptionPolicy = null;
+
+            TestHelper.ExpectedException<StorageException>(
+                () => currentTable.Execute(TableOperation.Insert(ent), options, null),
+                "Not specifying a policy when RequireEncryption is set to true should throw.");
+
+            // Retrieve Entity
+            TableRequestOptions retrieveOptions = new TableRequestOptions()
+            {
+                PropertyResolver = (pk, rk, propName, propValue) =>
+                {
+                    if (propName == "fooint")
+                    {
+                        return EdmType.Int32;
+                    }
+
+                    return (EdmType)0;
+                },
+
+                EncryptionPolicy = new TableEncryptionPolicy(null, resolver),
+
+                RequireEncryption = true
+            };
+
+            TableOperation operation = TableOperation.Retrieve(ent.PartitionKey, ent.RowKey);
+            Assert.IsFalse(operation.IsTableEntity);
+            TableResult result = currentTable.Execute(operation, retrieveOptions, null);
+
+            // Replace entity with plain text.
+            ent.ETag = (result.Result as DynamicTableEntity).ETag;
+            currentTable.Execute(TableOperation.Replace(ent));
+
+            // Retrieve with RequireEncryption flag but no metadata on the service. This should throw.
+            TestHelper.ExpectedException<StorageException>(
+                () => currentTable.Execute(operation, retrieveOptions, null),
+                "Retrieving with RequireEncryption set to true and no metadata on the service should fail.");
+
+            // Set RequireEncryption flag to true and retrieve.
+            retrieveOptions.RequireEncryption = false;
+            result = currentTable.Execute(operation, retrieveOptions, null);
+        }
+
+        [TestMethod]
+        [Description("TableOperation InsertOrMerge/Merge with RequireEncryption flag.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableOperationEncryptionWithStrictModeOnMerge()
+        {
+            // Insert Entity
+            DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
+            ent.Properties.Add("foo2", new EntityProperty(string.Empty));
+            ent.Properties.Add("foo", new EntityProperty("bar"));
+            ent.Properties.Add("fooint", new EntityProperty(1234));
+            ent.ETag = "*";
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                RequireEncryption = true
+            };
+
+            try
+            {
+                currentTable.Execute(TableOperation.Merge(ent), options, null);
+                Assert.Fail("Merge with RequireEncryption on should fail.");
+            }
+            catch (StorageException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionPolicyMissingInStrictMode);
+            }
+
+            try
+            {
+                currentTable.Execute(TableOperation.InsertOrMerge(ent), options, null);
+                Assert.Fail("InsertOrMerge with RequireEncryption on should fail.");
+            }
+            catch (StorageException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionPolicyMissingInStrictMode);
+            }
+
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+            options.EncryptionPolicy = new TableEncryptionPolicy(aesKey, null);
+
+            try
+            {
+                currentTable.Execute(TableOperation.Merge(ent), options, null);
+                Assert.Fail("Merge with an EncryptionPolicy should fail.");
+            }
+            catch (StorageException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionNotSupportedForOperation);
+            }
+
+            try
+            {
+                currentTable.Execute(TableOperation.InsertOrMerge(ent), options, null);
+                Assert.Fail("InsertOrMerge with an EncryptionPolicy should fail.");
+            }
+            catch (StorageException ex)
+            {
+                Assert.AreEqual(ex.Message, SR.EncryptionNotSupportedForOperation);
+            }
+        }
+
+        [TestMethod]
+        [Description("Basic query test with mixed mode.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableQueryEncryptionMixedMode()
+        {
+            // Insert Entity
+            EncryptedBaseEntity ent1 = new EncryptedBaseEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
+            ent1.Populate();
+
+            EncryptedBaseEntity ent2 = new EncryptedBaseEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
+            ent2.Populate();
+
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            TableRequestOptions options = new TableRequestOptions() { EncryptionPolicy = new TableEncryptionPolicy(aesKey, null) };
+
+            // Insert an encrypted entity.
+            currentTable.Execute(TableOperation.Insert(ent1), options, null);
+
+            // Insert a non-encrypted entity.
+            currentTable.Execute(TableOperation.Insert(ent2), null, null);
+
+            // Create the resolver to be used for unwrapping.
+            DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+            resolver.Add(aesKey);
+
+            options = new TableRequestOptions() { EncryptionPolicy = new TableEncryptionPolicy(null, resolver) };
+
+            // Set RequireEncryption to false and query. This will succeed.
+            options.RequireEncryption = false;
+            TableQuery<EncryptedBaseEntity> query = new TableQuery<EncryptedBaseEntity>();
+            currentTable.ExecuteQuery(query, options).ToList();
+
+            // Set RequireEncryption to true and query. This will fail because it can't find the metadata for the second enctity on the server.
+            options.RequireEncryption = true;
+            TestHelper.ExpectedException<StorageException>(
+                () => currentTable.ExecuteQuery(query, options).ToList(),
+                "All entities retrieved should be encrypted when RequireEncryption is set to true.");
+        }
 
         private static DynamicTableEntity GenerateRandomEntity(string pk)
         {

@@ -262,7 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Copies all the elements of the <see cref="TableBatchOperation"/> to the specified one-dimensional array starting at the specified destination array index. 
         /// </summary>
-        /// <param name="array">The one-dimensional array that is the destination of the elements copied from the <see cref="TableBatchOperation"/>.</param>
+        /// <param name="array">A one-dimensional array that serves as the destination for the elements copied from the <see cref="TableBatchOperation"/>.</param>
         /// <param name="arrayIndex">The index in the destination array at which copying begins.</param>
         public void CopyTo(TableOperation[] array, int arrayIndex)
         {

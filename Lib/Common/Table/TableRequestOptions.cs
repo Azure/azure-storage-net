@@ -60,6 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 this.PropertyResolver = other.PropertyResolver;
                 this.EncryptionPolicy = other.EncryptionPolicy;
+                this.RequireEncryption = other.RequireEncryption;
                 this.EncryptionResolver = other.EncryptionResolver;
 #endif
             }
@@ -93,6 +94,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             modifiedOptions.PropertyResolver = modifiedOptions.PropertyResolver ?? serviceClient.DefaultRequestOptions.PropertyResolver;
             modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
+            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
             modifiedOptions.EncryptionResolver = modifiedOptions.EncryptionResolver ?? serviceClient.DefaultRequestOptions.EncryptionResolver;
 #endif
 
@@ -140,6 +142,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        internal void AssertNoEncryptionPolicyOrStrictMode()
+        {
+            if (this.EncryptionPolicy != null)
+            {
+                throw new InvalidOperationException(SR.EncryptionNotSupportedForOperation);
+            }
+
+            this.AssertPolicyIfRequired();
+        }
+
+        internal void AssertPolicyIfRequired()
+        {
+            if (this.RequireEncryption.HasValue && this.RequireEncryption.Value && this.EncryptionPolicy == null)
+            {
+                throw new InvalidOperationException(SR.EncryptionPolicyMissingInStrictMode);
+            }
+        }
+#endif
+
         /// <summary>
         ///  Gets or sets the absolute expiry time across all potential retries for the request. 
         /// </summary>
@@ -157,6 +179,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <value>An object of type <see cref="EncryptionPolicy"/>.</value>
         public TableEncryptionPolicy EncryptionPolicy { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
+        /// </summary>
+        /// <value>Use <c>true</c> to specify that data should be encrypted/decrypted for all transactions; otherwise, <c>false</c>.</value>
+        public bool? RequireEncryption { get; set; }
 #endif
 
         /// <summary>
@@ -236,8 +264,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private Func<string, string, string, bool> encryptionResolver = null;
 
         /// <summary>
-        /// Gets or sets the delegate that is used to get the the value indicating whether a property should be encrypted or not given the partition key, row key, 
-        /// and the property name. 
+        /// Gets or sets the delegate to get the value indicating whether or not a property should be encrypted, given the partition key, row key, 
+        /// and property name. 
         /// </summary>
         public Func<string, string, string, bool> EncryptionResolver
         {

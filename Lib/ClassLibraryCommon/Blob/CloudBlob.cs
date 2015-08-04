@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a blob object.
+    /// Represents a blob.
     /// </summary>
     public partial class CloudBlob : IListBlobItem
     {
@@ -2415,6 +2415,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
+        [Obsolete("Deprecated this method in favor of StartCopy.")]
         [DoesServiceRequest]
         public string StartCopyFromBlob(Uri source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -2429,6 +2430,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of BeginStartCopy.")]
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginStartCopyFromBlob(Uri source, AsyncCallback callback, object state)
         {
@@ -2446,6 +2448,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of BeginStartCopy.")]        
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginStartCopyFromBlob(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
@@ -2461,6 +2464,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
+        [Obsolete("Deprecated this method in favor of EndStartCopy.")]        
         public string EndStartCopyFromBlob(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<string>(asyncResult);
@@ -2473,6 +2477,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]        
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(Uri source)
         {
@@ -2486,6 +2491,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(Uri source, CancellationToken cancellationToken)
         {
@@ -2502,6 +2508,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -2519,6 +2526,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -2928,6 +2936,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             long? endOffset = null;
             bool bufferIV = false;
             long? userSpecifiedLength = length;
+
+            options.AssertPolicyIfRequired();
+
             if (isRangeGet && options.EncryptionPolicy != null)
             {
 #if WINDOWS_PHONE
@@ -3584,6 +3595,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             blobAttributes.Properties.ETag = parsedProperties.ETag ?? blobAttributes.Properties.ETag;
             blobAttributes.Properties.LastModified = parsedProperties.LastModified ?? blobAttributes.Properties.LastModified;
             blobAttributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? blobAttributes.Properties.PageBlobSequenceNumber;
+            blobAttributes.Properties.AppendBlobCommittedBlockCount = parsedProperties.AppendBlobCommittedBlockCount ?? blobAttributes.Properties.AppendBlobCommittedBlockCount;
 
             if (updateLength)
             {

@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext)
@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and the level of access.</param>                
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
@@ -110,7 +110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Delete(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
@@ -140,7 +140,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
@@ -200,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
@@ -244,7 +244,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="leaseBreakPeriod">The amount of time to wait, in seconds, after a break operation before the lease is broken.
         /// If this is <c>null</c> then the default time is used. This should be <c>null</c> for acquire, renew, change, and release operations.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
@@ -306,7 +306,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
         /// <param name="detailsIncluded">A <see cref="ContainerListingDetails"/> enumeration value that indicates whether to return container metadata with the listing.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request for the specified operation.</returns>
         public static HttpWebRequest List(Uri uri, int? timeout, ListingContext listingContext, ContainerListingDetails detailsIncluded, bool useVersionHeader, OperationContext operationContext)
@@ -360,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetAcl(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
@@ -391,7 +391,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="publicAccess">The type of public access to allow for the container.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetAcl(Uri uri, int? timeout, BlobContainerPublicAccessType publicAccess, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
@@ -426,7 +426,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the container.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="listingContext">A <see cref="ListingContext"/> object.</param>
-        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest ListBlobs(Uri uri, int? timeout, BlobListingContext listingContext, bool useVersionHeader, OperationContext operationContext)

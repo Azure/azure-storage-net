@@ -31,6 +31,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
  static class BlobErrorCodeStrings
     {
         /// <summary>
+        /// Error code that may be returned when the specified append offset is invalid.
+        /// </summary>
+        public static readonly string InvalidAppendCondition = "AppendPositionConditionNotMet";
+
+        /// <summary>
+        /// Error code that may be returned when the specified maximum blob size is invalid.
+        /// </summary>
+        public static readonly string InvalidMaxBlobSizeCondition = "MaxBlobSizeConditionNotMet";
+
+        /// <summary>
         /// Error code that may be returned when the specified block or blob is invalid.
         /// </summary>
         public static readonly string InvalidBlobOrBlock = "InvalidBlobOrBlock";

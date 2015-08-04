@@ -30,7 +30,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     [TestClass]
     public class CloudBlobContainerTest : BlobTestBase
     {
-        //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
         public void MyTestInitialize()
@@ -51,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private static async Task TestAccessAsync(BlobContainerPublicAccessType accessType, CloudBlobContainer container, ICloudBlob inputBlob)
+        private static async Task TestAccessAsync(BlobContainerPublicAccessType accessType, CloudBlobContainer container, CloudBlob inputBlob)
         {
             StorageCredentials credentials = new StorageCredentials();
             container = new CloudBlobContainer(container.Uri, credentials);
@@ -111,11 +110,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = client.GetContainerReference("container");
             CloudBlockBlob blockBlob = container.GetBlockBlobReference("directory1/blob1");
             CloudPageBlob pageBlob = container.GetPageBlobReference("directory2/blob2");
-            CloudBlobDirectory directory = container.GetDirectoryReference("directory3");
-            CloudBlobDirectory directory2 = directory.GetDirectoryReference("directory4");
+            CloudAppendBlob appendBlob = container.GetAppendBlobReference("directory3/blob3");
+            CloudBlobDirectory directory = container.GetDirectoryReference("directory4");
+            CloudBlobDirectory directory2 = directory.GetDirectoryReference("directory5");
 
             Assert.AreEqual(container, blockBlob.Container);
             Assert.AreEqual(container, pageBlob.Container);
+            Assert.AreEqual(container, appendBlob.Container);
             Assert.AreEqual(container, directory.Container);
             Assert.AreEqual(container, directory2.Container);
             Assert.AreEqual(container, directory2.Parent.Container);
@@ -514,7 +515,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 do
                 {
                     BlobResultSegment results = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, 1, token, null, null);
-                    foreach (ICloudBlob blob in results.Results)
+                    foreach (CloudBlob blob in results.Results)
                     {
                         Assert.IsTrue(blobNames.Remove(blob.Name));
                         Assert.IsTrue(container.GetBlockBlobReference(blob.Name).StorageUri.Equals(blob.StorageUri));
@@ -557,6 +558,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob pageBlob = container.GetPageBlobReference("pb");
                 await pageBlob.CreateAsync(0);
 
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference("ab");
+                await appendBlob.CreateOrReplaceAsync();
+
                 CloudBlobClient client;
                 ICloudBlob blob;
 
@@ -584,6 +588,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(pageBlobSnapshot.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
+                blob = await container.GetBlobReferenceFromServerAsync("ab");
+                Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                Assert.IsTrue(blob.StorageUri.Equals(appendBlob.StorageUri));
+
+                CloudAppendBlob appendBlobSnapshot = await ((CloudAppendBlob)blob).CreateSnapshotAsync();
+                await blob.SetPropertiesAsync();
+                Uri appendBlobSnapshotUri = new Uri(appendBlobSnapshot.Uri.AbsoluteUri + "?snapshot=" + appendBlobSnapshot.SnapshotTime.Value.UtcDateTime.ToString("o"));
+                blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(appendBlobSnapshotUri);
+                AssertAreEqual(appendBlobSnapshot.Properties, blob.Properties);
+                Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(appendBlobSnapshot.Uri));
+                Assert.IsNull(blob.StorageUri.SecondaryUri);
+
                 blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(blockBlob.Uri);
                 Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(blockBlob.Uri));
@@ -594,6 +610,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(pageBlob.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
+                blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(appendBlob.Uri);
+                Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(appendBlob.Uri));
+                Assert.IsNull(blob.StorageUri.SecondaryUri);
+
                 blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(blockBlob.StorageUri, null, null, null);
                 Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
                 Assert.IsTrue(blob.StorageUri.Equals(blockBlob.StorageUri));
@@ -602,10 +623,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
                 Assert.IsTrue(blob.StorageUri.Equals(pageBlob.StorageUri));
 
+                blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(appendBlob.StorageUri, null, null, null);
+                Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                Assert.IsTrue(blob.StorageUri.Equals(appendBlob.StorageUri));
+
                 string blockBlobToken = blockBlob.GetSharedAccessSignature(policy);
                 StorageCredentials blockBlobSAS = new StorageCredentials(blockBlobToken);
                 Uri blockBlobSASUri = blockBlobSAS.TransformUri(blockBlob.Uri);
                 StorageUri blockBlobSASStorageUri = blockBlobSAS.TransformUri(blockBlob.StorageUri);
+
+                string appendBlobToken = appendBlob.GetSharedAccessSignature(policy);
+                StorageCredentials appendBlobSAS = new StorageCredentials(appendBlobToken);
+                Uri appendBlobSASUri = appendBlobSAS.TransformUri(appendBlob.Uri);
+                StorageUri appendBlobSASStorageUri = appendBlobSAS.TransformUri(appendBlob.StorageUri);
 
                 string pageBlobToken = pageBlob.GetSharedAccessSignature(policy);
                 StorageCredentials pageBlobSAS = new StorageCredentials(pageBlobToken);
@@ -622,6 +652,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(pageBlob.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
+                blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(appendBlobSASUri);
+                Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(appendBlob.Uri));
+                Assert.IsNull(blob.StorageUri.SecondaryUri);
+
                 blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(blockBlobSASStorageUri, null, null, null);
                 Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
                 Assert.IsTrue(blob.StorageUri.Equals(blockBlob.StorageUri));
@@ -629,6 +664,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(pageBlobSASStorageUri, null, null, null);
                 Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
                 Assert.IsTrue(blob.StorageUri.Equals(pageBlob.StorageUri));
+
+                blob = await container.ServiceClient.GetBlobReferenceFromServerAsync(appendBlobSASStorageUri, null, null, null);
+                Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                Assert.IsTrue(blob.StorageUri.Equals(appendBlob.StorageUri));
 
                 client = new CloudBlobClient(container.ServiceClient.BaseUri, blockBlobSAS);
                 blob = await client.GetBlobReferenceFromServerAsync(blockBlobSASUri);
@@ -642,6 +681,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(pageBlob.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
+                client = new CloudBlobClient(container.ServiceClient.BaseUri, appendBlobSAS);
+                blob = await client.GetBlobReferenceFromServerAsync(appendBlobSASUri);
+                Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(appendBlob.Uri));
+                Assert.IsNull(blob.StorageUri.SecondaryUri);
+
                 client = new CloudBlobClient(container.ServiceClient.StorageUri, blockBlobSAS);
                 blob = await client.GetBlobReferenceFromServerAsync(blockBlobSASStorageUri, null, null, null);
                 Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
@@ -651,6 +696,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob = await client.GetBlobReferenceFromServerAsync(pageBlobSASStorageUri, null, null, null);
                 Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
                 Assert.IsTrue(blob.StorageUri.Equals(pageBlob.StorageUri));
+
+                client = new CloudBlobClient(container.ServiceClient.StorageUri, appendBlobSAS);
+                blob = await client.GetBlobReferenceFromServerAsync(appendBlobSASStorageUri, null, null, null);
+                Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                Assert.IsTrue(blob.StorageUri.Equals(appendBlob.StorageUri));
             }
             finally
             {
@@ -658,6 +708,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#pragma warning restore 0618
+        
         [TestMethod]
         [Description("Test conditional access on a container")]
         [TestCategory(ComponentCategory.Blob)]

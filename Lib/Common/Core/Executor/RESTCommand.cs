@@ -124,12 +124,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
             set
             {
-                MultiBufferMemoryStream tempStream = value as MultiBufferMemoryStream;
-                if (tempStream != null)
-                {
-                    this.StreamToDispose = tempStream;
-                }
-
                 this.sendStream = value;
             }
         }

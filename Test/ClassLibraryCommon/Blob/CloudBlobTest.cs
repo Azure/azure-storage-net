@@ -65,8 +65,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 // Upload some data to the blob.
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(BlobName); 
-                blockBlob.UploadFromStream(originalData); 
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplace();
+                appendBlob.AppendBlock(originalData, null);
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 blob.FetchAttributes();
@@ -110,6 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
+                appendBlob.CreateOrReplace();
                 blob.FetchAttributes();
 
                 using (Stream snapshotStream = snapshot1.OpenRead())
@@ -145,8 +147,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.Create();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(BlobName);
-                blockBlob.UploadFromStream(originalData);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplace();
+                appendBlob.AppendBlock(originalData, null);
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 blob.FetchAttributes();
@@ -190,6 +193,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                     }
 
+                    result = appendBlob.BeginCreateOrReplace(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    appendBlob.EndCreateOrReplace(result);
                     result = blob.BeginFetchAttributes(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob.EndFetchAttributes(result);
@@ -231,8 +237,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.CreateAsync().Wait();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(BlobName);
-                blockBlob.UploadFromStream(originalData);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplaceAsync().Wait();
+                appendBlob.AppendBlockAsync(originalData, null).Wait();
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 blob.FetchAttributesAsync().Wait();
@@ -271,6 +278,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
+                appendBlob.CreateOrReplaceAsync().Wait();
                 blob.FetchAttributesAsync().Wait();
 
                 using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
@@ -310,8 +318,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob pageBlob = container.GetPageBlobReference(BlobName);
-                pageBlob.Create(512);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplace();
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 blob.Metadata["Hello"] = "World";
@@ -355,8 +363,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob pageBlob = container.GetPageBlobReference(BlobName);
-                pageBlob.Create(512);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplace();
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 blob.Metadata["Hello"] = "World";
@@ -408,8 +416,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.CreateAsync().Wait();
 
-                CloudPageBlob pageBlob = container.GetPageBlobReference(BlobName);
-                pageBlob.Create(512);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplaceAsync(null, null, new OperationContext()).Wait();
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 blob.Metadata["Hello"] = "World";

@@ -730,6 +730,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             catch (InvalidOperationException invalidOpException)
             {
+                str.Dispose();
                 throw new ArgumentException(invalidOpException.Message, "properties");
             }
 
@@ -737,6 +738,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
             retCmd.SendStream = str;
+            retCmd.StreamToDispose = str;
             retCmd.BuildRequestDelegate = QueueHttpWebRequestFactory.SetServiceProperties;
             retCmd.RecoveryAction = RecoveryActions.RewindStream;
             retCmd.SignRequest = this.AuthenticationHandler.SignRequest;

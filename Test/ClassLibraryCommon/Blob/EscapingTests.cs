@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 // Copy blob verification.
                 CloudBlockBlob copyBlob = container.GetBlockBlobReference(prefix + "/" + blobName + "copy");
-                copyBlob.StartCopyFromBlob(blobInfo.Uri);
+                copyBlob.StartCopy(blobInfo.Uri);
                 copyBlob.FetchAttributes();
             }
             finally

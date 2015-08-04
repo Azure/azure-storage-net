@@ -449,7 +449,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="element">The XML element.</param>
         /// <returns>A <c>CorsProperties</c> object containing the properties in the element.</returns>
-        private static CorsProperties ReadCorsPropertiesFromXml(XElement element)
+        internal static CorsProperties ReadCorsPropertiesFromXml(XElement element)
         {
             CorsProperties ret = new CorsProperties();
 

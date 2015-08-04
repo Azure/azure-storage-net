@@ -195,6 +195,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static RESTCommand<TableResult> RetrieveImpl(TableOperation operation, CloudTableClient client, CloudTable table, TableRequestOptions requestOptions)
         {
+            requestOptions.AssertPolicyIfRequired();
+
             RESTCommand<TableResult> retrieveCmd = new RESTCommand<TableResult>(client.Credentials, operation.GenerateRequestURI(client.StorageUri, table.Name));
             requestOptions.ApplyToStorageCommand(retrieveCmd);
 

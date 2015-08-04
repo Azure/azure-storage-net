@@ -1,3 +1,18 @@
+Changes in 5.0.0 :
+
+ - All: Support for 2015-02-21 REST version. Please see our REST API documentation and blogs for information about the related added features.
+ - All: Added GA support for Client Side Encryption. For more information about our encryption, please see our documentation and samples. 
+ - All: Deprecated the overload for GetSharedAccessSignature that takes a SAS version because the SAS tokens generated using the current version work fine with old libraries.
+ - All: Updated the error message for the error that is thrown for having more than 5 shared access policy identifiers to include shares.
+ - All: Made SyncMemoryStream, a MemoryStream implementation that runs synchronously even when asynchronous overloads are called public.
+ - All: Updated OData dependencies to v5.6.4 and Newtonsoft.Json dependency to 6.0.8.
+ - All: Changed behavior to stop stripping out query parameters passed in with the resource URI. Some query parameters such as comp, restype, snapshot and api-version will still be removed.
+ - Blobs: MultiBufferMemoryStream objects passed as argument to upload methods are not disposed by the client library.
+ - Blobs: Added CloudAppendBlob class. For more information on this, please refer to the REST API link.
+ - Blobs: Deprecated StartCopyFromBlob() using the Obsolete attribute. Use StartCopy() instead.
+ - Blobs: CreateCloudBlobClient does not throw an exception when the credentials are null to support anonymous access.
+ - Blobs/Files: Fixed a bug which in very rare cases could cause streaming writes to hang.
+
 Changes in 4.4.1 Preview:
 
 - All: Refreshed ASP.NET 5 targets to work with latest RC bits (DNX 4.5.1 and DNX Core 5.0, beta4). 
@@ -10,7 +25,7 @@ Changes in 4.4.0 Preview:
  - All: Added preview support for client side encryption for blobs, queues and tables.
  - All: Added preview support for building applications via Portable Class Library (Profile 111), as well as Xamarin.iOS and Xamarin.Android.
  - All: Added StringToSign to the client logs in the Shared Access Signature case. 
- - Blobs: Created a CloudBlob instantiable class. Users can now get/set properties, metadata, download blobs, create snapshots, copy blobs and perform leasing actions on blobs without knowing the type of the blob. CloudPageBlob and CloudBlockBlob now derive from this class.
+ - Blobs: Created a CloudBlob instantiable class. Users can now get/set properties, metadata, download blobs, create snapshots, copy blobs and perform leasing actions on blobs without knowing the type of the blob. CloudPageBlob, CloudBlockBlob and CloudAppendBlob now derive from this class.
  - Blobs: Added GetBlobReference on CloudBlobContainer to get a reference to a CloudBlob object that can be used for common operations across blob types. This api does not make a service call.
  - Blobs (ASP.NET): Added missing overloads for StartCopyFromBlob in CloudBlockBlob and CloudPageBlob.
  - Blobs (Windows Runtime): Added missing custom encoding support for UploadTextAsync() and DownloadTextAsync() API in CloudBlockBlob.

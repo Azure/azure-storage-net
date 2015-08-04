@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     {
 #if SYNC
         /// <summary>
-        /// Opens a stream for writing to the blob.
+        /// Opens a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
         /// </summary>
         /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -49,6 +49,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributes(AccessCondition, BlobRequestOptions, OperationContext)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         [DoesServiceRequest]
         public CloudBlobStream OpenWrite(long? size, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
@@ -57,11 +59,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
             bool createNew = size.HasValue;
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             ICryptoTransform transform = null;
-            if (options != null && options.EncryptionPolicy != null)
+
+            modifiedOptions.AssertPolicyIfRequired();
+
+            if (modifiedOptions.EncryptionPolicy != null)
             {
                 transform = options.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, true /* noPadding */);
             }
+#endif
 
             if (createNew)
             {
@@ -74,10 +81,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw new ArgumentException(SR.MD5NotPossible);
                 }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 if (modifiedOptions.EncryptionPolicy != null)
                 {
                     throw new ArgumentException(SR.EncryptionNotSupportedForExistingBlobs);
                 }
+#endif
                 this.FetchAttributes(accessCondition, options, operationContext);
                 size = this.Properties.Length;
             }
@@ -87,11 +96,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
             }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             if (modifiedOptions.EncryptionPolicy != null)
             {
                 return new BlobEncryptedWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext, transform);
             }
             else
+#endif
             {
                 return new BlobWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext);
             }
@@ -99,7 +110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to open a stream for writing to the blob.
+        /// Begins an asynchronous operation to open a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
         /// </summary>
         /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -109,6 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the page size to write, in multiples of 512 bytes, 
         /// ranging from between 512 and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="BeginOpenWrite(long?, AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/>.</para>        
         /// </remarks>
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginOpenWrite(long? size, AsyncCallback callback, object state)
@@ -117,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to open a stream for writing to the blob.
+        /// Begins an asynchronous operation to open a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
         /// </summary>
         /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -130,6 +142,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the page size to write, in multiples of 512 bytes, 
         /// ranging from between 512 and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         [DoesServiceRequest]
@@ -142,8 +156,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             StorageAsyncResult<CloudBlobStream> storageAsyncResult = new StorageAsyncResult<CloudBlobStream>(callback, state);
             ICancellableAsyncResult result;
 
+            modifiedOptions.AssertPolicyIfRequired();
+
             if (createNew)
             {
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 ICryptoTransform transform = null;
                 if (options != null && options.EncryptionPolicy != null)
                 {
@@ -153,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     transform = options.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, true /* noPadding */);
 #endif
                 }
-
+#endif
                 result = this.BeginCreate(
                     size.Value,
                     accessCondition,
@@ -172,11 +189,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
                             }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                             if (modifiedOptions.EncryptionPolicy != null)
                             {
                                 storageAsyncResult.Result = new BlobEncryptedWriteStream(this, this.Properties.Length, createNew, accessCondition, modifiedOptions, operationContext, transform);
                             }
                             else
+#endif
                             {
                                 storageAsyncResult.Result = new BlobWriteStream(this, this.Properties.Length, createNew, accessCondition, modifiedOptions, operationContext);
                             }
@@ -197,10 +216,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw new ArgumentException(SR.MD5NotPossible);
                 }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 if (modifiedOptions.EncryptionPolicy != null)
                 {
                     throw new ArgumentException(SR.EncryptionNotSupportedForExistingBlobs);
                 }
+#endif
 
                 result = this.BeginFetchAttributes(
                     accessCondition,
@@ -248,7 +269,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
         /// </summary>
         /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudBlobStream"/> that represents the asynchronous operation.</returns>
@@ -256,6 +277,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the page size to write, in multiples of 512 bytes, 
         /// ranging from between 512 and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="OpenWriteAsync(long?, AccessCondition, BlobRequestOptions, OperationContext)"/>.</para>        
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync(long? size)
@@ -264,7 +286,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
         /// </summary>
         /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -273,6 +295,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the page size to write, in multiples of 512 bytes, 
         /// ranging from between 512 and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="OpenWriteAsync(long?, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.</para>                        
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync(long? size, CancellationToken cancellationToken)
@@ -281,7 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
         /// </summary>
         /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -292,6 +315,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the page size to write, in multiples of 512 bytes, 
         /// ranging from between 512 and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync(long? size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -300,7 +325,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
         /// </summary>
         /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -312,6 +337,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the page size to write, in multiples of 512 bytes, 
         /// ranging from between 512 and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync(long? size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
@@ -322,7 +349,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads a stream to a page blob. 
+        /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -335,7 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Uploads a stream to a page blob. 
+        /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -349,7 +376,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Uploads a stream to a page blob. 
+        /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -395,7 +422,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a page blob.
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -408,7 +435,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a page blob. 
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -424,7 +451,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a page blob.
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
@@ -438,7 +465,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a page blob. 
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
@@ -455,7 +482,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a page blob. 
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
@@ -584,7 +611,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
@@ -595,7 +622,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -607,7 +634,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -621,7 +648,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -636,7 +663,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -648,7 +675,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -661,7 +688,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -676,7 +703,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a page blob. 
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -693,7 +720,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads a file to a page blob. 
+        /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -713,7 +740,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a file to a page blob.
+        /// Begins an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -727,7 +754,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a file to a page blob. 
+        /// Begins an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -806,7 +833,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a page blob.
+        /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -818,7 +845,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a page blob.
+        /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -831,7 +858,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a page blob.
+        /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -846,7 +873,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a page blob.
+        /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -864,7 +891,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads the contents of a byte array to a page blob.
+        /// Uploads the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -885,7 +912,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to upload the contents of a byte array to a page blob.
+        /// Begins an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -900,7 +927,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload the contents of a byte array to a page blob.
+        /// Begins an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -921,7 +948,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Ends an asynchronous operation to upload the contents of a byte array to a page blob.
+        /// Ends an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public void EndUploadFromByteArray(IAsyncResult asyncResult)
@@ -931,7 +958,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -944,7 +971,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -958,7 +985,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -974,7 +1001,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -993,7 +1020,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Creates a page blob.
+        /// Creates a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
         /// </summary>
         /// <param name="size">The maximum size of the page blob, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -1012,7 +1040,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to create a page blob.
+        /// Begins an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting,
+        /// use <see cref="BeginCreate(long, AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/>.
         /// </summary>
         /// <param name="size">The maximum size of the page blob, in bytes.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -1025,7 +1054,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to create a page blob.
+        /// Begins an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
         /// </summary>
         /// <param name="size">The maximum size of the blob, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -1057,7 +1087,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to create a page blob.
+        /// Initiates an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting,
+        /// use <see cref="CreateAsync(long, AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </summary>
         /// <param name="size">The maximum size of the blob, in bytes.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
@@ -1068,7 +1099,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to create a page blob.
+        /// Initiates an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting,
+        /// use <see cref="CreateAsync(long, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </summary>
         /// <param name="size">The maximum size of the blob, in bytes.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -1080,7 +1112,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to create a page blob.
+        /// Initiates an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
         /// </summary>
         /// <param name="size">The maximum size of the blob, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -1094,7 +1127,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to create a page blob.
+        /// Initiates an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
         /// </summary>
         /// <param name="size">The maximum size of the blob, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -1616,36 +1650,49 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             Stream seekableStream = pageData;
-            if (!pageData.CanSeek || requiresContentMD5)
+            bool seekableStreamCreated = false;
+
+            try
             {
-                ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-
-                Stream writeToStream;
-                if (pageData.CanSeek)
+                if (!pageData.CanSeek || requiresContentMD5)
                 {
-                    writeToStream = Stream.Null;
+                    ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+
+                    Stream writeToStream;
+                    if (pageData.CanSeek)
+                    {
+                        writeToStream = Stream.Null;
+                    }
+                    else
+                    {
+                        seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                        seekableStreamCreated = true;
+                        writeToStream = seekableStream;
+                    }
+
+                    long startPosition = seekableStream.Position;
+                    StreamDescriptor streamCopyState = new StreamDescriptor();
+                    pageData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, true, tempExecutionState, streamCopyState);
+                    seekableStream.Position = startPosition;
+
+                    if (requiresContentMD5)
+                    {
+                        contentMD5 = streamCopyState.Md5;
+                    }
                 }
-                else
-                {
-                    seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                    writeToStream = seekableStream;
-                }
 
-                long startPosition = seekableStream.Position;
-                StreamDescriptor streamCopyState = new StreamDescriptor();
-                pageData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, true, tempExecutionState, streamCopyState);
-                seekableStream.Position = startPosition;
-
-                if (requiresContentMD5)
+                Executor.ExecuteSync(
+                    this.PutPageImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext);
+            }
+            finally
+            {
+                if (seekableStreamCreated)
                 {
-                    contentMD5 = streamCopyState.Md5;
+                    seekableStream.Dispose();
                 }
             }
-
-            Executor.ExecuteSync(
-                this.PutPageImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
         }
 #endif
 
@@ -1718,6 +1765,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 else
                 {
                     seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                    storageAsyncResult.OperationState = seekableStream;
                     writeToStream = seekableStream;
                 }
 
@@ -1801,7 +1849,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void EndWritePages(IAsyncResult asyncResult)
         {
             StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
-            storageAsyncResult.End();
+
+            try
+            {
+                storageAsyncResult.End();
+            }
+            finally
+            {
+                if (storageAsyncResult.OperationState != null)
+                {
+                    MultiBufferMemoryStream stream = (MultiBufferMemoryStream)storageAsyncResult.OperationState;
+                    stream.Dispose();
+                }
+            }
         }
 
 #if TASK
@@ -2028,6 +2088,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
+        [Obsolete("Deprecated this method in favor of StartCopy.")]
         [DoesServiceRequest]
         public string StartCopyFromBlob(CloudPageBlob source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -2042,6 +2103,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of BeginStartCopy.")]
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginStartCopyFromBlob(CloudPageBlob source, AsyncCallback callback, object state)
         {
@@ -2059,6 +2121,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of BeginStartCopy.")]
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest", Justification = "Reviewed")]
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginStartCopyFromBlob(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
@@ -2074,6 +2137,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(CloudPageBlob source)
         {
@@ -2087,6 +2151,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(CloudPageBlob source, CancellationToken cancellationToken)
         {
@@ -2103,6 +2168,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -2120,6 +2186,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]
         [DoesServiceRequest]
         public Task<string> StartCopyFromBlobAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -2356,7 +2423,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand{T}"/> that writes the pages.</returns>
         private RESTCommand<NullType> PutPageImpl(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options)
         {
-            options.AssertNoEncryptionPolicy();
+            options.AssertNoEncryptionPolicyOrStrictMode();
 
             if (startOffset % Constants.PageSize != 0)
             {
@@ -2410,7 +2477,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private RESTCommand<NullType> ClearPageImpl(long startOffset, long length, AccessCondition accessCondition, BlobRequestOptions options)
         {
             CommonUtility.AssertNotNull("options", options);
-            options.AssertNoEncryptionPolicy();
+            options.AssertNoEncryptionPolicyOrStrictMode();
 
             if (startOffset < 0 || startOffset % Constants.PageSize != 0)
             {

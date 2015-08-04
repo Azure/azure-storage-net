@@ -249,8 +249,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string outgoingMessageString = null;
 
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-            if (options != null && options.EncryptionPolicy != null)
+            if (options != null)
             {
+                options.AssertPolicyIfRequired();
+
+                if (options.EncryptionPolicy != null)
+                {
                 // Create an encrypted message that will hold the message contents along with encryption related metadata and return it.
                 // The encrypted message is already Base 64 encoded. So no need to process further in this method.
                 string encryptedMessageString = options.EncryptionPolicy.EncryptMessage(this.AsBytes);
@@ -265,6 +269,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 }
 
                 return encryptedMessageString;
+                }
             }
 #endif
 

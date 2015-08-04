@@ -167,6 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]                                    
         public void TableSASConstructorsOldVersion()
         {
             CloudTableClient tableClient = GenerateCloudTableClient();

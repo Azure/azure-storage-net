@@ -15,7 +15,7 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>RT_Test_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <PackageCertificateThumbprint>5E96456B12159A670EAF6D01EC0DEA1921A4BB57</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>13617093D767C01C888FFBD631A1F4745D89DE1B</PackageCertificateThumbprint>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
