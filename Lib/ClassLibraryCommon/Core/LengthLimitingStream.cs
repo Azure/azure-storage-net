@@ -135,7 +135,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
             return this.wrappedStream.Read(buffer, offset, count);
         }
 
-        
 #if WINDOWS_DESKTOP
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {

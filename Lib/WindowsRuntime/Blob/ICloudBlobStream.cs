@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying blob, and commits the blob.
         /// </summary>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public abstract Task CommitAsync();
     }
 #else

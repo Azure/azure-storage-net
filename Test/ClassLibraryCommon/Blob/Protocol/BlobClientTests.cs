@@ -1000,7 +1000,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             Assert.IsNotNull(snapshot.SnapshotTime);
             BlobTestBase.UploadText(blob, newText, Encoding.UTF8);
 
-            Uri sourceUri = new Uri(snapshot.Uri.AbsoluteUri + "?snapshot=" + BlobRequest.ConvertDateTimeToSnapshotString(snapshot.SnapshotTime.Value));
+            Uri sourceUri = new Uri(snapshot.Uri.AbsoluteUri + "?snapshot=" + Request.ConvertDateTimeToSnapshotString(snapshot.SnapshotTime.Value));
             OperationContext opContext = new OperationContext();
             HttpWebRequest request = BlobHttpWebRequestFactory.CopyFrom(blob.Uri, 30, sourceUri, null, null, opContext);
             Assert.IsTrue(request != null, "Failed to create HttpWebRequest");

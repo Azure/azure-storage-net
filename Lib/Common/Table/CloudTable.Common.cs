@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
@@ -129,8 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 null /* startPartitionKey */,
                 null /* startRowKey */,
                 null /* endPartitionKey */,
-                null /* endRowKey */,
-                null /* sasVersion */);
+                null /* endRowKey */);
         }
 
         /// <summary>
@@ -149,8 +149,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 null /* startPartitionKey */,
                 null /* startRowKey */,
                 null /* endPartitionKey */,
-                null /* endRowKey */,
-                null /* sasVersion */);
+                null /* endRowKey */);
         }
 
         /// <summary>
@@ -173,14 +172,39 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string endPartitionKey,
             string endRowKey)
         {
-            return this.GetSharedAccessSignature(
+            if (!this.ServiceClient.Credentials.IsSharedKey)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            string resourceName = this.GetCanonicalName(Constants.HeaderConstants.TargetStorageVersion);
+            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
+
+            string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
                 accessPolicyIdentifier,
                 startPartitionKey,
                 startRowKey,
                 endPartitionKey,
                 endRowKey,
-                null /* sasVersion */);
+                resourceName,
+                Constants.HeaderConstants.TargetStorageVersion,
+                accountKey.KeyValue);
+
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
+                policy,
+                this.Name,
+                accessPolicyIdentifier,
+                startPartitionKey,
+                startRowKey,
+                endPartitionKey,
+                endRowKey,
+                signature,
+                accountKey.KeyName,
+                Constants.HeaderConstants.TargetStorageVersion);
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -196,6 +220,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         /// <exception cref="InvalidOperationException">Thrown if the current credentials don't support creating a shared access signature.</exception>
+        [Obsolete("This overload has been deprecated because the SAS tokens generated using the current version work fine with old libraries. Please use the other overloads.")]        
         public string GetSharedAccessSignature(
             SharedAccessTablePolicy policy,
             string accessPolicyIdentifier,
@@ -212,7 +237,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
-            string resourceName = this.GetCanonicalName();
+            string resourceName = this.GetCanonicalName(validatedSASVersion);
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
          
             string signature = SharedAccessSignatureHelper.GetHash(
@@ -261,7 +286,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             StorageCredentials parsedCredentials;
             this.StorageUri = NavigationHelper.ParseQueueTableQueryAndVerify(address, out parsedCredentials);
 
-            if ((parsedCredentials != null) && (credentials != null) && !parsedCredentials.Equals(credentials))
+            if (parsedCredentials != null && credentials != null)
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);
@@ -274,14 +299,21 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the canonical name of the table, formatted as table/&lt;account-name&gt;/&lt;table-name&gt;.
         /// </summary>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
         /// <returns>The canonical name of the table.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.String.ToLower", Justification = "ToLower(CultureInfo) is not present in RT and ToLowerInvariant() also violates FxCop")]
-        private string GetCanonicalName()
+        private string GetCanonicalName(string sasVersion)
         {
             string accountName = this.ServiceClient.Credentials.AccountName;
             string tableNameLowerCase = this.Name.ToLower();
+            string canonicalNameFormat = "/{0}/{1}/{2}";
+            if (sasVersion == Constants.VersionConstants.February2012 || sasVersion == Constants.VersionConstants.August2013)
+            {
+                // Do not prepend service name for older versions
+                canonicalNameFormat = "/{1}/{2}";
+            }
 
-            return string.Format(CultureInfo.InvariantCulture, "/{0}/{1}", accountName, tableNameLowerCase);
+            return string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Table, accountName, tableNameLowerCase);
         }
     }
 }

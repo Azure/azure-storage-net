@@ -37,10 +37,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     {
         protected CloudBlockBlob blockBlob;
         protected CloudPageBlob pageBlob;
+        protected CloudAppendBlob appendBlob;
         protected long pageBlobSize;
         protected bool newPageBlob;
         protected long currentOffset;
-        protected long currentPageOffset;
+        protected long currentBlobOffset;
         protected int streamWriteSizeInBytes;
         protected MultiBufferMemoryStream internalBuffer;
         protected List<string> blockList;
@@ -67,8 +68,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             : base()
         {
             this.internalBuffer = new MultiBufferMemoryStream(serviceClient.BufferManager);
-            this.currentOffset = 0;
             this.accessCondition = accessCondition;
+            this.currentOffset = 0;
             this.options = options;
             this.operationContext = operationContext;
             this.noPendingWritesEvent = new CounterEvent();
@@ -91,6 +92,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             : this(blockBlob.ServiceClient, accessCondition, options, operationContext)
         {
             this.blockBlob = blockBlob;
+            this.Blob = this.blockBlob;
             this.blockList = new List<string>();
             this.blockIdPrefix = Guid.NewGuid().ToString("N") + "-";
             this.streamWriteSizeInBytes = blockBlob.StreamWriteSizeInBytes;
@@ -108,27 +110,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         protected BlobWriteStreamBase(CloudPageBlob pageBlob, long pageBlobSize, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : this(pageBlob.ServiceClient, accessCondition, options, operationContext)
         {
-            this.currentPageOffset = 0;
+            this.currentBlobOffset = 0;
             this.pageBlob = pageBlob;
+            this.Blob = this.pageBlob;
             this.pageBlobSize = pageBlobSize;
             this.streamWriteSizeInBytes = pageBlob.StreamWriteSizeInBytes;
             this.newPageBlob = createNew;
         }
 
-        protected ICloudBlob Blob
+        /// <summary>
+        /// Initializes a new instance of the BlobWriteStreamBase class for an append blob.
+        /// </summary>
+        /// <param name="appendBlob">Blob reference to write to.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        protected BlobWriteStreamBase(CloudAppendBlob appendBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+            : this(appendBlob.ServiceClient, accessCondition, options, operationContext)
         {
-            get
-            {
-                if (this.blockBlob != null)
-                {
-                    return this.blockBlob;
-                }
-                else
-                {
-                    return this.pageBlob;
-                }
-            }
+            this.accessCondition = this.accessCondition ?? new AccessCondition();
+
+            // If we are creating a new blob, create call would have appropriately set the length to 0. For an existing blob, if user specified a condition with append offset,
+            // we will use it. Otherwise, we will use the length returned by the FetchAttributes call.
+            this.currentBlobOffset = this.accessCondition.IfAppendPositionEqual.HasValue ? this.accessCondition.IfAppendPositionEqual.Value : appendBlob.Properties.Length;
+            this.operationContext = this.operationContext ?? new OperationContext();
+            this.appendBlob = appendBlob;
+            this.Blob = this.appendBlob;
+            this.parallelOperationSemaphore = new AsyncSemaphore(1);
+            this.streamWriteSizeInBytes = appendBlob.StreamWriteSizeInBytes;
         }
+
+        protected CloudBlob Blob { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether the current stream supports reading.

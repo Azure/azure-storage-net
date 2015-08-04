@@ -41,9 +41,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
         private bool bufferIV;
         private bool noPadding;
         private bool disposed;
+        private bool? requireEncryption;
         private ICryptoTransform transform;
 
-        public BlobDecryptStream(Stream userStream, IDictionary<string, string> metadata, long? userProvidedLength, int discardFirst, bool bufferIV, bool noPadding, BlobEncryptionPolicy policy)
+        public BlobDecryptStream(Stream userStream, IDictionary<string, string> metadata, long? userProvidedLength, int discardFirst, bool bufferIV, bool noPadding, BlobEncryptionPolicy policy, bool? requireEncryption)
         {
             this.userStream = userStream;
             this.metadata = metadata;
@@ -52,6 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             this.encryptionPolicy = policy;
             this.bufferIV = bufferIV;
             this.noPadding = noPadding;
+            this.requireEncryption = requireEncryption;
         }
 
         public override bool CanRead
@@ -137,7 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             if (this.cryptoStream == null)
             {
                 LengthLimitingStream lengthLimitingStream = new LengthLimitingStream(this.userStream, this.discardFirst, this.userProvidedLength);
-                this.cryptoStream = this.encryptionPolicy.DecryptBlob(lengthLimitingStream, this.metadata, out this.transform, !this.bufferIV ? null : this.iv, this.noPadding);
+                this.cryptoStream = this.encryptionPolicy.DecryptBlob(lengthLimitingStream, this.metadata, out this.transform, this.requireEncryption, iv: !this.bufferIV ? null : this.iv, noPadding: this.noPadding);
             }
 
             // Route the remaining data through the crypto stream.
@@ -168,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             if (this.cryptoStream == null)
             {
                 LengthLimitingStream lengthLimitingStream = new LengthLimitingStream(this.userStream, this.discardFirst, this.userProvidedLength);
-                this.cryptoStream = this.encryptionPolicy.DecryptBlob(lengthLimitingStream, this.metadata, out this.transform, !this.bufferIV ? null : this.iv, this.noPadding);
+                this.cryptoStream = this.encryptionPolicy.DecryptBlob(lengthLimitingStream, this.metadata, out this.transform, this.requireEncryption, iv: !this.bufferIV ? null : this.iv, noPadding: this.noPadding);
             }
 
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);

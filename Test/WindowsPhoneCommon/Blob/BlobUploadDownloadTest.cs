@@ -140,6 +140,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 "Page blobs must be 512-byte aligned");
         }
 
+        [TestMethod]
+        [Description("Upload from file to a blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobUploadDownloadFileAsync()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            await this.DoUploadDownloadFileAsync(blob, 0);
+            await this.DoUploadDownloadFileAsync(blob, 4096);
+            await this.DoUploadDownloadFileAsync(blob, 4097);
+        }
+
         private async Task DoUploadDownloadFileAsync(ICloudBlob blob, int fileSize)
         {
             string inputFileName = Path.GetTempFileName();
@@ -153,9 +167,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await file.WriteAsync(buffer, 0, buffer.Length);
                 }
 
+                OperationContext context = new OperationContext();
                 await blob.UploadFromFileAsync(inputFileName, FileMode.Open);
 
-                OperationContext context = new OperationContext();
                 await blob.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
@@ -236,6 +250,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 "Page blobs must be 512-byte aligned");
         }
 
+        [TestMethod]
+        [Description("Upload a blob using a byte array")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobUploadFromByteArrayAsync()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            await this.DoUploadFromByteArrayTestAsync(blob, 4 * 512, 0, 4 * 512);
+            await this.DoUploadFromByteArrayTestAsync(blob, 4 * 512, 0, 2 * 512);
+            await this.DoUploadFromByteArrayTestAsync(blob, 4 * 512, 1 * 512, 2 * 512);
+            await this.DoUploadFromByteArrayTestAsync(blob, 4 * 512, 2 * 512, 2 * 512);
+            await this.DoUploadFromByteArrayTestAsync(blob, 512, 0, 511);
+        }
+
         private async Task DoUploadFromByteArrayTestAsync(ICloudBlob blob, int bufferSize, int bufferOffset, int count)
         {
             byte[] buffer = GetRandomBuffer(bufferSize);
@@ -309,6 +339,34 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await this.DoDownloadToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, true);
         }
 
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobDownloadToByteArrayAsync()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            await this.DoDownloadToByteArrayAsyncTest(blob, 1 * 512, 2 * 512, 0, false);
+            await this.DoDownloadToByteArrayAsyncTest(blob, 1 * 512, 2 * 512, 1 * 512, false);
+            await this.DoDownloadToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, false);
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobDownloadToByteArrayAsyncOverload()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            await this.DoDownloadToByteArrayAsyncTest(blob, 1 * 512, 2 * 512, 0, true);
+            await this.DoDownloadToByteArrayAsyncTest(blob, 1 * 512, 2 * 512, 1 * 512, true);
+            await this.DoDownloadToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, true);
+        }
+
         private async Task DoDownloadToByteArrayAsyncTest(ICloudBlob blob, int blobSize, int bufferSize, int bufferOffset, bool isOverload)
         {
             int downloadLength;
@@ -318,37 +376,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
-                if (!isOverload)
-                {
-                    await blob.UploadFromStreamAsync(originalBlob);
-                    downloadLength = await blob.DownloadToByteArrayAsync(resultBuffer, bufferOffset);
-                }
-                else
-                {
-                    await blob.UploadFromStreamAsync(originalBlob);
-                    OperationContext context = new OperationContext();
-                    downloadLength = await blob.DownloadToByteArrayAsync(resultBuffer, bufferOffset, null, null, context);
-                }
+                await blob.UploadFromStreamAsync(originalBlob);
+            }
 
-                int downloadSize = Math.Min(blobSize, bufferSize - bufferOffset);
-                Assert.AreEqual(downloadSize, downloadLength);
+            if (!isOverload)
+            {
+                downloadLength = await blob.DownloadToByteArrayAsync(resultBuffer, bufferOffset);
+            }
+            else
+            {
+                OperationContext context = new OperationContext();
+                downloadLength = await blob.DownloadToByteArrayAsync(resultBuffer, bufferOffset, null, null, context);
+            }
 
-                for (int i = 0; i < blob.Properties.Length; i++)
-                {
-                    Assert.AreEqual(buffer[i], resultBuffer[bufferOffset + i]);
-                }
+            int downloadSize = Math.Min(blobSize, bufferSize - bufferOffset);
+            Assert.AreEqual(downloadSize, downloadLength);
 
-                for (int j = 0; j < bufferOffset; j++)
-                {
-                    Assert.AreEqual(0, resultBuffer2[j]);
-                }
+            for (int i = 0; i < blob.Properties.Length; i++)
+            {
+                Assert.AreEqual(buffer[i], resultBuffer[bufferOffset + i]);
+            }
 
-                if (bufferOffset + blobSize < bufferSize)
+            for (int j = 0; j < bufferOffset; j++)
+            {
+                Assert.AreEqual(0, resultBuffer2[j]);
+            }
+
+            if (bufferOffset + blobSize < bufferSize)
+            {
+                for (int k = bufferOffset + blobSize; k < bufferSize; k++)
                 {
-                    for (int k = bufferOffset + blobSize; k < bufferSize; k++)
-                    {
-                        Assert.AreEqual(0, resultBuffer2[k]);
-                    }
+                    Assert.AreEqual(0, resultBuffer2[k]);
                 }
             }
         }
@@ -453,6 +511,56 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 512, 0, 512, true);
         }
 
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobDownloadRangeToByteArrayAsync()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 0, 1 * 512, 1 * 512, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, null, null, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, 1 * 512, null, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, 0, 1 * 512, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 1 * 512, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 2 * 512, false);
+
+            // Edge cases
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 1023, 1023, 1, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 0, 1023, 1, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 0, 0, 1, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 0, 512, 1, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 512, 1023, 1, false);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 512, 0, 512, false);
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobDownloadRangeToByteArrayAsyncOverload()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 0, 1 * 512, 1 * 512, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, null, null, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, 1 * 512, null, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 1 * 512, 0, 1 * 512, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 1 * 512, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 2 * 512, true);
+
+            // Edge cases
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 1023, 1023, 1, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 0, 1023, 1, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 0, 0, 1, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 0, 512, 1, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 512, 1023, 1, true);
+            await this.DoDownloadRangeToByteArrayAsyncTest(blob, 1024, 1024, 512, 0, 512, true);
+        }
+
         /// <summary>
         /// Single put blob and get blob.
         /// </summary>
@@ -471,40 +579,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
-                if (!isOverload)
-                {
-                    await blob.UploadFromStreamAsync(originalBlob);
-                    downloadLength = await blob.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, blobOffset, length);
-                }
-                else
-                {
-                    await blob.UploadFromStreamAsync(originalBlob);
-                    OperationContext context = new OperationContext();
-                    downloadLength = await blob.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, blobOffset, length, null, null, context);
-                }
+                await blob.UploadFromStreamAsync(originalBlob);
+            }
 
-                int downloadSize = Math.Min(blobSize - (int)(blobOffset.HasValue ? blobOffset.Value : 0), bufferSize - bufferOffset);
-                if (length.HasValue && (length.Value < downloadSize))
-                {
-                    downloadSize = (int)length.Value;
-                }
+            if (!isOverload)
+            {
+                downloadLength = await blob.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, blobOffset, length);
+            }
+            else
+            {
+                OperationContext context = new OperationContext();
+                downloadLength = await blob.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, blobOffset, length, null, null, context);
+            }
 
-                Assert.AreEqual(downloadSize, downloadLength);
+            int downloadSize = Math.Min(blobSize - (int)(blobOffset.HasValue ? blobOffset.Value : 0), bufferSize - bufferOffset);
 
-                for (int i = 0; i < bufferOffset; i++)
-                {
-                    Assert.AreEqual(0, resultBuffer[i]);
-                }
+            if (length.HasValue && (length.Value < downloadSize))
+            {
+                downloadSize = (int)length.Value;
+            }
 
-                for (int j = 0; j < downloadLength; j++)
-                {
-                    Assert.AreEqual(buffer[(blobOffset.HasValue ? blobOffset.Value : 0) + j], resultBuffer[bufferOffset + j]);
-                }
+            Assert.AreEqual(downloadSize, downloadLength);
 
-                for (int k = bufferOffset + downloadLength; k < bufferSize; k++)
-                {
-                    Assert.AreEqual(0, resultBuffer[k]);
-                }
+            for (int i = 0; i < bufferOffset; i++)
+            {
+                Assert.AreEqual(0, resultBuffer[i]);
+            }
+
+            for (int j = 0; j < downloadLength; j++)
+            {
+                Assert.AreEqual(buffer[(blobOffset.HasValue ? blobOffset.Value : 0) + j], resultBuffer[bufferOffset + j]);
+            }
+
+            for (int k = bufferOffset + downloadLength; k < bufferSize; k++)
+            {
+                Assert.AreEqual(0, resultBuffer[k]);
             }
         }
 

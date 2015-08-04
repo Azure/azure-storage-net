@@ -26,19 +26,43 @@ namespace Microsoft.WindowsAzure.Storage.File
 {
     public partial class FileTestBase : TestBase
     {
-        public static List<string> CreateFiles(CloudFileShare share, int count) 
-         { 
-             string name; 
-             List<string> files = new List<string>(); 
-             for (int i = 0; i < count; i++) 
-             { 
-                 name = "ff" + Guid.NewGuid().ToString(); 
-                 CloudFile file = share.GetRootDirectoryReference().GetFileReference(name); 
-                 file.Create(0); 
-                 files.Add(name); 
-             } 
-             return files; 
-         } 
+        public static void WaitForCopy(CloudFile file)
+        {
+            bool copyInProgress = true;
+            while (copyInProgress)
+            {
+                Thread.Sleep(1000);
+                file.FetchAttributes();
+                copyInProgress = (file.CopyState.Status == CopyStatus.Pending);
+            }
+        }
+
+#if TASK
+        public static void WaitForCopyTask(CloudFile file)
+        {
+            bool copyInProgress = true;
+            while (copyInProgress)
+            {
+                Thread.Sleep(1000);
+                file.FetchAttributesAsync().Wait();
+                copyInProgress = (file.CopyState.Status == CopyStatus.Pending);
+            }
+        }
+#endif
+
+        public static List<string> CreateFiles(CloudFileShare share, int count)
+        {
+            string name;
+            List<string> files = new List<string>();
+            for (int i = 0; i < count; i++)
+            {
+                name = "ff" + Guid.NewGuid().ToString();
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference(name);
+                file.Create(0);
+                files.Add(name);
+            }
+            return files;
+        }
 
 #if TASK
         public static List<string> CreateFilesTask(CloudFileShare share, int count)

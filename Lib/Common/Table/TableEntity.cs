@@ -312,6 +312,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
 
                 EntityProperty newProperty = EntityProperty.CreateEntityPropertyFromObject(property.GetValue(entity, null), property.PropertyType);
+                
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)

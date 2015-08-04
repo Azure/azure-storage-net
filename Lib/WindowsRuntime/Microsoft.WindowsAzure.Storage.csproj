@@ -60,6 +60,7 @@
     <Compile Include="Blob\BlobReadStreamHelper.cs" />
     <Compile Include="Blob\BlobWriteStream.cs" />
     <Compile Include="Blob\BlobWriteStreamHelper.cs" />
+    <Compile Include="Blob\CloudAppendBlob.cs" />
     <Compile Include="Blob\CloudBlob.cs" />
     <Compile Include="Blob\CloudBlobClient.cs" />
     <Compile Include="Blob\CloudBlobContainer.cs" />

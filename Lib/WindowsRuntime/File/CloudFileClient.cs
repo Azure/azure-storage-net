@@ -18,10 +18,12 @@
 namespace Microsoft.WindowsAzure.Storage.File
 {
     using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.File.Protocol;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
@@ -170,6 +172,134 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
         /// <summary>
+        /// Gets the properties of the File service.
+        /// </summary>
+        /// <returns>The File service properties.</returns>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task<FileServiceProperties> GetServicePropertiesAsync()
+#else
+        public IAsyncOperation<FileServiceProperties> GetServicePropertiesAsync()
+#endif
+        {
+            return this.GetServicePropertiesAsync(null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Gets the properties of the File service.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The File service properties.</returns>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.GetServicePropertiesAsync(options, operationContext, CancellationToken.None);
+        }
+#else
+        public IAsyncOperation<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
+            operationContext = operationContext ?? new OperationContext();
+
+            return AsyncInfo.Run(
+                async (token) => await Executor.ExecuteAsync(
+                    this.GetServicePropertiesImpl(modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    token));
+        }
+#endif
+
+#if ASPNET_K
+        /// <summary>
+        /// Gets the properties of the File service.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The File service properties.</returns>
+        [DoesServiceRequest]
+        public Task<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Task.Run(
+                async () => await Executor.ExecuteAsync(
+                    this.GetServicePropertiesImpl(modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken), cancellationToken);
+        }
+#endif
+
+
+        /// <summary>
+        /// Sets the properties of the File service.
+        /// </summary>
+        /// <param name="properties">The File service properties.</param>
+        /// <returns>The properties of the File service.</returns>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task SetServicePropertiesAsync(FileServiceProperties properties)
+#else
+        public IAsyncAction SetServicePropertiesAsync(FileServiceProperties properties)
+#endif
+        {
+            return this.SetServicePropertiesAsync(properties, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Gets the properties of the File service.
+        /// </summary>
+        /// <param name="properties">The File service properties.</param>
+        /// <param name="requestOptions">A <see cref="FileRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The properties of the File service.</returns>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext)
+        {
+            return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
+        }
+#else
+        public IAsyncAction SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
+            operationContext = operationContext ?? new OperationContext();
+            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
+                 this.SetServicePropertiesImpl(properties, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                token));
+        }
+#endif
+
+#if ASPNET_K
+        /// <summary>
+        /// Gets the properties of the File service.
+        /// </summary>
+        /// <param name="properties">The File service properties.</param>
+        /// <param name="requestOptions">A <see cref="FileRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The properties of the File service.</returns>
+        [DoesServiceRequest]
+        public Task SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
+            operationContext = operationContext ?? new OperationContext();
+            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+                 this.SetServicePropertiesImpl(properties, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken), cancellationToken);
+        }
+#endif
+
+        /// <summary>
         /// Core implementation for the ListShares method.
         /// </summary>
         /// <param name="prefix">The share prefix.</param>
@@ -218,6 +348,55 @@ namespace Microsoft.WindowsAzure.Storage.File
             };
 
             return getCmd;
+        }
+
+        private RESTCommand<FileServiceProperties> GetServicePropertiesImpl(FileRequestOptions requestOptions)
+        {
+            RESTCommand<FileServiceProperties> retCmd = new RESTCommand<FileServiceProperties>(this.Credentials, this.StorageUri);
+
+            retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx);
+            retCmd.RetrieveResponseStream = true;
+            retCmd.Handler = this.AuthenticationHandler;
+            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            retCmd.PreProcessResponse =
+                (cmd, resp, ex, ctx) =>
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+
+            retCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            {
+                return Task.Factory.StartNew(() => FileHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
+            };
+
+            requestOptions.ApplyToStorageCommand(retCmd);
+            return retCmd;
+        }
+
+        private RESTCommand<NullType> SetServicePropertiesImpl(FileServiceProperties properties, FileRequestOptions requestOptions)
+        {
+            MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
+            try
+            {
+                properties.WriteServiceProperties(memoryStream);
+            }
+            catch (InvalidOperationException invalidOpException)
+            {
+                throw new ArgumentException(invalidOpException.Message, "properties");
+            }
+
+            RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
+            requestOptions.ApplyToStorageCommand(retCmd);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx);
+            retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            retCmd.StreamToDispose = memoryStream;
+            retCmd.RetrieveResponseStream = true;
+            retCmd.Handler = this.AuthenticationHandler;
+            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            retCmd.PreProcessResponse =
+                (cmd, resp, ex, ctx) =>
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
+            requestOptions.ApplyToStorageCommand(retCmd);
+            return retCmd;
         }
     }
 }

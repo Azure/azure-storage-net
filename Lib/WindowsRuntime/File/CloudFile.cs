@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
+    using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
@@ -35,6 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
+    using Windows.Foundation.Metadata;
     using Windows.Storage;
     using Windows.Storage.Streams;
 #endif
@@ -106,7 +108,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
-        /// Opens a stream for writing to the file.
+        /// Opens a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
         /// <param name="size">The size of the write operation, in bytes.</param>
         /// <returns>A stream to be used for writing to the file.</returns>
@@ -121,7 +123,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Opens a stream for writing to the file.
+        /// Opens a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
         /// <param name="size">The size of the write operation, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
@@ -199,7 +201,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Uploads a stream to a file. 
+        /// Uploads a stream to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="source">The stream providing the file content.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -214,12 +216,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Uploads a stream to a file. 
+        /// Uploads a stream to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="source">The stream providing the file content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromStreamAsync(Stream source, long length)
 #else
@@ -232,7 +234,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Uploads a stream to a file. 
+        /// Uploads a stream to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="source">The stream providing the file content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
@@ -252,7 +254,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Uploads a stream to a file. 
+        /// Uploads a stream to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="source">The stream providing the file content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -260,7 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
 #else
@@ -281,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -297,7 +299,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -306,7 +308,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
-        /// Uploads a stream to a file. 
+        /// Uploads a stream to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="source">The stream providing the file content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -314,7 +316,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -330,7 +332,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #else
@@ -386,12 +388,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Uploads a file to the Windows Azure File Service. 
+        /// Uploads a file to the Azure File Service. If the file already exists on the service, it will be overwritten.
         /// </summary>
 #if ASPNET_K
         /// <param name="path">A string containing the path to the target file.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromFileAsync(string path, FileMode mode)
         {
@@ -408,7 +410,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
-        /// Uploads a file to a file. 
+        /// Uploads a file to the Azure File Service. If the file already exists on the service, it will be overwritten.
         /// </summary>
 #if ASPNET_K
         /// <param name="path">A string containing the path to the target file.</param>
@@ -416,7 +418,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -445,7 +447,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
 #if ASPNET_K
         /// <summary>
-        /// Uploads a file to a file. 
+        /// Uploads a file to the Azure File Service. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the path to the target file.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
@@ -453,7 +455,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -470,13 +472,13 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
-        /// Uploads the contents of a byte array to a file.
+        /// Uploads the contents of a byte array to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the file.</param>
         /// <param name="count">The number of bytes to be written to the file.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count)
 #else
@@ -489,7 +491,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Uploads the contents of a byte array to a file.
+        /// Uploads the contents of a byte array to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the file.</param>
@@ -498,7 +500,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -527,7 +529,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -539,11 +541,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
-        /// Uploads a string of text to a file. 
+        /// Uploads a string of text to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadTextAsync(string content)
 #else
@@ -556,14 +558,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Uploads a string of text to a file. 
+        /// Uploads a string of text to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadTextAsync(string content, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -581,17 +583,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-
 #if ASPNET_K
         /// <summary>
-        /// Uploads a string of text to a file. 
+        /// Uploads a string of text to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
         /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UploadTextAsync(string content, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -607,7 +608,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="target">The target stream.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target)
 #else
@@ -627,7 +628,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -642,7 +643,6 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-
 #if ASPNET_K
         /// <summary>
         /// Downloads the contents of a file to a stream.
@@ -652,7 +652,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -666,7 +666,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToFileAsync(string path, FileMode mode)
         {
@@ -691,7 +691,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -729,7 +729,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -808,7 +808,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="offset">The offset at which to begin downloading the file, in bytes.</param>
         /// <param name="length">The length of the data to download from the file, in bytes.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length)
 #else
@@ -893,7 +893,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -929,7 +929,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1024,7 +1024,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
-        /// Creates a file.
+        /// Creates a file. If the file already exists, it will be overwritten.
         /// </summary>
         /// <param name="size">The maximum size of the file, in bytes.</param>
         [DoesServiceRequest]
@@ -1038,7 +1038,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Creates a file.
+        /// Creates a file. If the file already exists, it will be overwritten.
         /// </summary>
         /// <param name="size">The maximum size of the file, in bytes.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the file. If null, no condition is used.</param>
@@ -1064,7 +1064,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
 #if ASPNET_K
         /// <summary>
-        /// Creates a file.
+        /// Creates a file. If the file already exists, it will be overwritten.
         /// </summary>
         /// <param name="size">The maximum size of the file, in bytes.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the file. If null, no condition is used.</param>
@@ -1596,7 +1596,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
         /// on the file. May be <code>null</code> or an empty string.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5)
 #else
@@ -1619,7 +1619,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
@@ -1637,7 +1637,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -1662,40 +1662,53 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 Stream rangeDataAsStream = rangeData.AsStreamForRead();
                 Stream seekableStream = rangeDataAsStream;
-                if (!rangeDataAsStream.CanSeek || requiresContentMD5)
+                bool seekableStreamCreated = false;
+
+                try
                 {
-                    Stream writeToStream;
-                    if (rangeDataAsStream.CanSeek)
+                    if (!rangeDataAsStream.CanSeek || requiresContentMD5)
                     {
-                        writeToStream = Stream.Null;
-                    }
-                    else
-                    {
-                        seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                        writeToStream = seekableStream;
+                        Stream writeToStream;
+                        if (rangeDataAsStream.CanSeek)
+                        {
+                            writeToStream = Stream.Null;
+                        }
+                        else
+                        {
+                            seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                            seekableStreamCreated = true;
+                            writeToStream = seekableStream;
+                        }
+
+                        StreamDescriptor streamCopyState = new StreamDescriptor();
+                        long startPosition = seekableStream.Position;
+                        await rangeDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
+                        seekableStream.Position = startPosition;
+
+                        if (requiresContentMD5)
+                        {
+                            contentMD5 = streamCopyState.Md5;
+                        }
+
+                        if (modifiedOptions.MaximumExecutionTime.HasValue)
+                        {
+                            modifiedOptions.MaximumExecutionTime -= DateTime.Now.Subtract(streamCopyStartTime);
+                        }
                     }
 
-                    StreamDescriptor streamCopyState = new StreamDescriptor();
-                    long startPosition = seekableStream.Position;
-                    await rangeDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
-                    seekableStream.Position = startPosition;
-
-                    if (requiresContentMD5)
+                    await Executor.ExecuteAsyncNullReturn(
+                        this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+                        modifiedOptions.RetryPolicy,
+                        operationContext,
+                        cancellationToken);
+                }
+                finally
+                {
+                    if (seekableStreamCreated)
                     {
-                        contentMD5 = streamCopyState.Md5;
-                    }
-
-                    if (modifiedOptions.MaximumExecutionTime.HasValue)
-                    {
-                        modifiedOptions.MaximumExecutionTime -= DateTime.Now.Subtract(streamCopyStartTime);
+                        seekableStream.Dispose();
                     }
                 }
-
-                await Executor.ExecuteAsyncNullReturn(
-                    this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
 #if ASPNET_K
             }, cancellationToken);
 #else
@@ -1767,11 +1780,214 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
-        /// Implements getting the file.
+        /// Begins an operation to start copying an existing blob or Azure file's contents, properties, and metadata to a new Azure file.
         /// </summary>
-        /// <param name="accessCondition">An object that represents the access conditions for the file. If null, no condition is used.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="SynchronousTask"/> that gets the stream.</returns>
+        /// <param name="source">The URI of a source object.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the file's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task<string> StartCopyAsync(Uri source)
+#else
+        [DefaultOverload]
+        public IAsyncOperation<string> StartCopyAsync(Uri source)
+#endif      
+        {
+            return this.StartCopyAsync(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying an existing blob's contents, properties, and metadata to a new Azure file.
+        /// </summary>
+        /// <param name="source">The source blob.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the file's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task<string> StartCopyAsync(CloudBlob source)
+#else
+        public IAsyncOperation<string> StartCopyAsync(CloudBlob source)
+#endif
+        {
+            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying an existing Azure file's contents, properties, and metadata to a new Azure file.
+        /// </summary>
+        /// <param name="source">The source file.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the file's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task<string> StartCopyAsync(CloudFile source)
+#else
+        public IAsyncOperation<string> StartCopyAsync(CloudFile source)
+#endif
+        {
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source));
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying a blob or file's contents, properties, and metadata to a new Azure file.
+        /// </summary>
+        /// <param name="source">The URI of a source object.</param>
+        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the file's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+        }
+#else
+        [DefaultOverload]
+        public IAsyncOperation<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            CommonUtility.AssertNotNull("source", source);
+            
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsync(
+                this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                token));
+        }
+#endif
+
+#if ASPNET_K
+        /// <summary>
+        /// Begins an operation to start copying a blob or file's contents, properties, and metadata to a new Azure file.
+        /// </summary>
+        /// <param name="source">The URI of a source object.</param>
+        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the file's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Task.Run(async () => await Executor.ExecuteAsync<string>(
+                this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken), cancellationToken);
+        }
+#endif
+
+            /// <summary>
+            /// Begins an operation to start copying a blob's contents, properties, and metadata to a new Azure file.
+            /// </summary>
+            /// <param name="source">The source blob.</param>
+            /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+            /// <param name="destAccessCondition">An object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+            /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+            /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+            /// <returns>The copy ID associated with the copy operation.</returns>
+            /// <remarks>
+            /// This method fetches the file's ETag, last modified time, and part of the copy state.
+            /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+            /// </remarks>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task<string> StartCopyAsync(CloudBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
+#else
+        public IAsyncOperation<string> StartCopyAsync(CloudBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
+#endif
+
+        {
+            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Aborts an ongoing copy operation.
+        /// </summary>
+        /// <param name="copyId">A string identifying the copy operation.</param>
+        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task AbortCopyAsync(string copyId)
+#else
+        public IAsyncAction AbortCopyAsync(string copyId)
+#endif
+
+        {
+            return this.AbortCopyAsync(copyId, null /* accessCondition */, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Aborts an ongoing copy operation.
+        /// </summary>
+        /// <param name="copyId">A string identifying the copy operation.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task AbortCopyAsync(string copyId, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.AbortCopyAsync(copyId, accessCondition, options, operationContext, CancellationToken.None);
+        }
+#else
+        public IAsyncAction AbortCopyAsync(string copyId, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
+                this.AbortCopyImpl(copyId, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                token));
+        }
+#endif
+
+#if ASPNET_K
+        /// <summary>
+        /// Aborts an ongoing copy operation.
+        /// </summary>
+        /// <param name="copyId">A string identifying the copy operation.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public Task AbortCopyAsync(string copyId, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+               this.AbortCopyImpl(copyId, accessCondition, modifiedOptions),
+               modifiedOptions.RetryPolicy,
+               operationContext,
+               cancellationToken), cancellationToken);
+        }
+#endif
+
+            /// <summary>
+            /// Implements getting the file.
+            /// </summary>
+            /// <param name="accessCondition">An object that represents the access conditions for the file. If null, no condition is used.</param>
+            /// <param name="options">An object that specifies additional options for the request.</param>
+            /// <returns>A <see cref="SynchronousTask"/> that gets the stream.</returns>
         private RESTCommand<NullType> GetFileImpl(Stream destStream, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options)
         {
             string lockedETag = null;
@@ -2180,6 +2396,79 @@ namespace Microsoft.WindowsAzure.Storage.File
             };
 
             return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation of the StartCopy method. Result is a CloudFileAttributes object derived from the response headers.
+        /// </summary>
+        /// <param name="source">The URI of the source object.</param>
+        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source object. If null, no condition is used.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination file. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="setResult">A delegate for setting the CloudFileAttributes result.</param>
+        /// <returns>A <see cref="RESTCommand"/> that starts to copy the object.</returns>
+        internal RESTCommand<string> StartCopyImpl(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options)
+        {
+            if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
+            {
+                throw new ArgumentException(SR.LeaseConditionOnSource, "sourceAccessCondition");
+            }
+
+            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, this.attributes.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
+            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                HttpRequestMessage msg = FileHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceAccessCondition, destAccessCondition, cnt, ctx);
+                FileHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
+                return msg;
+            };
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
+                CopyState state = FileHttpResponseParsers.GetCopyAttributes(resp);
+                this.attributes.Properties = FileHttpResponseParsers.GetProperties(resp);
+                this.attributes.Metadata = FileHttpResponseParsers.GetMetadata(resp);
+                this.attributes.CopyState = state;
+                return state.CopyId;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation of the AbortCopy method. No result is produced.
+        /// </summary>
+        /// <param name="copyId">The copy ID of the copy operation to abort.</param>
+        /// <param name="accessCondition">An object that represents the access conditions for the operation. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="TaskSequence"/> that copies the object.</returns>
+        internal RESTCommand<NullType> AbortCopyImpl(string copyId, AccessCondition accessCondition, FileRequestOptions options)
+        {
+            CommonUtility.AssertNotNull("copyId", copyId);
+
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
+            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.AbortCopy(uri, serverTimeout, copyId, accessCondition, cnt, ctx);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Converts the source file of a copy operation to an appropriate access URI, taking Shared Access Signature credentials into account.
+        /// </summary>
+        /// <param name="source">The source file.</param>
+        /// <returns>A URI addressing the source file, using SAS if appropriate.</returns>
+        internal static Uri SourceFileToUri(CloudFile source)
+        {
+            CommonUtility.AssertNotNull("source", source);
+            return source.ServiceClient.Credentials.TransformUri(source.Uri);
         }
 
         /// <summary>

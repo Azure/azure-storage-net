@@ -64,8 +64,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(BlobName);
-                await blockBlob.UploadFromStreamAsync(originalData);
+
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                await appendBlob.CreateOrReplaceAsync();
+                await appendBlob.AppendBlockAsync(originalData, null);
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 await blob.FetchAttributesAsync();
@@ -98,6 +100,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await snapshot1Clone.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties, false);
 
+                CloudAppendBlob snapshotCopy = container.GetAppendBlobReference("blob2");
+                await snapshotCopy.StartCopyAsync((TestHelper.Defiddler(snapshot1.Uri)));
+                await WaitForCopyAsync(snapshotCopy);
+                Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
+
+                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()))
+                {
+                    snapshotStream.Seek(0, SeekOrigin.End);
+                    TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
+                }
+
+                await appendBlob.CreateOrReplaceAsync();
+                await appendBlob.FetchAttributesAsync(); // This is needed as cache settings are not updated with create call above.
+                await blob.FetchAttributesAsync();
+
                 using (Stream snapshotStream = (await snapshot1.OpenReadAsync()))
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
@@ -106,9 +123,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 BlobResultSegment resultSegment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null);
                 List<IListBlobItem> blobs = resultSegment.Results.ToList();
-                Assert.AreEqual(3, blobs.Count);
+                Assert.AreEqual(4, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                AssertAreEqual(appendBlob, (CloudBlob)blobs[2]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
             }
             finally
             {
@@ -129,8 +148,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await container.CreateAsync();
 
-                CloudPageBlob pageBlob = container.GetPageBlobReference(BlobName);
-                await pageBlob.CreateAsync(512);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                await appendBlob.CreateOrReplaceAsync();
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 blob.Metadata["Hello"] = "World";

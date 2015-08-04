@@ -56,9 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Since this is done on the copy of the options object that the client lib maintains and not on the user's options object and is done after getting 
             // the transform function, it should be fine. Setting this ensures that an error is not thrown when PutBlock is called internally from the write method on the stream.
-            // The other way to do this is to have an internal bool property on request options that specifies whether range upload operations should validate
-            // that encryption policy is not set.
-            options.EncryptionPolicy = null;
+            options.SkipEncryptionPolicyValidation = true;
 
             this.transform = transform;
             this.writeStream = new BlobWriteStream(blockBlob, accessCondition, options, operationContext) { IgnoreFlush = true };
@@ -86,12 +84,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Since this is done on the copy of the options object that the client lib maintains and not on the user's options object and is done after getting 
             // the transform function, it should be fine. Setting this ensures that an error is not thrown when PutPage is called internally from the write method on the stream.
-            // The other way to do this is to have an internal bool property on request options that specifies whether range upload operations should validate
-            // that encryption policy is not set.
-            options.EncryptionPolicy = null;
+            options.SkipEncryptionPolicyValidation = true;
 
             this.transform = transform;
             this.writeStream = new BlobWriteStream(pageBlob, pageBlobSize, createNew, accessCondition, options, operationContext) { IgnoreFlush = true };
+            this.cryptoStream = new CryptoStream(this.writeStream, transform, CryptoStreamMode.Write);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the BlobWriteStream class for an append blob.
+        /// </summary>
+        /// <param name="appendBlob">Blob reference to write to.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="transform">The ICryptoTransform function for the request.</param>        
+        internal BlobEncryptedWriteStream(CloudAppendBlob appendBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, ICryptoTransform transform)
+        {
+            CommonUtility.AssertNotNull("transform", transform);
+
+            if (options.EncryptionPolicy.EncryptionMode != BlobEncryptionMode.FullBlob)
+            {
+                throw new InvalidOperationException(SR.InvalidEncryptionMode, null);
+            }
+
+            // Since this is done on the copy of the options object that the client lib maintains and not on the user's options object and is done after getting 
+            // the transform function, it should be fine. Setting this ensures that an error is not thrown when AppendBlock is called internally from the write method on the stream.
+            options.SkipEncryptionPolicyValidation = true;
+
+            this.transform = transform;
+            this.writeStream = new BlobWriteStream(appendBlob, accessCondition, options, operationContext) { IgnoreFlush = true };
             this.cryptoStream = new CryptoStream(this.writeStream, transform, CryptoStreamMode.Write);
         }
 

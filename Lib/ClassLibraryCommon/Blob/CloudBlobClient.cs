@@ -808,6 +808,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     case BlobType.PageBlob:
                         return new CloudPageBlob(attributes, client);
 
+                    case BlobType.AppendBlob:
+                        return new CloudAppendBlob(attributes, client);
+
                     default:
                         throw new InvalidOperationException();
                 }
@@ -1179,6 +1182,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             catch (InvalidOperationException invalidOpException)
             {
+                str.Dispose();
                 throw new ArgumentException(invalidOpException.Message, "properties");
             }
 
@@ -1186,6 +1190,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
             retCmd.SendStream = str;
+            retCmd.StreamToDispose = str;
             retCmd.BuildRequestDelegate = BlobHttpWebRequestFactory.SetServiceProperties;
             retCmd.RecoveryAction = RecoveryActions.RewindStream;
             retCmd.SignRequest = this.AuthenticationHandler.SignRequest;

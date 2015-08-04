@@ -249,22 +249,27 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string outgoingMessageString = null;
 
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-            if (options != null && options.EncryptionPolicy != null)
+            if (options != null)
             {
-                // Create an encrypted message that will hold the message contents along with encryption related metadata and return it.
-                // The encrypted message is already Base 64 encoded. So no need to process further in this method.
-                string encryptedMessageString = options.EncryptionPolicy.EncryptMessage(this.AsBytes);
+                options.AssertPolicyIfRequired();
 
-                // the size of Base64 encoded string is the number of bytes this message will take up on server.
-                if (encryptedMessageString.Length > CloudQueueMessage.MaxMessageSize)
+                if (options.EncryptionPolicy != null)
                 {
-                    throw new ArgumentException(string.Format(
-                        CultureInfo.InvariantCulture,
-                        SR.EncryptedMessageTooLarge,
-                        CloudQueueMessage.MaxMessageSize));
-                }
+                    // Create an encrypted message that will hold the message contents along with encryption related metadata and return it.
+                    // The encrypted message is already Base 64 encoded. So no need to process further in this method.
+                    string encryptedMessageString = options.EncryptionPolicy.EncryptMessage(this.AsBytes);
 
-                return encryptedMessageString;
+                    // the size of Base64 encoded string is the number of bytes this message will take up on server.
+                    if (encryptedMessageString.Length > CloudQueueMessage.MaxMessageSize)
+                    {
+                        throw new ArgumentException(string.Format(
+                            CultureInfo.InvariantCulture,
+                            SR.EncryptedMessageTooLarge,
+                            CloudQueueMessage.MaxMessageSize));
+                    }
+
+                    return encryptedMessageString;
+                }
             }
 #endif
 

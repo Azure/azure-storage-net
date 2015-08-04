@@ -49,5 +49,13 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
         TimeSpan? MaximumExecutionTime { get; set; }
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        /// <summary>
+        /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
+        /// </summary>
+        /// <value>Use <c>true</c> to specify that data should be encrypted/decrypted for all transactions; otherwise, <c>false</c>.</value>
+        bool? RequireEncryption { get; set; }
+#endif
     }
 }

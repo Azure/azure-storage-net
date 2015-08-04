@@ -1978,6 +1978,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
             retCmd.BuildRequestDelegate = TableHttpWebRequestFactory.SetAcl;
             retCmd.SendStream = str;
+            retCmd.StreamToDispose = str;
             retCmd.RecoveryAction = RecoveryActions.RewindStream;
             retCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;

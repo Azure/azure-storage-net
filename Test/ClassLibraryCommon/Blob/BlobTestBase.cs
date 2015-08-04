@@ -70,6 +70,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         pageBlob.Create(0);
                         blobs.Add(name);
                         break;
+
+                    case BlobType.AppendBlob:
+                        name = "ab" + Guid.NewGuid().ToString();
+                        CloudAppendBlob appendBlob = container.GetAppendBlobReference(name);
+                        appendBlob.CreateOrReplace();
+                        blobs.Add(name);
+                        break;
                 }
             }
             return blobs;
@@ -97,6 +104,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         pageBlob.CreateAsync(0).Wait();
                         blobs.Add(name);
                         break;
+
+                    case BlobType.AppendBlob:
+                        name = "ab" + Guid.NewGuid().ToString();
+                        CloudAppendBlob appendBlob = container.GetAppendBlobReference(name);
+                        appendBlob.CreateOrReplaceAsync().Wait();
+                        blobs.Add(name);
+                        break;
                 }
             }
             return blobs;
@@ -118,10 +132,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         stream.Write(padding, 0, padding.Length);
                     }
                 }
+                
 
                 stream.Seek(0, SeekOrigin.Begin);
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
-                if (blob.BlobType == BlobType.PageBlob)
+
+                if (blob.BlobType == BlobType.AppendBlob)
+                {
+                    CloudAppendBlob blob1 = blob as CloudAppendBlob;
+                    blob1.CreateOrReplace();
+                    blob1.AppendBlock(stream, null);
+                }
+                else if (blob.BlobType == BlobType.PageBlob)
                 {
                     CloudPageBlob pageBlob = blob as CloudPageBlob;
                     pageBlob.UploadFromStream(stream, accessCondition, options, operationContext);
@@ -152,24 +174,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 stream.Seek(0, SeekOrigin.Begin);
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    IAsyncResult result;
-                    if (blob.BlobType == BlobType.PageBlob)
+                    if (blob.BlobType == BlobType.AppendBlob)
+                    {
+                        CloudAppendBlob blob1 = blob as CloudAppendBlob;
+
+                        IAsyncResult result = blob1.BeginCreateOrReplace(
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blob1.EndCreateOrReplace(result);
+
+                        result = blob1.BeginAppendBlock(stream, null,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blob1.EndAppendBlock(result);
+                    }
+                    else if (blob.BlobType == BlobType.PageBlob)
                     {
                         CloudPageBlob pageBlob = blob as CloudPageBlob;
-                        result = pageBlob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
-                        ar => waitHandle.Set(),
-                        null);
+                        IAsyncResult result = pageBlob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
+                                               ar => waitHandle.Set(),
+                                               null);
                         waitHandle.WaitOne();
                         pageBlob.EndUploadFromStream(result);
                     }
                     else
                     {
                         CloudBlockBlob blockBlob = blob as CloudBlockBlob;
-                        result = blockBlob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
-                        ar => waitHandle.Set(),
-                        null);
+                        IAsyncResult result = blockBlob.BeginUploadFromStream(stream, accessCondition, options, operationContext,
+                                                ar => waitHandle.Set(),
+                                                null);
                         waitHandle.WaitOne();
                         blockBlob.EndUploadFromStream(result);
                     }
@@ -196,9 +234,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 stream.Seek(0, SeekOrigin.Begin);
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+
                 try
                 {
-                    if (blob.BlobType == BlobType.PageBlob)
+                    if (blob.BlobType == BlobType.AppendBlob)
+                    {
+                        CloudAppendBlob blob1 = blob as CloudAppendBlob;
+                        blob1.CreateOrReplaceAsync().Wait();
+                        blob1.AppendBlock(stream, null);
+                    }
+                    else if (blob.BlobType == BlobType.PageBlob)
                     {
                         CloudPageBlob pageBlob = blob as CloudPageBlob;
                         pageBlob.UploadFromStreamAsync(stream, accessCondition, options, operationContext).Wait();

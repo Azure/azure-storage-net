@@ -259,7 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (this.SnapshotTime.HasValue)
                 {
                     UriQueryBuilder builder = new UriQueryBuilder();
-                    builder.Add("snapshot", BlobRequest.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value));
+                    builder.Add("snapshot", Request.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value));
                     return builder.AddToUri(this.Uri);
                 }
                 else
@@ -281,7 +281,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (this.SnapshotTime.HasValue)
                 {
                     UriQueryBuilder builder = new UriQueryBuilder();
-                    builder.Add("snapshot", BlobRequest.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value));
+                    builder.Add("snapshot", Request.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value));
                     return builder.AddToUri(this.StorageUri);
                 }
                 else
@@ -375,7 +375,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy)
         {
-            return this.GetSharedAccessSignature(policy, null /* headers */, null /* groupPolicyIdentifier */, null /* sasVersion */);
+            return this.GetSharedAccessSignature(policy, null /* headers */, null /* groupPolicyIdentifier */);
         }
 
         /// <summary>
@@ -390,7 +390,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, string groupPolicyIdentifier)
         {
-            return this.GetSharedAccessSignature(policy, null /* headers */, groupPolicyIdentifier, null /* sasVersion */);
+            return this.GetSharedAccessSignature(policy, null /* headers */, groupPolicyIdentifier);
         }
 
         /// <summary>
@@ -401,7 +401,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A shared access signature, as a URI query string.</returns>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers)
         {
-            return this.GetSharedAccessSignature(policy, headers, null /* groupPolicyIdentifier */, null /* sasVersion */);
+            return this.GetSharedAccessSignature(policy, headers, null /* groupPolicyIdentifier */);
         }
 
         /// <summary>
@@ -413,7 +413,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A shared access signature, as a URI query string.</returns>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier)
         {
-            return this.GetSharedAccessSignature(policy, headers, groupPolicyIdentifier, null /* sasVersion */);
+            if (!this.ServiceClient.Credentials.IsSharedKey)
+            {
+                string errorMessage = string.Format(CultureInfo.InvariantCulture, SR.CannotCreateSASWithoutAccountKey);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */, Constants.HeaderConstants.TargetStorageVersion);
+            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
+            string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
+
+            // Future resource type changes from "c" => "container"
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion);
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -424,6 +437,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
+        [Obsolete("This overload has been deprecated because the SAS tokens generated using the current version work fine with old libraries. Please use the other overloads.")]
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, string sasVersion)
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
@@ -433,7 +447,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
-            string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */);
+            string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */, validatedSASVersion);
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
             string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, validatedSASVersion, accountKey.KeyValue);
 
@@ -451,20 +465,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>This is used by both Shared Access and Copy blob operations.</para>
         /// </summary>
         /// <param name="ignoreSnapshotTime">Indicates if the snapshot time is ignored.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
         /// <returns>The canonical name of the blob.</returns>
-        private string GetCanonicalName(bool ignoreSnapshotTime)
+        private string GetCanonicalName(bool ignoreSnapshotTime, string sasVersion)
         {
             string accountName = this.ServiceClient.Credentials.AccountName;
             string containerName = this.Container.Name;
-
+ 
             // Replace \ with / for uri compatibility when running under .net 4.5. 
             string blobName = this.Name.Replace('\\', '/');
-
-            string canonicalName = string.Format(CultureInfo.InvariantCulture, "/{0}/{1}/{2}", accountName, containerName, blobName);
-
-            if (!ignoreSnapshotTime && this.SnapshotTime != null)
+            string canonicalNameFormat = "/{0}/{1}/{2}/{3}";
+            if (sasVersion == Constants.VersionConstants.February2012 || sasVersion == Constants.VersionConstants.August2013)
             {
-                canonicalName += "?snapshot=" + BlobRequest.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value);
+                // Do not prepend service name for older versions
+                canonicalNameFormat = "/{1}/{2}/{3}";
+            }
+
+            string canonicalName = string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Blob, accountName, containerName, blobName);
+ 
+             if (!ignoreSnapshotTime && this.SnapshotTime != null)
+             {
+                canonicalName += "?snapshot=" + Request.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value);
             }
 
             return canonicalName;
@@ -481,7 +502,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             DateTimeOffset? parsedSnapshot;
             this.attributes.StorageUri = NavigationHelper.ParseBlobQueryAndVerify(address, out parsedCredentials, out parsedSnapshot);
 
-            if ((parsedCredentials != null) && (credentials != null) && !parsedCredentials.Equals(credentials))
+            if (parsedCredentials != null && credentials != null)
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);

@@ -210,6 +210,10 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                                             shareProperties.ETag = reader.ReadElementContentAsString();
                                             break;
 
+                                        case Constants.QuotaElement:
+                                            shareProperties.Quota = reader.ReadElementContentAsInt();
+                                            break;
+
                                         default:
                                             reader.Skip();
                                             break;

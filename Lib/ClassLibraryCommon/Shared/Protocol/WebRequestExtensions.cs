@@ -113,6 +113,20 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Applies the append condition to the web request.
+        /// </summary>
+        /// <param name="request">The request to be modified.</param>
+        /// <param name="accessCondition">Access condition to be added to the request.</param>
+        internal static void ApplyAppendCondition(this HttpWebRequest request, AccessCondition accessCondition)
+        {
+            if (accessCondition != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.IfMaxSizeLessThanOrEqualHeader, accessCondition.IfMaxSizeLessThanOrEqual);
+                request.AddOptionalHeader(Constants.HeaderConstants.IfAppendPositionEqualHeader, accessCondition.IfAppendPositionEqual);
+            }
+        }
+
+        /// <summary>
         /// Applies the condition to the web request.
         /// </summary>
         /// <param name="request">The request to be modified.</param>

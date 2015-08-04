@@ -18,10 +18,15 @@
 namespace Microsoft.WindowsAzure.Storage.File
 {
     using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File.Protocol;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
 
     /// <summary>
     /// Represents a Windows Azure File.
@@ -37,6 +42,15 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Default is 4 MB.
         /// </summary>
         private int streamMinimumReadSizeInBytes = Constants.DefaultWriteBlockSizeBytes;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudFile"/> class using an absolute URI to the file.
+        /// </summary>
+        /// <param name="fileAbsoluteUri">The absolute URI to the file.</param>
+        public CloudFile(Uri fileAbsoluteUri)
+            : this(fileAbsoluteUri, null /* credentials */)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFile"/> class using an absolute URI to the file.
@@ -208,6 +222,18 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
+        /// Gets the state of the most recent or pending copy operation.
+        /// </summary>
+        /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if there is no copy state for the file.</value>
+        public CopyState CopyState
+        {
+            get
+            {
+                return this.attributes.CopyState;
+            }
+        }
+
+        /// <summary>
         /// Gets the file's name.
         /// </summary>
         /// <value>The file's name.</value>
@@ -255,16 +281,100 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
+        /// Returns a shared access signature for the file.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessFilePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        public string GetSharedAccessSignature(SharedAccessFilePolicy policy)
+        {
+            return this.GetSharedAccessSignature(policy, null /* headers */, null /* groupPolicyIdentifier */);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the file.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessFilePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+#if WINDOWS_RT
+        [Windows.Foundation.Metadata.DefaultOverload]
+#endif
+        public string GetSharedAccessSignature(SharedAccessFilePolicy policy, string groupPolicyIdentifier)
+        {
+            return this.GetSharedAccessSignature(policy, null /* headers */, groupPolicyIdentifier);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the file.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessFilePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="headers">A <see cref="SharedAccessFileHeaders"/> object specifying optional header values to set for a file accessed with this SAS.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        public string GetSharedAccessSignature(SharedAccessFilePolicy policy, SharedAccessFileHeaders headers)
+        {
+            return this.GetSharedAccessSignature(policy, headers, null /* groupPolicyIdentifier */);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the file.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessFilePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="headers">A <see cref="SharedAccessFileHeaders"/> object specifying optional header values to set for a file accessed with this SAS.</param>
+        /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        public string GetSharedAccessSignature(SharedAccessFilePolicy policy, SharedAccessFileHeaders headers, string groupPolicyIdentifier)
+        {
+            if (!this.ServiceClient.Credentials.IsSharedKey)
+            {
+                string errorMessage = string.Format(CultureInfo.InvariantCulture, SR.CannotCreateSASWithoutAccountKey);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            string resourceName = this.GetCanonicalName();
+            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
+            string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
+
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "f", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion);
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Gets the canonical name of the file, formatted as file/&lt;account-name&gt;/&lt;share-name&gt;/&lt;directory-name&gt;/&lt;file-name&gt;.
+        /// <para>This is used by both Shared Access and Copy operations.</para>
+        /// </summary>
+        /// <returns>The canonical name of the file.</returns>
+        private string GetCanonicalName()
+        {
+            string accountName = this.ServiceClient.Credentials.AccountName;
+            string shareName = this.Share.Name;
+
+            // Replace \ with / for uri compatibility when running under .net 4.5. 
+            string fileAndDirectoryName = NavigationHelper.GetFileAndDirectoryName(this.Uri, this.ServiceClient.UsePathStyleUris).Replace('\\', '/');
+            return string.Format(CultureInfo.InvariantCulture, "/{0}/{1}/{2}/{3}", SR.File, accountName, shareName, fileAndDirectoryName);
+        }
+
+        /// <summary>
         /// Parse URI.
         /// </summary>
         /// <param name="address">The complete Uri.</param>
         /// <param name="credentials">The credentials to use.</param>
         private void ParseQueryAndVerify(StorageUri address, StorageCredentials credentials)
         {
-            this.attributes.StorageUri = address;
+            StorageCredentials parsedCredentials;
+            this.attributes.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials);
+
+            if (parsedCredentials != null && credentials != null)
+            {
+                string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
+                throw new ArgumentException(error);
+            }
+
             if (this.ServiceClient == null)
             {
-                this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials);
+                this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials ?? parsedCredentials);
             }
             
             this.Name = NavigationHelper.GetFileName(this.Uri, this.ServiceClient.UsePathStyleUris);

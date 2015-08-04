@@ -67,37 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             {
                 canonicalizedString.AppendCanonicalizedElement(null);
                 canonicalizedString.AppendCanonicalizedElement(null);
-
-#if WINDOWS_PHONE
-                // Always add 0 for content length header for all requests except GET as Wininet on windows phone 8.1 has that behaviour
-                if (request.Method != HttpMethod.Get)
-                {
-                    canonicalizedString.AppendCanonicalizedElement("0");  
-                }
-                else
-                {
-                    canonicalizedString.AppendCanonicalizedElement(null);  
-                }
-#elif ASPNET_K && ASPNETCORE50
-                if (request.Method == HttpMethod.Put)
-                {
-                    canonicalizedString.AppendCanonicalizedElement("0");
-                }
-                else
-                {
-                    canonicalizedString.AppendCanonicalizedElement(null);
-                }
-#else
-                if (request.Method == HttpMethod.Put || request.Method == HttpMethod.Delete)
-                {
-                    canonicalizedString.AppendCanonicalizedElement("0");
-                }
-                else
-                {    
-                    canonicalizedString.AppendCanonicalizedElement(null); 
-                }
-#endif
-
+                canonicalizedString.AppendCanonicalizedElement(null);
                 canonicalizedString.AppendCanonicalizedElement(null);
                 canonicalizedString.AppendCanonicalizedElement(null);
             }

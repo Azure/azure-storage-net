@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 #endif
@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// The algorithm used for encryption.
         /// </summary>
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         [JsonConverter(typeof(StringEnumConverter))]
 #endif
         public EncryptionAlgorithm EncryptionAlgorithm { get; set; }

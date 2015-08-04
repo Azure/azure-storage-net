@@ -17,6 +17,8 @@
 
 namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using System.Collections.Generic;
     using System.Net.Http;
 
     internal static partial class DirectoryHttpResponseParsers
@@ -43,6 +45,16 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             }
 
             return directoryProperties;
+        }
+
+        /// <summary>
+        /// Gets the user-defined metadata.
+        /// </summary>
+        /// <param name="response">The response from server.</param>
+        /// <returns>A <see cref="IDictionary"/> of the metadata.</returns>
+        public static IDictionary<string, string> GetMetadata(HttpResponseMessage response)
+        {
+            return HttpResponseParsers.GetMetadata(response);
         }
     }
 }

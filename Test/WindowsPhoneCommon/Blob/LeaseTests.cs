@@ -1227,7 +1227,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 expectedStatusCode,
                 expectedErrorCode);
             await TestHelper.ExpectedExceptionAsync(
-                async () => await testBlob.StartCopyFromBlobAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, operationContext),
+                async () => await testBlob.StartCopyAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, operationContext),
                 operationContext,
                 description + " (Copy From)",
                 expectedStatusCode,
@@ -1257,7 +1257,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await testBlob.SetMetadataAsync(testAccessCondition, null /* options */, null);
             await testBlob.SetPropertiesAsync(testAccessCondition, null /* options */, null);
             await UploadTextAsync(testBlob, "No Problem", Encoding.UTF8, testAccessCondition, null /* options */, null);
-            await testBlob.StartCopyFromBlobAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, null);
+            await testBlob.StartCopyAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, null);
 
             while (testBlob.CopyState.Status == CopyStatus.Pending)
             {

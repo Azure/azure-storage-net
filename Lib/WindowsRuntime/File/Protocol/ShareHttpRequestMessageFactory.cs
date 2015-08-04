@@ -19,10 +19,12 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
+    using System.Text;
 
     internal static class ShareHttpRequestMessageFactory
     {
@@ -30,12 +32,20 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// Constructs a web request to create a new share.
         /// </summary>
         /// <param name="uri">The absolute URI to the share.</param>
+        /// <param name="properties">Properties to set on the share.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Create(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        public static HttpRequestMessage Create(Uri uri, FileShareProperties properties, int? timeout, HttpContent content, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            return HttpRequestMessageFactory.Create(uri, timeout, shareBuilder, content, operationContext);
+            
+            HttpRequestMessage request = HttpRequestMessageFactory.Create(uri, timeout, shareBuilder, content, operationContext);
+            if (properties != null && properties.Quota.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.ShareQuota, properties.Quota.Value);
+            }
+
+            return request;
         }
 
         /// <summary>
@@ -48,6 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static HttpRequestMessage Delete(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
+
             HttpRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, shareBuilder, content, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
@@ -63,6 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static HttpRequestMessage GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
+
             HttpRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, shareBuilder, content, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
@@ -78,6 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static HttpRequestMessage GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
+
             HttpRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, shareBuilder, content, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
@@ -94,6 +107,31 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             HttpRequestMessage request = HttpRequestMessageFactory.SetMetadata(uri, timeout, shareBuilder, content, operationContext);
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to set system properties for a share.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the share.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="properties">The share's properties.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static HttpRequestMessage SetProperties(Uri uri, int? timeout, FileShareProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        {
+            CommonUtility.AssertNotNull("properties", properties);
+
+            UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
+            shareBuilder.Add(Constants.QueryConstants.Component, "properties");
+
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, shareBuilder, content, operationContext);
+            if (properties.Quota.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.ShareQuota, properties.Quota.Value);
+            }
+
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -156,6 +194,52 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             }
 
             HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to return the ACL for a share.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the share.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <returns><returns>A web request to use to perform the operation.</returns></returns>
+        public static HttpRequestMessage GetAcl(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        {
+            HttpRequestMessage request = HttpRequestMessageFactory.GetAcl(uri, timeout, GetShareUriQueryBuilder(), content, operationContext);
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to set the ACL for a share.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the share.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="publicAccess">The type of public access to allow for the share.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <returns><returns>A web request to use to perform the operation.</returns></returns>
+        public static HttpRequestMessage SetAcl(Uri uri, int? timeout, FileSharePublicAccessType publicAccess, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        {
+            HttpRequestMessage request = HttpRequestMessageFactory.SetAcl(uri, timeout, GetShareUriQueryBuilder(), content, operationContext);
+
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to get the stats of the service.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the service.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <returns>A HttpRequestMessage to get the service stats.</returns>
+        public static HttpRequestMessage GetStats(Uri uri, int? timeout, OperationContext operationContext)
+        {
+            UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
+            shareBuilder.Add(Constants.QueryConstants.Component, "stats");
+
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, shareBuilder, null /* content */, operationContext);
+
             return request;
         }
 

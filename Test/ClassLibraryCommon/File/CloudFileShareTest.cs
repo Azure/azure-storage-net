@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.File.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -701,6 +702,679 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         [TestMethod]
+        [Description("Set share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPermissions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                permissions.SharedAccessPolicies.Add("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                share.SetPermissions(permissions);
+                Thread.Sleep(30 * 1000);
+
+                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                permissions = share2.GetPermissions();
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPermissionsOverload()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                share.SetPermissions(permissions);
+                Thread.Sleep(30 * 1000);
+
+                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                permissions = share2.GetPermissions();
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPermissionsAPM()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                permissions.SharedAccessPolicies.Add("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = share.BeginSetPermissions(permissions, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndSetPermissions(result);
+                    Thread.Sleep(30 * 1000);
+
+                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                    result = share.BeginGetPermissions(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    permissions = share.EndGetPermissions(result);
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPermissionsAPMOverload()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                permissions.SharedAccessPolicies.Add("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = share.BeginSetPermissions(permissions, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndSetPermissions(result);
+                    Thread.Sleep(30 * 1000);
+
+                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                    result = share.BeginGetPermissions(null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    permissions = share.EndGetPermissions(result);
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Set share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPermissionsTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissionsAsync().Result;
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                permissions.SharedAccessPolicies.Add("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                share.SetPermissionsAsync(permissions).Wait();
+                Thread.Sleep(30 * 1000);
+
+                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                permissions = share2.GetPermissionsAsync().Result;
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPermissionsOverloadTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.CreateAsync().Wait();
+
+                FileSharePermissions permissions = share.GetPermissionsAsync().Result;
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                share.SetPermissionsAsync(permissions).Wait();
+                Thread.Sleep(30 * 1000);
+
+                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                permissions = share2.GetPermissionsAsync().Result;
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Clear share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareClearPermissions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                share.SetPermissions(permissions);
+                Thread.Sleep(3 * 1000);
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+
+                Assert.AreEqual(true, permissions.SharedAccessPolicies.Contains(sharedAccessPolicy));
+                Assert.AreEqual(true, permissions.SharedAccessPolicies.ContainsKey("key1"));
+                permissions.SharedAccessPolicies.Clear();
+                share.SetPermissions(permissions);
+                Thread.Sleep(3 * 1000);
+                permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Copy share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareCopyPermissions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                DateTime start2 = DateTime.UtcNow;
+                start2 = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry2 = start.AddMinutes(30);
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy2 = new KeyValuePair<string, SharedAccessFilePolicy>("key2", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start2,
+                    SharedAccessExpiryTime = expiry2,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy2);
+
+                KeyValuePair<String, SharedAccessFilePolicy>[] sharedAccessPolicyArray = new KeyValuePair<string, SharedAccessFilePolicy>[2];
+                permissions.SharedAccessPolicies.CopyTo(sharedAccessPolicyArray, 0);
+                Assert.AreEqual(2, sharedAccessPolicyArray.Length);
+                Assert.AreEqual(sharedAccessPolicy, sharedAccessPolicyArray[0]);
+                Assert.AreEqual(sharedAccessPolicy2, sharedAccessPolicyArray[1]);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Remove share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareRemovePermissions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                DateTime start2 = DateTime.UtcNow;
+                start2 = new DateTime(start2.Year, start2.Month, start2.Day, start2.Hour, start2.Minute, start2.Second, DateTimeKind.Utc);
+                DateTime expiry2 = start2.AddMinutes(30);
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy2 = new KeyValuePair<string, SharedAccessFilePolicy>("key2", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start2,
+                    SharedAccessExpiryTime = expiry2,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy2);
+                share.SetPermissions(permissions);
+                Assert.AreEqual(2, permissions.SharedAccessPolicies.Count);
+
+                permissions.SharedAccessPolicies.Remove(sharedAccessPolicy2);
+                share.SetPermissions(permissions);
+                Thread.Sleep(3 * 1000);
+
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                permissions = share.GetPermissions();
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                Assert.AreEqual(sharedAccessPolicy.Key, permissions.SharedAccessPolicies.ElementAt(0).Key);
+                Assert.AreEqual(sharedAccessPolicy.Value.Permissions, permissions.SharedAccessPolicies.ElementAt(0).Value.Permissions);
+                Assert.AreEqual(sharedAccessPolicy.Value.SharedAccessStartTime, permissions.SharedAccessPolicies.ElementAt(0).Value.SharedAccessStartTime);
+                Assert.AreEqual(sharedAccessPolicy.Value.SharedAccessExpiryTime, permissions.SharedAccessPolicies.ElementAt(0).Value.SharedAccessExpiryTime);
+
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy2);
+                share.SetPermissions(permissions);
+                Assert.AreEqual(2, permissions.SharedAccessPolicies.Count);
+
+                permissions.SharedAccessPolicies.Remove("key2");
+                share.SetPermissions(permissions);
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                permissions = share.GetPermissions();
+                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                Assert.AreEqual(sharedAccessPolicy.Key, permissions.SharedAccessPolicies.ElementAt(0).Key);
+                Assert.AreEqual(sharedAccessPolicy.Value.Permissions, permissions.SharedAccessPolicies.ElementAt(0).Value.Permissions);
+                Assert.AreEqual(sharedAccessPolicy.Value.SharedAccessStartTime, permissions.SharedAccessPolicies.ElementAt(0).Value.SharedAccessStartTime);
+                Assert.AreEqual(sharedAccessPolicy.Value.SharedAccessExpiryTime, permissions.SharedAccessPolicies.ElementAt(0).Value.SharedAccessExpiryTime);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("TryGetValue for share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareTryGetValuePermissions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                DateTime start2 = DateTime.UtcNow;
+                start2 = new DateTime(start2.Year, start2.Month, start2.Day, start2.Hour, start2.Minute, start2.Second, DateTimeKind.Utc);
+                DateTime expiry2 = start2.AddMinutes(30);
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy2 = new KeyValuePair<string, SharedAccessFilePolicy>("key2", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start2,
+                    SharedAccessExpiryTime = expiry2,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy2);
+                share.SetPermissions(permissions);
+                Thread.Sleep(3 * 1000);
+                Assert.AreEqual(2, permissions.SharedAccessPolicies.Count);
+
+                permissions = share.GetPermissions();
+                SharedAccessFilePolicy retrPolicy;
+                permissions.SharedAccessPolicies.TryGetValue("key1", out retrPolicy);
+                Assert.AreEqual(sharedAccessPolicy.Value.Permissions, retrPolicy.Permissions);
+                Assert.AreEqual(sharedAccessPolicy.Value.SharedAccessStartTime, retrPolicy.SharedAccessStartTime);
+                Assert.AreEqual(sharedAccessPolicy.Value.SharedAccessExpiryTime, retrPolicy.SharedAccessExpiryTime);
+
+                SharedAccessFilePolicy retrPolicy2;
+                permissions.SharedAccessPolicies.TryGetValue("key2", out retrPolicy2);
+                Assert.AreEqual(sharedAccessPolicy2.Value.Permissions, retrPolicy2.Permissions);
+                Assert.AreEqual(sharedAccessPolicy2.Value.SharedAccessStartTime, retrPolicy2.SharedAccessStartTime);
+                Assert.AreEqual(sharedAccessPolicy2.Value.SharedAccessExpiryTime, retrPolicy2.SharedAccessExpiryTime);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("GetEnumerator for share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareGetEnumeratorPermissions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                DateTime start2 = DateTime.UtcNow;
+                start2 = new DateTime(start2.Year, start2.Month, start2.Day, start2.Hour, start2.Minute, start2.Second, DateTimeKind.Utc);
+                DateTime expiry2 = start2.AddMinutes(30);
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy2 = new KeyValuePair<string, SharedAccessFilePolicy>("key2", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start2,
+                    SharedAccessExpiryTime = expiry2,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy2);
+                Assert.AreEqual(2, permissions.SharedAccessPolicies.Count);
+
+                IEnumerator<KeyValuePair<string, SharedAccessFilePolicy>> policies = permissions.SharedAccessPolicies.GetEnumerator();
+                policies.MoveNext();
+                Assert.AreEqual(sharedAccessPolicy, policies.Current);
+                policies.MoveNext();
+                Assert.AreEqual(sharedAccessPolicy2, policies.Current);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("GetValues for share permissions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareGetValuesPermissions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                FileSharePermissions permissions = share.GetPermissions();
+                Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
+
+                // We do not have precision at milliseconds level. Hence, we need
+                // to recreate the start DateTime to be able to compare it later.
+                DateTime start = DateTime.UtcNow;
+                start = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, start.Second, DateTimeKind.Utc);
+                DateTime expiry = start.AddMinutes(30);
+
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy = new KeyValuePair<string, SharedAccessFilePolicy>("key1", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start,
+                    SharedAccessExpiryTime = expiry,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+
+                DateTime start2 = DateTime.UtcNow;
+                start2 = new DateTime(start2.Year, start2.Month, start2.Day, start2.Hour, start2.Minute, start2.Second, DateTimeKind.Utc);
+                DateTime expiry2 = start2.AddMinutes(30);
+                KeyValuePair<String, SharedAccessFilePolicy> sharedAccessPolicy2 = new KeyValuePair<string, SharedAccessFilePolicy>("key2", new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = start2,
+                    SharedAccessExpiryTime = expiry2,
+                    Permissions = SharedAccessFilePermissions.List,
+                });
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
+                permissions.SharedAccessPolicies.Add(sharedAccessPolicy2);
+                Assert.AreEqual(2, permissions.SharedAccessPolicies.Count);
+
+                ICollection<SharedAccessFilePolicy> values = permissions.SharedAccessPolicies.Values;
+                Assert.AreEqual(2, values.Count);
+                Assert.AreEqual(sharedAccessPolicy.Value, values.ElementAt(0));
+                Assert.AreEqual(sharedAccessPolicy2.Value, values.ElementAt(1));
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Get permissions from string")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileSharePermissionsFromString()
+        {
+            SharedAccessFilePolicy policy = new SharedAccessFilePolicy();
+            policy.SharedAccessStartTime = DateTime.UtcNow;
+            policy.SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(30);
+
+            policy.Permissions = SharedAccessFilePolicy.PermissionsFromString("rwdl");
+            Assert.AreEqual(SharedAccessFilePermissions.Read | SharedAccessFilePermissions.Write | SharedAccessFilePermissions.Delete | SharedAccessFilePermissions.List, policy.Permissions);
+
+            policy.Permissions = SharedAccessFilePolicy.PermissionsFromString("rwl");
+            Assert.AreEqual(SharedAccessFilePermissions.Read | SharedAccessFilePermissions.Write | SharedAccessFilePermissions.List, policy.Permissions);
+
+            policy.Permissions = SharedAccessFilePolicy.PermissionsFromString("rw");
+            Assert.AreEqual(SharedAccessFilePermissions.Read | SharedAccessFilePermissions.Write, policy.Permissions);
+
+            policy.Permissions = SharedAccessFilePolicy.PermissionsFromString("rd");
+            Assert.AreEqual(SharedAccessFilePermissions.Read | SharedAccessFilePermissions.Delete, policy.Permissions);
+
+            policy.Permissions = SharedAccessFilePolicy.PermissionsFromString("wl");
+            Assert.AreEqual(SharedAccessFilePermissions.Write | SharedAccessFilePermissions.List, policy.Permissions);
+
+            policy.Permissions = SharedAccessFilePolicy.PermissionsFromString("w");
+            Assert.AreEqual(SharedAccessFilePermissions.Write, policy.Permissions);
+        }
+
+        [TestMethod]
         [Description("List files")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1198,6 +1872,270 @@ namespace Microsoft.WindowsAzure.Storage.File
                 share.DeleteIfExists();
             }
         }
+
+        [TestMethod]
+        [Description("Get share stats")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareGetShareStats()
+        {
+            int megabyteInBytes = 1024 * 1024;
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.Create();
+
+                // should begin empty
+                ShareStats stats1 = share.GetStats();
+                Assert.AreEqual(0, stats1.Usage);
+
+                // should round up, upload 1 MB. 
+                CloudFile file = directory.GetFileReference("file1");
+                file.UploadFromByteArray(GetRandomBuffer(megabyteInBytes), 0, megabyteInBytes); //one mb
+
+                ShareStats stats2 = share.GetStats();
+                Assert.AreEqual(1, stats2.Usage);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Get share stats")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareGetShareStatsAPM()
+        {
+            int megabyteInBytes = 1024 * 1024;
+            CloudFileShare share = GetRandomShareReference();
+
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                try
+                {
+                    IAsyncResult result = share.BeginCreate(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    share.EndCreate(result);
+
+                    // should begin empty
+                    result = share.BeginGetStats(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+
+                    ShareStats stats1 = share.EndGetStats(result);
+                    Assert.AreEqual(0, stats1.Usage);
+
+                    // should round up, upload 1 MB and assert the usage is 1 GB. 
+                    CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                    CloudFile file = directory.GetFileReference("file1");
+                    result = directory.BeginCreate(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    directory.EndCreate(result);
+                    result = file.BeginUploadFromByteArray(
+                        GetRandomBuffer(megabyteInBytes),
+                        0,
+                        megabyteInBytes,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    file.EndUploadFromByteArray(result);
+
+                    result = share.BeginGetStats(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+
+                    ShareStats stats2 = share.EndGetStats(result);
+                    Assert.AreEqual(1, stats2.Usage);
+
+                }
+                finally
+                {
+                    IAsyncResult result = share.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    share.EndDeleteIfExists(result);
+                }
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Get service stats")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareGetShareStatsTask()
+        {
+            int megabyteInBytes = 1024 * 1024;
+            CloudFileShare share = GetRandomShareReference();
+            
+            try
+            {
+                share.CreateAsync().Wait();
+
+                // should begin empty
+                Task<ShareStats> statsTask1 = share.GetStatsAsync();
+                statsTask1.Wait();
+                ShareStats stats1 = statsTask1.Result;
+                Assert.AreEqual(0, stats1.Usage);
+
+                // should round up, upload 1 MB and assert the usage is 1 GB. 
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                CloudFile file = directory.GetFileReference("file1");
+                directory.CreateAsync().Wait();
+                file.UploadFromByteArrayAsync(GetRandomBuffer(megabyteInBytes), 0, megabyteInBytes).Wait(); //one mb
+
+                Task<ShareStats> statsTask2 = share.GetStatsAsync();
+                statsTask2.Wait();
+                ShareStats stats2 = statsTask2.Result;
+                Assert.AreEqual(1, stats2.Usage);
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Verify setting the properties of a share")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetProperties()
+        {
+            string shareName = GetRandomShareName();
+            CloudFileClient client = GenerateCloudFileClient();
+
+            try
+            {
+                CloudFileShare share1 = client.GetShareReference(shareName);
+                share1.Create();
+
+                share1.FetchAttributes();
+                Assert.AreEqual(5120, share1.Properties.Quota);
+
+                share1.Properties.Quota = 8;
+                share1.SetProperties();
+
+                CloudFileShare share2 = client.GetShareReference(shareName);
+                share2.FetchAttributes();
+                Assert.AreEqual(8, share2.Properties.Quota); 
+            }
+            finally
+            {
+                client.GetShareReference(shareName).DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Verify setting the properties of a share")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPropertiesAPM()
+        {
+            string shareName = GetRandomShareName();
+            CloudFileClient client = GenerateCloudFileClient();
+
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                try
+                {
+                    CloudFileShare share1 = client.GetShareReference(shareName);
+                    IAsyncResult result = share1.BeginCreate(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    share1.EndCreate(result);
+
+                    result = share1.BeginFetchAttributes(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    share1.EndFetchAttributes(result);
+
+                    Assert.AreEqual(5120, share1.Properties.Quota);
+
+                    share1.Properties.Quota = 8;
+                    result = share1.BeginSetProperties(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    share1.EndSetProperties(result);
+
+                    CloudFileShare share2 = client.GetShareReference(shareName);
+                    result = share2.BeginFetchAttributes(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    share2.EndFetchAttributes(result);
+
+                    Assert.AreEqual(8, share2.Properties.Quota); 
+                }
+                finally
+                {
+                    IAsyncResult result = client.GetShareReference(shareName).BeginDeleteIfExists(
+                                            ar => waitHandle.Set(),
+                                            null);
+                    waitHandle.WaitOne();
+                    client.GetShareReference(shareName).EndDeleteIfExists(result);
+                }
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Verify setting the properties of a share")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareSetPropertiesTask()
+        {
+            string shareName = GetRandomShareName();
+            CloudFileClient client = GenerateCloudFileClient();
+
+            try
+            {
+                CloudFileShare share1 = client.GetShareReference(shareName);
+                share1.CreateAsync().Wait();
+
+                share1.FetchAttributesAsync().Wait();
+                Assert.AreEqual(5120, share1.Properties.Quota);
+
+                share1.Properties.Quota = 8;
+                share1.SetPropertiesAsync().Wait();
+
+                CloudFileShare share2 = client.GetShareReference(shareName);
+                share2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(8, share2.Properties.Quota);
+            }
+            finally
+            {
+                client.GetShareReference(shareName).DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
 
         /*
         [TestMethod]

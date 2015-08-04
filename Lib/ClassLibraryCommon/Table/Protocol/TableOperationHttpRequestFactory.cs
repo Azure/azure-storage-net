@@ -52,6 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             HttpWebRequest msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, useVersionHeader, ctx);
 
             TablePayloadFormat payloadFormat = options.PayloadFormat.Value;
+
             // Set Accept and Content-Type based on the payload format.
             SetAcceptHeaderForHttpWebRequest(msg, payloadFormat);
             Logger.LogInformational(ctx, SR.PayloadFormat, payloadFormat);
@@ -63,10 +64,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             if (operation.OperationType == TableOperationType.InsertOrMerge || operation.OperationType == TableOperationType.Merge)
             {
-                if (options.EncryptionPolicy != null)
-                {
-                    throw new InvalidOperationException(SR.EncryptionNotSupportedForOperation);
-                }
+                options.AssertNoEncryptionPolicyOrStrictMode();
 
                 // post tunnelling
                 msg.Headers.Add("X-HTTP-Method", "MERGE");
@@ -154,11 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 string httpMethod = operation.HttpMethod;
                 if (operation.OperationType == TableOperationType.Merge || operation.OperationType == TableOperationType.InsertOrMerge)
                 {
-                    if (options.EncryptionPolicy != null)
-                    {
-                        throw new InvalidOperationException(SR.EncryptionNotSupportedForOperation);
-                    }
-
+                    options.AssertNoEncryptionPolicyOrStrictMode();
                     httpMethod = "MERGE";
                 }
 
@@ -222,9 +216,14 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         internal static IEnumerable<ODataProperty> GetPropertiesFromDictionary(IDictionary<string, EntityProperty> properties, TableRequestOptions options, string partitionKey, string rowKey)
         {
             // Check if encryption policy is set and invoke EncryptEnity if it is set.
-            if (options.EncryptionPolicy != null)
+            if (options != null)
             {
-                properties = options.EncryptionPolicy.EncryptEntity(properties, partitionKey, rowKey, options.EncryptionResolver);
+                options.AssertPolicyIfRequired();
+
+                if (options.EncryptionPolicy != null)
+                {
+                    properties = options.EncryptionPolicy.EncryptEntity(properties, partitionKey, rowKey, options.EncryptionResolver);
+                }
             }
 
             return properties.Select(kvp => new ODataProperty() { Name = kvp.Key, Value = kvp.Value.PropertyAsObject });

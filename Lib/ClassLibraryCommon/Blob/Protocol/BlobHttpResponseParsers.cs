@@ -110,6 +110,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 properties.PageBlobSequenceNumber = long.Parse(sequenceNumber, CultureInfo.InvariantCulture);
             }
 
+            // Get committed block count
+            string comittedBlockCount = response.Headers[Constants.HeaderConstants.BlobCommittedBlockCount];
+            if (!string.IsNullOrEmpty(comittedBlockCount))
+            {
+                properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
+            }
+
             return properties;
         }
 

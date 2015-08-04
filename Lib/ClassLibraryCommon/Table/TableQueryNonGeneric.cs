@@ -155,8 +155,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static RESTCommand<TableQuerySegment<DynamicTableEntity>> QueryImpl(TableQuery query, TableContinuationToken token, CloudTableClient client, CloudTable table, TableRequestOptions requestOptions)
         {
+            requestOptions.AssertPolicyIfRequired();
+
             // If encryption policy is set, then add the encryption metadata column to Select columns in order to be able to decrypt properties.
-            if (requestOptions.EncryptionPolicy != null)
+            if (requestOptions.EncryptionPolicy != null && query.SelectColumns != null)
             {
                 query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails);
                 query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails);

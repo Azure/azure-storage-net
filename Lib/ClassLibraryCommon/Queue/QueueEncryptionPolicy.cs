@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Threading;
 
     /// <summary>
-    /// Represents a queue encryption policy that is used to perform envelope encryption/decryption of Azure queue messages.
+    /// Represents an encryption policy for performing envelope encryption/decryption of messages in Azure queue.
     /// </summary>
     public sealed class QueueEncryptionPolicy
     {
@@ -39,21 +39,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         public IKey Key { get; private set; }
 
         /// <summary>
-        /// Gets or sets the key resolver used to select the correct key for decrypting existing queue mesaages.
+        /// Gets or sets the key resolver used to select the correct key for decrypting existing queue messages.
         /// </summary>
-        /// <value>A resolver that returns an <see cref="IKey"/> given a keyId.</value>
+        /// <value>A resolver that returns an <see cref="IKeyResolver"/>, given a key ID.</value>
         public IKeyResolver KeyResolver { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QueueEncryptionPolicy"/> class with the specified key and resolver.
         /// </summary>
         /// <param name="key">An object of type <see cref="IKey"/> that is used to wrap/unwrap the content encryption key.</param>
-        /// <param name="keyResolver">The key resolver used to select the correct key for decrypting existing queue mesaages.</param>
-        /// <remarks>If the generated policy is intended to be used for encryption, users are expected to provide a key at the minimum.
-        /// The absence of key will cause an exception to be thrown during encryption.
-        /// If the generated policy is intended to be used for decryption, users can provide a keyResolver. The client library will -
-        /// 1. Invoke the key resolver if specified to get the key.
-        /// 2. If resolver is not specified but a key is specified, match the key id on the key and use it.</remarks> 
+        /// <param name="keyResolver">The key resolver used to select the correct key for decrypting existing queue messages.</param>
+        /// <remarks>If the generated policy is to be used for encryption, users are expected to provide a key at the minimum.
+        /// The absence of key will cause an exception to be thrown during encryption.<br/>
+        /// If the generated policy is intended to be used for decryption, users can provide a key resolver. The client library will:<br/>
+        /// 1. Invoke the key resolver, if specified, to get the key.<br/>
+        /// 2. If resolver is not specified but a key is specified, the client library will match the key ID against the key and use the key.</remarks> 
         public QueueEncryptionPolicy(IKey key, IKeyResolver keyResolver)
         {
             this.Key = key;
@@ -105,81 +105,93 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Returns a plain text message given an encrypted message.
         /// </summary>
         /// <param name="inputMessage">The encrypted message.</param>
+        /// <param name="requireEncryption">A value to indicate that the data read from the server should be encrypted.</param>        
         /// <returns>The plain text message bytes.</returns>
-        internal byte[] DecryptMessage(string inputMessage)
+        internal byte[] DecryptMessage(string inputMessage, bool? requireEncryption)
         {
             CommonUtility.AssertNotNull("inputMessage", inputMessage);
 
             try
             {
                 CloudQueueEncryptedMessage encryptedMessage = JsonConvert.DeserializeObject<CloudQueueEncryptedMessage>(inputMessage);
-                
-                CommonUtility.AssertNotNull("EncryptionData", encryptedMessage.EncryptionData);
-                EncryptionData encryptionData = encryptedMessage.EncryptionData;
-                
-                CommonUtility.AssertNotNull("ContentEncryptionIV", encryptionData.ContentEncryptionIV);
-                CommonUtility.AssertNotNull("EncryptedKey", encryptionData.WrappedContentKey.EncryptedKey);
 
-                // Throw if the encryption protocol on the message doesn't match the version that this client library understands
-                // and is able to decrypt.
-                if (encryptionData.EncryptionAgent.Protocol != Constants.EncryptionConstants.EncryptionProtocolV1)
+                if (requireEncryption.HasValue && requireEncryption.Value && encryptedMessage.EncryptionData == null)
                 {
-                    throw new StorageException(SR.EncryptionProtocolVersionInvalid, null) { IsRetryable = false };
+                    throw new StorageException(SR.EncryptionDataNotPresentError, null) { IsRetryable = false };
                 }
 
-                // Throw if neither the key nor the key resolver are set.
-                if (this.Key == null && this.KeyResolver == null)
+                if (encryptedMessage.EncryptionData != null)
                 {
-                    throw new StorageException(SR.KeyAndResolverMissingError, null) { IsRetryable = false };
-                }
+                    EncryptionData encryptionData = encryptedMessage.EncryptionData;
 
-                byte[] contentEncryptionKey = null;
+                    CommonUtility.AssertNotNull("ContentEncryptionIV", encryptionData.ContentEncryptionIV);
+                    CommonUtility.AssertNotNull("EncryptedKey", encryptionData.WrappedContentKey.EncryptedKey);
 
-                // 1. Invoke the key resolver if specified to get the key. If the resolver is specified but does not have a
-                // mapping for the key id, an error should be thrown. This is important for key rotation scenario.
-                // 2. If resolver is not specified but a key is specified, match the key id on the key and and use it.
-                // Calling UnwrapKeyAsync synchronously is fine because for the storage client scenario, unwrap happens
-                // locally. No service call is made.
-                if (this.KeyResolver != null)
-                {
-                    IKey keyEncryptionKey = this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).Result;
-
-                    CommonUtility.AssertNotNull("keyEncryptionKey", keyEncryptionKey);
-                    contentEncryptionKey = keyEncryptionKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
-                }
-                else
-                {
-                    if (this.Key.Kid == encryptionData.WrappedContentKey.KeyId)
+                    // Throw if the encryption protocol on the message doesn't match the version that this client library understands
+                    // and is able to decrypt.
+                    if (encryptionData.EncryptionAgent.Protocol != Constants.EncryptionConstants.EncryptionProtocolV1)
                     {
-                        contentEncryptionKey = this.Key.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
+                        throw new StorageException(SR.EncryptionProtocolVersionInvalid, null) { IsRetryable = false };
+                    }
+
+                    // Throw if neither the key nor the key resolver are set.
+                    if (this.Key == null && this.KeyResolver == null)
+                    {
+                        throw new StorageException(SR.KeyAndResolverMissingError, null) { IsRetryable = false };
+                    }
+
+                    byte[] contentEncryptionKey = null;
+
+                    // 1. Invoke the key resolver if specified to get the key. If the resolver is specified but does not have a
+                    // mapping for the key id, an error should be thrown. This is important for key rotation scenario.
+                    // 2. If resolver is not specified but a key is specified, match the key id on the key and and use it.
+                    // Calling UnwrapKeyAsync synchronously is fine because for the storage client scenario, unwrap happens
+                    // locally. No service call is made.
+                    if (this.KeyResolver != null)
+                    {
+                        IKey keyEncryptionKey = this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).Result;
+
+                        CommonUtility.AssertNotNull("keyEncryptionKey", keyEncryptionKey);
+                        contentEncryptionKey = keyEncryptionKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
                     }
                     else
                     {
-                        throw new StorageException(SR.KeyMismatch, null) { IsRetryable = false };
+                        if (this.Key.Kid == encryptionData.WrappedContentKey.KeyId)
+                        {
+                            contentEncryptionKey = this.Key.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
+                        }
+                        else
+                        {
+                            throw new StorageException(SR.KeyMismatch, null) { IsRetryable = false };
+                        }
                     }
-                }
 
-                switch (encryptionData.EncryptionAgent.EncryptionAlgorithm)
-                {
-                    case EncryptionAlgorithm.AES_CBC_256:
+                    switch (encryptionData.EncryptionAgent.EncryptionAlgorithm)
+                    {
+                        case EncryptionAlgorithm.AES_CBC_256:
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
-                        using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
+                            using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
 #else
                         using (AesManaged myAes = new AesManaged())
 #endif
-                        {
-                            myAes.Key = contentEncryptionKey;
-                            myAes.IV = encryptionData.ContentEncryptionIV;
-
-                            byte[] src = Convert.FromBase64String(encryptedMessage.EncryptedMessageContents);
-                            using (ICryptoTransform decryptor = myAes.CreateDecryptor())
                             {
-                                return decryptor.TransformFinalBlock(src, 0, src.Length);
-                            }
-                        }
+                                myAes.Key = contentEncryptionKey;
+                                myAes.IV = encryptionData.ContentEncryptionIV;
 
-                    default:
-                        throw new StorageException(SR.InvalidEncryptionAlgorithm, null) { IsRetryable = false };
+                                byte[] src = Convert.FromBase64String(encryptedMessage.EncryptedMessageContents);
+                                using (ICryptoTransform decryptor = myAes.CreateDecryptor())
+                                {
+                                    return decryptor.TransformFinalBlock(src, 0, src.Length);
+                                }
+                            }
+
+                        default:
+                            throw new StorageException(SR.InvalidEncryptionAlgorithm, null) { IsRetryable = false };
+                    }
+                }
+                else
+                {
+                    return Convert.FromBase64String(encryptedMessage.EncryptedMessageContents);
                 }
             }
             catch (JsonException ex)

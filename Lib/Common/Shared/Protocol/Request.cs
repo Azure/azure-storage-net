@@ -29,6 +29,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
     internal static class Request
     {
         /// <summary>
+        /// Converts the date time to snapshot string.
+        /// </summary>
+        /// <param name="dateTime">The date time.</param>
+        /// <returns>The converted string.</returns>
+        internal static string ConvertDateTimeToSnapshotString(DateTimeOffset dateTime)
+        {
+            return dateTime.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
         /// Writes a collection of shared access policies to the specified stream in XML format.
         /// </summary>
         /// <param name="sharedAccessPolicies">A collection of shared access policies.</param>

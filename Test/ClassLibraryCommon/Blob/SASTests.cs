@@ -68,9 +68,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     blob = container.GetBlockBlobReference(blob.Name);
                 }
-                else
+                else if (blob.BlobType == BlobType.PageBlob)
                 {
                     blob = container.GetPageBlobReference(blob.Name);
+                }
+                else
+                {
+                    blob = container.GetAppendBlobReference(blob.Name);
                 }
             }
             else
@@ -79,9 +83,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     blob = new CloudBlockBlob(credentials.TransformUri(blob.Uri));
                 }
-                else
+                else if (blob.BlobType == BlobType.PageBlob)
                 {
                     blob = new CloudPageBlob(credentials.TransformUri(blob.Uri));
+                }
+                else
+                {
+                    blob = new CloudAppendBlob(credentials.TransformUri(blob.Uri));
                 }
             }
 
@@ -103,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if ((permissions & SharedAccessBlobPermissions.Read) == SharedAccessBlobPermissions.Read)
             {
                 blob.FetchAttributes();
-                
+
                 // Test headers
                 if (headers != null)
                 {
@@ -166,11 +174,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#pragma warning disable 0618
         private static void TestBlobSAS(CloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers)
         {
             TestBlobSAS(testBlob, permissions, headers, null);
         }
+#pragma warning restore 0618
 
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         private static void TestBlobSAS(CloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, string sasVersion)
         {
             UploadText(testBlob, "blob", Encoding.UTF8);
@@ -259,6 +270,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob" + i);
                 UploadText(testPageBlob, "blob", Encoding.UTF8);
                 SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testPageBlob);
+
+                CloudAppendBlob testAppendBlob = this.testContainer.GetAppendBlobReference("appendblob" + i);
+                UploadText(testAppendBlob, "blob", Encoding.UTF8);
+                SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testAppendBlob);
             }
         }
 
@@ -276,6 +291,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob");
             UploadText(testPageBlob, "blob", Encoding.UTF8);
 
+            CloudAppendBlob testAppendBlob = this.testContainer.GetAppendBlobReference("appendblob");
+            UploadText(testAppendBlob, "blob", Encoding.UTF8);
+
             BlobContainerPermissions permissions = new BlobContainerPermissions();
 
             permissions.PublicAccess = BlobContainerPublicAccessType.Container;
@@ -283,12 +301,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Thread.Sleep(35 * 1000);
             SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob);
             SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob);
+            SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testAppendBlob);
 
             permissions.PublicAccess = BlobContainerPublicAccessType.Blob;
             this.testContainer.SetPermissions(permissions);
             Thread.Sleep(35 * 1000);
             SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob);
             SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob);
+            SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testAppendBlob);
+        }
+
+        [TestMethod]
+        [Description("Create client from storage account with anonymous creds.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobCreateClientWithAnonymousCreds()
+        {
+            CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob");
+            UploadText(testBlockBlob, "blob", Encoding.UTF8);
+
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+
+            permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+            this.testContainer.SetPermissions(permissions);
+            Thread.Sleep(35 * 1000);
+
+            string blobUri = testBlockBlob.ServiceClient.BaseUri.AbsoluteUri;
+            string accountString = "BlobEndpoint=" + blobUri;
+
+            CloudStorageAccount acc = CloudStorageAccount.Parse(accountString);
+            CloudBlobClient client = acc.CreateCloudBlobClient();
+            CloudBlobContainer container = client.GetContainerReference(this.testContainer.Name);
+            container.ListBlobs().ToArray();
         }
 
         [TestMethod]
@@ -304,6 +350,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob");
             UploadText(testPageBlob, "blob", Encoding.UTF8);
+
+            CloudAppendBlob testAppendBlob = this.testContainer.GetAppendBlobReference("appendblob");
+            UploadText(testAppendBlob, "blob", Encoding.UTF8);
 
             SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
             {
@@ -323,9 +372,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             sasToken = testPageBlob.GetSharedAccessSignature(null, "testpolicy");
             SASTests.TestAccess(sasToken, policy.Permissions, null, null, testPageBlob);
 
+            sasToken = testAppendBlob.GetSharedAccessSignature(null, "testpolicy");
+            SASTests.TestAccess(sasToken, policy.Permissions, null, null, testAppendBlob);
+
             sasToken = this.testContainer.GetSharedAccessSignature(null, "testpolicy");
             SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testBlockBlob);
             SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testPageBlob);
+            SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testAppendBlob);
         }
 
         [TestMethod]
@@ -355,6 +408,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             for (int i = 1; i < 8; i++)
             {
                 CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + i);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
+                TestBlobSAS(testBlob, permissions, null);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test all combinations of blob permissions against an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobSASCombinations()
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + i);
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
                 TestBlobSAS(testBlob, permissions, null);
             }
@@ -411,11 +480,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test all combinations of blob permissions against an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobSASHeaders()
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + i);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
+                SharedAccessBlobHeaders headers = new SharedAccessBlobHeaders()
+                {
+                    CacheControl = "no-transform",
+                    ContentDisposition = "attachment",
+                    ContentEncoding = "gzip",
+                    ContentLanguage = "tr,en",
+                    ContentType = "text/html"
+                };
+
+                TestBlobSAS(testBlob, permissions, headers);
+            }
+        }
+
+        [TestMethod]
         [Description("Test access of container with generation of 2012-02-12 SAS token.")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         public void CloudBlobContainer20120212SASVersion()
         {
             // Create a policy with read/write access and get SAS.
@@ -438,6 +533,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         public void CloudBlockBlob20120212SASVersion()
         {
             for (int i = 1; i < 8; i++)
@@ -454,6 +550,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         public void CloudPageBlob20120212SASVersion()
         {
             for (int i = 1; i < 8; i++)
@@ -465,11 +562,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test all combinations of permissions using generation of 2012-02-12 SAS tokens for append blobs.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
+        public void CloudAppendBlob20120212SASVersion()
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + i);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
+                TestBlobSAS(testBlob, permissions, null, Constants.VersionConstants.February2012);
+            }
+        }
+
+        [TestMethod]
         [Description("Test invalid SAS Version for page blobs.")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         public void CloudPageBlobInvalidSASVersion()
         {
             try
@@ -491,6 +606,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         public void CloudBlockBlobInvalidSASVersion()
         {
             try
@@ -507,11 +623,34 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test invalid SAS Version for append blobs.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
+        public void CloudAppendBlobInvalidSASVersion()
+        {
+            try
+            {
+                CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + 1);
+                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
+                TestBlobSAS(testBlob, permissions, null, "2012-02-29");
+                Assert.Fail();
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
+            }
+        }
+
+        [TestMethod]
         [Description("Negative test for empty SAS Version.")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         public void CloudPageBlobEmptySASVersion()
         {
             try
@@ -533,6 +672,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
         public void CloudPageBlobHeaders20120212SASVersion()
         {
             SharedAccessBlobHeaders headers = new SharedAccessBlobHeaders()
@@ -569,7 +709,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 container.Create();
-                ICloudBlob blob;
+                CloudBlob blob;
 
                 SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
                 {
@@ -584,6 +724,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob pageBlob = container.GetPageBlobReference("pb");
                 pageBlob.Create(0);
 
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference("ab");
+                appendBlob.CreateOrReplace();
+
                 string blockBlobToken = blockBlob.GetSharedAccessSignature(policy);
                 StorageCredentials blockBlobSAS = new StorageCredentials(blockBlobToken);
                 Uri blockBlobSASUri = blockBlobSAS.TransformUri(blockBlob.Uri);
@@ -594,29 +737,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Uri pageBlobSASUri = pageBlobSAS.TransformUri(pageBlob.Uri);
                 StorageUri pageBlobSASStorageUri = pageBlobSAS.TransformUri(pageBlob.StorageUri);
 
+                string appendBlobToken = appendBlob.GetSharedAccessSignature(policy);
+                StorageCredentials appendBlobSAS = new StorageCredentials(appendBlobToken);
+                Uri appendBlobSASUri = appendBlobSAS.TransformUri(appendBlob.Uri);
+                StorageUri appendBlobSASStorageUri = appendBlobSAS.TransformUri(appendBlob.StorageUri);
+
                 OperationContext apiVersionCheckContext = new OperationContext();
                 apiVersionCheckContext.SendingRequest += (sender, e) =>
                 {
                     Assert.IsTrue(e.Request.RequestUri.Query.Contains("api-version"));
                 };
 
-                blob = container.ServiceClient.GetBlobReferenceFromServer(blockBlobSASUri, operationContext: apiVersionCheckContext);
-                Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
+                blob = new CloudBlob(blockBlobSASUri);
+                blob.FetchAttributes(operationContext: apiVersionCheckContext);
+                Assert.AreEqual(blob.BlobType, BlobType.BlockBlob);
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(blockBlob.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
-                blob = container.ServiceClient.GetBlobReferenceFromServer(pageBlobSASUri, operationContext: apiVersionCheckContext);
-                Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
+                blob = new CloudBlob(pageBlobSASUri);
+                blob.FetchAttributes(operationContext: apiVersionCheckContext);
+                Assert.AreEqual(blob.BlobType, BlobType.PageBlob);
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(pageBlob.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
-                blob = container.ServiceClient.GetBlobReferenceFromServer(blockBlobSASStorageUri, operationContext: apiVersionCheckContext);
-                Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
+                blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                blob.FetchAttributes(operationContext: apiVersionCheckContext);
+                Assert.AreEqual(blob.BlobType, BlobType.BlockBlob);
                 Assert.IsTrue(blob.StorageUri.Equals(blockBlob.StorageUri));
 
-                blob = container.ServiceClient.GetBlobReferenceFromServer(pageBlobSASStorageUri, operationContext: apiVersionCheckContext);
-                Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
+                blob = new CloudBlob(pageBlobSASStorageUri, null, null);
+                blob.FetchAttributes(operationContext: apiVersionCheckContext);
+                Assert.AreEqual(blob.BlobType, BlobType.PageBlob);
                 Assert.IsTrue(blob.StorageUri.Equals(pageBlob.StorageUri));
+
             }
             finally
             {

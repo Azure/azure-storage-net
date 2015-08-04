@@ -64,8 +64,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if (other != null)
             {
                 this.RetryPolicy = other.RetryPolicy;
+                this.AbsorbConditionalErrorsOnRetry = other.AbsorbConditionalErrorsOnRetry;
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 this.EncryptionPolicy = other.EncryptionPolicy;
+                this.RequireEncryption = other.RequireEncryption;
+                this.SkipEncryptionPolicyValidation = other.SkipEncryptionPolicyValidation;
 #endif
                 this.LocationMode = other.LocationMode;
                 this.ServerTimeout = other.ServerTimeout;
@@ -84,10 +87,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = new BlobRequestOptions(options);
 
             modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+            modifiedOptions.AbsorbConditionalErrorsOnRetry = modifiedOptions.AbsorbConditionalErrorsOnRetry 
+                ?? serviceClient.DefaultRequestOptions.AbsorbConditionalErrorsOnRetry
+                ?? false;
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
+            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
 #endif
-
             modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
                                             ?? serviceClient.DefaultRequestOptions.LocationMode) 
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
@@ -147,11 +153,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-        internal void AssertNoEncryptionPolicy()
+        internal void AssertNoEncryptionPolicyOrStrictMode()
         {
-            if (this.EncryptionPolicy != null)
+            // Throw if an encryption policy is set and encryption validation is on
+            if (this.EncryptionPolicy != null && !this.SkipEncryptionPolicyValidation)
             {
                 throw new InvalidOperationException(SR.EncryptionNotSupportedForOperation);
+            }
+
+            this.AssertPolicyIfRequired();
+        }
+
+        internal void AssertPolicyIfRequired()
+        {
+            if (this.RequireEncryption.HasValue && this.RequireEncryption.Value && this.EncryptionPolicy == null)
+            {
+                throw new InvalidOperationException(SR.EncryptionPolicyMissingInStrictMode);
             }
         }
 #endif
@@ -173,7 +190,30 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <value>An object of type <see cref="EncryptionPolicy"/>.</value>
         public BlobEncryptionPolicy EncryptionPolicy { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
+        /// </summary>
+        /// <value>Use <c>true</c> to specify that data should be encrypted/decrypted for all transactions; otherwise, <c>false</c>.</value>
+        public bool? RequireEncryption { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value to indicate whether validating the presence of the encryption policy should be skipped.
+        /// </summary>
+        /// <value>Use <c>true</c> to skip validation; otherwise, <c>false</c>.</value>
+        internal bool SkipEncryptionPolicyValidation { get; set; }
 #endif
+
+        /// <summary>
+        /// Gets or sets a value that indicates whether a conditional failure should be absorbed on a retry attempt
+        /// for the request. 
+        /// </summary>
+        /// <remarks>
+        /// This option is used only by the <see cref="CloudAppendBlob"/> object in the <b>UploadFrom*</b> methods and
+        /// the <b>BlobWriteStream</b> methods. By default, it is set to <c>false</c>. Set this option to <c>true</c> only for single writer scenarios.
+        /// Setting this option to <c>true</c> in a multi-writer scenario may lead to corrupted blob data.
+        /// </remarks>
+        public bool? AbsorbConditionalErrorsOnRetry { get; set; }
 
         /// <summary>
         /// Gets or sets the location mode of the request.
@@ -294,6 +334,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets a value to indicate that an MD5 hash will be calculated and stored when uploading a blob.
         /// </summary>
         /// <value>Use <c>true</c> to calculate and store an MD5 hash when uploading a blob; otherwise, <c>false</c>.</value>
+        /// <remarks>This property is not supported for <see cref="CloudAppendBlob"/>.</remarks>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #elif PORTABLE

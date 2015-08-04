@@ -60,6 +60,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Initializes a new instance of the BlobWriteStreamHelper class for an append blob.
+        /// </summary>
+        /// <param name="appendBlob">Blob reference to write to.</param>
+        /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        internal BlobWriteStreamHelper(CloudAppendBlob appendBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            this.originalStream = new BlobWriteStream(appendBlob, accessCondition, options, operationContext);
+            this.originalStreamAsOutputStream = this.originalStream.AsOutputStream();
+        }
+
+        /// <summary>
         /// Gets a value that indicates whether the stream can be read from.
         /// </summary>
         public bool CanRead

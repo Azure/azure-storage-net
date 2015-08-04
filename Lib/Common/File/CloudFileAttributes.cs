@@ -17,8 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Core;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
 
     internal sealed class CloudFileAttributes
     {
@@ -57,5 +60,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>The list of URIs for all locations.</value>
         public StorageUri StorageUri { get; internal set; }
+
+        /// <summary>
+        /// Gets the state of the most recent or pending copy operation.
+        /// </summary>
+        /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if no copy file state exists for this file.</value>
+        public CopyState CopyState { get; internal set; }
     }
 }

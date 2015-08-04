@@ -17,6 +17,8 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
 
     /// <summary>
@@ -24,6 +26,8 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// </summary>
     public sealed class FileShareProperties
     {
+        private int? quota;
+
         /// <summary>
         /// Gets the ETag value for the share.
         /// </summary>
@@ -35,5 +39,26 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>The share's last-modified time.</value>
         public DateTimeOffset? LastModified { get; internal set; }
+
+        /// <summary>
+        /// Gets or sets the maximum size for the share, in gigabytes.
+        /// </summary>
+        public int? Quota
+        {
+            get
+            {
+                return this.quota;
+            }
+
+            set
+            {
+                if (value.HasValue)
+                {
+                    CommonUtility.AssertInBounds("Quota", value.Value, 1);
+                }
+                
+                this.quota = value;
+            }
+        }
     }
 }

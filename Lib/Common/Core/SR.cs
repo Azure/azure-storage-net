@@ -57,14 +57,16 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string Directory = "directory";
         public const string EmptyBatchOperation = "Cannot execute an empty batch operation";
         public const string EncryptedMessageTooLarge = "Encrypted Messages cannot be larger than {0} bytes. Please note that encrypting queue messages can increase their size.";
-        public const string EncryptionDataNotPresentError = "Encryption data does not exist. If you do not want to decrypt the data, please do not set the encryption policy on request options.";
+        public const string EncryptionDataNotPresentError = "Encryption data does not exist. If you do not want to decrypt the data, please do not set the RequireEncryption flag on request options.";
         public const string EncryptionLogicError = "Encryption logic threw error. Please check the inner exception for more details.";
         public const string EncryptedMessageDeserializingError = "Error while de-serializing the encrypted queue message string from the wire. Please check inner exception for more details.";
         public const string EncryptionNotSupportedForOperation = "Encryption is not supported for the current operation. Please ensure that EncryptionPolicy is not set on RequestOptions.";
         public const string EncryptingNullPropertiesNotAllowed = "Null properties cannot be encrypted. Please assign a default value to the property if you wish to encrypt it.";
         public const string EncryptionMetadataError = "Error while de-serializing the encryption metadata string from the wire.";
         public const string EncryptionNotSupportedForExistingBlobs = "Encryption is not supported for a blob that already exists. Please do not specify an encryption policy.";
+        public const string EncryptionNotSupportedForFiles = "Encryption is not supported for files.";
         public const string EncryptionNotSupportedForPageBlobsOnPhone = "Encryption is not supported for PageBlobs on Windows Phone.";
+        public const string EncryptionPolicyMissingInStrictMode = "Encryption Policy is mandatory when RequireEncryption is set to true. If you do not want to encrypt/decrypt data, please set RequireEncryption to false in request options.";
         public const string EncryptionProtocolVersionInvalid = "Invalid Encryption Agent. This version of the client library does not understand the Encryption Agent set on the blob.";
         public const string ETagMissingForDelete = "Delete requires an ETag (which may be the '*' wildcard).";
         public const string ETagMissingForMerge = "Merge requires an ETag (which may be the '*' wildcard).";
@@ -84,6 +86,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidBlobListItem = "Invalid blob list item returned";
         public const string InvalidCorsRule = "A CORS rule must contain at least one allowed origin and allowed method, and MaxAgeInSeconds cannot have a value less than zero.";
         public const string InvalidDelimiter = "\\ is an invalid delimiter.";
+        public const string InvalidFileAclType = "Invalid acl public access type returned '{0}'. Expected file or share.";
         public const string InvalidEncryptionAlgorithm = "Invalid Encryption Algorithm found on the resource. This version of the client library does not support the specified encryption algorithm.";
         public const string InvalidEncryptionMode = "Invalid BlobEncryptionMode set on the policy. Please set it to FullBlob when the policy is used with UploadFromStream.";
         public const string InvalidFileListItem = "Invalid file list item returned";
@@ -95,6 +98,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidListingDetails = "Invalid blob listing details specified.";
         public const string InvalidLoggingLevel = "Invalid logging operations specified.";
         public const string InvalidMetricsLevel = "Invalid metrics level specified.";
+        public const string InvalidBlockSize = "Append block data should not exceed the maximum blob size condition value.";
         public const string InvalidPageSize = "Page data must be a multiple of 512 bytes.";
         public const string InvalidResourceName = "Invalid {0} name. Check MSDN for more information about valid {0} naming.";
         public const string InvalidResourceNameLength = "Invalid {0} name length. The {0} name must be between {1} and {2} characters long.";
@@ -143,6 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string PathStyleUriMissingAccountNameInformation = "Missing account name information inside path style uri. Path style uris should be of the form http://<IPAddressPlusPort>/<accountName>";
         public const string PayloadFormat = "Setting payload format for the request to '{0}'.";
         public const string PreconditionFailed = "The condition specified using HTTP conditional header(s) is not met.";
+        public const string PreconditionFailureIgnored = "Pre-condition failure on a retry is being ignored since the request should have succeeded in the first attempt.";
         public const string PrimaryOnlyCommand = "This operation can only be executed against the primary storage location.";
         public const string PropertyResolverCacheDisabled = "Property resolver cache is disabled.";
         public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details";
@@ -172,7 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TableQueryTypeMustHaveDefaultParameterlessCtor = "TableQuery Generic Type must provide a default parameterless constructor.";
         public const string TakeCountNotPositive = "Take count must be positive and greater than 0.";
         public const string TimeoutExceptionMessage = "The client could not finish the operation within specified timeout.";
-        public const string TooManyPolicyIdentifiers = "Too many '{0}' shared access policy identifiers provided. Server does not support setting more than '{1}' on a single container, queue, or table.";
+        public const string TooManyPolicyIdentifiers = "Too many '{0}' shared access policy identifiers provided. Server does not support setting more than '{1}' on a single container, queue, table, or share.";
         public const string TooManyPathSegments = "The count of URL path segments (strings between '/' characters) as part of the blob name cannot exceed 254.";
         public const string TraceAbort = "Aborting pending request due to timeout.";
         public const string TraceAbortError = "Could not abort pending request because of {0}.";
