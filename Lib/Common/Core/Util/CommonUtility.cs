@@ -20,7 +20,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
+#if !PORTABLE
     using Microsoft.WindowsAzure.Storage.File;
+#endif
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -78,6 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
 
+#if !PORTABLE
         /// <summary>
         /// Create an ExecutionState object that can be used for pre-request operations
         /// such as buffering user's data.
@@ -94,6 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
+#endif
 
         /// <summary>
         /// Returns the larger of two time spans.
@@ -236,6 +240,23 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         internal static int RoundUpToSeconds(this TimeSpan timeSpan)
         {
             return (int)Math.Ceiling(timeSpan.TotalSeconds);
+        }
+
+        /// <summary>
+        /// Appends 2 byte arrays.
+        /// </summary>
+        /// <param name="arr1">First array.</param>
+        /// <param name="arr2">Second array.</param>
+        /// <returns>The result byte array.</returns>
+        internal static byte[] BinaryAppend(byte[] arr1, byte[] arr2)
+        {
+            int newLen = arr1.Length + arr2.Length;
+            byte[] result = new byte[newLen];
+
+            Array.Copy(arr1, result, arr1.Length);
+            Array.Copy(arr2, 0, result, arr1.Length, arr2.Length);
+
+            return result;
         }
 
         /// <summary>

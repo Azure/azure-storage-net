@@ -52,53 +52,54 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await container.CreateAsync();
 
-                ICloudBlob blob = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    await blob.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await blob1.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
                 }
-                await blob.FetchAttributesAsync();
-                Assert.IsNotNull(blob.Properties.ContentMD5);
+                await blob1.FetchAttributesAsync();
+                Assert.IsNotNull(blob1.Properties.ContentMD5);
 
-                blob = container.GetBlockBlobReference("blob2");
+                blob1 = container.GetBlockBlobReference("blob2");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    await blob.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithNoMD5, null);
+                    await blob1.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithNoMD5, null);
                 }
-                await blob.FetchAttributesAsync();
-                Assert.IsNull(blob.Properties.ContentMD5);
+                await blob1.FetchAttributesAsync();
+                Assert.IsNull(blob1.Properties.ContentMD5);
 
-                blob = container.GetBlockBlobReference("blob3");
+                blob1 = container.GetBlockBlobReference("blob3");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    await blob.UploadFromStreamAsync(stream.AsInputStream());
+                    await blob1.UploadFromStreamAsync(stream.AsInputStream());
                 }
-                await blob.FetchAttributesAsync();
-                Assert.IsNotNull(blob.Properties.ContentMD5);
+                await blob1.FetchAttributesAsync();
+                Assert.IsNotNull(blob1.Properties.ContentMD5);
 
-                blob = container.GetPageBlobReference("blob4");
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob4");
+                blob2 = container.GetPageBlobReference("blob4");
                 using (Stream stream = new MemoryStream())
                 {
-                    await blob.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await blob2.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
                 }
-                await blob.FetchAttributesAsync();
-                Assert.IsNotNull(blob.Properties.ContentMD5);
+                await blob2.FetchAttributesAsync();
+                Assert.IsNotNull(blob2.Properties.ContentMD5);
 
-                blob = container.GetPageBlobReference("blob5");
+                blob2 = container.GetPageBlobReference("blob5");
                 using (Stream stream = new MemoryStream())
                 {
-                    await blob.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithNoMD5, null);
+                    await blob2.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithNoMD5, null);
                 }
-                await blob.FetchAttributesAsync();
-                Assert.IsNull(blob.Properties.ContentMD5);
+                await blob2.FetchAttributesAsync();
+                Assert.IsNull(blob2.Properties.ContentMD5);
 
-                blob = container.GetPageBlobReference("blob6");
+                blob2 = container.GetPageBlobReference("blob6");
                 using (Stream stream = new MemoryStream())
                 {
-                    await blob.UploadFromStreamAsync(stream.AsInputStream());
+                    await blob2.UploadFromStreamAsync(stream.AsInputStream());
                 }
-                await blob.FetchAttributesAsync();
-                Assert.IsNull(blob.Properties.ContentMD5);
+                await blob2.FetchAttributesAsync();
+                Assert.IsNull(blob2.Properties.ContentMD5);
             }
             finally
             {

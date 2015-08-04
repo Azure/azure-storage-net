@@ -168,6 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     file.UploadFromStream(srcStream, null, null, context);
                 }
+
                 byte[] testBuffer2 = new byte[2048];
                 MemoryStream dstStream2 = new MemoryStream(testBuffer2);
                 file.DownloadRangeToStream(dstStream2, null, null, null, null, context);

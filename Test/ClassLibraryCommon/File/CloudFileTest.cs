@@ -2486,5 +2486,47 @@ namespace Microsoft.WindowsAzure.Storage.File
                 share.DeleteIfExists();
             }
         }
+
+        [TestMethod]
+        [Description("Try operations with an invalid Sas")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileInvalidSas()
+        {
+            // Sas token creds.
+            string token = "?sp=abcde&sig=1";
+            StorageCredentials creds = new StorageCredentials(token);
+            Assert.IsTrue(creds.IsSAS);
+
+            // Client with shared key access.
+            CloudFileClient fileClient = GenerateCloudFileClient();
+            CloudFileShare share = fileClient.GetShareReference(GetRandomShareName());
+            try
+            {
+                share.Create();
+
+                SharedAccessFilePolicy policy = new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessFilePermissions.Read | SharedAccessFilePermissions.Write,
+                };
+                string sasToken = share.GetSharedAccessSignature(policy);
+
+                string fileUri = share.Uri.AbsoluteUri + "/file1" + sasToken;
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => new CloudFile(new Uri(fileUri), share.ServiceClient.Credentials),
+                    "Try to use SAS creds in Uri on a shared key client");
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                file.UploadFromStream(new MemoryStream(GetRandomBuffer(10)));
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
     }
 }

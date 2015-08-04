@@ -29,6 +29,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     internal static class BlobHttpRequestMessageFactory
     {
         /// <summary>
+        /// Constructs a web request to commit a block to an append blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpRequestMessage AppendBlock(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "appendblock");
+
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            request.ApplyAccessCondition(accessCondition);
+            request.ApplyAppendCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
         /// Constructs a web request to create a new block blob or page blob, or to update the content 
         /// of an existing block blob. 
         /// </summary>
@@ -88,9 +108,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 request.Headers.Add(Constants.HeaderConstants.BlobContentLengthHeader, pageBlobSize.ToString(NumberFormatInfo.InvariantInfo));
                 properties.Length = pageBlobSize;
             }
-            else
+            else if (blobType == BlobType.BlockBlob)
             {
                 request.Headers.Add(Constants.HeaderConstants.BlobType, Constants.HeaderConstants.BlockBlob);
+            }
+            else 
+            {
+                request.Headers.Add(Constants.HeaderConstants.BlobType, Constants.HeaderConstants.AppendBlob);
             }
 
             request.ApplyAccessCondition(accessCondition);
@@ -106,7 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         {
             if (snapshot.HasValue)
             {
-                builder.Add("snapshot", BlobRequest.ConvertDateTimeToSnapshotString(snapshot.Value));
+                builder.Add("snapshot", Request.ConvertDateTimeToSnapshotString(snapshot.Value));
             }
         }
 
@@ -607,7 +631,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             UriQueryBuilder builder = new UriQueryBuilder();
             if (snapshot.HasValue)
             {
-                builder.Add("snapshot", BlobRequest.ConvertDateTimeToSnapshotString(snapshot.Value));
+                builder.Add("snapshot", Request.ConvertDateTimeToSnapshotString(snapshot.Value));
             }
 
             HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);

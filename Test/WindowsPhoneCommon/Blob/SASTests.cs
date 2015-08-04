@@ -52,7 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private static async Task TestAccessAsync(string sasToken, SharedAccessBlobPermissions permissions, CloudBlobContainer container, ICloudBlob blob)
+        private static async Task TestAccessAsync(string sasToken, SharedAccessBlobPermissions permissions, CloudBlobContainer container, CloudBlob blob)
         {
             OperationContext operationContext = new OperationContext();
             StorageCredentials credentials = string.IsNullOrEmpty(sasToken) ?
@@ -139,7 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private static async Task TestBlobSASAsync(ICloudBlob testBlob, SharedAccessBlobPermissions permissions)
+        private static async Task TestBlobSASAsync(CloudBlob testBlob, SharedAccessBlobPermissions permissions)
         {
             await UploadTextAsync(testBlob, "blob", Encoding.UTF8);
 

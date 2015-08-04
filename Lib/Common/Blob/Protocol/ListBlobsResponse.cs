@@ -287,6 +287,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                                 case Constants.PageBlobValue:
                                                     blob.Properties.BlobType = BlobType.PageBlob;
                                                     break;
+
+                                                case Constants.AppendBlobValue:
+                                                    blob.Properties.BlobType = BlobType.AppendBlob;
+                                                    break;
                                             }
 
                                             break;
@@ -355,7 +359,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             if (blob.SnapshotTime.HasValue)
             {
                 UriQueryBuilder builder = new UriQueryBuilder();
-                builder.Add("snapshot", BlobRequest.ConvertDateTimeToSnapshotString(blob.SnapshotTime.Value));
+                builder.Add("snapshot", Request.ConvertDateTimeToSnapshotString(blob.SnapshotTime.Value));
                 uri = builder.AddToUri(uri);
             }
 

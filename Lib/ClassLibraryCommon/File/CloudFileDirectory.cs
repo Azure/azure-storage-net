@@ -1056,6 +1056,116 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
+#if SYNC
+        /// <summary>
+        /// Updates the directory's metadata.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the directory. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public void SetMetadata(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            Executor.ExecuteSync(
+                this.SetMetadataImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to update the directory's metadata.
+        /// </summary>
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSetMetadata(AsyncCallback callback, object state)
+        {
+            return this.BeginSetMetadata(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to update the directory's metadata.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the directory. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.SetMetadataImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to update the directory's metadata.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public void EndSetMetadata(IAsyncResult asyncResult)
+        {
+            Executor.EndExecuteAsync<NullType>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Returns a task that performs an asynchronous operation to update the directory's metadata.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task SetMetadataAsync()
+        {
+            return this.SetMetadataAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous operation to update the directory's metadata.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task SetMetadataAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, cancellationToken);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous operation to update the directory's metadata.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the directory. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.SetMetadataAsync(accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous operation to update the directory's metadata.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the directory. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, accessCondition, options, operationContext, cancellationToken);
+        }
+#endif
+
         /// <summary>
         /// Implementation for the Create method.
         /// </summary>
@@ -1067,6 +1177,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.Create(uri, serverTimeout, useVersionHeader, ctx);
+            putCmd.SetHeaders = (r, ctx) => DirectoryHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -1145,6 +1256,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.Properties = DirectoryHttpResponseParsers.GetProperties(resp);
+                this.Metadata = DirectoryHttpResponseParsers.GetMetadata(resp);
                 return NullType.Value;
             };
 
@@ -1195,6 +1307,30 @@ namespace Microsoft.WindowsAzure.Storage.File
             };
 
             return getCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the SetMetadata method.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the directory. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that sets the metadata.</returns>
+        private RESTCommand<NullType> SetMetadataImpl(AccessCondition accessCondition, FileRequestOptions options)
+        {
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            putCmd.SetHeaders = (r, ctx) => DirectoryHttpWebRequestFactory.AddMetadata(r, this.Metadata);
+            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
         }
 
         /// <summary>

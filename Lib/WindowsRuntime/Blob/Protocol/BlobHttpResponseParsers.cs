@@ -21,9 +21,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Net.Http;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     public
 #else
     internal
@@ -103,7 +104,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string sequenceNumber = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobSequenceNumber);
             if (!string.IsNullOrEmpty(sequenceNumber))
             {
-                properties.PageBlobSequenceNumber = long.Parse(sequenceNumber);
+                properties.PageBlobSequenceNumber = long.Parse(sequenceNumber, CultureInfo.InvariantCulture);
+            }
+
+            // Get committed block count
+            string comittedBlockCount = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobCommittedBlockCount);
+            if (!string.IsNullOrEmpty(comittedBlockCount))
+            {
+                properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
             }
 
             return properties;

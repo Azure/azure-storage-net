@@ -61,9 +61,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     case "container":
                         accessType = BlobContainerPublicAccessType.Container;
                         break;
+
                     case "blob":
                         accessType = BlobContainerPublicAccessType.Blob;
                         break;
+
                     default:
                         string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.InvalidAclType, acl);
                         throw new InvalidOperationException(errorMessage);

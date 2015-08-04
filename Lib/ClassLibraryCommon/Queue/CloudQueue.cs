@@ -2504,6 +2504,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.SetAcl(uri, serverTimeout, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
+            putCmd.StreamToDispose = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2568,7 +2569,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CommonUtility.AssertNotNull("message", message);
 
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
-            QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage), memoryStream);
+            QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage, options), memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
@@ -2576,6 +2577,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
+            putCmd.StreamToDispose = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SetHeaders = (r, ctx) =>
             {
@@ -2637,10 +2639,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             if ((updateFields & MessageUpdateFields.Content) != 0)
             {
                 MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager, (int)(1 * Constants.KB));
-                QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage), memoryStream);
+                QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage, options), memoryStream);
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
                 putCmd.SendStream = memoryStream;
+                putCmd.StreamToDispose = memoryStream;
                 putCmd.RecoveryAction = RecoveryActions.RewindStream;
             }
 
@@ -2676,7 +2679,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Implementation for the GetPermissions method.
+        /// Implementation for the GetMessages method.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
@@ -2684,6 +2687,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand{T}"/> that gets the permissions.</returns>
         private RESTCommand<IEnumerable<CloudQueueMessage>> GetMessagesImpl(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options)
         {
+            options.AssertPolicyIfRequired();
+
             RESTCommand<IEnumerable<CloudQueueMessage>> getCmd = new RESTCommand<IEnumerable<CloudQueueMessage>>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(getCmd);
@@ -2695,7 +2700,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
 
-                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item)).ToList();
+                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item, options)).ToList();
 
                 return messagesList;
             };
@@ -2711,6 +2716,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand{T}"/> that gets the permissions.</returns>
         private RESTCommand<IEnumerable<CloudQueueMessage>> PeekMessagesImpl(int messageCount, QueueRequestOptions options)
         {
+            options.AssertPolicyIfRequired();
+
             RESTCommand<IEnumerable<CloudQueueMessage>> getCmd = new RESTCommand<IEnumerable<CloudQueueMessage>>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(getCmd);
@@ -2723,7 +2730,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
 
-                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item)).ToList();
+                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item, options)).ToList();
 
                 return messagesList;
             };

@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Security.Cryptography;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -35,211 +37,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a blob that is uploaded as a set of blocks.
     /// </summary>
-    public sealed partial class CloudBlockBlob : ICloudBlob
+    public sealed partial class CloudBlockBlob : CloudBlob, ICloudBlob
     {
 #if SYNC
         /// <summary>
-        /// Opens a stream for reading from the blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="System.IO.Stream"/> object to be used for reading from the blob.</returns>
-        /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributes(AccessCondition, BlobRequestOptions, OperationContext)"/> method under the covers.</para>
-        /// <para>Set the <see cref="StreamMinimumReadSizeInBytes"/> property before calling this method to specify the minimum
-        /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
-        /// </remarks>
-        [DoesServiceRequest]
-        public Stream OpenRead(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            this.FetchAttributes(accessCondition, options, operationContext);
-            AccessCondition streamAccessCondition = AccessCondition.CloneConditionWithETag(accessCondition, this.Properties.ETag);
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
-            return new BlobReadStream(this, streamAccessCondition, modifiedOptions, operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to open a stream for reading from the blob.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>
-        /// <para>On the <see cref="System.IO.Stream"/> object returned by the <see cref="EndOpenRead"/> method, the <see cref="System.IO.Stream.EndRead(IAsyncResult)"/> 
-        /// method must be called exactly once for every <see cref="System.IO.Stream.BeginRead(byte[], int, int, AsyncCallback, Object)"/> call. 
-        /// Failing to end the read process before beginning another read process can cause unexpected behavior.</para>
-        /// <para>Note that this method always makes a call to the <see cref="BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
-        /// <para>Set the <see cref="StreamMinimumReadSizeInBytes"/> property before calling this method to specify the minimum
-        /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
-        /// </remarks>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginOpenRead(AsyncCallback callback, object state)
-        {
-            return this.BeginOpenRead(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to open a stream for reading from the blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>
-        /// <para>On the <see cref="System.IO.Stream"/> object returned by the <see cref="EndOpenRead"/> method, the <see cref="System.IO.Stream.EndRead(IAsyncResult)"/> 
-        /// method must be called exactly once for every <see cref="System.IO.Stream.BeginRead(byte[], int, int, AsyncCallback, Object)"/> call. 
-        /// Failing to end the read process before beginning another read process can cause unexpected behavior.</para>
-        /// <para>Note that this method always makes a call to the <see cref="BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
-        /// <para>Set the <see cref="StreamMinimumReadSizeInBytes"/> property before calling this method to specify the minimum
-        /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
-        /// </remarks>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginOpenRead(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            StorageAsyncResult<Stream> storageAsyncResult = new StorageAsyncResult<Stream>(callback, state);
-
-            ICancellableAsyncResult result = this.BeginFetchAttributes(
-                accessCondition,
-                options,
-                operationContext,
-                ar =>
-                {
-                    try
-                    {
-                        this.EndFetchAttributes(ar);
-                        storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-                        AccessCondition streamAccessCondition = AccessCondition.CloneConditionWithETag(accessCondition, this.Properties.ETag);
-                        BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
-                        storageAsyncResult.Result = new BlobReadStream(this, streamAccessCondition, modifiedOptions, operationContext);
-                        storageAsyncResult.OnComplete();
-                    }
-                    catch (Exception e)
-                    {
-                        storageAsyncResult.OnComplete(e);
-                    }
-                },
-                null /* state */);
-
-            storageAsyncResult.CancelDelegate = result.Cancel;
-            return storageAsyncResult;
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to open a stream for reading from the blob.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>A <see cref="System.IO.Stream"/> object to be used for reading from the blob.</returns>
-        /// <remarks>
-        /// <para>On the <see cref="System.IO.Stream"/> object returned by this method, the <see cref="System.IO.Stream.EndRead(IAsyncResult)"/> 
-        /// method must be called exactly once for every <see cref="System.IO.Stream.BeginRead(byte[], int, int, AsyncCallback, Object)"/> call. 
-        /// Failing to end the read process before beginning another read process can cause unexpected behavior.</para>
-        /// </remarks>
-        public Stream EndOpenRead(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<Stream> storageAsyncResult = (StorageAsyncResult<Stream>)asyncResult;
-            storageAsyncResult.End();
-            return storageAsyncResult.Result;
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to open a stream for reading from the blob.
-        /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.IO.Stream"/> that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// <para>On the <see cref="System.IO.Stream"/> object returned by this method, the <see cref="System.IO.Stream.EndRead(IAsyncResult)"/> 
-        /// method must be called exactly once for every <see cref="System.IO.Stream.BeginRead(byte[], int, int, AsyncCallback, Object)"/> call. 
-        /// Failing to end the read process before beginning another read process can cause unexpected behavior.</para>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
-        /// <para>Set the <see cref="StreamMinimumReadSizeInBytes"/> property before calling this method to specify the minimum
-        /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task<Stream> OpenReadAsync()
-        {
-            return this.OpenReadAsync(CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to open a stream for reading from the blob.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.IO.Stream"/> that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// <para>On the <see cref="System.IO.Stream"/> object returned by this method, the <see cref="System.IO.Stream.EndRead(IAsyncResult)"/> 
-        /// method must be called exactly once for every <see cref="System.IO.Stream.BeginRead(byte[], int, int, AsyncCallback, Object)"/> call. 
-        /// Failing to end the read process before beginning another read process can cause unexpected behavior.</para>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
-        /// <para>Set the <see cref="StreamMinimumReadSizeInBytes"/> property before calling this method to specify the minimum
-        /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginOpenRead, this.EndOpenRead, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to open a stream for reading from the blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.IO.Stream"/> that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// <para>On the <see cref="System.IO.Stream"/> object returned by this method, the <see cref="System.IO.Stream.EndRead(IAsyncResult)"/> 
-        /// method must be called exactly once for every <see cref="System.IO.Stream.BeginRead(byte[], int, int, AsyncCallback, Object)"/> call. 
-        /// Failing to end the read process before beginning another read process can cause unexpected behavior.</para>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
-        /// <para>Set the <see cref="StreamMinimumReadSizeInBytes"/> property before calling this method to specify the minimum
-        /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task<Stream> OpenReadAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.OpenReadAsync(accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to open a stream for reading from the blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.IO.Stream"/> that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// <para>On the <see cref="System.IO.Stream"/> object returned by this method, the <see cref="System.IO.Stream.EndRead(IAsyncResult)"/> 
-        /// method must be called exactly once for every <see cref="System.IO.Stream.BeginRead(byte[], int, int, AsyncCallback, Object)"/> call. 
-        /// Failing to end the read process before beginning another read process can cause unexpected behavior.</para>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
-        /// <para>Set the <see cref="StreamMinimumReadSizeInBytes"/> property before calling this method to specify the minimum
-        /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task<Stream> OpenReadAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginOpenRead, this.EndOpenRead, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Opens a stream for writing to the blob.
+        /// Opens a stream for writing to the blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="CloudBlobStream"/> to be used for writing to the blob.</returns>
         /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributes(AccessCondition, BlobRequestOptions, OperationContext)"/> method under the covers.</para>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributes(AccessCondition, BlobRequestOptions, OperationContext)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         public CloudBlobStream OpenWrite(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -268,21 +81,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
-            return new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
-        }
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            modifiedOptions.AssertPolicyIfRequired();
 
+            if (modifiedOptions.EncryptionPolicy != null)
+            {
+                ICryptoTransform transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
+                return new BlobEncryptedWriteStream(this, accessCondition, modifiedOptions, operationContext, transform);
+            }
+            else
+#endif
+            {
+                return new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
+            }
+        }
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to open a stream for writing to the blob.
+        /// Begins an asynchronous operation to open a stream for writing to the blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="BeginOpenWrite(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/>.</para>
         /// </remarks>
         public ICancellableAsyncResult BeginOpenWrite(AsyncCallback callback, object state)
         {
@@ -290,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to open a stream for writing to the blob.
+        /// Begins an asynchronous operation to open a stream for writing to the blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -299,9 +124,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         public ICancellableAsyncResult BeginOpenWrite(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
@@ -354,7 +181,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                storageAsyncResult.Result = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                modifiedOptions.AssertPolicyIfRequired();
+
+                if (modifiedOptions.EncryptionPolicy != null)
+                {
+                    ICryptoTransform transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
+                    storageAsyncResult.Result = new BlobEncryptedWriteStream(this, accessCondition, modifiedOptions, operationContext, transform);
+                }
+                else
+#endif
+                {
+                    storageAsyncResult.Result = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
+                }
+
                 storageAsyncResult.OnComplete();
             }
 
@@ -375,13 +215,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudBlobStream"/> that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="OpenWriteAsync(AccessCondition, BlobRequestOptions, OperationContext)"/>.</para>        
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync()
@@ -390,14 +231,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudBlobStream"/> that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="OpenWriteAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.</para>                
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync(CancellationToken cancellationToken)
@@ -406,16 +248,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudBlobStream"/> that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -424,7 +268,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to open a stream for writing to the blob.
+        /// Initiates an asynchronous operation to open a stream for writing to the blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -432,9 +276,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudBlobStream"/> that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// <para>Note that this method always makes a call to the <see cref="FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
         /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
         [DoesServiceRequest]
         public Task<CloudBlobStream> OpenWriteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
@@ -445,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads a stream to a block blob. 
+        /// Uploads a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -458,7 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Uploads a stream to a block blob. 
+        /// Uploads a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -472,7 +318,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Uploads a stream to a block blob. 
+        /// Uploads a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -501,7 +347,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             bool lessThanSingleBlobThreshold = source.CanSeek
                                                && (length ?? source.Length - source.Position)
                                                <= modifiedOptions.SingleBlobUploadThresholdInBytes.Value;
-            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold)
+            modifiedOptions.AssertPolicyIfRequired();
+
+            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold && modifiedOptions.EncryptionPolicy == null)
             {
                 string contentMD5 = null;
                 if (modifiedOptions.StoreBlobContentMD5.Value)
@@ -544,7 +392,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a block blob.
+        /// Begins an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -557,7 +405,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a block blob. 
+        /// Begins an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -573,7 +421,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a block blob.
+        /// Begins an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -587,7 +435,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a block blob. 
+        /// Begins an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -604,7 +452,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a block blob. 
+        /// Begins an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -637,7 +485,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             bool lessThanSingleBlobThreshold = source.CanSeek &&
                 (length ?? source.Length - source.Position) <= modifiedOptions.SingleBlobUploadThresholdInBytes.Value;
-            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold)
+            modifiedOptions.AssertPolicyIfRequired();
+            
+            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold && modifiedOptions.EncryptionPolicy == null)
             {
                 if (modifiedOptions.StoreBlobContentMD5.Value)
                 {
@@ -744,7 +594,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                                 {
                                                     storageAsyncResult.CancelDelegate = null;
                                                     ICancellableAsyncResult commitResult = blobStream.BeginCommit(
-                                                            CloudBlobSharedImpl.BlobOutputStreamCommitCallback,
+                                                            CloudBlob.BlobOutputStreamCommitCallback,
                                                             storageAsyncResult);
 
                                                     storageAsyncResult.CancelDelegate = commitResult.Cancel;
@@ -825,7 +675,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
@@ -836,7 +686,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -848,7 +698,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -862,7 +712,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -877,7 +727,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -889,7 +739,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -902,7 +752,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -917,7 +767,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a stream to a block blob. 
+        /// Initiates an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -935,7 +785,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads a file to the Blob service. 
+        /// Uploads a file to the Blob service. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -955,7 +805,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a file to a blob.
+        /// Begins an asynchronous operation to upload a file to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -969,7 +819,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a file to a blob. 
+        /// Begins an asynchronous operation to upload a file to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -1048,7 +898,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a blob.
+        /// Initiates an asynchronous operation to upload a file to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -1060,7 +910,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a blob.
+        /// Initiates an asynchronous operation to upload a file to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -1073,7 +923,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a blob.
+        /// Initiates an asynchronous operation to upload a file to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -1088,7 +938,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a file to a blob.
+        /// Initiates an asynchronous operation to upload a file to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
@@ -1106,7 +956,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads the contents of a byte array to a blob.
+        /// Uploads the contents of a byte array to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -1127,7 +977,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to upload the contents of a byte array to a blob.
+        /// Begins an asynchronous operation to upload the contents of a byte array to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -1142,7 +992,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload the contents of a byte array to a blob.
+        /// Begins an asynchronous operation to upload the contents of a byte array to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -1173,7 +1023,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -1186,7 +1036,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -1200,7 +1050,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -1216,7 +1066,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob.
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
@@ -1235,7 +1085,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads a string of text to a blob. 
+        /// Uploads a string of text to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">A string containing the text to upload.</param>
         /// <param name="encoding">A <see cref="System.Text.Encoding"/> object that indicates the text encoding to use. If <c>null</c>, UTF-8 will be used.</param>
@@ -1253,7 +1103,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a string of text to a blob. 
+        /// Begins an asynchronous operation to upload a string of text to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">A string containing the text to upload.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -1266,7 +1116,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to upload a string of text to a blob. 
+        /// Begins an asynchronous operation to upload a string of text to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">A string containing the text to upload.</param>
         /// <param name="encoding">A <see cref="System.Text.Encoding"/> object that indicates the text encoding to use. If <c>null</c>, UTF-8 will be used.</param>
@@ -1296,7 +1146,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to upload a string of text to a blob.
+        /// Initiates an asynchronous operation to upload a string of text to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">A string containing the text to upload.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
@@ -1307,7 +1157,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a string of text to a blob.
+        /// Initiates an asynchronous operation to upload a string of text to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">A string containing the text to upload.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -1319,7 +1169,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a string of text to a blob.
+        /// Initiates an asynchronous operation to upload a string of text to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">A string containing the text to upload.</param>
         /// <param name="encoding">A <see cref="System.Text.Encoding"/> object that indicates the text encoding to use. If <c>null</c>, UTF-8 will be used.</param>
@@ -1334,7 +1184,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to upload a string of text to a blob.
+        /// Initiates an asynchronous operation to upload a string of text to a blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">A string containing the text to upload.</param>
         /// <param name="encoding">A <see cref="System.Text.Encoding"/> object that indicates the text encoding to use. If <c>null</c>, UTF-8 will be used.</param>
@@ -1347,441 +1197,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public Task UploadTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginUploadText, this.EndUploadText, content, encoding, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Downloads the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void DownloadToStream(Stream target, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            this.DownloadRangeToStream(target, null /* offset */, null /* length */, accessCondition, options, operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to download the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadToStream(Stream target, AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadToStream(target, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to download the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadToStream(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadRangeToStream(target, null /* offset */, null /* length */, accessCondition, options, operationContext, callback, state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to download the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndDownloadToStream(IAsyncResult asyncResult)
-        {
-            this.EndDownloadRangeToStream(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToStreamAsync(Stream target)
-        {
-            return this.DownloadToStreamAsync(target, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToStreamAsync(Stream target, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToStream, this.EndDownloadToStream, target, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.DownloadToStreamAsync(target, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToStream, this.EndDownloadToStream, target, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Downloads the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void DownloadToFile(string path, FileMode mode, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            CommonUtility.AssertNotNull("path", path);
-
-            try
-            {
-                using (FileStream fileStream = new FileStream(path, mode, FileAccess.Write))
-                {
-                    this.DownloadToStream(fileStream, accessCondition, options, operationContext);
-                }
-            }
-            catch (Exception)
-            {
-                if (mode == FileMode.Create || mode == FileMode.CreateNew)
-                {
-                    try
-                    {
-                        File.Delete(path);
-                    }
-                    catch (Exception)
-                    {
-                        // Best effort to clean up in the event that download was unsuccessful.
-                        // Do not throw as we want to throw original exception.
-                    }
-                }
-
-                throw;
-            }
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadToFile(string path, FileMode mode, AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadToFile(path, mode, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadToFile(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            CommonUtility.AssertNotNull("path", path);
-
-            FileStream fileStream = new FileStream(path, mode, FileAccess.Write);
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state)
-            {
-                OperationState = Tuple.Create<FileStream, FileMode>(fileStream, mode)
-            };
-
-            try
-            {
-                ICancellableAsyncResult asyncResult = this.BeginDownloadToStream(fileStream, accessCondition, options, operationContext, this.DownloadToFileCallback, storageAsyncResult);
-                storageAsyncResult.CancelDelegate = asyncResult.Cancel;
-                return storageAsyncResult;
-            }
-            catch (Exception)
-            {
-                fileStream.Dispose();
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Called when the asynchronous DownloadToStream operation completes.
-        /// </summary>
-        /// <param name="asyncResult">The result of the asynchronous operation.</param>
-        private void DownloadToFileCallback(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult.AsyncState;
-            Exception exception = null;
-            bool tryFileDelete = false;
-            string filePath = null;
-
-            try
-            {
-                this.EndDownloadToStream(asyncResult);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-                tryFileDelete = true;
-            }
-
-            // We should do FileStream disposal in a separate try-catch block
-            // because we want to close the file even if the operation fails.
-            try
-            {
-                FileStream fileStream = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item1;
-                filePath = fileStream.Name;
-                fileStream.Dispose();
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            if (tryFileDelete)
-            {
-                try
-                {
-                    FileMode mode = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item2;
-                    if (mode == FileMode.Create || mode == FileMode.CreateNew)
-                    {
-                        File.Delete(filePath);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Best effort to clean up in the event that download was unsuccessful.
-                    // Do not throw as we want to throw original exception.
-                }
-            }
-
-            storageAsyncResult.OnComplete(exception);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndDownloadToFile(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<NullType> res = (StorageAsyncResult<NullType>)asyncResult;
-            res.End();
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToFileAsync(string path, FileMode mode)
-        {
-            return this.DownloadToFileAsync(path, mode, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToFileAsync(string path, FileMode mode, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToFile, this.EndDownloadToFile, path, mode, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToFile, this.EndDownloadToFile, path, mode, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Downloads the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The total number of bytes read into the buffer.</returns>
-        [DoesServiceRequest]
-        public int DownloadToByteArray(byte[] target, int index, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            return this.DownloadRangeToByteArray(target, index, null /* blobOffset */, null /* length */, accessCondition, options, operationContext);
-        }
-
-#endif
-        /// <summary>
-        /// Begins an asynchronous operation to download the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadToByteArray(byte[] target, int index, AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadToByteArray(target, index, null /* accessCondition */, null /* options */, null /*operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to download the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadToByteArray(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadRangeToByteArray(target, index, null /* blobOffset */, null /* length */, accessCondition, options, operationContext, callback, state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to download the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>The total number of bytes read into the buffer.</returns>
-        public int EndDownloadToByteArray(IAsyncResult asyncResult)
-        {
-            return this.EndDownloadRangeToByteArray(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadToByteArrayAsync(byte[] target, int index)
-        {
-            return this.DownloadToByteArrayAsync(target, index, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadToByteArrayAsync(byte[] target, int index, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadToByteArray, this.EndDownloadToByteArray, target, index, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.DownloadToByteArrayAsync(target, index, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadToByteArray, this.EndDownloadToByteArray, target, index, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -1932,1124 +1347,778 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Downloads a range of bytes from a blob to a stream.
+        /// Uploads a single block.
         /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
         [DoesServiceRequest]
-        public void DownloadRangeToStream(Stream target, long? offset, long? length, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public void PutBlock(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            CommonUtility.AssertNotNull("target", target);
+            CommonUtility.AssertNotNull("blockData", blockData);
 
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.GetBlobImpl(this, this.attributes, target, offset, length, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to download a range of bytes from a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadRangeToStream(target, offset, length, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to download a range of bytes from a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            CommonUtility.AssertNotNull("target", target);
-
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.GetBlobImpl(this, this.attributes, target, offset, length, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to download a range of bytes from a blob to a stream.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndDownloadRangeToStream(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length)
-        {
-            return this.DownloadRangeToStreamAsync(target, offset, length, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadRangeToStream, this.EndDownloadRangeToStream, target, offset, length, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a stream.
-        /// </summary>
-        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
-        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadRangeToStream, this.EndDownloadRangeToStream, target, offset, length, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Downloads a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The total number of bytes read into the buffer.</returns>
-        [DoesServiceRequest]
-        public int DownloadRangeToByteArray(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            using (SyncMemoryStream stream = new SyncMemoryStream(target, index))
-            {
-                this.DownloadRangeToStream(stream, blobOffset, length, accessCondition, options, operationContext);
-                return (int)stream.Position;
-            }
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to download a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? blobOffset, long? length, AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadRangeToByteArray(target, index, blobOffset, length, null /* accesCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to download a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            SyncMemoryStream stream = new SyncMemoryStream(target, index);
-            StorageAsyncResult<int> storageAsyncResult = new StorageAsyncResult<int>(callback, state) { OperationState = stream };
-
-            ICancellableAsyncResult result = this.BeginDownloadRangeToStream(
-                stream,
-                blobOffset,
-                length,
-                accessCondition,
-                options,
-                operationContext,
-                this.DownloadRangeToByteArrayCallback,
-                storageAsyncResult);
-
-            storageAsyncResult.CancelDelegate = result.Cancel;
-            return storageAsyncResult;
-        }
-
-        /// <summary>
-        /// Called when the asynchronous DownloadRangeToStream operation completes.
-        /// </summary>
-        /// <param name="asyncResult">The result of the asynchronous operation.</param>
-        private void DownloadRangeToByteArrayCallback(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<int> storageAsyncResult = (StorageAsyncResult<int>)asyncResult.AsyncState;
-
-            try
-            {
-                this.EndDownloadRangeToStream(asyncResult);
-
-                SyncMemoryStream stream = (SyncMemoryStream)storageAsyncResult.OperationState;
-                storageAsyncResult.Result = (int)stream.Position;
-                storageAsyncResult.OnComplete();
-            }
-            catch (Exception e)
-            {
-                storageAsyncResult.OnComplete(e);
-            }
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to download a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>The total number of bytes read into the buffer.</returns>
-        public int EndDownloadRangeToByteArray(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<int> res = (StorageAsyncResult<int>)asyncResult;
-            res.End();
-            return res.Result;
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length)
-        {
-            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadRangeToByteArray, this.EndDownloadRangeToByteArray, target, index, blobOffset, length, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to download a range of bytes from a blob to a byte array.
-        /// </summary>
-        /// <param name="target">The target byte array.</param>
-        /// <param name="index">The starting offset in the byte array.</param>
-        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
-        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadRangeToByteArray, this.EndDownloadRangeToByteArray, target, index, blobOffset, length, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Checks existence of the blob.
-        /// </summary>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns><c>true</c> if the blob exists.</returns>
-        [DoesServiceRequest]
-        public bool Exists(BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            return this.Exists(false, options, operationContext);
-        }
-
-        /// <summary>
-        /// Checks existence of the blob.
-        /// </summary>
-        /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns><c>true</c> if the blob exists.</returns>
-        private bool Exists(bool primaryOnly, BlobRequestOptions options, OperationContext operationContext)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.ExecuteSync(
-                CloudBlobSharedImpl.ExistsImpl(this, this.attributes, modifiedOptions, primaryOnly),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous request to check existence of the blob.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginExists(AsyncCallback callback, object state)
-        {
-            return this.BeginExists(null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous request to check existence of the blob.
-        /// </summary>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginExists(BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            return this.BeginExists(false, options, operationContext, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous request to check existence of the blob.
-        /// </summary>
-        /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        private ICancellableAsyncResult BeginExists(bool primaryOnly, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.ExistsImpl(this, this.attributes, modifiedOptions, primaryOnly),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Returns the asynchronous result of the request to check existence of the blob.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns><c>true</c> if the blob exists.</returns>
-        public bool EndExists(IAsyncResult asyncResult)
-        {
-            return Executor.EndExecuteAsync<bool>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to check existence of the blob.
-        /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<bool> ExistsAsync()
-        {
-            return this.ExistsAsync(CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to check existence of the blob.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<bool> ExistsAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to check existence of the blob.
-        /// </summary>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<bool> ExistsAsync(BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.ExistsAsync(options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to check existence of the blob.
-        /// </summary>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<bool> ExistsAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Populates a blob's properties and metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void FetchAttributes(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.FetchAttributesImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to populate the blob's properties and metadata.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginFetchAttributes(AsyncCallback callback, object state)
-        {
-            return this.BeginFetchAttributes(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to populate the blob's properties and metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginFetchAttributes(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.FetchAttributesImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to populate the blob's properties and metadata.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndFetchAttributes(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to populate the blob's properties and metadata.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task FetchAttributesAsync()
-        {
-            return this.FetchAttributesAsync(CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to populate the blob's properties and metadata.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task FetchAttributesAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to populate the blob's properties and metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.FetchAttributesAsync(accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to populate the blob's properties and metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Updates the blob's metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void SetMetadata(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.SetMetadataImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to update the blob's metadata.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginSetMetadata(AsyncCallback callback, object state)
-        {
-            return this.BeginSetMetadata(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to update the blob's metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.SetMetadataImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to update the blob's metadata.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndSetMetadata(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's metadata.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetMetadataAsync()
-        {
-            return this.SetMetadataAsync(CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's metadata.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetMetadataAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.SetMetadataAsync(accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's metadata.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Updates the blob's properties.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void SetProperties(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.SetPropertiesImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to update the blob's properties.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginSetProperties(AsyncCallback callback, object state)
-        {
-            return this.BeginSetProperties(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to update the blob's properties.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.SetPropertiesImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to update the blob's properties.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndSetProperties(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's properties.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetPropertiesAsync()
-        {
-            return this.SetPropertiesAsync(CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's properties.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetPropertiesAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetProperties, this.EndSetProperties, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's properties.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetPropertiesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.SetPropertiesAsync(accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to update the blob's properties.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task SetPropertiesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetProperties, this.EndSetProperties, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Deletes the blob.
-        /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void Delete(DeleteSnapshotsOption deleteSnapshotsOption = DeleteSnapshotsOption.None, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.DeleteBlobImpl(this, this.attributes, deleteSnapshotsOption, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to delete the blob.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDelete(AsyncCallback callback, object state)
-        {
-            return this.BeginDelete(DeleteSnapshotsOption.None, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to delete the blob.
-        /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDelete(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.DeleteBlobImpl(this, this.attributes, deleteSnapshotsOption, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to delete the blob.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndDelete(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to delete the blob.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DeleteAsync()
-        {
-            return this.DeleteAsync(CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to delete the blob.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DeleteAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to delete the blob.
-        /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DeleteAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.DeleteAsync(deleteSnapshotsOption, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to delete the blob.
-        /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task DeleteAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Deletes the blob if it already exists.
-        /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns><c>true</c> if the blob did already exist and was deleted; otherwise <c>false</c>.</returns>
-        [DoesServiceRequest]
-        public bool DeleteIfExists(DeleteSnapshotsOption deleteSnapshotsOption = DeleteSnapshotsOption.None, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+            bool requiresContentMD5 = string.IsNullOrEmpty(contentMD5) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
 
-            bool exists = this.Exists(true, modifiedOptions, operationContext);
-            if (!exists)
-            {
-                return false;
-            }
+            Stream seekableStream = blockData;
+            bool seekableStreamCreated = false;
 
             try
             {
-                this.Delete(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext);
-                return true;
-            }
-            catch (StorageException e)
-            {
-                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                if (!blockData.CanSeek || requiresContentMD5)
                 {
-                    if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
+                    ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+
+                    Stream writeToStream;
+                    if (blockData.CanSeek)
                     {
-                        return false;
+                        writeToStream = Stream.Null;
                     }
                     else
                     {
-                        throw;
+                        seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                        seekableStreamCreated = true;
+                        writeToStream = seekableStream;
+                    }
+
+                    long startPosition = seekableStream.Position;
+                    StreamDescriptor streamCopyState = new StreamDescriptor();
+                    blockData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, true, tempExecutionState, streamCopyState);
+                    seekableStream.Position = startPosition;
+
+                    if (requiresContentMD5)
+                    {
+                        contentMD5 = streamCopyState.Md5;
                     }
                 }
-                else
+
+                Executor.ExecuteSync(
+                    this.PutBlockImpl(seekableStream, blockId, contentMD5, accessCondition, modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext);
+            }
+            finally
+            {
+                if (seekableStreamCreated)
                 {
-                    throw;
+                    seekableStream.Dispose();
                 }
             }
         }
 #endif
 
         /// <summary>
-        /// Begins an asynchronous request to delete the blob if it already exists.
+        /// Begins an asynchronous operation to upload a single block.
         /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDeleteIfExists(AsyncCallback callback, object state)
+        public ICancellableAsyncResult BeginPutBlock(string blockId, Stream blockData, string contentMD5, AsyncCallback callback, object state)
         {
-            return this.BeginDeleteIfExists(DeleteSnapshotsOption.None, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginPutBlock(blockId, blockData, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
+#if SYNC
         /// <summary>
-        /// Begins an asynchronous request to delete the blob if it already exists.
+        /// Returns an enumerable collection of the blob's blocks, using the specified block list filter.
         /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
+        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return 
+        /// committed blocks, uncommitted blocks, or both.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of objects implementing <see cref="ListBlockItem"/>.</returns>
+        [DoesServiceRequest]
+        public IEnumerable<ListBlockItem> DownloadBlockList(BlockListingFilter blockListingFilter = BlockListingFilter.Committed, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+            return Executor.ExecuteSync(
+                this.GetBlockListImpl(blockListingFilter, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDeleteIfExists(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public ICancellableAsyncResult BeginPutBlock(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            CommonUtility.AssertNotNull("blockData", blockData);
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+            bool requiresContentMD5 = string.IsNullOrEmpty(contentMD5) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
+            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
 
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
+            if (blockData.CanSeek && !requiresContentMD5)
             {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
+                this.PutBlockHandler(blockId, blockData, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
+            }
+            else
+            {
+                ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+                storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
 
-            this.DeleteIfExistsHandler(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
+                Stream seekableStream;
+                Stream writeToStream;
+                if (blockData.CanSeek)
+                {
+                    seekableStream = blockData;
+                    writeToStream = Stream.Null;
+                }
+                else
+                {
+                    seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                    storageAsyncResult.OperationState = seekableStream;
+                    writeToStream = seekableStream;
+                }
+
+                long startPosition = seekableStream.Position;
+                StreamDescriptor streamCopyState = new StreamDescriptor();
+                blockData.WriteToAsync(
+                    writeToStream,
+                    null /* copyLength */,
+                    Constants.MaxBlockSize,
+                    requiresContentMD5,
+                    tempExecutionState,
+                    streamCopyState,
+                    completedState =>
+                    {
+                        storageAsyncResult.UpdateCompletedSynchronously(completedState.CompletedSynchronously);
+
+                        if (completedState.ExceptionRef != null)
+                        {
+                            storageAsyncResult.OnComplete(completedState.ExceptionRef);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                if (requiresContentMD5)
+                                {
+                                    contentMD5 = streamCopyState.Md5;
+                                }
+
+                                seekableStream.Position = startPosition;
+                                this.PutBlockHandler(blockId, seekableStream, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
+                            }
+                            catch (Exception e)
+                            {
+                                storageAsyncResult.OnComplete(e);
+                            }
+                        }
+                    });
+            }
+
             return storageAsyncResult;
         }
 
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
-        private void DeleteIfExistsHandler(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
+        /// <summary>
+        /// Ends an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public void EndPutBlock(IAsyncResult asyncResult)
         {
-            ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                true,
-                options,
-                operationContext,
-                existsResult =>
+            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
+
+            try
+            {
+                storageAsyncResult.End();
+            }
+            finally
+            {
+                if (storageAsyncResult.OperationState != null)
                 {
-                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                    lock (storageAsyncResult.CancellationLockerObject)
+                    MultiBufferMemoryStream stream = (MultiBufferMemoryStream)storageAsyncResult.OperationState;
+                    stream.Dispose();
+                }
+            }
+        }
+
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
+        private void PutBlockHandler(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<NullType> storageAsyncResult)
+        {
+            lock (storageAsyncResult.CancellationLockerObject)
+            {
+                ICancellableAsyncResult result = Executor.BeginExecuteAsync(
+                    this.PutBlockImpl(blockData, blockId, contentMD5, accessCondition, options),
+                    options.RetryPolicy,
+                    operationContext,
+                    ar =>
                     {
-                        storageAsyncResult.CancelDelegate = null;
+                        storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
+
                         try
                         {
-                            bool exists = this.EndExists(existsResult);
-                            if (!exists)
-                            {
-                                storageAsyncResult.Result = false;
-                                storageAsyncResult.OnComplete();
-                                return;
-                            }
-
-                            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                                deleteSnapshotsOption,
-                                accessCondition,
-                                options,
-                                operationContext,
-                                deleteResult =>
-                                {
-                                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                                    storageAsyncResult.CancelDelegate = null;
-                                    try
-                                    {
-                                        this.EndDelete(deleteResult);
-                                        storageAsyncResult.Result = true;
-                                        storageAsyncResult.OnComplete();
-                                    }
-                                    catch (StorageException e)
-                                    {
-                                        if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                                        {
-                                            if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                                (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
-                                            {
-                                                storageAsyncResult.Result = false;
-                                                storageAsyncResult.OnComplete();
-                                            }
-                                            else
-                                            {
-                                                storageAsyncResult.OnComplete(e);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                },
-                                null /* state */);
-
-                            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
-                            if (storageAsyncResult.CancelRequested)
-                            {
-                                storageAsyncResult.Cancel();
-                            }
+                            Executor.EndExecuteAsync<NullType>(ar);
+                            storageAsyncResult.OnComplete();
                         }
                         catch (Exception e)
                         {
                             storageAsyncResult.OnComplete(e);
                         }
-                    }
-                },
-                null /* state */);
+                    },
+                    null /* asyncState */);
 
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
-        }
-
-        /// <summary>
-        /// Returns the result of an asynchronous request to delete the blob if it already exists.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns><c>true</c> if the blob did already exist and was deleted; otherwise, <c>false</c>.</returns>
-        public bool EndDeleteIfExists(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<bool> res = (StorageAsyncResult<bool>)asyncResult;
-            res.End();
-            return res.Result;
+                storageAsyncResult.CancelDelegate = result.Cancel;
+                if (storageAsyncResult.CancelRequested)
+                {
+                    storageAsyncResult.Cancel();
+                }
+            }
         }
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to delete the blob if it already exists.
+        /// Initiates an asynchronous operation to upload a single block.
         /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
         [DoesServiceRequest]
-        public Task<bool> DeleteIfExistsAsync()
+        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5)
         {
-            return this.DeleteIfExistsAsync(CancellationToken.None);
+            return this.PutBlockAsync(blockId, blockData, contentMD5, CancellationToken.None);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to delete the blob if it already exists.
+        /// Initiates an asynchronous operation to upload a single block.
         /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
         [DoesServiceRequest]
-        public Task<bool> DeleteIfExistsAsync(CancellationToken cancellationToken)
+        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, cancellationToken);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to delete the blob if it already exists.
+        /// Initiates an asynchronous operation to upload a single block.
         /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
         [DoesServiceRequest]
-        public Task<bool> DeleteIfExistsAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DeleteIfExistsAsync(deleteSnapshotsOption, accessCondition, options, operationContext, CancellationToken.None);
+            return this.PutBlockAsync(blockId, blockData, contentMD5, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to delete the blob if it already exists.
+        /// Initiates an asynchronous operation to upload a single block.
         /// </summary>
-        /// <param name="deleteSnapshotsOption">Whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
         [DoesServiceRequest]
-        public Task<bool> DeleteIfExistsAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, accessCondition, options, operationContext, cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Begins an operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [Obsolete("Deprecated this method in favor of StartCopy.")]                
+        [DoesServiceRequest]
+        public string StartCopyFromBlob(CloudBlockBlob source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            return this.StartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of BeginStartCopy.")]                        
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginStartCopyFromBlob(CloudBlockBlob source, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
+        [Obsolete("Deprecated this method in favor of BeginStartCopy.")]                                
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginStartCopyFromBlob(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                                
+        [DoesServiceRequest]
+        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source)
+        {
+            return this.StartCopyAsync(source, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                                        
+        [DoesServiceRequest]
+        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                                        
+        [DoesServiceRequest]
+        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [Obsolete("Deprecated this method in favor of StartCopyAsync.")]                                        
+        [DoesServiceRequest]
+        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+#endif 
+
+#if SYNC
+        /// <summary>
+        /// Begins an operation to start copying an Azure file's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public string StartCopy(CloudFile source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            return this.StartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public string StartCopy(CloudBlockBlob source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            return this.StartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginStartCopy(CloudFile source, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudFile.SourceFileToUri(source), callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginStartCopy(CloudBlockBlob source, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginStartCopy(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginStartCopy(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudFile source)
+        {
+            return this.StartCopyAsync(source, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudBlockBlob source)
+        {
+            return this.StartCopyAsync(source, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudFile source, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudBlockBlob source, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to return an enumerable collection of the blob's blocks, 
+        /// using the specified block list filter.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginDownloadBlockList(AsyncCallback callback, object state)
+        {
+            return this.BeginDownloadBlockList(BlockListingFilter.Committed, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to return an enumerable collection of the blob's blocks, 
+        /// using the specified block list filter.
+        /// </summary>
+        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return 
+        /// committed blocks, uncommitted blocks, or both.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginDownloadBlockList(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.GetBlockListImpl(blockListingFilter, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to return an enumerable collection of the blob's blocks, 
+        /// using the specified block list filter.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>An enumerable collection of objects implementing <see cref="ListBlockItem"/>.</returns>
+        public IEnumerable<ListBlockItem> EndDownloadBlockList(IAsyncResult asyncResult)
+        {
+            return Executor.EndExecuteAsync<IEnumerable<ListBlockItem>>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
+        /// using the specified block list filter.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync()
+        {
+            return this.DownloadBlockListAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
+        /// using the specified block list filter.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginDownloadBlockList, this.EndDownloadBlockList, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
+        /// using the specified block list filter.
+        /// </summary>
+        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return
+        /// committed blocks, uncommitted blocks, or both.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.DownloadBlockListAsync(blockListingFilter, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
+        /// using the specified block list filter.
+        /// </summary>
+        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return 
+        /// committed blocks, uncommitted blocks, or both.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginDownloadBlockList, this.EndDownloadBlockList, blockListingFilter, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -3173,927 +2242,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Acquires a lease on this blob.
-        /// </summary>
-        /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
-        /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A string containing the ID of the acquired lease.</returns>
-        [DoesServiceRequest]
-        public string AcquireLease(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.ExecuteSync(
-                CloudBlobSharedImpl.AcquireLeaseImpl(this, this.attributes, leaseTime, proposedLeaseId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to acquire a lease on this blob.
-        /// </summary>
-        /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
-        /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginAcquireLease(TimeSpan? leaseTime, string proposedLeaseId, AsyncCallback callback, object state)
-        {
-            return this.BeginAcquireLease(leaseTime, proposedLeaseId, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to acquire a lease on this blob.
-        /// </summary>
-        /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
-        /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginAcquireLease(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.AcquireLeaseImpl(this, this.attributes, leaseTime, proposedLeaseId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to acquire a lease on this blob.
-        /// </summary>
-        /// <param name="asyncResult">An IAsyncResult that references the pending asynchronous operation.</param>
-        /// <returns>A string containing the ID of the acquired lease.</returns>
-        public string EndAcquireLease(IAsyncResult asyncResult)
-        {
-            return Executor.EndExecuteAsync<string>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to acquire a lease on this blob.
-        /// </summary>
-        /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
-        /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId)
-        {
-            return this.AcquireLeaseAsync(leaseTime, proposedLeaseId, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to acquire a lease on this blob.
-        /// </summary>
-        /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
-        /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginAcquireLease, this.EndAcquireLease, leaseTime, proposedLeaseId, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to acquire a lease on this blob.
-        /// </summary>
-        /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
-        /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.AcquireLeaseAsync(leaseTime, proposedLeaseId, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to acquire a lease on this blob.
-        /// </summary>
-        /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
-        /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginAcquireLease, this.EndAcquireLease, leaseTime, proposedLeaseId, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Renews a lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void RenewLease(AccessCondition accessCondition, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.RenewLeaseImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to renew a lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginRenewLease(AccessCondition accessCondition, AsyncCallback callback, object state)
-        {
-            return this.BeginRenewLease(accessCondition, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to renew a lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginRenewLease(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.RenewLeaseImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to renew a lease on this blob.
-        /// </summary>
-        /// <param name="asyncResult">An IAsyncResult that references the pending asynchronous operation.</param>
-        public void EndRenewLease(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to renew a lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task RenewLeaseAsync(AccessCondition accessCondition)
-        {
-            return this.RenewLeaseAsync(accessCondition, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to renew a lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task RenewLeaseAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginRenewLease, this.EndRenewLease, accessCondition, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to renew a lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task RenewLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.RenewLeaseAsync(accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to renew a lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task RenewLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginRenewLease, this.EndRenewLease, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Changes the lease ID on this blob.
-        /// </summary>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease. This cannot be null.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The new lease ID.</returns>
-        [DoesServiceRequest]
-        public string ChangeLease(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.ExecuteSync(
-                CloudBlobSharedImpl.ChangeLeaseImpl(this, this.attributes, proposedLeaseId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to change the lease on this blob.
-        /// </summary>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease. This cannot be null.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginChangeLease(string proposedLeaseId, AccessCondition accessCondition, AsyncCallback callback, object state)
-        {
-            return this.BeginChangeLease(proposedLeaseId, accessCondition, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to change the lease on this blob.
-        /// </summary>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease. This cannot be null.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginChangeLease(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.ChangeLeaseImpl(this, this.attributes, proposedLeaseId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to change the lease on this blob.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>A string containing the new lease ID.</returns>
-        public string EndChangeLease(IAsyncResult asyncResult)
-        {
-            return Executor.EndExecuteAsync<string>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to change the lease on this blob.
-        /// </summary>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease. This cannot be null.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition)
-        {
-            return this.ChangeLeaseAsync(proposedLeaseId, accessCondition, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to change the lease on this blob.
-        /// </summary>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease. This cannot be null.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginChangeLease, this.EndChangeLease, proposedLeaseId, accessCondition, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to change the lease on this blob.
-        /// </summary>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease. This cannot be null.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.ChangeLeaseAsync(proposedLeaseId, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to change the lease on this blob.
-        /// </summary>
-        /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease. This cannot be null.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginChangeLease, this.EndChangeLease, proposedLeaseId, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Releases the lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void ReleaseLease(AccessCondition accessCondition, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.ReleaseLeaseImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to release the lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginReleaseLease(AccessCondition accessCondition, AsyncCallback callback, object state)
-        {
-            return this.BeginReleaseLease(accessCondition, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to release the lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginReleaseLease(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.ReleaseLeaseImpl(this, this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to release the lease on this blob.
-        /// </summary>
-        /// <param name="asyncResult">An IAsyncResult that references the pending asynchronous operation.</param>
-        public void EndReleaseLease(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to release the lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task ReleaseLeaseAsync(AccessCondition accessCondition)
-        {
-            return this.ReleaseLeaseAsync(accessCondition, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to release the lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task ReleaseLeaseAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginReleaseLease, this.EndReleaseLease, accessCondition, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to release the lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task ReleaseLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.ReleaseLeaseAsync(accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to release the lease on this blob.
-        /// </summary>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed, including a required lease ID.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task ReleaseLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginReleaseLease, this.EndReleaseLease, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Breaks the current lease on this blob.
-        /// </summary>
-        /// <param name="breakPeriod">A <see cref="TimeSpan"/> representing the amount of time to allow the lease to remain,
-        /// which will be rounded down to seconds. If <c>null</c>, the break period is the remainder of the current lease,
-        /// or zero for infinite leases.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="TimeSpan"/> representing the amount of time before the lease ends, to the second.</returns>
-        [DoesServiceRequest]
-        public TimeSpan BreakLease(TimeSpan? breakPeriod = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.ExecuteSync(
-                CloudBlobSharedImpl.BreakLeaseImpl(this, this.attributes, breakPeriod, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to break the current lease on this blob.
-        /// </summary>
-        /// <param name="breakPeriod">A <see cref="TimeSpan"/> representing the amount of time to allow the lease to remain,
-        /// which will be rounded down to seconds. If <c>null</c>, the break period is the remainder of the current lease,
-        /// or zero for infinite leases.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginBreakLease(TimeSpan? breakPeriod, AsyncCallback callback, object state)
-        {
-            return this.BeginBreakLease(breakPeriod, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to break the current lease on this blob.
-        /// </summary>
-        /// <param name="breakPeriod">A <see cref="TimeSpan"/> representing the amount of time to allow the lease to remain,
-        /// which will be rounded down to seconds. If <c>null</c>, the break period is the remainder of the current lease,
-        /// or zero for infinite leases.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginBreakLease(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.BreakLeaseImpl(this, this.attributes, breakPeriod, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to break the current lease on this blob.
-        /// </summary>
-        /// <param name="asyncResult">An IAsyncResult that references the pending asynchronous operation.</param>
-        /// <returns>A <see cref="TimeSpan"/> representing the amount of time before the lease ends, to the second.</returns>
-        public TimeSpan EndBreakLease(IAsyncResult asyncResult)
-        {
-            return Executor.EndExecuteAsync<TimeSpan>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to break the current lease on this blob.
-        /// </summary>
-        /// <param name="breakPeriod">A <see cref="TimeSpan"/> representing the amount of time to allow the lease to remain,
-        /// which will be rounded down to seconds. If <c>null</c>, the break period is the remainder of the current lease,
-        /// or zero for infinite leases.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.TimeSpan"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod)
-        {
-            return this.BreakLeaseAsync(breakPeriod, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to break the current lease on this blob.
-        /// </summary>
-        /// <param name="breakPeriod">A <see cref="TimeSpan"/> representing the amount of time to allow the lease to remain,
-        /// which will be rounded down to seconds. If <c>null</c>, the break period is the remainder of the current lease,
-        /// or zero for infinite leases.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.TimeSpan"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginBreakLease, this.EndBreakLease, breakPeriod, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to break the current lease on this blob.
-        /// </summary>
-        /// <param name="breakPeriod">A <see cref="TimeSpan"/> representing the amount of time to allow the lease to remain,
-        /// which will be rounded down to seconds. If <c>null</c>, the break period is the remainder of the current lease,
-        /// or zero for infinite leases.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.TimeSpan"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.BreakLeaseAsync(breakPeriod, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to break the current lease on this blob.
-        /// </summary>
-        /// <param name="breakPeriod">A <see cref="TimeSpan"/> representing the amount of time to allow the lease to remain,
-        /// which will be rounded down to seconds. If <c>null</c>, the break period is the remainder of the current lease,
-        /// or zero for infinite leases.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="System.TimeSpan"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginBreakLease, this.EndBreakLease, breakPeriod, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Uploads a single block.
-        /// </summary>
-        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
-        [DoesServiceRequest]
-        public void PutBlock(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            CommonUtility.AssertNotNull("blockData", blockData);
-
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
-            operationContext = operationContext ?? new OperationContext();
-
-            Stream seekableStream = blockData;
-            if (!blockData.CanSeek || requiresContentMD5)
-            {
-                ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-
-                Stream writeToStream;
-                if (blockData.CanSeek)
-                {
-                    writeToStream = Stream.Null;
-                }
-                else
-                {
-                    seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                    writeToStream = seekableStream;
-                }
-
-                long startPosition = seekableStream.Position;
-                StreamDescriptor streamCopyState = new StreamDescriptor();
-                blockData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, true, tempExecutionState, streamCopyState);
-                seekableStream.Position = startPosition;
-
-                if (requiresContentMD5)
-                {
-                    contentMD5 = streamCopyState.Md5;
-                }
-            }
-
-            Executor.ExecuteSync(
-                this.PutBlockImpl(seekableStream, blockId, contentMD5, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to upload a single block.
-        /// </summary>
-        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginPutBlock(string blockId, Stream blockData, string contentMD5, AsyncCallback callback, object state)
-        {
-            return this.BeginPutBlock(blockId, blockData, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to upload a single block.
-        /// </summary>
-        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginPutBlock(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            CommonUtility.AssertNotNull("blockData", blockData);
-
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
-            operationContext = operationContext ?? new OperationContext();
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
-
-            if (blockData.CanSeek && !requiresContentMD5)
-            {
-                this.PutBlockHandler(blockId, blockData, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
-            }
-            else
-            {
-                ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-                storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
-
-                Stream seekableStream;
-                Stream writeToStream;
-                if (blockData.CanSeek)
-                {
-                    seekableStream = blockData;
-                    writeToStream = Stream.Null;
-                }
-                else
-                {
-                    seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                    writeToStream = seekableStream;
-                }
-
-                long startPosition = seekableStream.Position;
-                StreamDescriptor streamCopyState = new StreamDescriptor();
-                blockData.WriteToAsync(
-                    writeToStream,
-                    null /* copyLength */,
-                    Constants.MaxBlockSize,
-                    requiresContentMD5,
-                    tempExecutionState,
-                    streamCopyState,
-                    completedState =>
-                    {
-                        storageAsyncResult.UpdateCompletedSynchronously(completedState.CompletedSynchronously);
-
-                        if (completedState.ExceptionRef != null)
-                        {
-                            storageAsyncResult.OnComplete(completedState.ExceptionRef);
-                        }
-                        else
-                        {
-                            try
-                            {
-                                if (requiresContentMD5)
-                                {
-                                    contentMD5 = streamCopyState.Md5;
-                                }
-
-                                seekableStream.Position = startPosition;
-                                this.PutBlockHandler(blockId, seekableStream, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
-                            }
-                            catch (Exception e)
-                            {
-                                storageAsyncResult.OnComplete(e);
-                            }
-                        }
-                    });
-            }
-
-            return storageAsyncResult;
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
-        private void PutBlockHandler(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<NullType> storageAsyncResult)
-        {
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                ICancellableAsyncResult result = Executor.BeginExecuteAsync(
-                    this.PutBlockImpl(blockData, blockId, contentMD5, accessCondition, options),
-                    options.RetryPolicy,
-                    operationContext,
-                    ar =>
-                    {
-                        storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-
-                        try
-                        {
-                            Executor.EndExecuteAsync<NullType>(ar);
-                            storageAsyncResult.OnComplete();
-                        }
-                        catch (Exception e)
-                        {
-                            storageAsyncResult.OnComplete(e);
-                        }
-                    },
-                    null /* asyncState */);
-
-                storageAsyncResult.CancelDelegate = result.Cancel;
-                if (storageAsyncResult.CancelRequested)
-                {
-                    storageAsyncResult.Cancel();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to upload a single block.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndPutBlock(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
-            storageAsyncResult.End();
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to upload a single block.
-        /// </summary>
-        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5)
-        {
-            return this.PutBlockAsync(blockId, blockData, contentMD5, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to upload a single block.
-        /// </summary>
-        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to upload a single block.
-        /// </summary>
-        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.PutBlockAsync(blockId, blockData, contentMD5, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to upload a single block.
-        /// </summary>
-        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
-        [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
         /// Uploads a list of blocks to a new or existing blob. 
         /// </summary>
         /// <param name="blockList">An enumerable collection of block IDs, as Base64-encoded strings.</param>
@@ -4211,522 +2359,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if SYNC
-        /// <summary>
-        /// Returns an enumerable collection of the blob's blocks, using the specified block list filter.
-        /// </summary>
-        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return 
-        /// committed blocks, uncommitted blocks, or both.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An enumerable collection of objects implementing <see cref="ListBlockItem"/>.</returns>
-        [DoesServiceRequest]
-        public IEnumerable<ListBlockItem> DownloadBlockList(BlockListingFilter blockListingFilter = BlockListingFilter.Committed, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.ExecuteSync(
-                this.GetBlockListImpl(blockListingFilter, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to return an enumerable collection of the blob's blocks, 
-        /// using the specified block list filter.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadBlockList(AsyncCallback callback, object state)
-        {
-            return this.BeginDownloadBlockList(BlockListingFilter.Committed, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to return an enumerable collection of the blob's blocks, 
-        /// using the specified block list filter.
-        /// </summary>
-        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return 
-        /// committed blocks, uncommitted blocks, or both.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginDownloadBlockList(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.GetBlockListImpl(blockListingFilter, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to return an enumerable collection of the blob's blocks, 
-        /// using the specified block list filter.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>An enumerable collection of objects implementing <see cref="ListBlockItem"/>.</returns>
-        public IEnumerable<ListBlockItem> EndDownloadBlockList(IAsyncResult asyncResult)
-        {
-            return Executor.EndExecuteAsync<IEnumerable<ListBlockItem>>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
-        /// using the specified block list filter.
-        /// </summary>
-        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync()
-        {
-            return this.DownloadBlockListAsync(CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
-        /// using the specified block list filter.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadBlockList, this.EndDownloadBlockList, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
-        /// using the specified block list filter.
-        /// </summary>
-        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return
-        /// committed blocks, uncommitted blocks, or both.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.DownloadBlockListAsync(blockListingFilter, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to return an enumerable collection of the blob's blocks, 
-        /// using the specified block list filter.
-        /// </summary>
-        /// <param name="blockListingFilter">A <see cref="BlockListingFilter"/> enumeration value that indicates whether to return 
-        /// committed blocks, uncommitted blocks, or both.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="ListBlockItem"/> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadBlockList, this.EndDownloadBlockList, blockListingFilter, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Starts an operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public string StartCopyFromBlob(Uri source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            CommonUtility.AssertNotNull("source", source);
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.ExecuteSync(
-                CloudBlobSharedImpl.StartCopyFromBlobImpl(this, this.attributes, source, sourceAccessCondition, destAccessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-
-        /// <summary>
-        /// Starts an operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public string StartCopyFromBlob(CloudBlockBlob source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            return this.StartCopyFromBlob(CloudBlobSharedImpl.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
-        }
-
-#endif
-        /// <summary>
-        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginStartCopyFromBlob(Uri source, AsyncCallback callback, object state)
-        {
-            return this.BeginStartCopyFromBlob(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlockBlob"/> that is the source blob.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginStartCopyFromBlob(CloudBlockBlob source, AsyncCallback callback, object state)
-        {
-            return this.BeginStartCopyFromBlob(CloudBlobSharedImpl.SourceBlobToUri(source), callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginStartCopyFromBlob(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            CommonUtility.AssertNotNull("source", source);
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.StartCopyFromBlobImpl(this, this.attributes, source, sourceAccessCondition, destAccessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlockBlob"/> that is the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginStartCopyFromBlob(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            return this.BeginStartCopyFromBlob(CloudBlobSharedImpl.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        public string EndStartCopyFromBlob(IAsyncResult asyncResult)
-        {
-            return Executor.EndExecuteAsync<string>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(Uri source)
-        {
-            return this.StartCopyFromBlobAsync(source, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(Uri source, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopyFromBlob, this.EndStartCopyFromBlob, source, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlockBlob"/> that is the source blob.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source)
-        {
-            return this.StartCopyFromBlobAsync(source, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlockBlob"/> that is the source blob.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopyFromBlob, this.EndStartCopyFromBlob, source, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.StartCopyFromBlobAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopyFromBlob, this.EndStartCopyFromBlob, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlockBlob"/> that is the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.StartCopyFromBlobAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlockBlob"/> that is the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task<string> StartCopyFromBlobAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopyFromBlob, this.EndStartCopyFromBlob, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-#if SYNC
-        /// <summary>
-        /// Aborts an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="copyId">A string identifying the copy operation.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        [DoesServiceRequest]
-        public void AbortCopy(string copyId, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            Executor.ExecuteSync(
-                CloudBlobSharedImpl.AbortCopyImpl(this, this.attributes, copyId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext);
-        }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous operation to abort an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="copyId">A string identifying the copy operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginAbortCopy(string copyId, AsyncCallback callback, object state)
-        {
-            return this.BeginAbortCopy(copyId, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Begins an asynchronous operation to abort an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="copyId">A string identifying the copy operation.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public ICancellableAsyncResult BeginAbortCopy(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                CloudBlobSharedImpl.AbortCopyImpl(this, this.attributes, copyId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to abort an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public void EndAbortCopy(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Initiates an asynchronous operation to abort an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="copyId">A string identifying the copy operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task AbortCopyAsync(string copyId)
-        {
-            return this.AbortCopyAsync(copyId, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to abort an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="copyId">A string identifying the copy operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task AbortCopyAsync(string copyId, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginAbortCopy, this.EndAbortCopy, copyId, cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to abort an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="copyId">A string identifying the copy operation.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task AbortCopyAsync(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.AbortCopyAsync(copyId, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to abort an ongoing blob copy operation.
-        /// </summary>
-        /// <param name="copyId">A string identifying the copy operation.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public Task AbortCopyAsync(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginAbortCopy, this.EndAbortCopy, copyId, accessCondition, options, operationContext, cancellationToken);
-        }
-#endif
-
-        /// <summary>
-        /// Implementation for the CreateSnapshot method.
-        /// </summary>
-        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot, or <c>null</c>.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="RESTCommand{T}"/> that creates the snapshot.</returns>
-        /// <remarks>If the <c>metadata</c> parameter is <c>null</c> then no metadata is associated with the request.</remarks>
-        internal RESTCommand<CloudBlockBlob> CreateSnapshotImpl(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options)
-        {
-            RESTCommand<CloudBlockBlob> putCmd = new RESTCommand<CloudBlockBlob>(this.ServiceClient.Credentials, this.attributes.StorageUri);
-
-            options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Snapshot(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) =>
-            {
-                if (metadata != null)
-                {
-                    BlobHttpWebRequestFactory.AddMetadata(r, metadata);
-                }
-            };
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
-            {
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
-                DateTimeOffset snapshotTime = NavigationHelper.ParseSnapshotTime(BlobHttpResponseParsers.GetSnapshotTime(resp));
-                CloudBlockBlob snapshot = new CloudBlockBlob(this.Name, snapshotTime, this.Container);
-                snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata);
-                snapshot.attributes.Properties = new BlobProperties(this.Properties);
-                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
-                return snapshot;
-            };
-
-            return putCmd;
-        }
-
         /// <summary>
         /// Uploads the full blob from a seekable stream.
         /// </summary>
@@ -4753,7 +2385,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 this.Properties.Length = putCmd.SendStreamLength.Value;
                 return NullType.Value;
             };
@@ -4772,6 +2404,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand{T}"/> that uploads the block.</returns>
         internal RESTCommand<NullType> PutBlockImpl(Stream source, string blockId, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options)
         {
+            options.AssertNoEncryptionPolicyOrStrictMode();
+
             long offset = source.Position;
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
@@ -4805,9 +2439,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
             BlobRequest.WriteBlockListBody(blocks, memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
+
 #if !WINDOWS_PHONE
-            string contentMD5 = memoryStream.ComputeMD5Hash();
-            memoryStream.Seek(0, SeekOrigin.Begin);
+            string contentMD5 = null;
+            if (options.UseTransactionalMD5.HasValue && options.UseTransactionalMD5.Value)
+            {
+                contentMD5 = memoryStream.ComputeMD5Hash();
+                memoryStream.Seek(0, SeekOrigin.Begin);
+            }
 #endif
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
@@ -4817,17 +2456,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.SetHeaders = (r, ctx) =>
             {
 #if !WINDOWS_PHONE
-                r.Headers[HttpRequestHeader.ContentMd5] = contentMD5;
+                if (contentMD5 != null)
+                {
+                    r.Headers[HttpRequestHeader.ContentMd5] = contentMD5;
+                }
 #endif
                 BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             };
             putCmd.SendStream = memoryStream;
+            putCmd.StreamToDispose = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };
@@ -4854,13 +2497,50 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                CloudBlobSharedImpl.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
                 GetBlockListResponse responseParser = new GetBlockListResponse(cmd.ResponseStream);
                 IEnumerable<ListBlockItem> blocks = new List<ListBlockItem>(responseParser.Blocks);
                 return blocks;
             };
 
             return getCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the Snapshot method.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot, or <c>null</c>.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that creates the snapshot.</returns>
+        /// <remarks>If the <c>metadata</c> parameter is <c>null</c> then no metadata is associated with the request.</remarks>
+        internal RESTCommand<CloudBlockBlob> CreateSnapshotImpl(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options)
+        {
+            RESTCommand<CloudBlockBlob> putCmd = new RESTCommand<CloudBlockBlob>(this.ServiceClient.Credentials, this.attributes.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Snapshot(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            putCmd.SetHeaders = (r, ctx) =>
+            {
+                if (metadata != null)
+                {
+                    BlobHttpWebRequestFactory.AddMetadata(r, metadata);
+                }
+            };
+            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+                DateTimeOffset snapshotTime = NavigationHelper.ParseSnapshotTime(BlobHttpResponseParsers.GetSnapshotTime(resp));
+
+                CloudBlockBlob snapshot = new CloudBlockBlob(this.Name, snapshotTime, this.Container);
+                snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata);
+                snapshot.attributes.Properties = new BlobProperties(this.Properties);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
+                return snapshot;
+            };
+
+            return putCmd;
         }
     }
 }

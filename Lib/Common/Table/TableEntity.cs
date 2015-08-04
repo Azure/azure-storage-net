@@ -144,7 +144,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Reviewed")]
         private static void ReflectionRead(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-#if WINDOWS_RT
+#if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
@@ -298,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             Dictionary<string, EntityProperty> retVals = new Dictionary<string, EntityProperty>();
 
-#if WINDOWS_RT
+#if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
@@ -312,6 +312,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
 
                 EntityProperty newProperty = EntityProperty.CreateEntityPropertyFromObject(property.GetValue(entity, null), property.PropertyType);
+                
+                // Add the fact that this property needs to be encrypted
+                // properties with [EncryptAttribute]
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                if (Attribute.IsDefined(property, typeof(EncryptPropertyAttribute)))
+                {
+                    newProperty.IsEncrypted = true;
+                }
+#endif
 
                 // property will be null if unknown type
                 if (newProperty != null)
@@ -361,7 +370,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // properties with [IgnoreAttribute]
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
             if (property.GetCustomAttribute(typeof(IgnorePropertyAttribute)) != null)
 #else
             if (Attribute.IsDefined(property, typeof(IgnorePropertyAttribute)))
@@ -571,7 +580,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                                      Expression.Convert(Expression.Call(Expression.Convert(instanceParam, type), prop.FindGetProp()), typeof(object)),
                                                      Expression.Constant(prop.PropertyType))));
 
-                exprs.Add(Expression.Assign(propName, Expression.Constant(prop.Name)));
+                // Add the fact that this property needs to be encrypted
+                // properties with [EncryptAttribute]
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                if (Attribute.IsDefined(prop, typeof(EncryptPropertyAttribute)))
+                {
+                    PropertyInfo property = typeof(EntityProperty).FindProperty("IsEncrypted");
+                    exprs.Add(Expression.Assign(Expression.Property(tempProp, property), Expression.Constant(true)));
+                }
+#endif
+
+            exprs.Add(Expression.Assign(propName, Expression.Constant(prop.Name)));
 
                 // if tempprop!=null dict.Add(propName, Prop);
                 exprs.Add(Expression.IfThen(Expression.NotEqual(tempProp, Expression.Constant(null)), Expression.Call(dictVar, DictionaryAddMethodInfo, propName, tempProp)));

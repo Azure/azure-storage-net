@@ -17,12 +17,14 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
+    using System.Net;
     using System.Threading;
 
 #if WINDOWS_PHONE
@@ -32,6 +34,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     internal sealed class BlobWriteStream : BlobWriteStreamBase
     {
         private volatile bool flushPending = false;
+
+        /// <summary>
+        /// This value is used mainly to provide async commit functionality(BeginCommit) to BlobEncryptedWriteStream. CryptoStream does not provide begin/end 
+        /// flush. It only provides a blocking sync FlushFinalBlock call which calls the underlying stream's flush method (BlobWriteStream in this case). 
+        /// By setting this to true while initiliazing the write stream, it is ensured that BlobWriteStream's Flush does not do anything and
+        /// just returns. Therefore BeginCommit first just flushes all the data from the crypto stream's buffer to the blob write stream's buffer. The client 
+        /// library then sets this property to false and calls BeginCommit on the write stream and returns the async result back to the user. This time flush actually
+        /// does its work and sends the buffered data over to the service. 
+        /// </summary>
+        internal bool IgnoreFlush { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the BlobWriteStream class for a block blob.
@@ -60,6 +72,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Initializes a new instance of the BlobWriteStream class for an append blob.
+        /// </summary>
+        /// <param name="appendBlob">Blob reference to write to.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        internal BlobWriteStream(CloudAppendBlob appendBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+            : base(appendBlob, accessCondition, options, operationContext)
+        {
+        }
+
+        /// <summary>
         /// Sets the position within the current stream.
         /// </summary>
         /// <param name="offset">A byte offset relative to the origin parameter.</param>
@@ -83,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             this.currentOffset = newOffset;
-            this.currentPageOffset = newOffset;
+            this.currentBlobOffset = newOffset;
             return this.currentOffset;
         }
 
@@ -190,22 +214,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         public override void Flush()
         {
-            if (this.lastException != null)
+            if (!this.IgnoreFlush)
             {
-                throw this.lastException;
-            }
+                if (this.lastException != null)
+                {
+                    throw this.lastException;
+                }
 
-            if (this.committed)
-            {
-                throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
-            }
+                if (this.committed)
+                {
+                    throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
+                }
 
-            this.DispatchWrite(null /* asyncResult */);
-            this.noPendingWritesEvent.Wait();
+                this.DispatchWrite(null /* asyncResult */);
+                this.noPendingWritesEvent.Wait();
 
-            if (this.lastException != null)
-            {
-                throw this.lastException;
+                if (this.lastException != null)
+                {
+                    throw this.lastException;
+                }
             }
         }
 
@@ -230,31 +257,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new InvalidOperationException(SR.BlobStreamFlushPending);
             }
 
+            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
+
             try
             {
-                this.flushPending = true;
-                this.DispatchWrite(null /* asyncResult */);
-
-                StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
-                if ((this.lastException != null) || this.noPendingWritesEvent.Wait(0))
+                if (this.IgnoreFlush)
                 {
-                    storageAsyncResult.OnComplete(this.lastException);
+                    storageAsyncResult.OnComplete();
                 }
                 else
                 {
-                    RegisteredWaitHandle waitHandle = ThreadPool.RegisterWaitForSingleObject(
-                        this.noPendingWritesEvent.WaitHandle,
-                        this.WaitForPendingWritesCallback,
-                        storageAsyncResult,
-                        -1,
-                        true);
+                    this.flushPending = true;
+                    this.DispatchWrite(null /* asyncResult */);
 
-                    storageAsyncResult.OperationState = waitHandle;
-                    storageAsyncResult.CancelDelegate = () =>
+                    if ((this.lastException != null) || this.noPendingWritesEvent.Wait(0))
                     {
-                        waitHandle.Unregister(null /* waitObject */);
                         storageAsyncResult.OnComplete(this.lastException);
-                    };
+                    }
+                    else
+                    {
+                        RegisteredWaitHandle waitHandle = ThreadPool.RegisterWaitForSingleObject(
+                            this.noPendingWritesEvent.WaitHandle,
+                            this.WaitForPendingWritesCallback,
+                            storageAsyncResult,
+                            -1,
+                            true);
+
+                        storageAsyncResult.OperationState = waitHandle;
+                        storageAsyncResult.CancelDelegate = () =>
+                        {
+                            waitHandle.Unregister(null /* waitObject */);
+                            storageAsyncResult.OnComplete(this.lastException);
+                        };
+                    }
                 }
 
                 return storageAsyncResult;
@@ -346,6 +381,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (this.blockBlob != null)
                 {
+                    // This block of code is for block blobs. PutBlockList needs to be called with the list of block IDs uploaded in order
+                    // to commit the blocks.
                     if (this.blobMD5 != null)
                     {
                         this.blockBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
@@ -359,10 +396,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 else
                 {
+                    // For Page blobs and append blobs, only if StoreBlobContentMD5 is set to true, the stream would have caclculated an MD5
+                    // which should be uploaded to the server using SetProperties.
                     if (this.blobMD5 != null)
                     {
-                        this.pageBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
-                        this.pageBlob.SetProperties(
+                        this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+
+                        this.Blob.SetProperties(
                             this.accessCondition,
                             this.options,
                             this.operationContext);
@@ -441,8 +481,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         if (this.blobMD5 != null)
                         {
-                            this.pageBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
-                            ICancellableAsyncResult result = this.pageBlob.BeginSetProperties(
+                            this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+
+                            ICancellableAsyncResult result = this.Blob.BeginSetProperties(
                                 this.accessCondition,
                                 this.options,
                                 this.operationContext,
@@ -493,7 +534,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Called when the page blob commit operation completes.
+        /// Called when the page or append blob commit operation completes.
         /// </summary>
         /// <param name="ar">The result of the asynchronous operation.</param>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
@@ -504,7 +545,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             try
             {
-                this.pageBlob.EndSetProperties(ar);
+                this.Blob.EndSetProperties(ar);
                 storageAsyncResult.OnComplete();
             }
             catch (Exception e)
@@ -548,7 +589,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 this.blockList.Add(blockId);
                 this.WriteBlock(bufferToUpload, blockId, bufferMD5, asyncResult);
             }
-            else
+            else if (this.pageBlob != null)
             {
                 if ((bufferToUpload.Length % Constants.PageSize) != 0)
                 {
@@ -556,9 +597,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw this.lastException;
                 }
 
-                long offset = this.currentPageOffset;
-                this.currentPageOffset += bufferToUpload.Length;
+                long offset = this.currentBlobOffset;
+                this.currentBlobOffset += bufferToUpload.Length;
                 this.WritePages(bufferToUpload, offset, bufferMD5, asyncResult);
+            }
+            else
+            {
+                long offset = this.currentBlobOffset;
+                this.currentBlobOffset += bufferToUpload.Length;
+
+                // We cannot differentiate between max size condition failing only in the retry versus failing in the first attempt and retry.  
+                // So we will eliminate the latter and handle the former in the append operation callback.
+                if (this.accessCondition.IfMaxSizeLessThanOrEqual.HasValue && this.currentBlobOffset > this.accessCondition.IfMaxSizeLessThanOrEqual.Value)
+                {
+                    this.lastException = new IOException(SR.InvalidBlockSize);
+                    throw this.lastException;
+                }
+
+                this.WriteAppendBlock(bufferToUpload, offset, bufferMD5, asyncResult);
             }
         }
 
@@ -598,6 +654,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 catch (Exception e)
                 {
                     this.lastException = e;
+                    this.noPendingWritesEvent.Decrement();
+                    this.parallelOperationSemaphore.Release();
                 }
                 finally
                 {
@@ -670,6 +728,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 catch (Exception e)
                 {
                     this.lastException = e;
+                    this.noPendingWritesEvent.Decrement();
+                    this.parallelOperationSemaphore.Release();
                 }
                 finally
                 {
@@ -692,6 +752,106 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 this.pageBlob.EndWritePages(ar);
+            }
+            catch (Exception e)
+            {
+                this.lastException = e;
+            }
+
+            // This must be called in a separate thread than the user's
+            // callback to prevent a deadlock in case the callback is blocking.
+            // If they are called in the same thread, this call must take
+            // place before the user's callback.
+            this.noPendingWritesEvent.Decrement();
+            this.parallelOperationSemaphore.Release();
+        }
+
+        /// <summary>
+        /// Starts an asynchronous AppendBlock operation as soon as the parallel
+        /// operation semaphore becomes available. Since parallelism is always set
+        /// to 1 for append blobs, appendblock operations are called serially.
+        /// </summary>
+        /// <param name="blockData">Data to be uploaded.</param>
+        /// <param name="offset">Offset within the append blob to be used to set the append offset conditional header.</param>
+        /// <param name="blockMD5">MD5 hash of the data to be uploaded.</param>
+        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
+        private void WriteAppendBlock(Stream blockData, long offset, string blockMD5, StorageAsyncResult<NullType> asyncResult)
+        {
+            this.noPendingWritesEvent.Increment();
+            this.parallelOperationSemaphore.WaitAsync(calledSynchronously =>
+            {
+                try
+                {
+                    this.accessCondition.IfAppendPositionEqual = offset;
+
+                    int previousResultsCount = this.operationContext.RequestResults.Count;
+                    ICancellableAsyncResult result = this.appendBlob.BeginAppendBlock(
+                        blockData, 
+                        blockMD5,
+                        this.accessCondition,
+                        this.options,
+                        this.operationContext,
+                        this.AppendBlockCallback,
+                        previousResultsCount /* state */);
+
+                    if (asyncResult != null)
+                    {
+                        // We do not need to do this inside a lock, as asyncResult is
+                        // not returned to the user yet.
+                        asyncResult.CancelDelegate = result.Cancel;
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.lastException = e;
+                    this.noPendingWritesEvent.Decrement();
+                    this.parallelOperationSemaphore.Release();
+                }
+                finally
+                {
+                    if (asyncResult != null)
+                    {
+                        asyncResult.UpdateCompletedSynchronously(calledSynchronously);
+                        asyncResult.OnComplete(this.lastException);
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Called when the asynchronous AppendBlock operation completes.
+        /// </summary>
+        /// <param name="ar">The result of the asynchronous operation.</param>
+        private void AppendBlockCallback(IAsyncResult ar)
+        {
+            try
+            {
+                this.appendBlob.EndAppendBlock(ar);
+            }
+            catch (StorageException e)
+            {
+                if (this.options.AbsorbConditionalErrorsOnRetry.Value
+                    && e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
+                {
+                    int previousResultsCount = (int)ar.AsyncState;
+                    StorageExtendedErrorInformation extendedInfo = e.RequestInformation.ExtendedErrorInformation;
+                    if (extendedInfo != null
+                        && (extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition || extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidMaxBlobSizeCondition) 
+                        && (this.operationContext.RequestResults.Count - previousResultsCount > 1))
+                    {
+                        // Pre-condition failure on a retry should be ignored in a single writer scenario since the request
+                        // succeeded in the first attempt.
+                        Logger.LogWarning(this.operationContext, SR.PreconditionFailureIgnored);
+                    }
+                    else
+                    {
+                        this.lastException = e;
+                    }
+                }
+                else
+                {
+                    this.lastException = e;
+                }
             }
             catch (Exception e)
             {

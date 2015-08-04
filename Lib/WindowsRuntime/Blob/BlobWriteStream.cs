@@ -17,11 +17,13 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.IO;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -33,6 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blockBlob">Blob reference to write to.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         internal BlobWriteStream(CloudBlockBlob blockBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : base(blockBlob, accessCondition, options, operationContext)
         {
@@ -46,8 +49,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="createNew">Use <c>true</c> if the page blob is newly created, <c>false</c> otherwise.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>        
         internal BlobWriteStream(CloudPageBlob pageBlob, long pageBlobSize, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : base(pageBlob, pageBlobSize, createNew, accessCondition, options, operationContext)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the BlobWriteStream class for an append blob.
+        /// </summary>
+        /// <param name="appendBlob">Blob reference to write to.</param>
+        /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>        
+        internal BlobWriteStream(CloudAppendBlob appendBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+            : base(appendBlob, accessCondition, options, operationContext)
         {
         }
 
@@ -75,7 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             this.currentOffset = newOffset;
-            this.currentPageOffset = newOffset;
+            this.currentBlobOffset = newOffset;
             return this.currentOffset;
         }
 
@@ -207,8 +223,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying blob, and commits the blob.
         /// </summary>
         /// <returns>A task that represents the asynchronous commit operation.</returns>
-
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public override async Task CommitAsync()
 #else
         public async Task CommitAsync()
@@ -232,8 +247,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     if (this.blobMD5 != null)
                     {
-                        this.pageBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
-                        await this.pageBlob.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext);
+                        this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+                        await this.Blob.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext);
                     }
                 }
             }
@@ -273,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 this.blockList.Add(blockId);
                 await this.WriteBlockAsync(bufferToUpload, blockId, bufferMD5);
             }
-            else
+            else if (this.pageBlob != null)
             {
                 if ((bufferToUpload.Length % Constants.PageSize) != 0)
                 {
@@ -281,9 +296,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw this.lastException;
                 }
 
-                long offset = this.currentPageOffset;
-                this.currentPageOffset += bufferToUpload.Length;
+                long offset = this.currentBlobOffset;
+                this.currentBlobOffset += bufferToUpload.Length;
                 await this.WritePagesAsync(bufferToUpload, offset, bufferMD5);
+            }
+            else
+            {
+                long offset = this.currentBlobOffset;
+                this.currentBlobOffset += bufferToUpload.Length;
+
+                // We cannot differentiate between max size condition failing only in the retry versus failing in the 
+                // first attempt and retry even for a single writer scenario. So we will eliminate the latter and handle 
+                // the former in the append operation call.
+                if (this.accessCondition.IfMaxSizeLessThanOrEqual.HasValue && this.currentBlobOffset > this.accessCondition.IfMaxSizeLessThanOrEqual.Value)
+                {
+                    this.lastException = new IOException(SR.InvalidBlockSize);
+                    throw this.lastException;
+                }
+
+                await this.WriteAppendBlockAsync(bufferToUpload, offset, bufferMD5);
             }
         }
 
@@ -326,6 +357,55 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (task.Exception != null)
                 {
                     this.lastException = task.Exception;
+                }
+
+                this.noPendingWritesEvent.Decrement();
+                this.parallelOperationSemaphore.Release();
+            });
+        }
+
+        /// <summary>
+        /// Starts an asynchronous AppendBlock operation as soon as the parallel
+        /// operation semaphore becomes available. Since parallelism is always set
+        /// to 1 for append blobs, appendblock operations are called serially.
+        /// </summary>
+        /// <param name="blockData">Data to be uploaded</param>
+        /// <param name="offset">Offset within the append blob to be used to set the append offset conditional header.</param>        
+        /// <param name="blockMD5">MD5 hash of the data to be uploaded</param>
+        /// <returns>A task that represents the asynchronous write operation.</returns>
+        private async Task WriteAppendBlockAsync(Stream blockData, long offset, string blockMD5)
+        {
+            this.noPendingWritesEvent.Increment();
+            await this.parallelOperationSemaphore.WaitAsync();
+
+            this.accessCondition.IfAppendPositionEqual = offset;
+
+            int previousResultsCount = this.operationContext.RequestResults.Count;
+            Task writeBlockTask = this.appendBlob.AppendBlockAsync(blockData.AsInputStream(), blockMD5, this.accessCondition, this.options, this.operationContext).AsTask().ContinueWith(task =>
+            {
+                if (task.Exception != null)
+                {
+                    if (this.options.AbsorbConditionalErrorsOnRetry.Value
+                        && this.operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
+                    {
+                        StorageExtendedErrorInformation extendedInfo = this.operationContext.LastResult.ExtendedErrorInformation;
+                        if (extendedInfo != null 
+                            && (extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition || extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidMaxBlobSizeCondition)
+                            && (this.operationContext.RequestResults.Count - previousResultsCount > 1))
+                        {
+                            // Pre-condition failure on a retry should be ignored in a single writer scenario since the request
+                            // succeeded in the first attempt.
+                            Logger.LogWarning(this.operationContext, SR.PreconditionFailureIgnored);
+                        }
+                        else
+                        {
+                            this.lastException = task.Exception;
+                        }
+                    }
+                    else
+                    {
+                        this.lastException = task.Exception;
+                    }
                 }
 
                 this.noPendingWritesEvent.Decrement();

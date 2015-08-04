@@ -1,3 +1,6 @@
 ﻿{
-    "sources": [ "Lib/AspNet"]
+    "projects": [ "lib", "Lib/AspNet" ],
+    "sdk": {
+        "version": "1.0.0-beta5"
+    }
 }

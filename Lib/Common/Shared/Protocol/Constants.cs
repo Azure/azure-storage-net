@@ -374,6 +374,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string BlockBlobValue = "BlockBlob";
 
         /// <summary>
+        /// Constant signaling an append blob.
+        /// </summary>
+        public const string AppendBlobValue = "AppendBlob";
+
+        /// <summary>
         /// Constant signaling the blob is locked.
         /// </summary>
         public const string LockedValue = "locked";
@@ -497,6 +502,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for a share.
         /// </summary>
         public const string ShareElement = "Share";
+
+        /// <summary>
+        /// XML element for Share Quota.
+        /// </summary>
+        public const string QuotaElement = "Quota";
 
         /// <summary>
         /// XML element for file ranges.
@@ -727,6 +737,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constants for HTTP headers.
         /// </summary>
         [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Justification = "Reviewed.")]
+        [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed.")]
         public static class HeaderConstants
         {
             static HeaderConstants()
@@ -738,11 +749,13 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
 #elif ASPNET_K
-#if ASPNETCORE50
+#if DNXCORE50
                 UserAgentComment = "(ASP.NET Core 5.0)";
 #else
                 UserAgentComment = "(ASP.NET 5.0)";
 #endif
+#elif PORTABLE
+                UserAgentComment = "(Portable Class Library)";
 #else
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
@@ -768,11 +781,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-#if ASPNET_K
-            public const string UserAgentProductVersion = "4.3.2-preview";
+#if ASPNET_K || PORTABLE
+            public const string UserAgentProductVersion = "5.0.1-preview";
 #else
-            public const string UserAgentProductVersion = "4.3.0";
-#endif
+            public const string UserAgentProductVersion = "5.0.0";
+#endif 
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.
@@ -965,6 +978,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string SequenceNumberAction = PrefixForStorageHeader + "sequence-number-action";
 
             /// <summary>
+            /// Header that specifies committed block count.
+            /// </summary>
+            public const string BlobCommittedBlockCount = PrefixForStorageHeader + "blob-committed-block-count";
+
+            /// <summary>
+            /// Header that specifies the blob append offset.
+            /// </summary>
+            public const string BlobAppendOffset = PrefixForStorageHeader + "blob-append-offset";
+
+            /// <summary>
             /// Header for the If-Sequence-Number-LE condition.
             /// </summary>
             public const string IfSequenceNumberLEHeader = PrefixForStorageHeader + "if-sequence-number-le";
@@ -978,6 +1001,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header for the If-Sequence-Number-EQ condition.
             /// </summary>
             public const string IfSequenceNumberEqHeader = PrefixForStorageHeader + "if-sequence-number-eq";
+
+            /// <summary>
+            /// Header for the blob-condition-maxsize condition.
+            /// </summary>
+            public const string IfMaxSizeLessThanOrEqualHeader = PrefixForStorageHeader + "blob-condition-maxsize";
+
+            /// <summary>
+            /// Header for the blob-condition-appendpos condition.
+            /// </summary>
+            public const string IfAppendPositionEqualHeader = PrefixForStorageHeader + "blob-condition-appendpos";
 
             /// <summary>
             /// Header that specifies lease ID.
@@ -1033,7 +1066,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2014-02-14";
+            public const string TargetStorageVersion = "2015-02-21";
 
             /// <summary>
             /// Specifies the file type.
@@ -1049,6 +1082,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the block blob type.
             /// </summary>
             public const string BlockBlob = "BlockBlob";
+
+            /// <summary>
+            /// Specifies the append blob type.
+            /// </summary>
+            public const string AppendBlob = "AppendBlob";
 
             /// <summary>
             /// Specifies only snapshots are to be included.
@@ -1145,6 +1183,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// The value of the copy action header that signifies an abort operation.
             /// </summary>
             public const string CopyActionAbort = "abort";
+
+            /// <summary>
+            /// Header that specifies the share size, in gigabytes.
+            /// </summary>
+            public const string ShareSize = PrefixForStorageHeader + "share-size";
+
+            /// <summary>
+            /// Header that specifies the share quota, in gigabytes.
+            /// </summary>
+            public const string ShareQuota = PrefixForStorageHeader + "share-quota";
 
             /// <summary>
             /// Header that specifies the Accept type for the response payload.
@@ -1474,6 +1522,38 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Constant for default metrics version.
             /// </summary>
             public const string MetricsVersionV1 = "1.0";
+        }
+
+        /// <summary>
+        /// Constants for client encryption.
+        /// </summary>
+        [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Justification = "Reviewed.")]
+        public static class EncryptionConstants
+        {
+            /// <summary>
+            /// Constant for the encryption protocol.
+            /// </summary>
+            internal const string EncryptionProtocolV1 = "1.0";
+
+            /// <summary>
+            /// Encryption metadata key for key wrapping IV.
+            /// </summary>
+            internal const string KeyWrappingIV = "KeyWrappingIV";
+
+            /// <summary>
+            /// Metadata header to store encryption materials.
+            /// </summary>
+            public const string BlobEncryptionData = "encryptiondata";
+
+            /// <summary>
+            /// Property name to store the encryption metadata.
+            /// </summary>
+            public const string TableEncryptionKeyDetails = "_ClientEncryptionMetadata1";
+
+            /// <summary>
+            /// Additional property name to store the encryption metadata.
+            /// </summary>
+            public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
         }
     }
 }

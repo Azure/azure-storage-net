@@ -92,7 +92,9 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request for performing the operation.</returns>
         public static HttpRequestMessage GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, null /* builder */, content, operationContext);
+            UriQueryBuilder builder = new UriQueryBuilder();
+
+            HttpRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, builder, content, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -106,7 +108,9 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request for performing the operation.</returns>
         public static HttpRequestMessage GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, null /* builder */, content, operationContext);
+            UriQueryBuilder builder = new UriQueryBuilder();
+
+            HttpRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, builder, content, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -197,7 +201,9 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request for performing the operation.</returns>
         public static HttpRequestMessage Get(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, null /* builder */, content, operationContext);
+            UriQueryBuilder builder = new UriQueryBuilder();
+
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -331,6 +337,71 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             request.Headers.Add(Constants.HeaderConstants.FileRangeWrite, fileRangeWrite.ToString());
 
             request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Generates a web request to copy.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the destination file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="source">The absolute URI to the source object, including any necessary authentication parameters.</param>
+        /// <param name="sourceAccessCondition">The access condition to apply to the source object.</param>
+        /// <param name="destAccessCondition">The access condition to apply to the destination file.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static HttpRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext)
+        {
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext);
+
+            request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
+            request.ApplyAccessCondition(destAccessCondition);
+            request.ApplyAccessConditionToSource(sourceAccessCondition);
+
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to get the properties of the service.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the service.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <returns>A HttpRequestMessage to get the service properties.</returns>
+        public static HttpRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext)
+        {
+            return HttpRequestMessageFactory.GetServiceProperties(uri, timeout, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to set the properties of the service.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the service.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <returns>A web request to set the service properties.</returns>
+        internal static HttpRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        {
+            return HttpRequestMessageFactory.SetServiceProperties(uri, timeout, content, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to abort a copy operation.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="copyId">The ID string of the copy operation to be aborted.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.
+        ///     Only lease conditions are supported for this operation.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        public static HttpRequestMessage AbortCopy(Uri uri, int? timeout, string copyId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "copy");
+            builder.Add(Constants.QueryConstants.CopyId, copyId);
+
+            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+
+            request.Headers.Add(Constants.HeaderConstants.CopyActionHeader, Constants.HeaderConstants.CopyActionAbort);
+            request.ApplyAccessCondition(accessCondition);
+
             return request;
         }
     }

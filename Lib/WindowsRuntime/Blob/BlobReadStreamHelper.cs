@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if !ASPNET_K
+#if !(ASPNET_K || PORTABLE)
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;
@@ -40,7 +40,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blob">Blob reference to read from</param>
         /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
-        internal BlobReadStreamHelper(ICloudBlob blob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        internal BlobReadStreamHelper(CloudBlob blob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             this.originalStream = new BlobReadStream(blob, accessCondition, options, operationContext);
             this.originalStreamAsInputStream = this.originalStream.AsInputStream();

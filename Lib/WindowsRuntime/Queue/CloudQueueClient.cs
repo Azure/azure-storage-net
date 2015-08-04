@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -64,15 +64,19 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <value>Authentication handler.</value>
         internal HttpClientHandler AuthenticationHandler
         {
-            get
+           get
             {
                 HttpClientHandler authenticationHandler;
                 if (this.Credentials.IsSharedKey)
                 {
+#if PORTABLE
+                    throw new NotSupportedException(SR.PortableDoesNotSupportSharedKey);
+#else
                     authenticationHandler = new SharedKeyAuthenticationHttpHandler(
                         this.GetCanonicalizer(),
                         this.Credentials,
                         this.Credentials.AccountName);
+#endif
                 }
                 else
                 {
@@ -83,12 +87,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
+#if !PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of queues.
         /// </summary>
         /// <param name="currentToken">A <see cref="QueueContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K
+#if ASPNET_K 
         public Task<QueueResultSegment> ListQueuesSegmentedAsync(QueueContinuationToken currentToken)
 #else
         public IAsyncOperation<QueueResultSegment> ListQueuesSegmentedAsync(QueueContinuationToken currentToken)
@@ -103,7 +108,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="prefix">The queue name prefix.</param>
         /// <param name="currentToken">A <see cref="QueueContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K
+#if ASPNET_K 
         public Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueContinuationToken currentToken)
 #else
         public IAsyncOperation<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueContinuationToken currentToken)
@@ -124,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K
+#if ASPNET_K 
         public Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext)
         {
             return this.ListQueuesSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
@@ -148,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Returns a result segment containing a collection of queues
         /// whose names begin with the specified prefix.
@@ -240,7 +245,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<ServiceProperties> GetServicePropertiesAsync()
 #else
         public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync()
@@ -256,7 +261,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<ServiceProperties> GetServicePropertiesAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(options, operationContext, CancellationToken.None);
@@ -275,7 +280,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -323,7 +328,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="properties">The queue service properties.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task SetServicePropertiesAsync(ServiceProperties properties)
 #else
         public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties)
@@ -340,7 +345,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
@@ -358,7 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -396,6 +401,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx);
             retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            retCmd.StreamToDispose = memoryStream;
             retCmd.Handler = this.AuthenticationHandler;
             retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
@@ -410,7 +416,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>The queue service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<ServiceStats> GetServiceStatsAsync()
 #else
         public IAsyncOperation<ServiceStats> GetServiceStatsAsync()
@@ -426,7 +432,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The queue service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<ServiceStats> GetServiceStatsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetServiceStatsAsync(options, operationContext, CancellationToken.None);
@@ -446,7 +452,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Gets the stats of the queue service.
         /// </summary>
@@ -484,5 +490,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
 #endregion
+#endif
     }
 }

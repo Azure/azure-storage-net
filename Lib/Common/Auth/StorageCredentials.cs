@@ -101,12 +101,31 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         }
 
         /// <summary>
+        /// Gets the value of the shared access signature token's <code>sig</code> parameter.
+        /// </summary>
+        public string SASSignature
+        {
+            get
+            {
+                if (this.IsSAS)
+                {
+                    return this.queryBuilder[Constants.QueryConstants.Signature];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="StorageCredentials"/> class.
         /// </summary>
         public StorageCredentials()
         {
         }
 
+#if !PORTABLE
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageCredentials"/> class with the specified account name and key value.
         /// </summary>
@@ -158,6 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
             this.UpdateKey(keyValue, keyName);
         }
 #endif
+#endif 
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageCredentials"/> class with the specified shared access signature token.
@@ -228,7 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
             this.Key = new StorageAccountKey(keyName, keyValue);
         }
 #endif
-        
+
         /// <summary>
         /// Updates the shared access signature (SAS) token value for storage credentials created with a shared access signature.
         /// </summary>

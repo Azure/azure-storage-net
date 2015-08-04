@@ -38,6 +38,6 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Retrieve all available details.
         /// </summary>
-        All = 0x1
+        All = Metadata
     }
 }

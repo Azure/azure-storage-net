@@ -102,6 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>A <see cref="BlobType"/> enumeration value.</value>
         BlobType BlobType { get; }
 
+#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the blob.
         /// </summary>
@@ -148,5 +149,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
         /// <returns>A shared access signature.</returns>
         string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, string sasVersion);
+#endif
     }
 }

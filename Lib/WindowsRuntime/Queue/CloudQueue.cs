@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -41,11 +41,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// </summary>
     public sealed partial class CloudQueue
     {
+#if !PORTABLE
         /// <summary>
         /// Creates the queue.
         /// </summary>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task CreateAsync()
 #else
@@ -62,8 +63,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task CreateAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -85,14 +86,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Creates the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task CreateAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -112,7 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<bool> CreateIfNotExistsAsync()
 #else
         public IAsyncOperation<bool> CreateIfNotExistsAsync()
@@ -128,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.CreateIfNotExistsAsync(options, operationContext, CancellationToken.None);
@@ -150,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-#if ASPNET_K
+#if ASPNET_K 
             return Task.Run(async () =>
             {
                 bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
@@ -167,7 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 try
                 {
-#if ASPNET_K
+#if ASPNET_K 
                     await this.CreateAsync(modifiedOptions, operationContext, cancellationToken);
 #else
                     await this.CreateAsync(modifiedOptions, operationContext).AsTask(token);
@@ -199,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                         throw;
                     }
                 }
-#if ASPNET_K
+#if ASPNET_K 
             }, cancellationToken);
 #else
             });
@@ -209,8 +210,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Deletes the queue.
         /// </summary>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync()
 #else
@@ -227,8 +228,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -250,14 +251,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Deletes the queue.
         /// </summary>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -277,7 +278,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns><c>true</c> if the queue already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<bool> DeleteIfExistsAsync()
 #else
         public IAsyncOperation<bool> DeleteIfExistsAsync()
@@ -293,7 +294,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<bool> DeleteIfExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteIfExistsAsync(options, operationContext, CancellationToken.None);
@@ -315,7 +316,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-#if ASPNET_K
+#if ASPNET_K 
             return Task.Run(async () =>
             {
                 bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
@@ -332,7 +333,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 try
                 {
-#if ASPNET_K
+#if ASPNET_K 
                     await this.DeleteAsync(modifiedOptions, operationContext, cancellationToken);
 #else
                     await this.DeleteAsync(modifiedOptions, operationContext).AsTask(token);
@@ -359,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                         throw;
                     }
                 }
-#if ASPNET_K
+#if ASPNET_K 
             }, cancellationToken);
 #else
             });
@@ -370,8 +371,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Sets permissions for the queue.
         /// </summary>
         /// <param name="permissions">The permissions to apply to the queue.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(QueuePermissions permissions)
 #else
@@ -389,8 +390,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="permissions">The permissions to apply to the queue.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(QueuePermissions permissions, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -412,7 +413,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Sets permissions for the queue.
         /// </summary>
@@ -420,7 +421,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(QueuePermissions permissions, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -440,7 +441,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>The queue's permissions.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<QueuePermissions> GetPermissionsAsync()
 #else
         public IAsyncOperation<QueuePermissions> GetPermissionsAsync()
@@ -456,7 +457,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The queue's permissions.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K 
         public Task<QueuePermissions> GetPermissionsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetPermissionsAsync(options, operationContext, CancellationToken.None);
@@ -475,7 +476,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Gets the permissions settings for the queue.
         /// </summary>
@@ -496,13 +497,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 cancellationToken), cancellationToken);
         }
 #endif
+#endif 
 
         /// <summary>
         /// Checks existence of the queue.
         /// </summary>
         /// <returns><c>true</c> if the queue exists.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync()
 #else
         public IAsyncOperation<bool> ExistsAsync()
@@ -518,7 +520,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue exists.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.ExistsAsync(false, options, operationContext, CancellationToken.None);
@@ -530,7 +532,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Checks existence of the queue.
         /// </summary>
@@ -551,7 +553,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the queue exists.</returns>
         private Task<bool> ExistsAsync(bool primaryOnly, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
@@ -580,12 +582,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-
         /// <summary>
         /// Retrieves the queue's attributes.
         /// </summary>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync()
 #else
@@ -602,8 +603,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -625,14 +626,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Retrieves the queue's attributes.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task FetchAttributesAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -647,11 +648,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
+#if !PORTABLE
         /// <summary>
         /// Sets the queue's user-defined metadata.
         /// </summary>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync()
 #else
@@ -668,8 +670,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -691,14 +693,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K 
         /// <summary>
         /// Sets the queue's user-defined metadata.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -712,13 +714,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 cancellationToken), cancellationToken);
         }
 #endif
+#endif
 
         /// <summary>
         /// Adds a message to the queue.
         /// </summary>
         /// <param name="message">The message to add.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task AddMessageAsync(CloudQueueMessage message)
 #else
@@ -739,8 +742,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -762,7 +765,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Adds a message to the queue.
         /// </summary>
@@ -773,7 +776,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -794,8 +797,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="message">The message to update.</param>
         /// <param name="visibilityTimeout">The visibility timeout interval.</param>
         /// <param name="updateFields">The message update fields.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields)
 #else
@@ -815,8 +818,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="updateFields">The message update fields.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -838,7 +841,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Updates a message.
         /// </summary>
@@ -848,7 +851,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -867,8 +870,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Deletes the message.
         /// </summary>
         /// <param name="message">The message to delete.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(CloudQueueMessage message)
 #else
@@ -886,8 +889,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="message">The message to delete.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(CloudQueueMessage message, QueueRequestOptions options, OperationContext operationContext)
 #else
@@ -904,8 +907,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="messageId">The message ID.</param>
         /// <param name="popReceipt">The pop receipt value.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(string messageId, string popReceipt)
 #else
@@ -924,8 +927,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="popReceipt">The pop receipt value.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(string messageId, string popReceipt, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -947,7 +950,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Deletes the message.
         /// </summary>
@@ -956,7 +959,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteMessageAsync(string messageId, string popReceipt, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -975,8 +978,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Gets a list of messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount)
 #else
@@ -997,7 +1000,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of messages.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetMessagesAsync(messageCount, visibilityTimeout, options, operationContext, CancellationToken.None);
@@ -1016,8 +1019,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets a list of messages from the queue.
         /// </summary>
@@ -1046,7 +1048,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>A message.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<CloudQueueMessage> GetMessageAsync()
 #else
         public IAsyncOperation<CloudQueueMessage> GetMessageAsync()
@@ -1063,7 +1065,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A message.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<CloudQueueMessage> GetMessageAsync(TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetMessageAsync(visibilityTimeout, options, operationContext, CancellationToken.None);
@@ -1082,7 +1084,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets a single message from the queue.
         /// </summary>
@@ -1109,8 +1111,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Peeks a list of messages from the queue.
         /// </summary>
         /// <param name="messageCount">The number of messages to retrieve.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount)
 #else
@@ -1130,7 +1132,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of messages.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount, QueueRequestOptions options, OperationContext operationContext)
         {
             return this.PeekMessagesAsync(messageCount, null /* options */, null /* operationContext */, CancellationToken.None);
@@ -1149,7 +1151,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Peeks a list of messages from the queue.
         /// </summary>
@@ -1177,7 +1179,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>A message.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<CloudQueueMessage> PeekMessageAsync()
 #else
         public IAsyncOperation<CloudQueueMessage> PeekMessageAsync()
@@ -1193,7 +1195,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A message.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<CloudQueueMessage> PeekMessageAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.PeekMessageAsync(options, operationContext, CancellationToken.None);
@@ -1212,7 +1214,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Peeks a single message from the queue.
         /// </summary>
@@ -1237,8 +1239,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Clears the messages of the queue.
         /// </summary>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ClearAsync()
 #else
@@ -1255,8 +1257,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K || PORTABLE
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ClearAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1278,14 +1280,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Clears the messages of the queue.
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ClearAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1470,6 +1472,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            putCmd.StreamToDispose = memoryStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
@@ -1547,6 +1550,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, cnt, ctx);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
+            putCmd.StreamToDispose = memoryStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
@@ -1592,6 +1596,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
                 putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
+                putCmd.StreamToDispose = memoryStream;
             }
 
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>

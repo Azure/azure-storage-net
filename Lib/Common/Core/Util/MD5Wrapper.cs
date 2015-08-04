@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using Windows.Security.Cryptography;
     using Windows.Security.Cryptography.Core;
     using Windows.Storage.Streams;
-#else
+#elif !PORTABLE
     using System.Security.Cryptography;
 #endif
 
@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
 #if WINDOWS_RT
         private CryptographicHash hash = null;
-#elif WINDOWS_PHONE && WINDOWS_DESKTOP
+#elif (WINDOWS_PHONE && WINDOWS_DESKTOP) || PORTABLE
 
 #else
         private MD5 hash = null;
@@ -56,6 +56,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             this.hash = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
 #elif WINDOWS_PHONE
             throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
+#elif PORTABLE
+            throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
 #elif ASPNET_K
             this.hash = MD5.Create();
 #else
@@ -77,6 +79,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 this.hash.Append(input.AsBuffer(offset, count));
 #elif WINDOWS_PHONE && WINDOWS_DESKTOP
                 throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
+#elif PORTABLE
+                throw new NotSupportedException(SR.PortableDoesNotSupportMD5); 
 #elif ASPNET_K
                 inputStream.Write(input, offset, count);
 #else
@@ -96,7 +100,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             return CryptographicBuffer.EncodeToBase64String(md5HashBuff);
 #elif WINDOWS_PHONE && WINDOWS_DESKTOP
             throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-#elif ASPNET_K
+#elif PORTABLE
+            throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
+#elif ASPNET_K 
             return Convert.ToBase64String(this.hash.ComputeHash(inputStream.ToArray()));
 #else
             this.hash.TransformFinalBlock(new byte[0], 0, 0);
@@ -106,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public void Dispose()
         {
-#if (WINDOWS_DESKTOP && !WINDOWS_PHONE) || ASPNET_K
+#if (WINDOWS_DESKTOP && !WINDOWS_PHONE && !PORTABLE) || ASPNET_K
             if (this.hash != null)
             {
                 ((IDisposable)this.hash).Dispose();

@@ -1,10 +1,8 @@
 pushd %~dp0
-@powershell -NoProfile -ExecutionPolicy unrestricted -Command "iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/aspnet/Home/release/kvminstall.ps1'))"
-call %userprofile%\.kre\bin\kvm.cmd upgrade -x86 -r CoreCLR
-call %userprofile%\.kre\bin\kvm.cmd upgrade -x86 -r CLR
-call %userprofile%\.kre\bin\kvm.cmd use 1.0.0-beta1-10674 -r CLR
-call kpm restore
-call %userprofile%\.kre\bin\kvm.cmd use 1.0.0-beta1-10674 -r CoreCLR
+call Tools\nuget.exe install dnx-coreclr-win-x86 -Version 1.0.0-beta5 -Prerelease
+call Tools\nuget.exe install dnx-clr-win-x86 -Version 1.0.0-beta5 -Prerelease
+call dnx-coreclr-win-x86.1.0.0-beta5\bin\dnu restore
+call dnx-clr-win-x86.1.0.0-beta5\bin\dnu restore
 cd Lib\AspNet\Microsoft.WindowsAzure.Storage
-call kpm build --configuration release
+call ..\..\..\dnx-coreclr-win-x86.1.0.0-beta5\bin\dnu build --configuration release
 popd

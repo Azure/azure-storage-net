@@ -20,11 +20,14 @@
       <Value>Fisma</Value>
       <Value>func</Value>
       <Value>impl</Value>
+      <Value>int</Value>
       <Value>Json</Value>
       <Value>Md</Value>
       <Value>myblob</Value>
       <Value>mycontainer</Value>
+      <Value>myfile</Value>
       <Value>myfolder</Value>
+      <Value>myshare</Value>
       <Value>parsable</Value>
       <Value>Postcondition</Value>
       <Value>Retryable</Value>

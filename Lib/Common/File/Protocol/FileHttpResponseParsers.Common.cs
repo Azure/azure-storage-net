@@ -22,6 +22,8 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System.IO;
+    using System.Xml;
+    using System.Xml.Linq;
 
 #if WINDOWS_RT
     internal
@@ -30,6 +32,21 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 #endif
         static partial class FileHttpResponseParsers
     {
+        /// <summary>
+        /// Reads service properties from a stream.
+        /// </summary>
+        /// <param name="inputStream">The stream from which to read the service properties.</param>
+        /// <returns>The service properties stored in the stream.</returns>
+        public static FileServiceProperties ReadServiceProperties(Stream inputStream)
+        {
+            using (XmlReader reader = XmlReader.Create(inputStream))
+            {
+                XDocument servicePropertyDocument = XDocument.Load(reader);
+
+                return FileServiceProperties.FromServiceXml(servicePropertyDocument);
+            }
+        }
+
         /// <summary>
         /// Reads service stats from a stream.
         /// </summary>

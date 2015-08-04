@@ -217,7 +217,7 @@
     <ProjectReference Include="..\..\Lib\WindowsPhone\Microsoft.WindowsAzure.Storage.csproj">
       <Project>{CF1D432A-380F-434A-BC43-FC39AC8B61A8}</Project>
       <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsPhone%29</Name>
-      <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsPhone\Microsoft.WindowsAzure.Storage%29</Name>
+      <Name>Microsoft.WindowsAzure.Storage</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

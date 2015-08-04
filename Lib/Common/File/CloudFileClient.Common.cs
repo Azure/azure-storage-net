@@ -49,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="storageUri">The File service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT
         /// <returns>A <see cref="CloudFileClient"/> object.</returns>
         public static CloudFileClient Create(StorageUri storageUri, StorageCredentials credentials)
         {

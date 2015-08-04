@@ -57,8 +57,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
                 this.OperationExpiryTime = other.OperationExpiryTime;
                 this.PayloadFormat = other.PayloadFormat;
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 this.PropertyResolver = other.PropertyResolver;
+                this.EncryptionPolicy = other.EncryptionPolicy;
+                this.RequireEncryption = other.RequireEncryption;
+                this.EncryptionResolver = other.EncryptionResolver;
 #endif
             }
         }
@@ -73,7 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
             modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
             modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             modifiedOptions.PayloadFormat = (modifiedOptions.PayloadFormat 
                                                 ?? serviceClient.DefaultRequestOptions.PayloadFormat)
                                                 ?? TablePayloadFormat.Json;
@@ -88,8 +91,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
 
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             modifiedOptions.PropertyResolver = modifiedOptions.PropertyResolver ?? serviceClient.DefaultRequestOptions.PropertyResolver;
+            modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
+            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
+            modifiedOptions.EncryptionResolver = modifiedOptions.EncryptionResolver ?? serviceClient.DefaultRequestOptions.EncryptionResolver;
 #endif
 
             return modifiedOptions;
@@ -136,6 +142,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        internal void AssertNoEncryptionPolicyOrStrictMode()
+        {
+            if (this.EncryptionPolicy != null)
+            {
+                throw new InvalidOperationException(SR.EncryptionNotSupportedForOperation);
+            }
+
+            this.AssertPolicyIfRequired();
+        }
+
+        internal void AssertPolicyIfRequired()
+        {
+            if (this.RequireEncryption.HasValue && this.RequireEncryption.Value && this.EncryptionPolicy == null)
+            {
+                throw new InvalidOperationException(SR.EncryptionPolicyMissingInStrictMode);
+            }
+        }
+#endif
+
         /// <summary>
         ///  Gets or sets the absolute expiry time across all potential retries for the request. 
         /// </summary>
@@ -146,6 +172,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        /// <summary>
+        /// Gets or sets the encryption policy for the request.
+        /// </summary>
+        /// <value>An object of type <see cref="EncryptionPolicy"/>.</value>
+        public TableEncryptionPolicy EncryptionPolicy { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
+        /// </summary>
+        /// <value>Use <c>true</c> to specify that data should be encrypted/decrypted for all transactions; otherwise, <c>false</c>.</value>
+        public bool? RequireEncryption { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets the location mode of the request.
@@ -209,7 +249,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         // For now, this is ok since we don't have RT support. Has to change to internal once we do. In that case, we can add overloads to Table operation
         // methods to take in EdmTypeResolver.
-#if !WINDOWS_RT
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         private Func<string, string, string, string, EdmType> propertyResolver = null;
 
         /// <summary>
@@ -219,6 +259,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             get { return this.propertyResolver; }
             set { this.propertyResolver = value; }
+        }
+
+        private Func<string, string, string, bool> encryptionResolver = null;
+
+        /// <summary>
+        /// Gets or sets the delegate to get the value indicating whether or not a property should be encrypted, given the partition key, row key, 
+        /// and property name. 
+        /// </summary>
+        public Func<string, string, string, bool> EncryptionResolver
+        {
+            get { return this.encryptionResolver; }
+            set { this.encryptionResolver = value; }
         }
 #endif
     }

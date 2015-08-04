@@ -1,27 +1,30 @@
 ﻿{
     "version" : "1.0.0.0",
     "dependencies": {
-	"Xunit.KRunner": "1.0.0-beta1-*"
+        "xunit": "2.1.0-*",
+        "xunit.runner.dnx": "2.1.0-*"
     },
 
     "commands": {
-        "test": "Xunit.KRunner"
+        "test": "xunit.runner.dnx"
     },
 
     "frameworks": {
-        "aspnet50": {
+        "dnx451": {
             "frameworkAssemblies": {
+                "System.Runtime": "",
+                "System.Xml.Linq": ""
             }
         },
-        "aspnetcore50": {
+        "dnxcore50": {
             "dependencies": {
-                "System.Runtime": "4.0.20-beta-*"
+              "System.Runtime": "4.0.10-beta-*"
             }
         }
     },
 
-    "compilationOptions": {
-        "define": [ "XUNIT" ]
-    }
+	"compilationOptions": {
+		"define": [ "XUNIT" ]
+	}
 
 }

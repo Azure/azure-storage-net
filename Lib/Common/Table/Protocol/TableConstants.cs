@@ -32,6 +32,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
  static class TableConstants
     {
         /// <summary>
+        /// Stores the maximum number of operations allowed in a TableBatchOperation.
+        /// </summary>
+        public const int TableServiceBatchMaximumOperations = 100;
+
+        /// <summary>
         /// Stores the header prefix for continuation information.
         /// </summary>
         public const string TableServicePrefixForTableContinuation = "x-ms-continuation-";

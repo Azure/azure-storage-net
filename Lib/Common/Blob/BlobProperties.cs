@@ -53,6 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.ETag = other.ETag;
             this.LastModified = other.LastModified;
             this.PageBlobSequenceNumber = other.PageBlobSequenceNumber;
+            this.AppendBlobCommittedBlockCount = other.AppendBlobCommittedBlockCount;
         }
 
         /// <summary>
@@ -150,5 +151,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <value>A long containing the blob's current sequence number.</value>
         public long? PageBlobSequenceNumber { get; internal set; }
+
+        /// <summary>
+        /// If the blob is an append blob, gets the number of committed blocks.
+        /// </summary>
+        /// <value>An integer containing the number of committed blocks.</value>
+        public int? AppendBlobCommittedBlockCount { get; internal set; }
     }
 }

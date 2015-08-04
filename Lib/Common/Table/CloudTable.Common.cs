@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
@@ -54,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="tableAddress">A <see cref="StorageUri"/> containing the absolute URI to the table at both the primary and secondary locations.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT
         /// <returns>A <see cref="CloudTable"/> object.</returns>
         public static CloudTable Create(StorageUri tableAddress, StorageCredentials credentials)
         {
@@ -113,6 +114,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <value>An object of type <see cref="StorageUri"/> containing the table's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
+#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the table.
         /// </summary>
@@ -128,8 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 null /* startPartitionKey */,
                 null /* startRowKey */,
                 null /* endPartitionKey */,
-                null /* endRowKey */,
-                null /* sasVersion */);
+                null /* endRowKey */);
         }
 
         /// <summary>
@@ -148,8 +149,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 null /* startPartitionKey */,
                 null /* startRowKey */,
                 null /* endPartitionKey */,
-                null /* endRowKey */,
-                null /* sasVersion */);
+                null /* endRowKey */);
         }
 
         /// <summary>
@@ -172,14 +172,39 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string endPartitionKey,
             string endRowKey)
         {
-            return this.GetSharedAccessSignature(
+            if (!this.ServiceClient.Credentials.IsSharedKey)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            string resourceName = this.GetCanonicalName(Constants.HeaderConstants.TargetStorageVersion);
+            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
+
+            string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
                 accessPolicyIdentifier,
                 startPartitionKey,
                 startRowKey,
                 endPartitionKey,
                 endRowKey,
-                null /* sasVersion */);
+                resourceName,
+                Constants.HeaderConstants.TargetStorageVersion,
+                accountKey.KeyValue);
+
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
+                policy,
+                this.Name,
+                accessPolicyIdentifier,
+                startPartitionKey,
+                startRowKey,
+                endPartitionKey,
+                endRowKey,
+                signature,
+                accountKey.KeyName,
+                Constants.HeaderConstants.TargetStorageVersion);
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -191,10 +216,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="startRowKey">A string specifying the start row key, or <c>null</c>.</param>
         /// <param name="endPartitionKey">A string specifying the end partition key, or <c>null</c>.</param>
         /// <param name="endRowKey">A string specifying the end row key, or <c>null</c>.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         /// <exception cref="InvalidOperationException">Thrown if the current credentials don't support creating a shared access signature.</exception>
+        [Obsolete("This overload has been deprecated because the SAS tokens generated using the current version work fine with old libraries. Please use the other overloads.")]        
         public string GetSharedAccessSignature(
             SharedAccessTablePolicy policy,
             string accessPolicyIdentifier,
@@ -210,9 +236,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new InvalidOperationException(errorMessage);
             }
 
-            string resourceName = this.GetCanonicalName();
-            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
             string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
+            string resourceName = this.GetCanonicalName(validatedSASVersion);
+            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
          
             string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
@@ -239,6 +265,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return builder.ToString();
         }
+#endif
 
         /// <summary>
         /// Returns the name of the table.
@@ -259,7 +286,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             StorageCredentials parsedCredentials;
             this.StorageUri = NavigationHelper.ParseQueueTableQueryAndVerify(address, out parsedCredentials);
 
-            if ((parsedCredentials != null) && (credentials != null) && !parsedCredentials.Equals(credentials))
+            if (parsedCredentials != null && credentials != null)
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);
@@ -270,16 +297,23 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Gets the canonical name of the table, formatted as /&lt;account-name&gt;/&lt;table-name&gt;.
+        /// Gets the canonical name of the table, formatted as table/&lt;account-name&gt;/&lt;table-name&gt;.
         /// </summary>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
         /// <returns>The canonical name of the table.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.String.ToLower", Justification = "ToLower(CultureInfo) is not present in RT and ToLowerInvariant() also violates FxCop")]
-        private string GetCanonicalName()
+        private string GetCanonicalName(string sasVersion)
         {
             string accountName = this.ServiceClient.Credentials.AccountName;
             string tableNameLowerCase = this.Name.ToLower();
+            string canonicalNameFormat = "/{0}/{1}/{2}";
+            if (sasVersion == Constants.VersionConstants.February2012 || sasVersion == Constants.VersionConstants.August2013)
+            {
+                // Do not prepend service name for older versions
+                canonicalNameFormat = "/{1}/{2}";
+            }
 
-            return string.Format(CultureInfo.InvariantCulture, "/{0}/{1}", accountName, tableNameLowerCase);
+            return string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Table, accountName, tableNameLowerCase);
         }
     }
 }

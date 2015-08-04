@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using System.Security.Cryptography;
     using System.Threading;
 
     [TestClass]
@@ -52,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Download a specific range of the blob to a stream")]
+        [Description("Download a specific range of a page blob to a stream")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -90,7 +91,46 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload a stream to a blob")]
+        [Description("Download a specific range of an append blob to a stream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobDownloadToStreamRangeTest()
+        {
+            byte[] buffer = GetRandomBuffer(2 * 1024);
+
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            using (MemoryStream wholeBlob = new MemoryStream(buffer))
+            {
+                blob.CreateOrReplace();
+                blob.AppendBlock(wholeBlob, null);
+
+                byte[] testBuffer = new byte[1024];
+                MemoryStream blobStream = new MemoryStream(testBuffer);
+                StorageException storageEx = TestHelper.ExpectedException<StorageException>(
+                    () => blob.DownloadRangeToStream(blobStream, 0, 0),
+                    "Requesting 0 bytes when downloading range should not work");
+                Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
+                blob.DownloadRangeToStream(blobStream, 0, 1024);
+                Assert.AreEqual(blobStream.Position, 1024);
+                TestHelper.AssertStreamsAreEqualAtIndex(blobStream, wholeBlob, 0, 0, 1024);
+
+                CloudAppendBlob blob2 = this.testContainer.GetAppendBlobReference("blob1");
+                MemoryStream blobStream2 = new MemoryStream(testBuffer);
+                storageEx = TestHelper.ExpectedException<StorageException>(
+                    () => blob2.DownloadRangeToStream(blobStream, 1024, 0),
+                    "Requesting 0 bytes when downloading range should not work");
+                Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
+                blob2.DownloadRangeToStream(blobStream2, 1024, 1024);
+                TestHelper.AssertStreamsAreEqualAtIndex(blobStream2, wholeBlob, 0, 1024, 1024);
+
+                AssertAreEqual(blob, blob2);
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload a stream to a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -111,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload from text to a blob")]
+        [Description("Upload from text to a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -147,7 +187,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload from text to a blob")]
+        [Description("Upload from text to an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void AppendBlobUploadWithMD5ValidationTest()
+        {
+            byte[] buffer = GetRandomBuffer(2 * 1024);
+            MD5 md5 = MD5.Create();
+            string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            BlobRequestOptions options = new BlobRequestOptions();
+            options.DisableContentMD5Validation = false;
+            options.StoreBlobContentMD5 = false;
+            OperationContext context = new OperationContext();
+            using (MemoryStream srcStream = new MemoryStream(buffer))
+            {
+                blob.CreateOrReplace();
+                blob.AppendBlock(srcStream, contentMD5, null, options, context);
+
+                blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                blob.SetProperties(null, options, context);
+                byte[] testBuffer = new byte[2048];
+                MemoryStream dstStream = new MemoryStream(testBuffer);
+                TestHelper.ExpectedException(() => blob.DownloadRangeToStream(dstStream, null, null, null, options, context),
+                    "Try to Download a stream with a corrupted md5 and DisableMD5Validation set to false",
+                    HttpStatusCode.OK);
+
+                options.DisableContentMD5Validation = true;
+                blob.SetProperties(null, options, context);
+                byte[] testBuffer2 = new byte[2048];
+                MemoryStream dstStream2 = new MemoryStream(testBuffer2);
+                blob.DownloadRangeToStream(dstStream2, null, null, null, options, context);
+            }
+        }
+
+        [TestMethod]
+        [Description("Check that the empty header is not used for signing.")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -178,7 +256,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload from file to a blob")]
+        [Description("Upload from file to a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -213,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload from file to a blob")]
+        [Description("Upload from file to a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -251,7 +329,42 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload from file to a blob")]
+        [Description("Upload from file to an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadDownloadFile()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            CloudAppendBlob nullBlob = this.testContainer.GetAppendBlobReference("null");
+            this.DoUploadDownloadFile(blob, 0, false);
+            this.DoUploadDownloadFile(blob, 4096, false);
+            this.DoUploadDownloadFile(blob, 4097, false);
+
+            TestHelper.ExpectedException<IOException>(
+                () => blob.UploadFromFile("non_existent.file", FileMode.Open),
+                "UploadFromFile requires an existing file");
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.Create),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.CreateNew),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            TestHelper.ExpectedException<StorageException>(
+                () => nullBlob.DownloadToFile("garbage.file", FileMode.Append),
+                "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
+        }
+
+        [TestMethod]
+        [Description("Upload from file to a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -305,7 +418,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload from file to a blob")]
+        [Description("Upload from file to a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -361,9 +474,63 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        [TestMethod]
+        [Description("Upload from file to an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadDownloadFileAPM()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            CloudBlockBlob nullBlob = this.testContainer.GetBlockBlobReference("null");
+            this.DoUploadDownloadFile(blob, 0, true);
+            this.DoUploadDownloadFile(blob, 4096, true);
+            this.DoUploadDownloadFile(blob, 4097, true);
+
+            TestHelper.ExpectedException<IOException>(
+                () => blob.BeginUploadFromFile("non_existent.file", FileMode.Open, null, null),
+                "UploadFromFile requires an existing file");
+
+            IAsyncResult result;
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                OperationContext context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.Create, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.CreateNew, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should not leave an empty file behind after failing.");
+                Assert.IsFalse(File.Exists("garbage.file"));
+
+                context = new OperationContext();
+                result = nullBlob.BeginDownloadToFile("garbage.file", FileMode.Append, null, null, context,
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<StorageException>(
+                    () => nullBlob.EndDownloadToFile(result),
+                    "DownloadToFile should leave an empty file behind after failing, depending on file mode.");
+                Assert.IsTrue(File.Exists("garbage.file"));
+                File.Delete("garbage.file");
+            }
+        }
+
 #if TASK
         [TestMethod]
-        [Description("Upload from file to a blob")]
+        [Description("Upload from file to a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -401,7 +568,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload from file to a blob")]
+        [Description("Upload from file to a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -441,6 +608,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             File.Delete("garbage.file");
         }
 
+        [TestMethod]
+        [Description("Upload from file to an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadDownloadFileTask()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            CloudAppendBlob nullBlob = this.testContainer.GetAppendBlobReference("null");
+            this.DoUploadDownloadFileTask(blob, 0);
+            this.DoUploadDownloadFileTask(blob, 4096);
+            this.DoUploadDownloadFileTask(blob, 4097);
+
+            TestHelper.ExpectedException<IOException>(
+                () => blob.UploadFromFileAsync("non_existent.file", FileMode.Open),
+                "UploadFromFile requires an existing file");
+
+            AggregateException e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.Create).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.CreateNew).Wait(),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsFalse(File.Exists("garbage.file"));
+
+            e = TestHelper.ExpectedException<AggregateException>(
+                () => nullBlob.DownloadToFileAsync("garbage.file", FileMode.OpenOrCreate).Wait(),
+                "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(e.InnerException is StorageException);
+            Assert.IsTrue(File.Exists("garbage.file"));
+            File.Delete("garbage.file");
+        }
+
         private void DoUploadDownloadFileTask(ICloudBlob blob, int fileSize)
         {
             string inputFileName = Path.GetTempFileName();
@@ -454,9 +659,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     file.Write(buffer, 0, buffer.Length);
                 }
 
+                OperationContext context = new OperationContext();
                 blob.UploadFromFileAsync(inputFileName, FileMode.Open).Wait();
 
-                OperationContext context = new OperationContext();
                 blob.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context).Wait();
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
@@ -499,7 +704,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (ex.InnerException != null)
                 {
-                    throw ex.InnerException; 
+                    throw ex.InnerException;
                 }
 
                 throw;
@@ -530,13 +735,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     IAsyncResult result;
                     using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                     {
+                        OperationContext context = new OperationContext();
                         result = blob.BeginUploadFromFile(inputFileName, FileMode.Open,
-                            ar => waitHandle.Set(),
-                            null);
+                                ar => waitHandle.Set(),
+                                null);
                         waitHandle.WaitOne();
                         blob.EndUploadFromFile(result);
 
-                        OperationContext context = new OperationContext();
                         result = blob.BeginUploadFromFile(inputFileName, FileMode.Open, null, null, context,
                             ar => waitHandle.Set(),
                             null);
@@ -588,9 +793,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 else
                 {
-                    blob.UploadFromFile(inputFileName, FileMode.Open);
-
                     OperationContext context = new OperationContext();
+
+                    blob.UploadFromFile(inputFileName, FileMode.Open);
                     blob.UploadFromFile(inputFileName, FileMode.Open, null, null, context);
                     Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
@@ -636,7 +841,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload a blob using a byte array")]
+        [Description("Upload a block blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -652,7 +857,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload a blob using a byte array")]
+        [Description("Upload a block blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -668,7 +873,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload a blob using a byte array")]
+        [Description("Upload a page blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -687,7 +892,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload a blob using a byte array")]
+        [Description("Upload a page blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -705,9 +910,73 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 "Page blobs must be 512-byte aligned");
         }
 
+        [TestMethod]
+        [Description("Upload an append blob using a byte array")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadFromByteArray()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 4 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 2 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 1 * 512, 2 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 2 * 512, 2 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 512, 0, 511, false);
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using a byte array")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadFromByteArrayAPM()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 4 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 2 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 1 * 512, 2 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 2 * 512, 2 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 512, 0, 511, true);
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using a byte array")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadBlockFromByteArray()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 4 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 2 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 1 * 512, 2 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 2 * 512, 2 * 512, false);
+            this.DoUploadFromByteArrayTest(blob, 512, 0, 511, false);
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using a byte array")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadBlockFromByteArrayAPM()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 4 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 0, 2 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 1 * 512, 2 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 4 * 512, 2 * 512, 2 * 512, true);
+            this.DoUploadFromByteArrayTest(blob, 512, 0, 511, true);
+        }
+
 #if TASK
         [TestMethod]
-        [Description("Upload a blob using a byte array")]
+        [Description("Upload a block blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -723,7 +992,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Upload a blob using a byte array")]
+        [Description("Upload a page blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -739,6 +1008,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadFromByteArrayTestTask(blob, 512, 0, 511),
                 "Page blobs must be 512-byte aligned");
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using a byte array")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobUploadFromByteArrayTask()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 0, 4 * 512);
+            this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 0, 2 * 512);
+            this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 1 * 512, 2 * 512);
+            this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 2 * 512, 2 * 512);
+            this.DoUploadFromByteArrayTestTask(blob, 512, 0, 511);
         }
 
         private void DoUploadFromByteArrayTestTask(ICloudBlob blob, int bufferSize, int bufferOffset, int count)
@@ -783,8 +1068,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
                     result = blob.BeginUploadFromByteArray(buffer, bufferOffset, count,
-                        ar => waitHandle.Set(),
-                        null);
+                                                                    ar => waitHandle.Set(),
+                                                                    null);
                     waitHandle.WaitOne();
                     blob.EndUploadFromByteArray(result);
 
@@ -810,7 +1095,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -824,7 +1109,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -838,7 +1123,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -853,7 +1138,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -867,7 +1152,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -882,7 +1167,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -896,7 +1181,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -910,7 +1195,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -925,7 +1210,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -939,7 +1224,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -947,6 +1232,77 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudPageBlobDownloadToByteArrayOverloadTask()
         {
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
+            this.DoDownloadToByteArrayTestTask(blob, 1 * 512, 2 * 512, 0, true);
+            this.DoDownloadToByteArrayTestTask(blob, 1 * 512, 2 * 512, 1 * 512, true);
+            this.DoDownloadToByteArrayTestTask(blob, 2 * 512, 4 * 512, 1 * 512, true);
+        }
+#endif
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadToByteArray()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 0, 0);
+            this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 1 * 512, 0);
+            this.DoDownloadToByteArrayTest(blob, 2 * 512, 4 * 512, 1 * 512, 0);
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadToByteArrayAPM()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 0, 1);
+            this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 1 * 512, 1);
+            this.DoDownloadToByteArrayTest(blob, 2 * 512, 4 * 512, 1 * 512, 1);
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadToByteArrayAPMOverload()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 0, 2);
+            this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 1 * 512, 2);
+            this.DoDownloadToByteArrayTest(blob, 2 * 512, 4 * 512, 1 * 512, 2);
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadToByteArrayTask()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadToByteArrayTestTask(blob, 1 * 512, 2 * 512, 0, false);
+            this.DoDownloadToByteArrayTestTask(blob, 1 * 512, 2 * 512, 1 * 512, false);
+            this.DoDownloadToByteArrayTestTask(blob, 2 * 512, 4 * 512, 1 * 512, false);
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadToByteArrayOverloadTask()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
             this.DoDownloadToByteArrayTestTask(blob, 1 * 512, 2 * 512, 0, true);
             this.DoDownloadToByteArrayTestTask(blob, 1 * 512, 2 * 512, 1 * 512, true);
             this.DoDownloadToByteArrayTestTask(blob, 2 * 512, 4 * 512, 1 * 512, true);
@@ -968,71 +1324,60 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
-                if (option == 0)
+                blob.UploadFromStream(originalBlob);
+            }
+
+            if (option == 0)
+            {
+                downloadLength = blob.DownloadToByteArray(resultBuffer, bufferOffset);
+            }
+            else if (option == 1)
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    blob.UploadFromStream(originalBlob);
-                    downloadLength = blob.DownloadToByteArray(resultBuffer, bufferOffset);
+                    ICancellableAsyncResult result = blob.BeginDownloadToByteArray(resultBuffer,
+                        bufferOffset,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    downloadLength = blob.EndDownloadToByteArray(result);
                 }
-                else if (option == 1)
+            }
+            else
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
-                    {
-                        ICancellableAsyncResult result = blob.BeginUploadFromStream(originalBlob,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
-
-                        result = blob.BeginDownloadToByteArray(resultBuffer,
-                            bufferOffset,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        downloadLength = blob.EndDownloadToByteArray(result);
-                    }
+                    OperationContext context = new OperationContext();
+                    ICancellableAsyncResult result = blob.BeginDownloadToByteArray(resultBuffer,
+                        bufferOffset, /* offset */
+                        null, /* accessCondition */
+                        null, /* options */
+                        context, /* operationContext */
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    downloadLength = blob.EndDownloadToByteArray(result);
                 }
-                else
+            }
+
+            int downloadSize = Math.Min(blobSize, bufferSize - bufferOffset);
+            Assert.AreEqual(downloadSize, downloadLength);
+
+            for (int i = 0; i < blob.Properties.Length; i++)
+            {
+                Assert.AreEqual(buffer[i], resultBuffer[bufferOffset + i]);
+            }
+
+            for (int j = 0; j < bufferOffset; j++)
+            {
+                Assert.AreEqual(0, resultBuffer2[j]);
+            }
+
+            if (bufferOffset + blobSize < bufferSize)
+            {
+                for (int k = bufferOffset + blobSize; k < bufferSize; k++)
                 {
-                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
-                    {
-                        ICancellableAsyncResult result = blob.BeginUploadFromStream(originalBlob,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
-
-                        OperationContext context = new OperationContext();
-                        result = blob.BeginDownloadToByteArray(resultBuffer,
-                            bufferOffset, /* offset */
-                            null, /* accessCondition */
-                            null, /* options */
-                            context, /* operationContext */
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        downloadLength = blob.EndDownloadToByteArray(result);
-                    }
-                }
-
-                int downloadSize = Math.Min(blobSize, bufferSize - bufferOffset);
-                Assert.AreEqual(downloadSize, downloadLength);
-
-                for (int i = 0; i < blob.Properties.Length; i++)
-                {
-                    Assert.AreEqual(buffer[i], resultBuffer[bufferOffset + i]);
-                }
-
-                for (int j = 0; j < bufferOffset; j++)
-                {
-                    Assert.AreEqual(0, resultBuffer2[j]);
-                }
-
-                if (bufferOffset + blobSize < bufferSize)
-                {
-                    for (int k = bufferOffset + blobSize; k < bufferSize; k++)
-                    {
-                        Assert.AreEqual(0, resultBuffer2[k]);
-                    }
+                    Assert.AreEqual(0, resultBuffer2[k]);
                 }
             }
         }
@@ -1054,48 +1399,48 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
                 blob.UploadFromStreamAsync(originalBlob).Wait();
-                
-                if (overload)
-                {
-                    downloadLength = blob.DownloadToByteArrayAsync(
-                        resultBuffer, 
-                        bufferOffset, 
-                        null, 
-                        null, 
-                        new OperationContext())
-                            .Result;
-                }
-                else
-                {
-                    downloadLength = blob.DownloadToByteArrayAsync(resultBuffer, bufferOffset).Result; 
-                }
-                
-                int downloadSize = Math.Min(blobSize, bufferSize - bufferOffset);
-                Assert.AreEqual(downloadSize, downloadLength);
+            }
 
-                for (int i = 0; i < blob.Properties.Length; i++)
-                {
-                    Assert.AreEqual(buffer[i], resultBuffer[bufferOffset + i]);
-                }
+            if (overload)
+            {
+                downloadLength = blob.DownloadToByteArrayAsync(
+                    resultBuffer,
+                    bufferOffset,
+                    null,
+                    null,
+                    new OperationContext())
+                        .Result;
+            }
+            else
+            {
+                downloadLength = blob.DownloadToByteArrayAsync(resultBuffer, bufferOffset).Result;
+            }
 
-                for (int j = 0; j < bufferOffset; j++)
-                {
-                    Assert.AreEqual(0, resultBuffer2[j]);
-                }
+            int downloadSize = Math.Min(blobSize, bufferSize - bufferOffset);
+            Assert.AreEqual(downloadSize, downloadLength);
 
-                if (bufferOffset + blobSize < bufferSize)
+            for (int i = 0; i < blob.Properties.Length; i++)
+            {
+                Assert.AreEqual(buffer[i], resultBuffer[bufferOffset + i]);
+            }
+
+            for (int j = 0; j < bufferOffset; j++)
+            {
+                Assert.AreEqual(0, resultBuffer2[j]);
+            }
+
+            if (bufferOffset + blobSize < bufferSize)
+            {
+                for (int k = bufferOffset + blobSize; k < bufferSize; k++)
                 {
-                    for (int k = bufferOffset + blobSize; k < bufferSize; k++)
-                    {
-                        Assert.AreEqual(0, resultBuffer2[k]);
-                    }
+                    Assert.AreEqual(0, resultBuffer2[k]);
                 }
             }
         }
 #endif
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1120,7 +1465,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1145,7 +1490,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1171,7 +1516,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1196,7 +1541,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1222,7 +1567,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1248,7 +1593,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1273,7 +1618,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1299,7 +1644,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1324,7 +1669,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1348,7 +1693,133 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 512, 0, 512, true);
         }
 #endif
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadRangeToByteArray()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 0, 1 * 512, 1 * 512, 0);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, null, null, 0);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, 1 * 512, null, 0);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, 0, 1 * 512, 0);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 1 * 512, 0);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 2 * 512, 0);
 
+            // Edge cases
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 1023, 1023, 1, 0);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 1023, 1, 0);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 0, 1, 0);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 512, 1, 0);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 512, 1023, 1, 0);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 512, 0, 512, 0);
+
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadRangeToByteArrayAPM()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 0, 1 * 512, 1 * 512, 1);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, null, null, 1);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, 1 * 512, null, 1);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, 0, 1 * 512, 1);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 1 * 512, 1);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 2 * 512, 1);
+
+            // Edge cases
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 1023, 1023, 1, 1);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 1023, 1, 1);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 0, 1, 1);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 512, 1, 1);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 512, 1023, 1, 1);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 512, 0, 512, 1);
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadRangeToByteArrayAPMOverload()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 0, 1 * 512, 1 * 512, 2);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, null, null, 2);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, 1 * 512, null, 2);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 1 * 512, 0, 1 * 512, 2);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 1 * 512, 2);
+            this.DoDownloadRangeToByteArray(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 2 * 512, 2);
+
+            // Edge cases
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 1023, 1023, 1, 2);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 1023, 1, 2);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 0, 1, 2);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 0, 512, 1, 2);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 512, 1023, 1, 2);
+            this.DoDownloadRangeToByteArray(blob, 1024, 1024, 512, 0, 512, 2);
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadRangeToByteArrayTask()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 0, 1 * 512, 1 * 512, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 1 * 512, null, null, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 1 * 512, 1 * 512, null, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 1 * 512, 0, 1 * 512, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 1 * 512, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 2 * 512, false);
+
+            // Edge cases
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 1023, 1023, 1, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 0, 1023, 1, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 0, 0, 1, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 0, 512, 1, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 512, 1023, 1, false);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 512, 0, 512, false);
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob on an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobDownloadRangeToByteArrayOverloadTask()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 0, 1 * 512, 1 * 512, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 1 * 512, null, null, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 1 * 512, 1 * 512, null, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 1 * 512, 0, 1 * 512, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 1 * 512, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 2 * 512, 4 * 512, 2 * 512, 1 * 512, 2 * 512, true);
+
+            // Edge cases
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 1023, 1023, 1, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 0, 1023, 1, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 0, 0, 1, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 0, 512, 1, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 512, 1023, 1, true);
+            this.DoDownloadRangeToByteArrayTask(blob, 1024, 1024, 512, 0, 512, true);
+        }
+#endif
         /// <summary>
         /// Single put blob and get blob
         /// </summary>
@@ -1367,78 +1838,67 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
-                if (option == 0)
-                {
-                    blob.UploadFromStream(originalBlob);
-                    downloadLength = blob.DownloadRangeToByteArray(resultBuffer, bufferOffset, blobOffset, length);
-                }
-                else if (option == 1)
-                {
-                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
-                    {
-                        ICancellableAsyncResult result = blob.BeginUploadFromStream(originalBlob,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
+                blob.UploadFromStream(originalBlob);
+            }
 
-                        result = blob.BeginDownloadRangeToByteArray(resultBuffer,
-                            bufferOffset,
-                            blobOffset,
-                            length,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        downloadLength = blob.EndDownloadRangeToByteArray(result);
-                    }
-                }
-                else
+            if (option == 0)
+            {
+                downloadLength = blob.DownloadRangeToByteArray(resultBuffer, bufferOffset, blobOffset, length);
+            }
+            else if (option == 1)
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
-                    {
-                        ICancellableAsyncResult result = blob.BeginUploadFromStream(originalBlob,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
-
-                        OperationContext context = new OperationContext();
-                        result = blob.BeginDownloadRangeToByteArray(resultBuffer,
-                            bufferOffset,
-                            blobOffset,
-                            length,
-                            null,
-                            null,
-                            context,
-                            ar => waitHandle.Set(),
-                            null);
-                        waitHandle.WaitOne();
-                        downloadLength = blob.EndDownloadRangeToByteArray(result);
-                    }
+                    ICancellableAsyncResult result = blob.BeginDownloadRangeToByteArray(resultBuffer,
+                        bufferOffset,
+                        blobOffset,
+                        length,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    downloadLength = blob.EndDownloadRangeToByteArray(result);
                 }
-
-                int downloadSize = Math.Min(blobSize - (int)(blobOffset.HasValue ? blobOffset.Value : 0), bufferSize - bufferOffset);
-                if (length.HasValue && (length.Value < downloadSize))
+            }
+            else
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    downloadSize = (int)length.Value;
+                    OperationContext context = new OperationContext();
+                    ICancellableAsyncResult result = blob.BeginDownloadRangeToByteArray(resultBuffer,
+                        bufferOffset,
+                        blobOffset,
+                        length,
+                        null,
+                        null,
+                        context,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    downloadLength = blob.EndDownloadRangeToByteArray(result);
                 }
+            }
 
-                Assert.AreEqual(downloadSize, downloadLength);
+            int downloadSize = Math.Min(blobSize - (int)(blobOffset.HasValue ? blobOffset.Value : 0), bufferSize - bufferOffset);
+            if (length.HasValue && (length.Value < downloadSize))
+            {
+                downloadSize = (int)length.Value;
+            }
 
-                for (int i = 0; i < bufferOffset; i++)
-                {
-                    Assert.AreEqual(0, resultBuffer[i]);
-                }
+            Assert.AreEqual(downloadSize, downloadLength);
 
-                for (int j = 0; j < downloadLength; j++)
-                {
-                    Assert.AreEqual(buffer[(blobOffset.HasValue ? blobOffset.Value : 0) + j], resultBuffer[bufferOffset + j]);
-                }
+            for (int i = 0; i < bufferOffset; i++)
+            {
+                Assert.AreEqual(0, resultBuffer[i]);
+            }
 
-                for (int k = bufferOffset + downloadLength; k < bufferSize; k++)
-                {
-                    Assert.AreEqual(0, resultBuffer[k]);
-                }
+            for (int j = 0; j < downloadLength; j++)
+            {
+                Assert.AreEqual(buffer[(blobOffset.HasValue ? blobOffset.Value : 0) + j], resultBuffer[bufferOffset + j]);
+            }
+
+            for (int k = bufferOffset + downloadLength; k < bufferSize; k++)
+            {
+                Assert.AreEqual(0, resultBuffer[k]);
             }
         }
 
@@ -1461,47 +1921,47 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
-                if (overload)
-                {
-                    blob.UploadFromStream(originalBlob);
-                    downloadLength = blob.DownloadRangeToByteArrayAsync(
-                        resultBuffer, bufferOffset, blobOffset, length, null, null, new OperationContext()).Result;
-                }
-                else
-                {
-                    blob.UploadFromStream(originalBlob);
-                    downloadLength = blob.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, blobOffset, length).Result;
-                }
-                
-                int downloadSize = Math.Min(blobSize - (int)(blobOffset.HasValue ? blobOffset.Value : 0), bufferSize - bufferOffset);
-                if (length.HasValue && (length.Value < downloadSize))
-                {
-                    downloadSize = (int)length.Value;
-                }
+                blob.UploadFromStreamAsync(originalBlob).Wait();
+            }
 
-                Assert.AreEqual(downloadSize, downloadLength);
+            if (overload)
+            {
+                downloadLength = blob.DownloadRangeToByteArrayAsync(
+                    resultBuffer, bufferOffset, blobOffset, length, null, null, new OperationContext()).Result;
+            }
+            else
+            {
+                downloadLength = blob.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, blobOffset, length).Result;
+            }
 
-                for (int i = 0; i < bufferOffset; i++)
-                {
-                    Assert.AreEqual(0, resultBuffer[i]);
-                }
+            int downloadSize = Math.Min(blobSize - (int)(blobOffset.HasValue ? blobOffset.Value : 0), bufferSize - bufferOffset);
+            if (length.HasValue && (length.Value < downloadSize))
+            {
+                downloadSize = (int)length.Value;
+            }
 
-                for (int j = 0; j < downloadLength; j++)
-                {
-                    Assert.AreEqual(buffer[(blobOffset.HasValue ? blobOffset.Value : 0) + j], resultBuffer[bufferOffset + j]);
-                }
+            Assert.AreEqual(downloadSize, downloadLength);
 
-                for (int k = bufferOffset + downloadLength; k < bufferSize; k++)
-                {
-                    Assert.AreEqual(0, resultBuffer[k]);
-                }
+            for (int i = 0; i < bufferOffset; i++)
+            {
+                Assert.AreEqual(0, resultBuffer[i]);
+            }
+
+            for (int j = 0; j < downloadLength; j++)
+            {
+                Assert.AreEqual(buffer[(blobOffset.HasValue ? blobOffset.Value : 0) + j], resultBuffer[bufferOffset + j]);
+            }
+
+            for (int k = bufferOffset + downloadLength; k < bufferSize; k++)
+            {
+                Assert.AreEqual(0, resultBuffer[k]);
             }
         }
 #endif
 
         #region Negative tests
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a block blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -1513,7 +1973,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Single put blob and get blob")]
+        [Description("Single put blob and get blob on a page blob")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]

@@ -45,18 +45,20 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         {
             CommonUtility.AssertNotNull("result", result);
 
-            ExecutionState<T> executionState = (ExecutionState<T>)result;
-            executionState.End();
-
-            executionState.RestCMD.SendStream = null;
-            executionState.RestCMD.DestinationStream = null;
-
-            if (executionState.ExceptionRef != null)
+            using (ExecutionState<T> executionState = (ExecutionState<T>)result)
             {
-                throw executionState.ExceptionRef;
-            }
+                executionState.End();
 
-            return executionState.Result;
+                executionState.RestCMD.SendStream = null;
+                executionState.RestCMD.DestinationStream = null;
+
+                if (executionState.ExceptionRef != null)
+                {
+                    throw executionState.ExceptionRef;
+                }
+
+                return executionState.Result;
+            }
         }
 
         #endregion
@@ -896,6 +898,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 executionState.CurrentOperation = ExecutorOperation.PostProcess;
                 Logger.LogInformational(executionState.OperationContext, SR.TracePostProcess);
                 executionState.Result = executionState.RestCMD.PostProcessResponse(executionState.RestCMD, executionState.Resp, executionState.OperationContext);
+            }
+
+            // 10. If there is a dispose action specified on the command, invoke it.
+            if (executionState.RestCMD.DisposeAction != null)
+            {
+                Logger.LogInformational(executionState.OperationContext, SR.TraceDispose);
+                executionState.RestCMD.DisposeAction(executionState.RestCMD);
+                executionState.RestCMD.DisposeAction = null;
             }
 
             executionState.CurrentOperation = ExecutorOperation.EndOperation;

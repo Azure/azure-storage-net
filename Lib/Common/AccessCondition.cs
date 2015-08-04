@@ -90,6 +90,30 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
+        /// Gets or sets a value for a condition that specifies the maximum size allowed for an append blob when a new block is committed. The append
+        /// will succeed only if the size of the blob after the append operation is less than or equal to the specified size.
+        /// </summary>
+        /// <value>The maximum size in bytes, or <c>null</c> if no value is set.</value>
+        /// <remarks>This condition only applies to append blobs.</remarks>
+        public long? IfMaxSizeLessThanOrEqual
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets a value for a condition specifying the byte offset to check for when committing a block to an append blob.
+        /// The append will succeed only if the end position is equal to this number. 
+        /// </summary>
+        /// <value>An append position number, or <c>null</c> if no value is set.</value>
+        /// <remarks>This condition only applies to append blobs.</remarks>
+        public long? IfAppendPositionEqual
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Gets or sets a value for a condition specifying that the current sequence number must be less than or equal to the specified value.
         /// </summary>
         /// <value>A sequence number, or <c>null</c> if no condition exists.</value>
@@ -157,6 +181,26 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
+        /// Constructs an access condition such that an operation will be performed only if the resource does not exist.
+        /// </summary>
+        /// <returns>An <see cref="AccessCondition"/> object that represents a condition where a resource does not exist.</returns>
+        /// <remarks>Setting this access condition modifies the request to include the HTTP <i>If-None-Match</i> conditional header.</remarks>
+        public static AccessCondition GenerateIfNotExistsCondition()
+        {
+            return new AccessCondition { IfNoneMatchETag = "*" };
+        }
+
+        /// <summary>
+        /// Constructs an access condition such that an operation will be performed only if the resource exists.
+        /// </summary>
+        /// <returns>An <see cref="AccessCondition"/> object that represents a condition where a resource exists.</returns>
+        /// <remarks>Setting this access condition modifies the request to include the HTTP <i>If-Match</i> conditional header.</remarks>
+        public static AccessCondition GenerateIfExistsCondition()
+        {
+            return new AccessCondition { IfMatchETag = "*" };
+        }
+
+        /// <summary>
         /// Constructs an access condition such that an operation will be performed only if the resource's ETag value
         /// matches the specified ETag value.
         /// </summary>
@@ -202,6 +246,27 @@ namespace Microsoft.WindowsAzure.Storage
         public static AccessCondition GenerateIfNotModifiedSinceCondition(DateTimeOffset modifiedTime)
         {
             return new AccessCondition { IfNotModifiedSinceTime = modifiedTime };
+        }
+
+        /// <summary>
+        /// Constructs an access condition such that an operation will be performed only if the size of the append blob after committing the block is less
+        /// than or equal to the specified value.
+        /// </summary>
+        /// <param name="maxSize">An integer specifying the maximum allowed size of the blob, in bytes, when committing a new block.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the maximum allowed size.</returns>
+        public static AccessCondition GenerateIfMaxSizeLessThanOrEqualCondition(long maxSize)
+        {
+            return new AccessCondition { IfMaxSizeLessThanOrEqual = maxSize };
+        }
+
+        /// <summary>
+        /// Constructs an access condition such that an operation will be performed only if the end position of the append blob is equal to the specified value.
+        /// </summary>
+        /// <param name="appendPosition">An integer specifying the offset to compare to the current end position of the blob.</param>
+        /// <returns>An <see cref="AccessCondition"/> object that represents the offset to compare.</returns>
+        public static AccessCondition GenerateIfAppendPositionEqualCondition(long appendPosition)
+        {
+            return new AccessCondition { IfAppendPositionEqual = appendPosition };
         }
 
         /// <summary>

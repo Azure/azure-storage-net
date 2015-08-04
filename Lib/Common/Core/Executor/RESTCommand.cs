@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
     using System.Net.Http;
     using System.Threading.Tasks;
 #else
@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             set
             {
                 this.responseStream =
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
                     value;
 #else
                     value == null ? null : value.WrapWithByteCountingStream(this.CurrentResult);
@@ -96,7 +96,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         public Stream StreamToDispose { get; set; }
         
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         public Func<RESTCommand<T>, HttpMessageHandler, bool, OperationContext, HttpClient> BuildClient;
 
         public Func<RESTCommand<T>, OperationContext, HttpContent> BuildContent;
@@ -108,6 +108,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         // Post-Stream Retrieval Func ( if retreiveStream is true after ProcessResponse, the stream is retrieved and then PostProcess is called
         public Func<RESTCommand<T>, HttpResponseMessage, OperationContext, Task<T>> PostProcessResponse;
+
+        // Delegate that will be executed if there is anything to be disposed.
+        public Action<RESTCommand<T>> DisposeAction = null;
 #else
         // Stream to send to server
         private Stream sendStream = null;
@@ -121,12 +124,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
             set
             {
-                MultiBufferMemoryStream tempStream = value as MultiBufferMemoryStream;
-                if (tempStream != null)
-                {
-                    this.StreamToDispose = tempStream;
-                }
-
                 this.sendStream = value;
             }
         }
@@ -149,6 +146,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         // Post-Stream Retrieval Func ( if retreiveStream is true after ProcessResponse, the stream is retrieved and then PostProcess is called
         public Func<RESTCommand<T>, HttpWebResponse, OperationContext, T> PostProcessResponse = null;
+
+        // Delegate that will be executed if there is anything to be disposed.
+        public Action<RESTCommand<T>> DisposeAction = null;
 #endif
     }
 }

@@ -1,6 +1,6 @@
 ﻿{
-    "version": "4.3.2.0",
-    "authors": ["Microsoft Corporation"],
+    "version": "5.0.1.0",
+    "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for ASP.NET 5 Preview",
     "dependencies": {
         "Microsoft.Data.OData": "5.6.3",
@@ -8,7 +8,7 @@
         "System.Spatial": "5.6.3"
     },
     "frameworks": {
-        "aspnetcore50": {
+        "dnxcore50": {
             "dependencies": {
                 "System.Collections": "4.0.10-beta-*",
                 "System.Collections.Concurrent": "4.0.0-beta-*",
@@ -52,7 +52,7 @@
                 "System.Xml.XmlSerializer": "4.0.0-beta-*"
             }
         },
-        "aspnet50": {
+        "dnx451": {
             "frameworkAssemblies": {
                 "System.Data": "",
                 "System.Data.DataSetExtensions": "",
@@ -69,7 +69,7 @@
         "allowUnsafe": false,
         "warningsAsErrors": true
     },
-    "code": [
+    "compile": [
         "**/*.cs",
                 
         "../../Common/*.cs",
@@ -96,9 +96,5 @@
         "../../WindowsRuntime/Table/*.cs",
         "../../WindowsRuntime/Table/DataServices/*.cs",
         "../../WindowsRuntime/Table/Protocol/*.cs"
-
-        /*
-        Note, WinRT does not include "../../Common/Table/Queryable/*.cs", so we won't either
-        */
     ]
 }

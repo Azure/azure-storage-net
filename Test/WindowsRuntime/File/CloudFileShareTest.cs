@@ -256,8 +256,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         public async Task CloudFileShareRegionalSetMetadataAsync()
         {
 #if ASPNET_K
-            CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
+            //CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            //CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
 #else
             string currentPrimaryLanguage = ApplicationLanguages.PrimaryLanguageOverride;
             ApplicationLanguages.PrimaryLanguageOverride = "sk-SK";
@@ -273,7 +273,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             finally
             {
 #if ASPNET_K
-                CultureInfo.CurrentCulture = currentCulture;
+                //CultureInfo.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif

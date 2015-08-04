@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Create the given blob and, if necessary, its container.
         /// </summary>
         /// <param name="blob">The blob to create.</param>
-        internal static async Task CreateBlobAsync(ICloudBlob blob)
+        internal static async Task CreateBlobAsync(CloudBlob blob)
         {
             await blob.Container.CreateIfNotExistsAsync();
             await UploadTextAsync(blob, "LeaseTestBlobContent", Encoding.UTF8);
@@ -140,7 +140,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 // Delete all blobs in root container with prefix
                 CloudBlobContainer rc = this.blobClient.GetRootContainerReference();
                 BlobResultSegment blobs = await rc.ListBlobsSegmentedAsync(this.prefix, true, BlobListingDetails.None, null, null, null, null);
-                foreach (ICloudBlob blob in blobs.Results)
+                foreach (CloudBlob blob in blobs.Results)
                 {
                     try
                     {
@@ -168,7 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Puts the lease on the given blob in an available state.
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
-        internal static async Task SetAvailableStateAsync(ICloudBlob blob)
+        internal static async Task SetAvailableStateAsync(CloudBlob blob)
         {
             bool shouldBreakFirst = false;
 
@@ -203,7 +203,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blob">The blob with the lease.</param>
         /// <param name="leaseTime">The amount of time on the new lease.</param>
         /// <returns>The lease ID of the current lease.</returns>
-        internal static async Task<string> SetLeasedStateAsync(ICloudBlob blob, TimeSpan? leaseTime)
+        internal static async Task<string> SetLeasedStateAsync(CloudBlob blob, TimeSpan? leaseTime)
         {
             string leaseId = Guid.NewGuid().ToString();
             await SetAvailableStateAsync(blob);
@@ -216,7 +216,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blob">The blob with the lease.</param>
         /// <param name="leaseTime">The amount of time on the renewed lease.</param>
         /// <returns>The lease ID of the current lease.</returns>
-        internal static async Task<string> SetRenewedStateAsync(ICloudBlob blob, TimeSpan? leaseTime)
+        internal static async Task<string> SetRenewedStateAsync(CloudBlob blob, TimeSpan? leaseTime)
         {
             string leaseId = await SetLeasedStateAsync(blob, leaseTime);
             await blob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
@@ -229,7 +229,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blob">The blob with the lease.</param>
         /// <param name="leaseTime">The amount of time on the released lease.</param>
         /// <returns>The lease ID of the released lease.</returns>
-        internal static async Task<string> SetReleasedStateAsync(ICloudBlob blob, TimeSpan? leaseTime)
+        internal static async Task<string> SetReleasedStateAsync(CloudBlob blob, TimeSpan? leaseTime)
         {
             string leaseId = await SetLeasedStateAsync(blob, leaseTime);
             await blob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
@@ -241,7 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
         /// <returns>The lease ID of the current (but breaking) lease.</returns>
-        internal static async Task<string> SetBreakingStateAsync(ICloudBlob blob)
+        internal static async Task<string> SetBreakingStateAsync(CloudBlob blob)
         {
             string leaseId = await SetLeasedStateAsync(blob, null /* infinite lease */);
             await blob.BreakLeaseAsync(TimeSpan.FromSeconds(60));
@@ -253,7 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
         /// <returns>The lease ID of the broken lease.</returns>
-        internal static async Task<string> SetTimeBrokenStateAsync(ICloudBlob blob)
+        internal static async Task<string> SetTimeBrokenStateAsync(CloudBlob blob)
         {
             string leaseId = await SetLeasedStateAsync(blob, null /* infinite lease */);
             await blob.BreakLeaseAsync(TimeSpan.FromSeconds(1));
@@ -266,7 +266,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
         /// <returns>The lease ID of the broken lease.</returns>
-        internal static async Task<string> SetInstantBrokenStateAsync(ICloudBlob blob)
+        internal static async Task<string> SetInstantBrokenStateAsync(CloudBlob blob)
         {
             string leaseId = await SetLeasedStateAsync(blob, null /* infinite lease */);
             await blob.BreakLeaseAsync(TimeSpan.Zero);
@@ -278,7 +278,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
         /// <returns>The lease ID of the expired lease.</returns>
-        internal static async Task<string> SetExpiredStateAsync(ICloudBlob blob)
+        internal static async Task<string> SetExpiredStateAsync(CloudBlob blob)
         {
             string leaseId = await SetLeasedStateAsync(blob, TimeSpan.FromSeconds(15));
             await Task.Delay(TimeSpan.FromSeconds(17));
@@ -410,7 +410,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             TimeSpan tolerance = TimeSpan.FromSeconds(2);
             string leaseId;
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             await SetAvailableStateAsync(leasedBlob);
             leaseId = await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(15), null /* proposed lease ID */);
@@ -453,7 +453,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             TimeSpan tolerance = TimeSpan.FromSeconds(2);
             string leaseId;
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             leaseId = await SetLeasedStateAsync(leasedBlob, TimeSpan.FromSeconds(15));
             await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
@@ -478,7 +478,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="duration">The duration of the lease.</param>
         /// <param name="testLength">The maximum length of time to run the test.</param>
         /// <param name="tolerance">The allowed lease time error.</param>
-        internal async Task BlobAcquireRenewLeaseTestAsync(ICloudBlob leasedBlob, TimeSpan? duration, TimeSpan testLength, TimeSpan tolerance)
+        internal async Task BlobAcquireRenewLeaseTestAsync(CloudBlob leasedBlob, TimeSpan? duration, TimeSpan testLength, TimeSpan tolerance)
         {
             OperationContext operationContext = new OperationContext();
             DateTime beginTime = DateTime.UtcNow;
@@ -559,7 +559,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string invalidLeaseId = "invalid";
             string leaseId;
 
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             await CreateBlobAsync(leasedBlob);
 
             await TestHelper.ExpectedExceptionAsync<ArgumentException>(
@@ -655,7 +655,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string leaseId;
             string leaseId2;
 
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Acquire the lease while in available state, make idempotent call
             await SetAvailableStateAsync(leasedBlob);
@@ -739,7 +739,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string unknownLeaseId = Guid.NewGuid().ToString();
             string leaseId;
 
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Renew lease in available state
             await SetAvailableStateAsync(leasedBlob);
@@ -887,7 +887,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string leaseId;
             string leaseId2;
 
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Change lease in available state
             await SetAvailableStateAsync(leasedBlob);
@@ -990,7 +990,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string unknownLeaseId = Guid.NewGuid().ToString();
             string leaseId;
 
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Release lease in available state
             await SetAvailableStateAsync(leasedBlob);
@@ -1076,7 +1076,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string leaseId;
             TimeSpan leaseTime;
 
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Break lease in available state
             await SetAvailableStateAsync(leasedBlob);
@@ -1246,7 +1246,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 expectedStatusCode,
                 expectedErrorCode);
             await TestHelper.ExpectedExceptionAsync(
-                async () => await testBlob.StartCopyFromBlobAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, operationContext),
+                async () => await testBlob.StartCopyAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, operationContext),
                 operationContext,
                 description + " (Copy From)",
                 expectedStatusCode,
@@ -1272,12 +1272,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="testBlob">The blob to test.</param>
         /// <param name="sourceBlob">A blob to use as the source of a copy.</param>
         /// <param name="testAccessCondition">The access condition to use.</param>
-        private async Task BlobWriteExpectLeaseSuccessAsync(CloudBlockBlob testBlob, ICloudBlob sourceBlob, AccessCondition testAccessCondition)
+        private async Task BlobWriteExpectLeaseSuccessAsync(CloudBlockBlob testBlob, CloudBlob sourceBlob, AccessCondition testAccessCondition)
         {
             await testBlob.SetMetadataAsync(testAccessCondition, null /* options */, null);
             await testBlob.SetPropertiesAsync(testAccessCondition, null /* options */, null);
             await UploadTextAsync(testBlob, "No Problem", Encoding.UTF8, testAccessCondition, null /* options */, null);
-            await testBlob.StartCopyFromBlobAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, null);
+            await testBlob.StartCopyAsync(TestHelper.Defiddler(sourceBlob.Uri), null /* source access condition */, testAccessCondition, null /* options */, null);
 
             while (testBlob.CopyState.Status == CopyStatus.Pending)
             {
@@ -1350,7 +1350,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 HttpStatusCode.PreconditionFailed);
 
             await TestHelper.ExpectedExceptionAsync(
-                async () => await testBlob.CreateSnapshotAsync(null /* metadata */, testAccessCondition, null /* options */, operationContext),
+                async () => await testBlob.SnapshotAsync(null /* metadata */, testAccessCondition, null /* options */, operationContext),
                 operationContext,
                 description + " (Create Snapshot)",
                 expectedStatusCode,
@@ -1379,7 +1379,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private async Task BlobReadExpectLeaseSuccessAsync(CloudBlockBlob testBlob, AccessCondition testAccessCondition)
         {
             await testBlob.FetchAttributesAsync(testAccessCondition, null /* options */, null);
-            await (await testBlob.CreateSnapshotAsync(null /* metadata */, testAccessCondition, null /* options */, null)).DeleteAsync();
+            await (await testBlob.SnapshotAsync(null /* metadata */, testAccessCondition, null /* options */, null)).DeleteAsync();
             await DownloadTextAsync(testBlob, Encoding.UTF8, testAccessCondition, null /* options */, null);
 
             var readStream = await testBlob.OpenReadAsync(testAccessCondition, null /* options */, null);
@@ -1858,7 +1858,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task BlobLeaseStatusTestAsync()
         {
             string leaseId;
-            ICloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
+            CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Check uninitialized lease status
             await SetAvailableStateAsync(leasedBlob);
@@ -1933,7 +1933,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="expectedDuration">The expected lease duration.</param>
         /// <param name="description">A description of the circumstances that lead to the expected status.</param>
         private async Task CheckLeaseStatusAsync(
-            ICloudBlob blob,
+            CloudBlob blob,
             LeaseStatus expectedStatus,
             LeaseState expectedState,
             LeaseDuration expectedDuration,
@@ -1945,7 +1945,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Assert.AreEqual(expectedDuration, blob.Properties.LeaseDuration, "LeaseDuration mismatch: " + description + " (from FetchAttributes)");
 
             BlobResultSegment blobs = await blob.Container.ListBlobsSegmentedAsync(blob.Name, true, BlobListingDetails.None, null, null, null, null);
-            BlobProperties propertiesInListing = (from ICloudBlob b in blobs.Results
+            BlobProperties propertiesInListing = (from CloudBlob b in blobs.Results
                                                   where b.Name == blob.Name
                                                   select b.Properties).Single();
 

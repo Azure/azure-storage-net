@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     /// <summary>
     /// This class provides APM Read/Write overrides for memory stream to improve performance.
     /// </summary>
-    internal class SyncMemoryStream : MemoryStream
+    public class SyncMemoryStream : MemoryStream
     {
         /// <summary>
         /// Initializes a new instance of the SyncMemoryStream class with an expandable capacity initialized to zero.
@@ -65,7 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
         }
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         /// <summary>
         /// Begins an asynchronous read operation.
         /// </summary>

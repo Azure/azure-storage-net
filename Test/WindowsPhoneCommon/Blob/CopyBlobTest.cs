@@ -71,11 +71,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 //Copy blobs over
                 CloudBlockBlob blobAsciiDest = container.GetBlockBlobReference(_nonUnicodeBlobName + "_copy");
-                string copyId = await blobAsciiDest.StartCopyFromBlobAsync(TestHelper.Defiddler(blobAsciiSource));
+                string copyId = await blobAsciiDest.StartCopyAsync(TestHelper.Defiddler(blobAsciiSource));
                 await WaitForCopyAsync(blobAsciiDest);
 
                 CloudBlockBlob blobUnicodeDest = container.GetBlockBlobReference(_unicodeBlobName + "_copy");
-                copyId = await blobUnicodeDest.StartCopyFromBlobAsync(TestHelper.Defiddler(blobUnicodeSource));
+                copyId = await blobUnicodeDest.StartCopyAsync(TestHelper.Defiddler(blobUnicodeSource));
                 await WaitForCopyAsync(blobUnicodeDest);
 
                 Assert.AreEqual(CopyStatus.Success, blobUnicodeDest.CopyState.Status);
@@ -113,7 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await source.SetMetadataAsync();
 
                 CloudBlockBlob copy = container.GetBlockBlobReference("copy");
-                string copyId = await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source));
+                string copyId = await copy.StartCopyAsync(TestHelper.Defiddler(source));
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -181,7 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob copy = container.GetBlockBlobReference("copy");
                 copy.Metadata["Test2"] = "value2";
-                string copyId = await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source));
+                string copyId = await copy.StartCopyAsync(TestHelper.Defiddler(source));
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -253,7 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreNotEqual(source.Metadata["Test"], snapshot.Metadata["Test"], "Source and snapshot metadata should be independent");
 
                 CloudBlockBlob copy = container.GetBlockBlobReference("copy");
-                await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(snapshot));
+                await copy.StartCopyAsync(TestHelper.Defiddler(snapshot));
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(data, await DownloadTextAsync(copy, Encoding.UTF8), "Data inside copy of blob not similar");
@@ -300,7 +300,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await source.SetMetadataAsync();
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
-                string copyId = await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source));
+                string copyId = await copy.StartCopyAsync(TestHelper.Defiddler(source));
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -368,7 +368,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
                 copy.Metadata["Test2"] = "value2";
-                string copyId = await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(source));
+                string copyId = await copy.StartCopyAsync(TestHelper.Defiddler(source));
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -440,7 +440,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreNotEqual(source.Metadata["Test"], snapshot.Metadata["Test"], "Source and snapshot metadata should be independent");
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
-                await copy.StartCopyFromBlobAsync(TestHelper.Defiddler(snapshot));
+                await copy.StartCopyAsync(TestHelper.Defiddler(snapshot));
                 await WaitForCopyAsync(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(data, await DownloadTextAsync(copy, Encoding.UTF8), "Data inside copy of blob not similar");

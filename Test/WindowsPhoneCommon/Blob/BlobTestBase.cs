@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     public partial class BlobTestBase : TestBase
     {
-        public static async Task WaitForCopyAsync(ICloudBlob blob)
+        public static async Task WaitForCopyAsync(CloudBlob blob)
         {
             bool copyInProgress = true;
             while (copyInProgress)
@@ -57,12 +57,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         await pageBlob.CreateAsync(0);
                         blobs.Add(name);
                         break;
+
+                    case BlobType.AppendBlob:
+                        name = "ab" + Guid.NewGuid().ToString();
+                        CloudAppendBlob appendBlob = container.GetAppendBlobReference(name);
+                        await appendBlob.CreateOrReplaceAsync();
+                        blobs.Add(name);
+                        break;
                 }
             }
             return blobs;
         }
 
-        public static async Task UploadTextAsync(ICloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static async Task UploadTextAsync(CloudBlob blob, string text, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             byte[] textAsBytes = encoding.GetBytes(text);
             using (MemoryStream stream = new MemoryStream())
@@ -80,11 +87,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 stream.Seek(0, SeekOrigin.Begin);
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
-                await blob.UploadFromStreamAsync(stream, accessCondition, options, operationContext);
+
+                if (blob.BlobType == BlobType.AppendBlob)
+                {
+                    CloudAppendBlob blob1 = blob as CloudAppendBlob;
+                    await blob1.CreateOrReplaceAsync();
+                    await blob1.AppendBlockAsync(stream, null);
+                }
+                else if (blob.BlobType == BlobType.PageBlob)
+                {
+                    CloudPageBlob pageBlob = blob as CloudPageBlob;
+                    await pageBlob.UploadFromStreamAsync(stream, accessCondition, options, operationContext);
+                }
+                else
+                {
+                    CloudBlockBlob blockBlob = blob as CloudBlockBlob;
+                    await blockBlob.UploadFromStreamAsync(stream, accessCondition, options, operationContext);
+                }
             }
         }
 
-        public static async Task<string> DownloadTextAsync(ICloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public static async Task<string> DownloadTextAsync(CloudBlob blob, Encoding encoding, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {

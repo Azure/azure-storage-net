@@ -36,5 +36,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// A block blob.
         /// </summary>
         BlockBlob,
+
+        /// <summary>
+        /// An append blob.
+        /// </summary>
+        AppendBlob
     }
 }

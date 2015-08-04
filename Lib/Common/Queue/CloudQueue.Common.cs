@@ -58,7 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="queueAddress">A <see cref="StorageUri"/> containing the absolute URI to the queue at both the primary and secondary locations.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT
         /// <returns>A <see cref="CloudQueue"/> object.</returns>
         public static CloudQueue Create(StorageUri queueAddress, StorageCredentials credentials)
         {
@@ -186,7 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             StorageCredentials parsedCredentials;
             this.StorageUri = NavigationHelper.ParseQueueTableQueryAndVerify(address, out parsedCredentials);
 
-            if ((parsedCredentials != null) && (credentials != null) && !parsedCredentials.Equals(credentials))
+            if (parsedCredentials != null && credentials != null)
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);
@@ -199,23 +199,31 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Returns the canonical name for shared access.
         /// </summary>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
         /// <returns>The canonical name.</returns>
-        private string GetCanonicalName()
+        private string GetCanonicalName(string sasVersion)
         {
             string accountName = this.ServiceClient.Credentials.AccountName;
             string queueName = this.Name;
+            string canonicalNameFormat = "/{0}/{1}/{2}";
+            if (sasVersion == Constants.VersionConstants.February2012 || sasVersion == Constants.VersionConstants.August2013)
+            {
+                // Do not prepend service name for older versions
+                canonicalNameFormat = "/{1}/{2}";
+            }
 
-            return string.Format(CultureInfo.InvariantCulture, "/{0}/{1}", accountName, queueName);
-        }
+            return string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Queue, accountName, queueName);
+       }
 
         /// <summary>
         /// Selects the get message response.
         /// </summary>
         /// <param name="protocolMessage">The protocol message.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>The parsed message.</returns>
-        private CloudQueueMessage SelectGetMessageResponse(QueueMessage protocolMessage)
+        private CloudQueueMessage SelectGetMessageResponse(QueueMessage protocolMessage, QueueRequestOptions options = null)
         {
-            CloudQueueMessage message = this.SelectPeekMessageResponse(protocolMessage);
+            CloudQueueMessage message = this.SelectPeekMessageResponse(protocolMessage, options);
             message.PopReceipt = protocolMessage.PopReceipt;
 
             if (protocolMessage.NextVisibleTime.HasValue)
@@ -230,12 +238,27 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Selects the peek message response.
         /// </summary>
         /// <param name="protocolMessage">The protocol message.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>The parsed message.</returns>
-        private CloudQueueMessage SelectPeekMessageResponse(QueueMessage protocolMessage)
+        private CloudQueueMessage SelectPeekMessageResponse(QueueMessage protocolMessage, QueueRequestOptions options = null)
         {
             CloudQueueMessage message = null;
+            byte[] dest = null;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            if (options != null && options.EncryptionPolicy != null)
+            {
+                // If EncryptionPolicy is set, decrypt the message and set it.
+                dest = options.EncryptionPolicy.DecryptMessage(protocolMessage.Text, options.RequireEncryption);
+            }
+#endif
+
             if (this.EncodeMessage)
             {
+                if (dest!= null)
+                {
+                    protocolMessage.Text = Convert.ToBase64String(dest, 0, dest.Length);
+                }
+
                 // if EncodeMessage is true, we assume the string returned from server is Base64 encoding of original message;
                 // if this is not true, exception will likely be thrown.
                 // it is user's responsibility to make sure EncodeMessage setting matches the queue that is being read.
@@ -243,7 +266,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             else
             {
-                message = new CloudQueueMessage(protocolMessage.Text);
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                if (dest != null)
+                {
+                    message = new CloudQueueMessage(dest);
+                }
+                else
+#endif
+                {
+                    message = new CloudQueueMessage(protocolMessage.Text);
+                }
             }
 
             message.Id = protocolMessage.Id;
@@ -255,6 +287,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             return message;
         }
 
+#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the queue.
         /// </summary>
@@ -263,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessQueuePolicy policy)
         {
-            return this.GetSharedAccessSignature(policy, null /* accessPolicyIdentifier */, null /* sasVersion */);
+            return this.GetSharedAccessSignature(policy, null /* accessPolicyIdentifier */);
         }
 
         /// <summary>
@@ -275,7 +308,32 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessQueuePolicy policy, string accessPolicyIdentifier)
         {
-            return this.GetSharedAccessSignature(policy, accessPolicyIdentifier, null /* sasVersion */);
+            if (!this.ServiceClient.Credentials.IsSharedKey)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            string resourceName = this.GetCanonicalName(Constants.HeaderConstants.TargetStorageVersion);
+            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
+
+            string signature = SharedAccessSignatureHelper.GetHash(
+                policy,
+                accessPolicyIdentifier,
+                resourceName,
+                Constants.HeaderConstants.TargetStorageVersion,
+                accountKey.KeyValue);
+
+            string accountKeyName = accountKey.KeyName;
+
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
+                policy,
+                accessPolicyIdentifier,
+                signature,
+                accountKeyName,
+                Constants.HeaderConstants.TargetStorageVersion);
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -283,9 +341,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="policy">A <see cref="SharedAccessQueuePolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <param name="accessPolicyIdentifier">A string identifying a stored access policy.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
+        [Obsolete("This overload has been deprecated because the SAS tokens generated using the current version work fine with old libraries. Please use the other overloads.")]        
         public string GetSharedAccessSignature(SharedAccessQueuePolicy policy, string accessPolicyIdentifier, string sasVersion)
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
@@ -294,9 +353,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 throw new InvalidOperationException(errorMessage);
             }
 
-            string resourceName = this.GetCanonicalName();
-            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
             string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
+            string resourceName = this.GetCanonicalName(validatedSASVersion);
+            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
 
             string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
@@ -316,5 +375,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             return builder.ToString();
         }
+#endif
     }
 }

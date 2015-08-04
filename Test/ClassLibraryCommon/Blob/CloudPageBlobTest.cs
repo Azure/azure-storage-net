@@ -2873,7 +2873,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties);
 
                 CloudPageBlob snapshotCopy = container.GetPageBlobReference("blob2");
-                snapshotCopy.StartCopyFromBlob(TestHelper.Defiddler(snapshot1.Uri));
+                snapshotCopy.StartCopy(TestHelper.Defiddler(snapshot1.Uri));
                 WaitForCopy(snapshotCopy);
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
@@ -2897,10 +2897,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
             }
             finally
             {
@@ -2957,9 +2957,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     AssertAreEqual(snapshot1.Properties, blob.Properties);
 
                     CloudPageBlob snapshotCopy = container.GetPageBlobReference("blob2");
-                    result = snapshotCopy.BeginStartCopyFromBlob(snapshot1, null, null, null, null, ar => waitHandle.Set(), null);
+                    result = snapshotCopy.BeginStartCopy(snapshot1, null, null, null, null, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
-                    snapshotCopy.EndStartCopyFromBlob(result);
+                    snapshotCopy.EndStartCopy(result);
                     WaitForCopy(snapshotCopy);
                     Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
@@ -2989,10 +2989,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                     Assert.AreEqual(4, blobs.Count);
-                    AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                    AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                    AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                    AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                    AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                    AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                    AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                    AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
                 }
             }
             finally
@@ -3048,7 +3048,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties);
 
                 CloudPageBlob snapshotCopy = container.GetPageBlobReference("blob2");
-                snapshotCopy.StartCopyFromBlobAsync(snapshot1, null, null, null, null).Wait();
+                snapshotCopy.StartCopyAsync(snapshot1, null, null, null, null).Wait();
                 WaitForCopy(snapshotCopy);
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
@@ -3076,10 +3076,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                              .Results
                              .ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (ICloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (ICloudBlob)blobs[1]);
-                AssertAreEqual(blob, (ICloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (ICloudBlob)blobs[3]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
+                AssertAreEqual(blob, (CloudBlob)blobs[2]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
             }
             finally
             {

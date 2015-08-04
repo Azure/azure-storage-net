@@ -126,7 +126,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batchCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             batchCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableBatchOperation(uri, builder, client.BufferManager, timeout, table.Name, batch, useVersionHeader, ctx, requestOptions.PayloadFormat.Value, client.AccountName);
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableBatchOperation(uri, builder, client.BufferManager, timeout, table.Name, batch, useVersionHeader, ctx, requestOptions, client.AccountName);
                 batchCmd.SendStream = res.Item2;
                 return res.Item1;
             };

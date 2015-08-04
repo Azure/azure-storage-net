@@ -342,6 +342,220 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Verify that creating a file directory can also set its metadata")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateWithMetadata()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.Metadata["key1"] = "value1";
+                directory.Create();
+
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory2.FetchAttributes();
+                Assert.AreEqual(1, directory2.Metadata.Count);
+                Assert.AreEqual("value1", directory2.Metadata["key1"]);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Verify that a file directory's metadata can be updated")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectorySetMetadata()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.Create();
+
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory2.FetchAttributes();
+                Assert.AreEqual(0, directory2.Metadata.Count);
+
+                directory.Metadata["key1"] = null;
+                StorageException e = TestHelper.ExpectedException<StorageException>(
+                    () => directory.SetMetadata(),
+                    "Metadata keys should have a non-null value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                directory.Metadata["key1"] = "";
+                e = TestHelper.ExpectedException<StorageException>(
+                    () => directory.SetMetadata(),
+                    "Metadata keys should have a non-empty value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                directory.Metadata["key1"] = "value1";
+                directory.SetMetadata();
+
+                directory2.FetchAttributes();
+                Assert.AreEqual(1, directory2.Metadata.Count);
+                Assert.AreEqual("value1", directory2.Metadata["key1"]);
+
+                directory.Metadata.Clear();
+                directory.SetMetadata();
+
+                directory2.FetchAttributes();
+                Assert.AreEqual(0, directory2.Metadata.Count);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Verify that a file directory's metadata can be updated")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectorySetMetadataAPM()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.Create();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                    IAsyncResult result = directory2.BeginFetchAttributes(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    directory2.EndFetchAttributes(result);
+                    Assert.AreEqual(0, directory2.Metadata.Count);
+
+                    directory.Metadata["key1"] = null;
+                    result = directory.BeginSetMetadata(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Exception e = TestHelper.ExpectedException<StorageException>(
+                        () => directory.EndSetMetadata(result),
+                        "Metadata keys should have a non-null value");
+                    Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                    directory.Metadata["key1"] = "";
+                    result = directory.BeginSetMetadata(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    e = TestHelper.ExpectedException<StorageException>(
+                        () => directory.EndSetMetadata(result),
+                        "Metadata keys should have a non-empty value");
+                    Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                    directory.Metadata["key1"] = "value1";
+                    result = directory.BeginSetMetadata(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    directory.EndSetMetadata(result);
+
+                    result = directory2.BeginFetchAttributes(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    directory2.EndFetchAttributes(result);
+                    Assert.AreEqual(1, directory2.Metadata.Count);
+                    Assert.AreEqual("value1", directory2.Metadata["key1"]);
+
+                    directory.Metadata.Clear();
+                    result = directory.BeginSetMetadata(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    directory.EndSetMetadata(result);
+
+                    result = directory2.BeginFetchAttributes(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    directory2.EndFetchAttributes(result);
+                    Assert.AreEqual(0, directory2.Metadata.Count);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Verify that a file directory's metadata can be updated")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectorySetMetadataTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.CreateAsync().Wait();
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.CreateAsync().Wait();
+
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(0, directory2.Metadata.Count);
+
+                directory.Metadata["key1"] = null;
+                StorageException e = TestHelper.ExpectedExceptionTask<StorageException>(
+                    directory.SetMetadataAsync(),
+                    "Metadata keys should have a non-null value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                directory.Metadata["key1"] = "";
+                e = TestHelper.ExpectedExceptionTask<StorageException>(
+                    directory.SetMetadataAsync(),
+                    "Metadata keys should have a non-empty value");
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
+
+                directory.Metadata["key1"] = "value1";
+                directory.SetMetadataAsync().Wait();
+
+                directory2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(1, directory2.Metadata.Count);
+                Assert.AreEqual("value1", directory2.Metadata["key1"]);
+
+                directory.Metadata.Clear();
+                directory.SetMetadataAsync().Wait();
+
+                directory2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(0, directory2.Metadata.Count);
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
         [Description("CloudFileDirectory listing")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

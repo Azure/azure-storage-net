@@ -230,5 +230,81 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 }
             }
         }
+
+        [TestMethod]
+        [Description("Ensure MultiBufferMemoryStream provided by user is not closed after upload.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void EnsureMultiBufferMemoryStreamIsNotClosed()
+        {
+            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(Guid.NewGuid().ToString("N"));
+
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                using (MultiBufferMemoryStream originalBlob = new MultiBufferMemoryStream(null))
+                {
+                    originalBlob.Write(buffer, 0, buffer.Length);
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+
+                    blob.PutBlock(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), originalBlob, null);
+
+                    Assert.IsTrue(originalBlob.CanSeek);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Ensure MultiBufferMemoryStream provided by user is not closed after upload.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void EnsureMultiBufferMemoryStreamIsNotClosedAPM()
+        {
+            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(Guid.NewGuid().ToString("N"));
+            
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                using (MultiBufferMemoryStream originalBlob = new MultiBufferMemoryStream(null))
+                {
+                    originalBlob.Write(buffer, 0, buffer.Length);
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        ICancellableAsyncResult result = blob.BeginPutBlock(
+                            Convert.ToBase64String(Guid.NewGuid().ToByteArray()), 
+                            originalBlob, 
+                            null,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blob.EndPutBlock(result);
+                    }
+
+                    Assert.IsTrue(originalBlob.CanSeek);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
     }
 }

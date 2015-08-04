@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying file, and commits the file.
         /// </summary>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public abstract Task CommitAsync();
 
         internal Stream AsStreamForWrite()

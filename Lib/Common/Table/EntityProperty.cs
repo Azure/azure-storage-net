@@ -688,6 +688,8 @@ byte[] input)
         
         internal bool IsNull { get; set; }
 
+        internal bool IsEncrypted { get; set; }
+
         /// <summary>
         /// Creates an <see cref="EntityProperty"/> from the specified object.
         /// </summary>

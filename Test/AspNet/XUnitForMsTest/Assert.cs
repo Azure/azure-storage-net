@@ -149,8 +149,8 @@ namespace Microsoft.VisualStudio.TestPlatform.UnitTestFramework
         /// <param name="culture">A <see cref="CultureInfo"/> object that supplies culture-specific comparison information.</param>
         public static void AreEqual(string expected, string actual, bool ignoreCase, CultureInfo culture)
         {
-            CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = culture;
+            //CultureInfo currentCulture = CultureInfo.CurrentCulture;
+            //CultureInfo.CurrentCulture = culture;
 
             try
             {
@@ -158,7 +158,7 @@ namespace Microsoft.VisualStudio.TestPlatform.UnitTestFramework
             }
             finally
             {
-                CultureInfo.CurrentCulture = currentCulture;
+                //CultureInfo.CurrentCulture = currentCulture;
             }
         }
 
@@ -416,8 +416,8 @@ namespace Microsoft.VisualStudio.TestPlatform.UnitTestFramework
         /// <param name="culture">A CultureInfo object that supplies culture-specific comparison information.</param>
         public static void AreNotEqual(string notExpected, string actual, bool ignoreCase, CultureInfo culture)
         {
-            CultureInfo currentCulture = CultureInfo.CurrentCulture;
-            CultureInfo.CurrentCulture = culture;
+           // CultureInfo currentCulture = CultureInfo.CurrentCulture;
+           // CultureInfo.CurrentCulture = culture;
 
             try
             {
@@ -425,7 +425,7 @@ namespace Microsoft.VisualStudio.TestPlatform.UnitTestFramework
             }
             finally
             {
-                CultureInfo.CurrentCulture = currentCulture;
+              //  CultureInfo.CurrentCulture = currentCulture;
             }
         }
 

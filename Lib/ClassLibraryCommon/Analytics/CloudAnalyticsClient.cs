@@ -195,6 +195,7 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         /// Returns an enumerable collection of log blobs containing Analytics log records. The blobs are retrieved lazily.
         /// </summary>
         /// <param name="service">A <see cref="StorageService"/> enumeration value.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="ICloudBlob"/> and are retrieved lazily.</returns>
         public IEnumerable<ICloudBlob> ListLogs(StorageService service)
         {
             return this.ListLogs(service, LoggingOperations.All, BlobListingDetails.None, null /* options */, null /* operationContext */);
@@ -462,7 +463,7 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
         {
             return CloudAnalyticsClient.ParseLogBlobs(this.ListLogs(service, startTime, endTime, LoggingOperations.All, BlobListingDetails.None, options, operationContext));
         }
-        
+
         /// <summary>
         /// Returns an enumerable collection of Analytics log records, retrieved lazily.
         /// </summary>

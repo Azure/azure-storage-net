@@ -616,7 +616,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public ICancellableAsyncResult BeginGetBlobReferenceFromServer(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             CommonUtility.AssertNotNull("blobUri", blobUri);
-
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
             return Executor.BeginExecuteAsync(
                 this.GetBlobReferenceImpl(blobUri, accessCondition, modifiedOptions),
@@ -799,7 +798,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     SnapshotTime = parsedSnapshot,
                 };
 
-                CloudBlobSharedImpl.UpdateAfterFetchAttributes(attributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(attributes, resp, false);
 
                 switch (attributes.Properties.BlobType)
                 {
@@ -808,6 +807,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     case BlobType.PageBlob:
                         return new CloudPageBlob(attributes, client);
+
+                    case BlobType.AppendBlob:
+                        return new CloudAppendBlob(attributes, client);
 
                     default:
                         throw new InvalidOperationException();
@@ -1180,6 +1182,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             catch (InvalidOperationException invalidOpException)
             {
+                str.Dispose();
                 throw new ArgumentException(invalidOpException.Message, "properties");
             }
 
@@ -1187,6 +1190,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
             retCmd.SendStream = str;
+            retCmd.StreamToDispose = str;
             retCmd.BuildRequestDelegate = BlobHttpWebRequestFactory.SetServiceProperties;
             retCmd.RecoveryAction = RecoveryActions.RewindStream;
             retCmd.SignRequest = this.AuthenticationHandler.SignRequest;

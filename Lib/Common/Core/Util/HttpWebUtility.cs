@@ -87,19 +87,19 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 
         /// <summary>
-        /// Converts the DateTimeOffset object to an Http string of form: Sun, 28 Jan 2008 12:11:37 GMT.
+        /// Converts the DateTimeOffset object to an Http string of form: Mon, 28 Jan 2008 12:11:37 GMT.
         /// </summary>
         /// <param name="dateTime">The DateTimeOffset object to convert to an Http string.</param>
-        /// <returns>String of form: Sun, 28 Jan 2008 12:11:37 GMT.</returns>
+        /// <returns>String of form: Mon, 28 Jan 2008 12:11:37 GMT.</returns>
         public static string ConvertDateTimeToHttpString(DateTimeOffset dateTime)
         {
             // 'R' means rfc1123 date which is what the storage services use for all dates...
             // It will be in the following format:
-            // Sun, 28 Jan 2008 12:11:37 GMT
+            // Mon, 28 Jan 2008 12:11:37 GMT
             return dateTime.UtcDateTime.ToString("R", CultureInfo.InvariantCulture);
         }
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <summary>
         /// Combine all the header values in the IEnumerable to a single comma separated string.
         /// </summary>

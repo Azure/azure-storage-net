@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Globalization;
     using System.Net;
     using System.Text;
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
     using System.Net.Http;
 #endif
 
@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         private const char HeaderNameValueSeparator = ':';
         private const char HeaderValueDelimiter = ',';
 
-#if WINDOWS_RT || ASPNET_K
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the value of the x-ms-date or Date header.
         /// </summary>
@@ -60,7 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         public static void AppendCanonicalizedContentLengthHeader(CanonicalizedString canonicalizedString, HttpRequestMessage request)
         {
             long? contentLength = request.Content.Headers.ContentLength;
-            if (contentLength.HasValue && contentLength.Value != -1L)
+            if (contentLength.HasValue && contentLength.Value != -1L && contentLength.Value != 0)
             {
                 canonicalizedString.AppendCanonicalizedElement(contentLength.Value.ToString(CultureInfo.InvariantCulture));
             }
@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="request">The request where the value is read from.</param>
         public static void AppendCanonicalizedContentLengthHeader(CanonicalizedString canonicalizedString, HttpWebRequest request)
         {
-            if (request.ContentLength != -1L)
+            if (request.ContentLength != -1L && request.ContentLength != 0)
             {
                 canonicalizedString.AppendCanonicalizedElement(request.ContentLength.ToString(CultureInfo.InvariantCulture));
             }

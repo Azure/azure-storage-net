@@ -17,9 +17,17 @@
 
 namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Globalization;
+    using System.IO;
     using System.Net.Http;
+    using System.Xml;
+    using System.Xml.Linq;
 
     /// <summary>
     /// Provides a set of methods for parsing share responses from the File service.
@@ -47,6 +55,12 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 shareProperties.LastModified = null;
             }
 
+            string quota = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ShareQuota);
+            if (!string.IsNullOrEmpty(quota))
+            {
+                shareProperties.Quota = int.Parse(quota, CultureInfo.InvariantCulture);
+            }
+
             return shareProperties;
         }
 
@@ -58,6 +72,33 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static IDictionary<string, string> GetMetadata(HttpResponseMessage response)
         {
             return HttpResponseParsers.GetMetadata(response);
+        }
+
+        /// <summary>
+        /// Reads the share access policies from a stream in XML.
+        /// </summary>
+        /// <param name="inputStream">The stream of XML policies.</param>
+        /// <param name="permissions">The permissions object to which the policies are to be written.</param>
+        public static void ReadSharedAccessIdentifiers(Stream inputStream, FileSharePermissions permissions)
+        {
+            CommonUtility.AssertNotNull("permissions", permissions);
+
+            Response.ReadSharedAccessIdentifiers(permissions.SharedAccessPolicies, new FileAccessPolicyResponse(inputStream));
+        }
+
+        /// <summary>
+        /// Reads share stats from a stream.
+        /// </summary>
+        /// <param name="inputStream">The stream from which to read the share stats.</param>
+        /// <returns>The share stats stored in the stream.</returns>
+        public static ShareStats ReadShareStats(Stream inputStream)
+        {
+            using (XmlReader reader = XmlReader.Create(inputStream))
+            {
+                XDocument shareStatsDocument = XDocument.Load(reader);
+
+                return ShareStats.FromServiceXml(shareStatsDocument);
+            }
         }
     }
 }

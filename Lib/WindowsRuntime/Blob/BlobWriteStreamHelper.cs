@@ -14,7 +14,7 @@
 //    limitations under the License.
 // </copyright>
 //-----------------------------------------------------------------------
-#if !ASPNET_K
+#if !(ASPNET_K || PORTABLE)
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;
@@ -56,6 +56,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         internal BlobWriteStreamHelper(CloudPageBlob pageBlob, long pageBlobSize, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             this.originalStream = new BlobWriteStream(pageBlob, pageBlobSize, createNew, accessCondition, options, operationContext);
+            this.originalStreamAsOutputStream = this.originalStream.AsOutputStream();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the BlobWriteStreamHelper class for an append blob.
+        /// </summary>
+        /// <param name="appendBlob">Blob reference to write to.</param>
+        /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        internal BlobWriteStreamHelper(CloudAppendBlob appendBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            this.originalStream = new BlobWriteStream(appendBlob, accessCondition, options, operationContext);
             this.originalStreamAsOutputStream = this.originalStream.AsOutputStream();
         }
 

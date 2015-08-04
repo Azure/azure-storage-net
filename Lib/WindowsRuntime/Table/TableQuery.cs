@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Collections.Generic;
     using System.Net;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return enumerable;
         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         internal Task<TableQuerySegment> ExecuteQuerySegmentedAsync(TableContinuationToken continuationToken, CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return ExecuteQuerySegmentedAsync(continuationToken, client, tableName, requestOptions, operationContext, CancellationToken.None);
@@ -78,7 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment> cmdToExecute = QueryImpl(this, continuationToken, client, tableName, modifiedOptions);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () => await Executor.ExecuteAsync(
                                                             cmdToExecute,
                                                             modifiedOptions.RetryPolicy,
@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return queryCmd;
         }
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         internal Task<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<TResult>(TableContinuationToken continuationToken, CloudTableClient client, string tableName, EntityResolver<TResult> resolver, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         internal IAsyncOperation<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<TResult>(TableContinuationToken continuationToken, CloudTableClient client, string tableName, EntityResolver<TResult> resolver, TableRequestOptions requestOptions, OperationContext operationContext)
@@ -139,7 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment<TResult>> cmdToExecute = this.QueryImpl<TResult>(continuationToken, client, tableName, resolver, modifiedOptions);
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () => await Executor.ExecuteAsync(
                                                             cmdToExecute,
                                                             modifiedOptions.RetryPolicy,

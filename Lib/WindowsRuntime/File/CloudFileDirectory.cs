@@ -517,6 +517,63 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         /// <summary>
+        /// Updates the directory's metadata.
+        /// </summary>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task SetMetdataAsync()
+#else
+        public IAsyncAction SetMetadataAsync()
+#endif
+        {
+            return this.SetMetadataAsync(null /* accessCondition */, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Updates the directory's metadata.
+        /// </summary>
+        /// <param name="accessCondition">An object that represents the access conditions for the directory. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+#if ASPNET_K
+        public Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.SetMetadataAsync(accessCondition, options, operationContext, CancellationToken.None);
+        }
+#else
+        public IAsyncAction SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
+                this.SetMetadataImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                token));
+        }
+#endif
+
+#if ASPNET_K
+        /// <summary>
+        /// Updates the directory's metadata.
+        /// </summary>
+        /// <param name="accessCondition">An object that represents the access conditions for the directory. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">Cancellation Token</param>
+        [DoesServiceRequest]
+        public Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+                this.SetMetadataImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken), cancellationToken);
+        }
+#endif
+
+        /// <summary>
         /// Implementation for the Create method.
         /// </summary>
         /// <param name="options">An object that specifies additional options for the request.</param>
@@ -528,7 +585,12 @@ namespace Microsoft.WindowsAzure.Storage.File
             options.ApplyToStorageCommand(putCmd);
             putCmd.Handler = this.ServiceClient.AuthenticationHandler;
             putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.Create(uri, serverTimeout, cnt, ctx);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                HttpRequestMessage msg = DirectoryHttpRequestMessageFactory.Create(uri, serverTimeout, cnt, ctx);
+                DirectoryHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
@@ -604,6 +666,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.Properties = DirectoryHttpResponseParsers.GetProperties(resp);
+                this.Metadata = DirectoryHttpResponseParsers.GetMetadata(resp);
                 return NullType.Value;
             };
 
@@ -658,6 +721,35 @@ namespace Microsoft.WindowsAzure.Storage.File
             };
 
             return getCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the SetMetadata method.
+        /// </summary>
+        /// <param name="accessCondition">An object that represents the access conditions for the directory. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand"/> that sets the metadata.</returns>
+        private RESTCommand<NullType> SetMetadataImpl(AccessCondition accessCondition, FileRequestOptions options)
+        {
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
+            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                HttpRequestMessage msg = DirectoryHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, accessCondition, cnt, ctx);
+                DirectoryHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                this.UpdateETagAndLastModified(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
         }
 
         /// <summary>

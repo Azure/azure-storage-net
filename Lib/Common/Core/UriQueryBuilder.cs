@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Text;
 
     /// <summary>
@@ -55,6 +56,26 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// Stores the query parameters.
         /// </summary>
         private Dictionary<string, string> parameters;
+
+        /// <summary>
+        /// Gets the query string value associated with the given name.
+        /// </summary>
+        /// <param name="name">The query string name.</param>
+        public string this[string name]
+        {
+            get
+            {
+                string value;
+                if (this.parameters.TryGetValue(name, out value))
+                {
+                    return value;
+                }
+                else
+                {
+                    throw new KeyNotFoundException(string.Format(CultureInfo.InvariantCulture, SR.QueryBuilderKeyNotFound, name));
+                }
+            }
+        }
 
         /// <summary>
         /// Add the query string value with URI escaping.

@@ -220,7 +220,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public static readonly string InvalidAuthenticationInfo = "InvalidAuthenticationInfo";
 
         /// <summary>
-        /// The specifed resource name contains invalid characters.
+        /// The specified resource name contains invalid characters.
         /// </summary>
         public static readonly string InvalidResourceName = "InvalidResourceName";
 

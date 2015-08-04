@@ -51,6 +51,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             if (other != null)
             {
                 this.RetryPolicy = other.RetryPolicy;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+                this.EncryptionPolicy = other.EncryptionPolicy;
+                this.RequireEncryption = other.RequireEncryption;
+#endif
                 this.ServerTimeout = other.ServerTimeout;
                 this.LocationMode = other.LocationMode;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
@@ -63,6 +67,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = new QueueRequestOptions(options);
             
             modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
+            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
+#endif
             modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
                                             ?? serviceClient.DefaultRequestOptions.LocationMode)
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
@@ -99,6 +107,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        internal void AssertPolicyIfRequired()
+        {
+            if (this.RequireEncryption.HasValue && this.RequireEncryption.Value && this.EncryptionPolicy == null)
+            {
+                throw new InvalidOperationException(SR.EncryptionPolicyMissingInStrictMode);
+            }
+        }
+#endif
+
         /// <summary>
         ///  Gets or sets the absolute expiry time across all potential retries for the request. 
         /// </summary>
@@ -109,6 +127,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+        /// <summary>
+        /// Gets or sets the encryption policy for the request.
+        /// </summary>
+        /// <value>An object of type <see cref="EncryptionPolicy"/>.</value>
+        public QueueEncryptionPolicy EncryptionPolicy { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
+        /// </summary>
+        /// <value>Use <c>true</c> to specify that data should be encrypted/decrypted for all transactions; otherwise, <c>false</c>.</value>
+        public bool? RequireEncryption { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets the location mode of the request.

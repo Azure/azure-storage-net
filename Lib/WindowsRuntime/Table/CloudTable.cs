@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Collections.Generic;
     using System.Net;
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -44,7 +44,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="operation">A <see cref="TableOperation"/> object that represents the operation to perform.</param>
         /// <returns>A <see cref="TableResult"/> containing the result of executing the operation on the table.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableResult> ExecuteAsync(TableOperation operation)
 #else
         public IAsyncOperation<TableResult> ExecuteAsync(TableOperation operation)
@@ -60,7 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>A <see cref="TableResult"/> containing the result of executing the operation on the table.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableResult> ExecuteAsync(TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteAsync(operation, requestOptions, operationContext, CancellationToken.None);
@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Executes the operation on a table, using the specified <see cref="TableRequestOptions"/> and <see cref="OperationContext"/>.
         /// </summary>
@@ -99,7 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="batch">The <see cref="TableBatchOperation"/> object representing the operations to execute on the table.</param>
         /// <returns>An enumerable collection of <see cref="TableResult"/> objects that contains the results, in order, of each operation in the <see cref="TableBatchOperation"/> on the table.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch)
 #else
         public IAsyncOperation<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch)
@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>An enumerable collection of <see cref="TableResult"/> objects that contains the results, in order, of each operation in the <see cref="TableBatchOperation"/> on the table.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteBatchAsync(batch, requestOptions, operationContext, CancellationToken.None);
@@ -128,7 +128,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Executes a batch operation on a table as an atomic operation, using the specified <see cref="TableRequestOptions"/> and <see cref="OperationContext"/>.
         /// </summary>
@@ -164,7 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
         /// <param name="token">A <see cref="ResultContinuation"/> object representing a continuation token from the server when the operation returns a partial result.</param>
         /// <returns>A <see cref="TableQuerySegment"/> object containing the results of executing the query.</returns>        
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment> ExecuteQuerySegmentedAsync(TableQuery query, TableContinuationToken token)
 #else
         public IAsyncOperation<TableQuerySegment> ExecuteQuerySegmentedAsync(TableQuery query, TableContinuationToken token)
@@ -181,7 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>A <see cref="TableQuerySegment"/> object containing the results of executing the query.</returns>        
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment> ExecuteQuerySegmentedAsync(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteQuerySegmentedAsync(query, token, requestOptions, operationContext, CancellationToken.None);
@@ -194,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Executes a query in segmented mode with the specified <see cref="TableContinuationToken"/> continuation token, <see cref="TableRequestOptions"/>, and <see cref="OperationContext"/>.
         /// </summary>
@@ -212,13 +212,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
         #endregion
 
+#if !PORTABLE
         #region Create
 
         /// <summary>
         /// Creates the Table.
         /// </summary>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync()
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -233,8 +234,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.CreateAsync(requestOptions, operationContext, CancellationToken.None);
@@ -246,7 +247,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -370,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Deletes the Table.
         /// </summary>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync()
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -385,8 +386,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-#if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+#if ASPNET_K 
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.DeleteAsync(requestOptions, operationContext, CancellationToken.None);
@@ -398,7 +399,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -515,13 +516,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
         }
         #endregion
+#endif
 
         #region Exists
         /// <summary>
         /// Checks existence of the queue.
         /// </summary>
         /// <returns><c>true</c> if the queue exists.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync()
 #else
         public IAsyncOperation<bool> ExistsAsync()
@@ -536,7 +538,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns><c>true</c> if the queue exists.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExistsAsync(false, requestOptions, operationContext, CancellationToken.None);
@@ -548,7 +550,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Checks existence of the queue.
         /// </summary>
@@ -570,7 +572,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the queue exists.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         private Task<bool> ExistsAsync(bool primaryOnly, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
         private IAsyncOperation<bool> ExistsAsync(bool primaryOnly, TableRequestOptions requestOptions, OperationContext operationContext)
@@ -585,7 +587,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             operation.IsTableEntity = true;
             operation.IsPrimaryOnlyRetrieve = primaryOnly;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 TableResult res = await this.ServiceClient.ExecuteAsync(TableConstants.TableServiceTablesName, operation, requestOptions, operationContext, cancellationToken);
@@ -605,13 +607,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
 
+#if !PORTABLE
         #region Permissions
         /// <summary>
         /// Sets permissions for the Table.
         /// </summary>
         /// <param name="permissions">The permissions to apply to the Table.</param>
 #if ASPNET_K
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task SetPermissionsAsync(TablePermissions permissions)
 #else
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
@@ -655,7 +658,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
             /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
             /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-            /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+            /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task SetPermissionsAsync(TablePermissions permissions, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
@@ -687,6 +690,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            putCmd.StreamToDispose = memoryStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
@@ -784,6 +788,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return getCmd;
         }
         #endregion
+#endif
 
         #region TableQuery Execute Methods
         /// <summary>
@@ -794,7 +799,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="query">A <see cref="TableQuery{T}"/> representing the query to execute.</param>
         /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
         /// <returns>A <see cref="TableQuerySegment{T}"/> object containing the results of executing the query.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment<T>> ExecuteQuerySegmentedAsync<T>(TableQuery<T> query, TableContinuationToken token) where T : ITableEntity, new()
 #else
         public IAsyncOperation<TableQuerySegment<T>> ExecuteQuerySegmentedAsync<T>(TableQuery<T> query, TableContinuationToken token) where T : ITableEntity, new()
@@ -813,7 +818,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>A <see cref="TableQuerySegment{T}"/> object containing the results of executing the query.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment<T>> ExecuteQuerySegmentedAsync<T>(TableQuery<T> query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext) where T : ITableEntity, new()
         {
             return this.ExecuteQuerySegmentedAsync<T>(query, token, requestOptions, operationContext, CancellationToken.None);
@@ -826,7 +831,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Executes a query asynchronously in segmented mode with the specified <see cref="TableQuery{T}"/> query, <see cref="TableContinuationToken"/> continuation token, <see cref="TableRequestOptions"/> options, and <see cref="OperationContext"/> context.
         /// </summary>
@@ -855,7 +860,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="resolver">An <see cref="EntityResolver{R}"/> instance which creates a projection of the table query result entities into the specified type <c>TResult</c>.</param>
         /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
         /// <returns>A <see cref="TableQuerySegment{R}"/> containing the projection into type <c>TResult</c> of the results of executing the query.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<T, TResult>(TableQuery<T> query, EntityResolver<TResult> resolver, TableContinuationToken token) where T : ITableEntity, new()
 #else
         public IAsyncOperation<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<T, TResult>(TableQuery<T> query, EntityResolver<TResult> resolver, TableContinuationToken token) where T : ITableEntity, new()
@@ -876,7 +881,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>A <see cref="TableQuerySegment{R}"/> containing the projection into type <c>TResult</c> of the results of executing the query.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<T, TResult>(TableQuery<T> query, EntityResolver<TResult> resolver, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext) where T : ITableEntity, new()
         {
             return this.ExecuteQuerySegmentedAsync<T, TResult>(query, resolver, token, requestOptions, operationContext, CancellationToken.None);
@@ -890,7 +895,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Executes a query asynchronously in segmented mode, using the specified <see cref="TableQuery{T}"/> query, <see cref="TableContinuationToken"/> continuation token, <see cref="TableRequestOptions"/> options, and <see cref="OperationContext"/> context, and applies the <see cref="EntityResolver{T}"/> to the result.
         /// </summary>
@@ -922,7 +927,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="resolver">An <see cref="EntityResolver{R}"/> instance which creates a projection of the table query result entities into the specified type <c>TResult</c>.</param>
         /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
         /// <returns>A <see cref="TableQuerySegment{R}"/> containing the projection into type <c>TResult</c> of the results of executing the query.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<TResult>(TableQuery query, EntityResolver<TResult> resolver, TableContinuationToken token)
 #else
         public IAsyncOperation<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<TResult>(TableQuery query, EntityResolver<TResult> resolver, TableContinuationToken token)
@@ -942,7 +947,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>A <see cref="TableQuerySegment{R}"/> containing the projection into type <c>TResult</c> of the results of executing the query.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<TResult>(TableQuery query, EntityResolver<TResult> resolver, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteQuerySegmentedAsync<TResult>(query, resolver, token, requestOptions, operationContext, CancellationToken.None);
@@ -956,7 +961,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Executes a query asynchronously in segmented mode, using the specified <see cref="TableContinuationToken"/> continuation token, <see cref="TableRequestOptions"/> options, and <see cref="OperationContext"/> context, and applies the <see cref="EntityResolver{T}"/> to the result.
         /// </summary>

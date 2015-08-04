@@ -17,6 +17,8 @@
 
 namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
@@ -89,6 +91,16 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             }
 
             return properties;
+        }
+
+        /// <summary>
+        /// Extracts a <see cref="CopyState"/> object from the headers of a web response.
+        /// </summary>
+        /// <param name="response">The HTTP web response.</param>
+        /// <returns>A <see cref="CopyState"/> object, or null if the web response does not contain a copy status.</returns>
+        public static CopyState GetCopyAttributes(HttpResponseMessage response)
+        {
+            return BlobHttpResponseParsers.GetCopyAttributes(response);
         }
 
         /// <summary>

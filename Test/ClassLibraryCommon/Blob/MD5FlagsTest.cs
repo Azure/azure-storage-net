@@ -72,53 +72,55 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.Create();
 
-                ICloudBlob blob = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
+
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    blob.UploadFromStream(stream, null, optionsWithMD5);
+                    blob1.UploadFromStream(stream, null, optionsWithMD5);
                 }
-                blob.FetchAttributes();
-                Assert.IsNotNull(blob.Properties.ContentMD5);
+                blob1.FetchAttributes();
+                Assert.IsNotNull(blob1.Properties.ContentMD5);
 
-                blob = container.GetBlockBlobReference("blob2");
+                blob1 = container.GetBlockBlobReference("blob2");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    blob.UploadFromStream(stream, null, optionsWithNoMD5);
+                    blob1.UploadFromStream(stream, null, optionsWithNoMD5);
                 }
-                blob.FetchAttributes();
-                Assert.IsNull(blob.Properties.ContentMD5);
+                blob1.FetchAttributes();
+                Assert.IsNull(blob1.Properties.ContentMD5);
 
-                blob = container.GetBlockBlobReference("blob3");
+                blob1 = container.GetBlockBlobReference("blob3");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    blob.UploadFromStream(stream);
+                    blob1.UploadFromStream(stream);
                 }
-                blob.FetchAttributes();
-                Assert.IsNotNull(blob.Properties.ContentMD5);
+                blob1.FetchAttributes();
+                Assert.IsNotNull(blob1.Properties.ContentMD5);
 
-                blob = container.GetPageBlobReference("blob4");
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob4");
+                blob2 = container.GetPageBlobReference("blob4");
                 using (Stream stream = new MemoryStream())
                 {
-                    blob.UploadFromStream(stream, null, optionsWithMD5);
+                    blob2.UploadFromStream(stream, null, optionsWithMD5);
                 }
-                blob.FetchAttributes();
-                Assert.IsNotNull(blob.Properties.ContentMD5);
+                blob2.FetchAttributes();
+                Assert.IsNotNull(blob2.Properties.ContentMD5);
 
-                blob = container.GetPageBlobReference("blob5");
+                blob2 = container.GetPageBlobReference("blob5");
                 using (Stream stream = new MemoryStream())
                 {
-                    blob.UploadFromStream(stream, null, optionsWithNoMD5);
+                    blob2.UploadFromStream(stream, null, optionsWithNoMD5);
                 }
-                blob.FetchAttributes();
-                Assert.IsNull(blob.Properties.ContentMD5);
+                blob2.FetchAttributes();
+                Assert.IsNull(blob2.Properties.ContentMD5);
 
-                blob = container.GetPageBlobReference("blob6");
+                blob2 = container.GetPageBlobReference("blob6");
                 using (Stream stream = new MemoryStream())
                 {
-                    blob.UploadFromStream(stream);
+                    blob2.UploadFromStream(stream);
                 }
-                blob.FetchAttributes();
-                Assert.IsNull(blob.Properties.ContentMD5);
+                blob2.FetchAttributes();
+                Assert.IsNull(blob2.Properties.ContentMD5);
             }
             finally
             {
@@ -151,77 +153,77 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
                     IAsyncResult result;
-                    ICloudBlob blob = container.GetBlockBlobReference("blob1");
+                    CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
                     using (Stream stream = new NonSeekableMemoryStream())
                     {
-                        result = blob.BeginUploadFromStream(stream, null, optionsWithMD5, null,
+                        result = blob1.BeginUploadFromStream(stream, null, optionsWithMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
+                        blob1.EndUploadFromStream(result);
                     }
-                    blob.FetchAttributes();
-                    Assert.IsNotNull(blob.Properties.ContentMD5);
+                    blob1.FetchAttributes();
+                    Assert.IsNotNull(blob1.Properties.ContentMD5);
 
-                    blob = container.GetBlockBlobReference("blob2");
+                    blob1 = container.GetBlockBlobReference("blob2");
                     using (Stream stream = new NonSeekableMemoryStream())
                     {
-                        result = blob.BeginUploadFromStream(stream, null, optionsWithNoMD5, null,
+                        result = blob1.BeginUploadFromStream(stream, null, optionsWithNoMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
+                        blob1.EndUploadFromStream(result);
                     }
-                    blob.FetchAttributes();
-                    Assert.IsNull(blob.Properties.ContentMD5);
+                    blob1.FetchAttributes();
+                    Assert.IsNull(blob1.Properties.ContentMD5);
 
-                    blob = container.GetBlockBlobReference("blob3");
+                    blob1 = container.GetBlockBlobReference("blob3");
                     using (Stream stream = new NonSeekableMemoryStream())
                     {
-                        result = blob.BeginUploadFromStream(stream,
+                        result = blob1.BeginUploadFromStream(stream,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
+                        blob1.EndUploadFromStream(result);
                     }
-                    blob.FetchAttributes();
-                    Assert.IsNotNull(blob.Properties.ContentMD5);
+                    blob1.FetchAttributes();
+                    Assert.IsNotNull(blob1.Properties.ContentMD5);
 
-                    blob = container.GetPageBlobReference("blob4");
+                    CloudPageBlob blob2 = container.GetPageBlobReference("blob4");
                     using (Stream stream = new MemoryStream())
                     {
-                        result = blob.BeginUploadFromStream(stream, null, optionsWithMD5, null,
+                        result = blob2.BeginUploadFromStream(stream, null, optionsWithMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
+                        blob2.EndUploadFromStream(result);
                     }
-                    blob.FetchAttributes();
-                    Assert.IsNotNull(blob.Properties.ContentMD5);
+                    blob2.FetchAttributes();
+                    Assert.IsNotNull(blob2.Properties.ContentMD5);
 
-                    blob = container.GetPageBlobReference("blob5");
+                    blob2 = container.GetPageBlobReference("blob5");
                     using (Stream stream = new MemoryStream())
                     {
-                        result = blob.BeginUploadFromStream(stream, null, optionsWithNoMD5, null,
+                        result = blob2.BeginUploadFromStream(stream, null, optionsWithNoMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
+                        blob2.EndUploadFromStream(result);
                     }
-                    blob.FetchAttributes();
-                    Assert.IsNull(blob.Properties.ContentMD5);
+                    blob2.FetchAttributes();
+                    Assert.IsNull(blob2.Properties.ContentMD5);
 
-                    blob = container.GetPageBlobReference("blob6");
+                    blob2 = container.GetPageBlobReference("blob6");
                     using (Stream stream = new MemoryStream())
                     {
-                        result = blob.BeginUploadFromStream(stream,
+                        result = blob2.BeginUploadFromStream(stream,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndUploadFromStream(result);
+                        blob2.EndUploadFromStream(result);
                     }
-                    blob.FetchAttributes();
-                    Assert.IsNull(blob.Properties.ContentMD5);
+                    blob2.FetchAttributes();
+                    Assert.IsNull(blob2.Properties.ContentMD5);
                 }
             }
             finally
@@ -423,78 +425,78 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
                     IAsyncResult result;
-                    ICloudBlob blob = container.GetBlockBlobReference("blob1");
+                    CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
                     using (Stream stream = new NonSeekableMemoryStream())
                     {
-                        blob.UploadFromStream(stream, null, optionsWithMD5);
+                        blob1.UploadFromStream(stream, null, optionsWithMD5);
                     }
 
                     using (Stream stream = new MemoryStream())
                     {
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithMD5, null,
+                        result = blob1.BeginDownloadToStream(stream, null, optionsWithMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndDownloadToStream(result);
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
+                        blob1.EndDownloadToStream(result);
+                        result = blob1.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndDownloadToStream(result);
+                        blob1.EndDownloadToStream(result);
 
-                        blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
-                        blob.SetProperties();
+                        blob1.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                        blob1.SetProperties();
 
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithMD5, null,
+                        result = blob1.BeginDownloadToStream(stream, null, optionsWithMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
                         TestHelper.ExpectedException(
-                            () => blob.EndDownloadToStream(result),
+                            () => blob1.EndDownloadToStream(result),
                             "Downloading a blob with invalid MD5 should fail",
                             HttpStatusCode.OK);
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
+                        result = blob1.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndDownloadToStream(result);
+                        blob1.EndDownloadToStream(result);
                     }
 
-                    blob = container.GetPageBlobReference("blob2");
+                    CloudPageBlob blob2 = container.GetPageBlobReference("blob2");
                     using (Stream stream = new MemoryStream())
                     {
-                        blob.UploadFromStream(stream, null, optionsWithMD5);
+                        blob2.UploadFromStream(stream, null, optionsWithMD5);
                     }
 
                     using (Stream stream = new MemoryStream())
                     {
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithMD5, null,
+                        result = blob2.BeginDownloadToStream(stream, null, optionsWithMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndDownloadToStream(result);
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
+                        blob2.EndDownloadToStream(result);
+                        result = blob2.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndDownloadToStream(result);
+                        blob2.EndDownloadToStream(result);
 
-                        blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
-                        blob.SetProperties();
+                        blob2.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                        blob2.SetProperties();
 
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithMD5, null,
+                        result = blob2.BeginDownloadToStream(stream, null, optionsWithMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
                         TestHelper.ExpectedException(
-                            () => blob.EndDownloadToStream(result),
+                            () => blob2.EndDownloadToStream(result),
                             "Downloading a blob with invalid MD5 should fail",
                             HttpStatusCode.OK);
-                        result = blob.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
+                        result = blob2.BeginDownloadToStream(stream, null, optionsWithNoMD5, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
-                        blob.EndDownloadToStream(result);
+                        blob2.EndDownloadToStream(result);
                     }
                 }
             }
@@ -564,7 +566,30 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 Assert.AreEqual(3, checkCount);
 
-                CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                checkCount = 0;
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob2");
+                appendBlob.CreateOrReplace();
+                checkCount = 0;
+                using (Stream blockData = new MemoryStream(buffer))
+                {
+                    lastCheckMD5 = "invalid_md5";
+                    appendBlob.AppendBlock(blockData, null, null, optionsWithNoMD5, opContextWithMD5Check);
+                    Assert.IsNull(lastCheckMD5);
+
+                    lastCheckMD5 = "invalid_md5";
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    appendBlob.AppendBlock(blockData, null, null, optionsWithMD5, opContextWithMD5Check);
+                    Assert.AreEqual(md5, lastCheckMD5);
+
+                    lastCheckMD5 = "invalid_md5";
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    appendBlob.AppendBlock(blockData, md5, null, optionsWithNoMD5, opContextWithMD5Check);
+                    Assert.AreEqual(md5, lastCheckMD5);
+                }
+
+                Assert.AreEqual(3, checkCount);
+
+                CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
                 pageBlob.Create(buffer.Length);
                 checkCount = 0;
                 using (Stream pageData = new MemoryStream(buffer))
@@ -587,7 +612,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(3, checkCount);
 
                 lastCheckMD5 = null;
-                blockBlob = container.GetBlockBlobReference("blob3");
+                blockBlob = container.GetBlockBlobReference("blob4");
                 checkCount = 0;
                 using (Stream blobStream = blockBlob.OpenWrite(null, optionsWithMD5, opContextWithMD5Check))
                 {
@@ -598,7 +623,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(1, checkCount);
 
                 lastCheckMD5 = "invalid_md5";
-                blockBlob = container.GetBlockBlobReference("blob4");
+                blockBlob = container.GetBlockBlobReference("blob5");
                 checkCount = 0;
                 using (Stream blobStream = blockBlob.OpenWrite(null, optionsWithNoMD5, opContextWithMD5Check))
                 {
@@ -609,7 +634,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(1, checkCount);
 
                 lastCheckMD5 = null;
-                pageBlob = container.GetPageBlobReference("blob5");
+                pageBlob = container.GetPageBlobReference("blob6");
                 checkCount = 0;
                 using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 3, null, optionsWithMD5, opContextWithMD5Check))
                 {
@@ -620,7 +645,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(1, checkCount);
 
                 lastCheckMD5 = "invalid_md5";
-                pageBlob = container.GetPageBlobReference("blob6");
+                pageBlob = container.GetPageBlobReference("blob7");
                 checkCount = 0;
                 using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 3, null, optionsWithNoMD5, opContextWithMD5Check))
                 {
@@ -711,7 +736,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     Assert.AreEqual(3, checkCount);
 
-                    CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob2");
+                    appendBlob.CreateOrReplace();
+                    checkCount = 0;
+                    using (Stream blockData = new MemoryStream(buffer))
+                    {
+                        lastCheckMD5 = "invalid_md5";
+                        result = appendBlob.BeginAppendBlock(blockData, null, null, optionsWithNoMD5, opContextWithMD5Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        appendBlob.EndAppendBlock(result);
+                        Assert.IsNull(lastCheckMD5);
+
+                        lastCheckMD5 = "invalid_md5";
+                        blockData.Seek(0, SeekOrigin.Begin);
+                        result = appendBlob.BeginAppendBlock(blockData, null, null, optionsWithMD5, opContextWithMD5Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        appendBlob.EndAppendBlock(result);
+                        Assert.AreEqual(md5, lastCheckMD5);
+
+                        lastCheckMD5 = "invalid_md5";
+                        blockData.Seek(0, SeekOrigin.Begin);
+                        result = appendBlob.BeginAppendBlock(blockData, md5, null, optionsWithNoMD5, opContextWithMD5Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        appendBlob.EndAppendBlock(result);
+                        Assert.AreEqual(md5, lastCheckMD5);
+                    }
+
+                    Assert.AreEqual(3, checkCount);
+
+                    CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
                     pageBlob.Create(buffer.Length);
                     checkCount = 0;
                     using (Stream pageData = new MemoryStream(buffer))
@@ -842,7 +901,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 Assert.AreEqual(9, checkCount);
 
-                CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
                 using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 2))
                 {
                     blobStream.Write(buffer, 0, buffer.Length);
@@ -1024,8 +1083,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     Assert.AreEqual(9, checkCount);
-
-                    CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
+                                        
+                    CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
                     using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 2))
                     {
                         blobStream.Write(buffer, 0, buffer.Length);

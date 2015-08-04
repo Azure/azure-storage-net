@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
     using System.Collections.Generic;
     using System.Net.Http;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
     public
 #else
     internal
@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <returns>The approximate count for the queue.</returns>
         public static string GetApproximateMessageCount(HttpResponseMessage response)
         {
-            return response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.LeaseStatus);
+            return response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ApproximateMessagesCount);
         }
 
         /// <summary>

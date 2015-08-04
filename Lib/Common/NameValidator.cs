@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage
         private const int FileDirectoryMaxLength = 255;
         private const int BlobMaxLength = 1024;
         private static readonly string[] ReservedFileNames = { ".", "..", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "PRN", "AUX", "NUL", "CON", "CLOCK$" };
-        private static readonly RegexOptions RegexOptions = (RegexOptions.Singleline | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant);
+        private static readonly RegexOptions RegexOptions = RegexOptions.Singleline | RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant;
         private static readonly Regex FileDirectoryRegex = new Regex(@"^[^""\\/:|<>*?]*\/{0,1}$", NameValidator.RegexOptions);
         private static readonly Regex ShareContainerQueueRegex = new Regex("^[a-z0-9]+(-[a-z0-9]+)*$", NameValidator.RegexOptions);
         private static readonly Regex TableRegex = new Regex("^[A-Za-z][A-Za-z0-9]*$", NameValidator.RegexOptions);

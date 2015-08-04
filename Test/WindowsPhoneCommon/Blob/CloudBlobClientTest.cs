@@ -94,6 +94,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Assert.AreEqual(blobClient, blockBlob.ServiceClient);
             CloudPageBlob pageBlob = container.GetPageBlobReference("pageblob");
             Assert.AreEqual(blobClient, pageBlob.ServiceClient);
+            CloudAppendBlob appendBlob = container.GetAppendBlobReference("appendblob");
+            Assert.AreEqual(blobClient, appendBlob.ServiceClient);
 
             CloudBlobContainer container2 = GetRandomContainerReference();
             Assert.AreNotEqual(blobClient, container2.ServiceClient);
@@ -101,6 +103,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Assert.AreEqual(container2.ServiceClient, blockBlob2.ServiceClient);
             CloudPageBlob pageBlob2 = container2.GetPageBlobReference("pageblob");
             Assert.AreEqual(container2.ServiceClient, pageBlob2.ServiceClient);
+            CloudAppendBlob appendBlob2 = container2.GetAppendBlobReference("appendblob");
+            Assert.AreEqual(container2.ServiceClient, appendBlob2.ServiceClient);
         }
 
         [TestMethod]

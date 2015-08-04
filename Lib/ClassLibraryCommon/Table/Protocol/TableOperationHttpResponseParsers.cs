@@ -30,6 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using System.IO;
     using System.Net;
     using System.Reflection;
+    using System.Text;
 
     internal static class TableOperationHttpResponseParsers
     {
@@ -116,7 +117,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
                 else
                 {
-                    ReadOdataEntity(result, operation, new HttpResponseAdapterMessage(resp, cmd.ResponseStream), ctx, readerSettings, accountName);
+                    ReadOdataEntity(result, operation, new HttpResponseAdapterMessage(resp, cmd.ResponseStream), ctx, readerSettings, accountName, options);
                 }
             }
 
@@ -257,7 +258,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         }
                         else
                         {
-                            ReadOdataEntity(currentResult, currentOperation, mimePartResponseMessage, ctx, readerSettings, accountName);
+                            ReadOdataEntity(currentResult, currentOperation, mimePartResponseMessage, ctx, readerSettings, accountName, options);
                         }
                     }
                     else if (currentOperation.OperationType == TableOperationType.Insert)
@@ -282,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             if (resp.ContentType.Contains(Constants.JsonNoMetadataAcceptHeaderValue))
             {
-                ReadQueryResponseUsingJsonParser(retSeg, responseStream, resp.Headers[Constants.HeaderConstants.EtagHeader], resolver, options.PropertyResolver, typeof(TQueryType), null);
+                ReadQueryResponseUsingJsonParser(retSeg, responseStream, resp.Headers[Constants.HeaderConstants.EtagHeader], resolver, options.PropertyResolver, typeof(TQueryType), null, options);
             }
             else
             {
@@ -313,7 +314,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                         ODataEntry entry = (ODataEntry)reader.Item;
 
-                        retSeg.Results.Add(ReadAndResolve(entry, resolver));
+                        retSeg.Results.Add(ReadAndResolve(entry, resolver, options));
 
                         // Entry End => ?
                         reader.Read();
@@ -340,7 +341,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
         }
 
-        private static void ReadQueryResponseUsingJsonParser<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx)
+        private static void ReadQueryResponseUsingJsonParser<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx, TableRequestOptions options)
         {
             StreamReader streamReader = new StreamReader(responseStream);
 
@@ -363,7 +364,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 foreach (JToken token in dataTable)
                 {
                     Dictionary<string, string> properties = token.ToObject<Dictionary<string, string>>();
-                    retSeg.Results.Add(ReadAndResolveWithEdmTypeResolver(properties, resolver, propertyResolver, etag, type, ctx, disablePropertyResolverCache));
+                    retSeg.Results.Add(ReadAndResolveWithEdmTypeResolver(properties, resolver, propertyResolver, etag, type, ctx, disablePropertyResolverCache, options));
                 }
 
                 if (reader.Read())
@@ -403,7 +404,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return newContinuationToken;
         }
 
-        private static void ReadOdataEntity(TableResult result, TableOperation operation, IODataResponseMessage respMsg, OperationContext ctx, ODataMessageReaderSettings readerSettings, string accountName)
+        private static void ReadOdataEntity(TableResult result, TableOperation operation, IODataResponseMessage respMsg, OperationContext ctx, ODataMessageReaderSettings readerSettings, string accountName, TableRequestOptions options)
         {
             using (ODataMessageReader messageReader = new ODataMessageReader(respMsg, readerSettings, new TableStorageModel(accountName)))
             {
@@ -418,7 +419,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                         if (operation.OperationType == TableOperationType.Retrieve)
                         {
-                            result.Result = ReadAndResolve(entry, operation.RetrieveResolver);
+                            result.Result = ReadAndResolve(entry, operation.RetrieveResolver, options);
                             result.Etag = entry.ETag;
                         }
                         else
@@ -446,10 +447,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 if (operation.OperationType == TableOperationType.Retrieve)
                 {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
-                    result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx, TableEntity.DisablePropertyResolverCache);
+                    result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx, TableEntity.DisablePropertyResolverCache, options);
 #else
                     // doesn't matter what is passed for disablePropertyResolverCache for windows phone because it is not read.
-                    result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx, true);
+                    result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx, true, options);
 #endif
                 }
                 else
@@ -464,10 +465,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
         }
 
-        private static T ReadAndResolve<T>(ODataEntry entry, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver)
+        private static T ReadAndResolve<T>(ODataEntry entry, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, TableRequestOptions options)
         {
             string pk = null;
             string rk = null;
+            byte[] cek = null;
             DateTimeOffset ts = new DateTimeOffset();
             Dictionary<string, EntityProperty> properties = new Dictionary<string, EntityProperty>();
 
@@ -492,16 +494,46 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
             }
 
+            // If encryption policy is set on options, try to decrypt the entity.
+            EntityProperty propertyDetailsProperty;
+            EntityProperty keyProperty;
+
+            if (options.EncryptionPolicy != null)
+            {
+                if (properties.TryGetValue(Constants.EncryptionConstants.TableEncryptionPropertyDetails, out propertyDetailsProperty)
+                    && properties.TryGetValue(Constants.EncryptionConstants.TableEncryptionKeyDetails, out keyProperty))
+                {
+                    // Decrypt the metadata property value to get the names of encrypted properties.
+                    EncryptionData encryptionData = null;
+                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData);
+
+                    byte[] binaryVal = propertyDetailsProperty.BinaryValue;
+                    HashSet<string> encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+
+                    properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData);
+                }
+                else
+                {
+                    if (options.RequireEncryption.HasValue && options.RequireEncryption.Value)
+                    {
+                        throw new StorageException(SR.EncryptionDataNotPresentError, null) { IsRetryable = false };
+                    }
+                }
+            }
+
             return resolver(pk, rk, ts, properties, entry.ETag);
         }
 
-        private static T ReadAndResolveWithEdmTypeResolver<T>(Dictionary<string, string> entityAttributes, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, Func<string, string, string, string, EdmType> propertyResolver, string etag, Type type, OperationContext ctx, bool disablePropertyResolverCache)
+        private static T ReadAndResolveWithEdmTypeResolver<T>(Dictionary<string, string> entityAttributes, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, Func<string, string, string, string, EdmType> propertyResolver, string etag, Type type, OperationContext ctx, bool disablePropertyResolverCache, TableRequestOptions options)
         {
             string pk = null;
             string rk = null;
+            byte[] cek = null;
+            EncryptionData encryptionData = null;
             DateTimeOffset ts = new DateTimeOffset();
             Dictionary<string, EntityProperty> properties = new Dictionary<string, EntityProperty>();
             Dictionary<string, EdmType> propertyResolverDictionary = null;
+            HashSet<string> encryptedPropertyDetailsSet = null;
 
             if (type != null)
             {
@@ -519,6 +551,36 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 #endif
             }
 
+            // Decrypt the metadata property value to get the names of encrypted properties so that they can be parsed correctly below.
+            if (options.EncryptionPolicy != null)
+            {
+                string metadataValue = null;
+                string keyPropertyValue = null;
+
+                if (entityAttributes.TryGetValue(Constants.EncryptionConstants.TableEncryptionPropertyDetails, out metadataValue)
+                && entityAttributes.TryGetValue(Constants.EncryptionConstants.TableEncryptionKeyDetails, out keyPropertyValue))
+                {
+                    EntityProperty propertyDetailsProperty = EntityProperty.CreateEntityPropertyFromObject(metadataValue, EdmType.Binary);
+                    EntityProperty keyProperty = EntityProperty.CreateEntityPropertyFromObject(keyPropertyValue, EdmType.String);
+
+                    entityAttributes.TryGetValue(TableConstants.PartitionKey, out pk);
+                    entityAttributes.TryGetValue(TableConstants.RowKey, out rk);
+                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData);
+
+                    properties.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails, propertyDetailsProperty);
+
+                    byte[] binaryVal = propertyDetailsProperty.BinaryValue;
+                    encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+                }
+                else
+                {
+                    if (options.RequireEncryption.HasValue && options.RequireEncryption.Value)
+                    {
+                        throw new StorageException(SR.EncryptionDataNotPresentError, null) { IsRetryable = false };
+                    }
+                }
+            }
+            
             foreach (KeyValuePair<string, string> prop in entityAttributes)
             {
                 if (prop.Key == TableConstants.PartitionKey)
@@ -537,6 +599,24 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         etag = GetETagFromTimestamp(prop.Value);
                     }
                 }
+                else if (prop.Key == Constants.EncryptionConstants.TableEncryptionKeyDetails)
+                {
+                    // This and the following check are required because in JSON no-metadata, the type information for the properties are not returned and users are 
+                    // not expected to provide a type for them. So based on how the user defined property resolvers treat unknown properties, we might get unexpected results.
+                    properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, EdmType.String));
+                }
+                else if (prop.Key == Constants.EncryptionConstants.TableEncryptionPropertyDetails)
+                {
+                    if (!properties.ContainsKey(Constants.EncryptionConstants.TableEncryptionPropertyDetails))
+                    {
+                        // If encryption policy is not set, then add the value as-is to the dictionary.
+                        properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, EdmType.Binary));
+                    }
+                    else
+                    {
+                        // Do nothing. Already handled above. 
+                    }
+                }
                 else
                 {
                     if (propertyResolver != null)
@@ -548,7 +628,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                             Logger.LogVerbose(ctx, SR.AttemptedEdmTypeForTheProperty, prop.Key, edmType);
                             try
                             {
-                                properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, edmType));
+                                CreateEntityPropertyFromObject(properties, encryptedPropertyDetailsSet, prop, edmType);
                             }
                             catch (FormatException ex)
                             {
@@ -572,18 +652,37 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         {
                             propertyResolverDictionary.TryGetValue(prop.Key, out edmType);
                             Logger.LogVerbose(ctx, SR.AttemptedEdmTypeForTheProperty, prop.Key, edmType);
-                            properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, edmType));
+                            CreateEntityPropertyFromObject(properties, encryptedPropertyDetailsSet, prop, edmType);
                         }
                     }
                     else
                     {
                         Logger.LogVerbose(ctx, SR.NoPropertyResolverAvailable);
-                        properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, typeof(string)));
+                        CreateEntityPropertyFromObject(properties, encryptedPropertyDetailsSet, prop, EdmType.String);
                     }
                 }
             }
 
+            // If encryption policy is set on options, try to decrypt the entity.
+            if (options.EncryptionPolicy != null && encryptionData != null)
+            {
+                properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData);
+            }
+
             return resolver(pk, rk, ts, properties, etag);
+        }
+
+        private static void CreateEntityPropertyFromObject(Dictionary<string, EntityProperty> properties, HashSet<string> encryptedPropertyDetailsSet, KeyValuePair<string, string> prop, EdmType edmType)
+        {
+            // Handle the case where the property is encrypted.
+            if (encryptedPropertyDetailsSet != null && encryptedPropertyDetailsSet.Contains(prop.Key))
+            {
+                properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, EdmType.Binary));
+            }
+            else
+            {
+                properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value, edmType));
+            }
         }
 
         // returns etag

@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-#if !ASPNET_K
+#if !(ASPNET_K || PORTABLE)
     using Windows.Storage.Streams;
 #endif
 
@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        internal BlobReadStream(ICloudBlob blob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        internal BlobReadStream(CloudBlob blob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
             : base(blob, accessCondition, options, operationContext)
         {
         }
