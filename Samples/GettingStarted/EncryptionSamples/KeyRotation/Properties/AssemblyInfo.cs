@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("BlobGettingStarted")]
+[assembly: AssemblyTitle("KeyRotation")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("BlobGettingStarted")]
+[assembly: AssemblyProduct("KeyRotation")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("66d06292-516c-41b4-9041-aa94b8115119")]
+[assembly: Guid("6952a40f-f8a9-4876-a9e2-37818bed06ce")]
 
 // Version information for an assembly consists of the following four values:
 //
