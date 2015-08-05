@@ -120,3 +120,6 @@ TestResults/
 
 #VS14 sln.ide files
 *.sln.ide/
+
+# FaultInjection dependencies
+Test/FaultInjection/Dependencies/**/*.dll
