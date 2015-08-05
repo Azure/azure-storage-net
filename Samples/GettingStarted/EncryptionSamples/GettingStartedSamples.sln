@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KVGettingStarted", "KVGetti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableGettingStartedUsingAttributes", "TableGettingStartedUsingAttributes\TableGettingStartedUsingAttributes.csproj", "{804DF8D6-CCCC-4408-8B2E-2FF09CC3B266}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyRotation", "KeyRotation\KeyRotation.csproj", "{C291D50F-A422-478A-90AC-2BA3CF2B7B59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{804DF8D6-CCCC-4408-8B2E-2FF09CC3B266}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{804DF8D6-CCCC-4408-8B2E-2FF09CC3B266}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{804DF8D6-CCCC-4408-8B2E-2FF09CC3B266}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C291D50F-A422-478A-90AC-2BA3CF2B7B59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C291D50F-A422-478A-90AC-2BA3CF2B7B59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C291D50F-A422-478A-90AC-2BA3CF2B7B59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C291D50F-A422-478A-90AC-2BA3CF2B7B59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -118,7 +118,7 @@ Tests for the client-side encryption preview support also depend on KeyVault.Ext
 ## Code Samples
 
 > Note:
-> How-Tos focused around accomplishing specific tasks are available on the [http://azure.microsoft.com/en-us/develop/net/](Microsoft Azure .NET Developer Center).
+> How-Tos focused around accomplishing specific tasks are available on the [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/).
 
 ### Creating a Table
 
