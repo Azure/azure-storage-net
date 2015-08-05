@@ -135,8 +135,7 @@ a *client* which allows performing actions on it. The resource is known as an
 *entity*. To do so for Table you also have to authenticate your request:
 
 ```csharp
-var storageAccount = CloudStorageAccount.Parse(
-    CloudConfigurationManager.GetSetting("StorageConnectionString"));
+var storageAccount = CloudStorageAccount.Parse(storageConnectionString);
 var tableClient = storageAccount.CreateCloudTableClient();
 ```
 

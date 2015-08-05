@@ -1,5 +1,6 @@
 Tracking Breaking Changes since 4.0
 
+- All: Removed dependency on Microsoft.WindowsAzure.ConfigurationManager.
 - All: Deprecated the overload for GetSharedAccessSignature that takes a SAS version because the SAS tokens generated using the current version work fine with old libraries.
 - All: Updated the error message for the error that is thrown for having more than 5 shared access policy identifiers to include shares.
 - All: Changed behavior to stop stripping out query parameters passed in with the resource URI. Some query parameters such as comp, restype, snapshot and api-version will still be removed.
