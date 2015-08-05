@@ -1,3 +1,1 @@
-Please download FiddlerCore @ http://www.fiddler2.com/Fiddler/Core/
-
-Please place FiddlerCore4.dll here
+Please download FiddlerCore @ http://www.telerik.com/fiddler/fiddlercore Please place FiddlerCore4.dll here
