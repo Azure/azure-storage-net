@@ -1,3 +1,6 @@
+Changes in 5.0.2 :
+ - Blobs: Fixed a bug in the min AppendTextAsync overload that caused overwrite behavior instead of append behavior. Please upgrade to 5.0.2 as soon as possible to avoid this bug.
+
 Changes in 5.0.0 :
 
  - All: Support for 2015-02-21 REST version. Please see our REST API documentation and blogs for information about the related added features.
@@ -5,9 +8,9 @@ Changes in 5.0.0 :
  - All: Deprecated the overload for GetSharedAccessSignature that takes a SAS version because the SAS tokens generated using the current version work fine with old libraries.
  - All: Updated the error message for the error that is thrown for having more than 5 shared access policy identifiers to include shares.
  - All: Made SyncMemoryStream, a MemoryStream implementation that runs synchronously even when asynchronous overloads are called public.
+ - All: Removed dependency on Microsoft.WindowsAzure.ConfigurationManager.
  - All: Updated OData dependencies to v5.6.4 and Newtonsoft.Json dependency to 6.0.8. Removed Microsoft.WindowsAzure.ConfigurationManager dependency.
  - All: Changed behavior to stop stripping out query parameters passed in with the resource URI. Some query parameters such as comp, restype, snapshot and api-version will still be removed.
- - All: Removed dependency on Microsoft.WindowsAzure.ConfigurationManager.
  - Blobs: MultiBufferMemoryStream objects passed as argument to upload methods are not disposed by the client library.
  - Blobs: Added CloudAppendBlob class. For more information on this, please refer to the REST API link.
  - Blobs: Deprecated StartCopyFromBlob() using the Obsolete attribute. Use StartCopy() instead.

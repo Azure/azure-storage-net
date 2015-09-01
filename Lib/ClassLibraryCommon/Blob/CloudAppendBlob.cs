@@ -1941,7 +1941,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public Task AppendTextAsync(string content, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadText, this.EndUploadText, content, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginAppendText, this.EndAppendText, content, cancellationToken);
         }
 
         /// <summary>
