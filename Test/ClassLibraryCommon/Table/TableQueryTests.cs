@@ -775,6 +775,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     complexEntity.Bool = m % 2 == 0 ? true : false;
                     complexEntity.BoolPrimitive = m % 2 == 0 ? true : false;
                     complexEntity.Double = m + ((double)m / 100);
+                    complexEntity.DoubleInteger = m;
                     complexEntity.DoublePrimitive = m + ((double)m / 100);
                     complexEntity.Int32 = m;
                     complexEntity.IntegerPrimitive = m;
@@ -817,6 +818,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 ExecuteQueryAndAssertResults(table,
                         TableQuery.GenerateFilterConditionForDouble("Double", QueryComparisons.GreaterThanOrEqual,
                                 middleRef["Double"].DoubleValue.Value), 50);
+
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDouble("Double", QueryComparisons.GreaterThanOrEqual,
+                                middleRef["DoubleInteger"].DoubleValue.Value), 50);
 
                 ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForDouble("DoublePrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef["DoublePrimitive"].DoubleValue.Value), 50);
