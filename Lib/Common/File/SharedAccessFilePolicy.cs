@@ -59,12 +59,17 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns>The shared access permissions, in string format.</returns>
         public static string PermissionsToString(SharedAccessFilePermissions permissions) 
         {
-            // The service supports a fixed order => rwdl
+            // The service supports a fixed order => rcwdl
             StringBuilder builder = new StringBuilder();
 
             if ((permissions & SharedAccessFilePermissions.Read) == SharedAccessFilePermissions.Read)
             {
                 builder.Append("r");
+            }
+
+            if ((permissions & SharedAccessFilePermissions.Create) == SharedAccessFilePermissions.Create)
+            {
+                builder.Append("c");
             }
 
             if ((permissions & SharedAccessFilePermissions.Write) == SharedAccessFilePermissions.Write)
@@ -114,6 +119,10 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                     case 'l':
                         permissions |= SharedAccessFilePermissions.List;
+                        break;
+
+                    case 'c':
+                        permissions |= SharedAccessFilePermissions.Create;
                         break;
 
                     default:

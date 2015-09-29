@@ -100,9 +100,12 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
             else if (operation.OperationType == TableOperationType.Insert && (!operation.EchoContent))
             {
-                result.Etag = HttpResponseParsers.GetETag(resp);
-                operation.Entity.ETag = result.Etag;
-                operation.Entity.Timestamp = ParseETagForTimestamp(result.Etag);
+                if (HttpResponseParsers.GetETag(resp) != null)
+                {
+                    result.Etag = HttpResponseParsers.GetETag(resp);
+                    operation.Entity.ETag = result.Etag;
+                    operation.Entity.Timestamp = ParseETagForTimestamp(result.Etag);
+                }
             }
             else
             {
@@ -235,7 +238,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                             }
                         }
 
-                        throw new StorageException(cmd.CurrentResult, SR.UnexpectedResponseCodeForOperation + indexString, null) { IsRetryable = true };
+                        throw new StorageException(cmd.CurrentResult, string.Format(CultureInfo.CurrentCulture, SR.BatchErrorInOperation, indexString), null) { IsRetryable = true };
                     }
 
                     // Update etag

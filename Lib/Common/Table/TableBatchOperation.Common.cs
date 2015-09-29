@@ -71,7 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="entity">The entity to be inserted into the table.</param>
         public void Insert(ITableEntity entity)
         {
-            this.Insert(entity, true);
+            this.Insert(entity, false);
         }
 
         /// <summary>

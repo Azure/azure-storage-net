@@ -180,7 +180,7 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
                 bool parsed = DateTimeOffset.TryParseExact(
                     temp,
                     format,
-                    null /* provider */,
+                    CultureInfo.InvariantCulture,
                     DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
                     out tempDateTime);
                 if (parsed)

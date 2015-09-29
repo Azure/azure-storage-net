@@ -120,9 +120,9 @@
       <HintPath>..\..\packages\Microsoft.Bcl.1.1.9\lib\net40\System.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Spatial, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Spatial, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\System.Spatial.5.6.2\lib\net40\System.Spatial.dll</HintPath>
+      <HintPath>..\..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="System.Threading.Tasks, Version=2.6.9.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -178,64 +178,7 @@
     <Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
       <Link>Analytics\Analytics</Link>
     </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobAnalyticsUnitTests.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobCancellationUnitTests.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobEncryptionTests.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobManglerUnitTests.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobReadStreamTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobStreamTests.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobTestBase.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobUploadDownloadTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\BlobWriteStreamTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\CloudBlobClientTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\CloudBlobContainerTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\CloudBlobDirectoryTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\CloudBlobTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\CloudBlockBlobTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\CloudPageBlobTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\CopyBlobTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\EscapingTests.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\LeaseTests.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\MD5FlagsTest.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\SASTests.cs">
+    <Compile Include="..\ClassLibraryCommon\Blob\*.cs">
       <Link>Blob\Blob</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Core\*.cs">

@@ -962,7 +962,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 queryDelegate,
                 "point query",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound,
+                false, 
+                expectSuccess);
         }
 
 
@@ -1008,7 +1010,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 updateDelegate,
                 "update merge",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -1053,7 +1055,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 updateDelegate,
                 "update replace",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -1097,7 +1099,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 addDelegate,
                 "add",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.Created : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.Created : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -1143,7 +1145,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 deleteDelegate,
                 "delete",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -1189,7 +1191,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 upsertDelegate,
                 "upsert merge",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -1235,7 +1237,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 upsertDelegate,
                 "upsert replace",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -1296,6 +1298,44 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
             HttpStatusCode expectedStatusCode,
             bool isRangeQuery)
         {
+            TestOperationWithRange(
+            tableName,
+            startPk,
+            startRk,
+            endPk,
+            endRk,
+            runOperationDelegate,
+            opName,
+            expectSuccess,
+            expectedStatusCode,
+            isRangeQuery /* isRangeQuery */,
+            false /* isPointQuery */);
+        }
+
+        /// <summary>
+        /// Test a table operation on entities inside and outside the given range.
+        /// </summary>
+        /// <param name="tableName">The name of the table to test.</param>
+        /// <param name="startPk">The start partition key range.</param>
+        /// <param name="startRk">The start row key range.</param>
+        /// <param name="endPk">The end partition key range.</param>
+        /// <param name="endRk">The end row key range.</param>
+        /// <param name="runOperationDelegate">A delegate with the table operation to test.</param>
+        /// <param name="opName">The name of the operation being tested.</param>
+        /// <param name="expectSuccess">Whether the operation should succeed on entities within the range.</param>
+        private void TestOperationWithRange(
+            string tableName,
+            string startPk,
+            string startRk,
+            string endPk,
+            string endRk,
+            Action<BaseEntity> runOperationDelegate,
+            string opName,
+            bool expectSuccess,
+            HttpStatusCode expectedStatusCode,
+            bool isRangeQuery,
+            bool isPointQuery)
+        {
             CloudTableClient referenceClient = GenerateCloudTableClient();
             TableServiceContext referenceContext = referenceClient.GetTableServiceContext();
 
@@ -1333,7 +1373,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 TestHelper.ExpectedException(
                     () => runOperationDelegate(tableEntity),
                     string.Format("{0} without appropriate permission.", opName),
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
             }
 
             if (startPk != null)
@@ -1347,7 +1387,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 TestHelper.ExpectedException(
                     () => runOperationDelegate(tableEntity),
                     string.Format("{0} before allowed partition key range", opName),
-                    HttpStatusCode.NotFound);
+                    isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden);
                 tableEntity.PartitionKey = partitionKey;
             }
 
@@ -1362,7 +1402,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 TestHelper.ExpectedException(
                     () => runOperationDelegate(tableEntity),
                     string.Format("{0} after allowed partition key range", opName),
-                    HttpStatusCode.NotFound);
+                    isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden);
 
                 tableEntity.PartitionKey = partitionKey;
             }
@@ -1381,7 +1421,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                     TestHelper.ExpectedException(
                         () => runOperationDelegate(tableEntity),
                         string.Format("{0} before allowed row key range", opName),
-                        HttpStatusCode.NotFound);
+                        isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden);
 
                     tableEntity.RowKey = rowKey;
                 }
@@ -1401,7 +1441,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                     TestHelper.ExpectedException(
                         () => runOperationDelegate(tableEntity),
                         string.Format("{0} after allowed row key range", opName),
-                        HttpStatusCode.NotFound);
+                        isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden);
 
                     tableEntity.RowKey = rowKey;
                 }
@@ -1450,22 +1490,22 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 
                 // Test invalid client operations
                 // BUGBUG: ListTables hides the exception. We should fix this
-                // TestHelpers.ExpectedException(() => sasClient.ListTablesSegmented(), "List tables with SAS", HttpStatusCode.NotFound);
-                TestHelper.ExpectedException(() => sasClient.GetServiceProperties(), "Get service properties with SAS", HttpStatusCode.NotFound);
-                TestHelper.ExpectedException(() => sasClient.SetServiceProperties(properties), "Set service properties with SAS", HttpStatusCode.NotFound);
+                // TestHelpers.ExpectedException(() => sasClient.ListTablesSegmented(), "List tables with SAS", HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException(() => sasClient.GetServiceProperties(), "Get service properties with SAS", HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException(() => sasClient.SetServiceProperties(properties), "Set service properties with SAS", HttpStatusCode.Forbidden);
 
                 CloudTable sasTable = sasClient.GetTableReference(table.Name);
 
                 // Verify that creation fails with SAS
-                TestHelper.ExpectedException(() => sasTable.Create(), "Create a table with SAS", HttpStatusCode.NotFound);
+                TestHelper.ExpectedException(() => sasTable.Create(), "Create a table with SAS", HttpStatusCode.Forbidden);
 
                 // Create the table.
                 table.Create();
 
                 // Test invalid table operations
-                TestHelper.ExpectedException(() => sasTable.Delete(), "Delete a table with SAS", HttpStatusCode.NotFound);
-                TestHelper.ExpectedException(() => sasTable.GetPermissions(), "Get ACL with SAS", HttpStatusCode.NotFound);
-                TestHelper.ExpectedException(() => sasTable.SetPermissions(new TablePermissions()), "Set ACL with SAS", HttpStatusCode.NotFound);
+                TestHelper.ExpectedException(() => sasTable.Delete(), "Delete a table with SAS", HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException(() => sasTable.GetPermissions(), "Get ACL with SAS", HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException(() => sasTable.SetPermissions(new TablePermissions()), "Set ACL with SAS", HttpStatusCode.Forbidden);
             }
             finally
             {

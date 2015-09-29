@@ -76,7 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, client);
             operationContext = operationContext ?? new OperationContext();
 
-            RESTCommand<TableQuerySegment> cmdToExecute = QueryImpl(this, continuationToken, client, tableName, modifiedOptions);
+            RESTCommand<TableQuerySegment> cmdToExecute = QueryImpl(this, continuationToken, client, tableName, EntityUtilities.ResolveEntityByType<DynamicTableEntity>, modifiedOptions);
 
 #if ASPNET_K || PORTABLE
             return Task.Run(async () => await Executor.ExecuteAsync(
@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
         }
 
-        private static RESTCommand<TableQuerySegment> QueryImpl(TableQuery query, TableContinuationToken token, CloudTableClient client, string tableName, TableRequestOptions requestOptions)
+        private static RESTCommand<TableQuerySegment> QueryImpl(TableQuery query, TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<DynamicTableEntity> resolver, TableRequestOptions requestOptions)
         {
             UriQueryBuilder builder = query.GenerateQueryBuilder();
 
@@ -111,17 +111,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.Handler = client.AuthenticationHandler;
             queryCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             queryCmd.Builder = builder;
-            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx);
+            queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                TableQuerySegment resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcess(cmd.ResponseStream, resp, ctx);
+                ResultSegment<DynamicTableEntity> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<DynamicTableEntity>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;
                 }
 
-                return resSeg;
+                return new TableQuerySegment(resSeg);
             };
 
             return queryCmd;
@@ -171,12 +172,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.RetrieveResponseStream = true;
             queryCmd.Handler = client.AuthenticationHandler;
             queryCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             queryCmd.Builder = builder;
-            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx);
+            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, ctx);
+                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;

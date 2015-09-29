@@ -224,10 +224,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertSync()
         {
-            DoTableBatchInsertSync(TablePayloadFormat.Json);
-            DoTableBatchInsertSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchInsertSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchInsertSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchInsertSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchInsertSync(TablePayloadFormat format)
@@ -273,10 +273,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchBasicOperationsCheck()
         {
-            DoTableBatchBasicOperationsCheck(TablePayloadFormat.Json);
-            DoTableBatchBasicOperationsCheck(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchBasicOperationsCheck(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchBasicOperationsCheck(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchBasicOperationsCheck(payloadFormat);
+            }
         }
 
         private void DoTableBatchBasicOperationsCheck(TablePayloadFormat format)
@@ -326,10 +326,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertFailSync()
         {
-            DoTableBatchInsertFailSync(TablePayloadFormat.Json);
-            DoTableBatchInsertFailSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchInsertFailSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchInsertFailSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchInsertFailSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchInsertFailSync(TablePayloadFormat format)
@@ -540,10 +540,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertOrMergeSync()
         {
-            DoTableBatchInsertOrMergeSync(TablePayloadFormat.Json);
-            DoTableBatchInsertOrMergeSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchInsertOrMergeSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchInsertOrMergeSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchInsertOrMergeSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchInsertOrMergeSync(TablePayloadFormat format)
@@ -664,10 +664,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertOrReplaceSync()
         {
-            DoTableBatchInsertOrReplaceSync(TablePayloadFormat.Json);
-            DoTableBatchInsertOrReplaceSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchInsertOrReplaceSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchInsertOrReplaceSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchInsertOrReplaceSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchInsertOrReplaceSync(TablePayloadFormat format)
@@ -781,10 +781,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchDeleteSync()
         {
-            DoTableBatchDeleteSync(TablePayloadFormat.Json);
-            DoTableBatchDeleteSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchDeleteSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchDeleteSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchDeleteSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchDeleteSync(TablePayloadFormat format)
@@ -828,10 +828,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchDeleteFailSync()
         {
-            DoTableBatchDeleteFailSync(TablePayloadFormat.Json);
-            DoTableBatchDeleteFailSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchDeleteFailSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchDeleteFailSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchDeleteFailSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchDeleteFailSync(TablePayloadFormat format)
@@ -998,10 +998,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchMergeSync()
         {
-            DoTableBatchMergeSync(TablePayloadFormat.Json);
-            DoTableBatchMergeSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchMergeSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchMergeSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchMergeSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchMergeSync(TablePayloadFormat format)
@@ -1039,10 +1039,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchMergeFailSync()
         {
-            DoTableBatchMergeFailSync(TablePayloadFormat.Json);
-            DoTableBatchMergeFailSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchMergeFailSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchMergeFailSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchMergeFailSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchMergeFailSync(TablePayloadFormat format)
@@ -1258,10 +1258,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchReplaceSync()
         {
-            DoTableBatchReplaceSync(TablePayloadFormat.Json);
-            DoTableBatchReplaceSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchReplaceSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchReplaceSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchReplaceSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchReplaceSync(TablePayloadFormat format)
@@ -1298,10 +1298,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchReplaceFailSync()
         {
-            DoTableBatchReplaceFailSync(TablePayloadFormat.Json);
-            DoTableBatchReplaceFailSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchReplaceFailSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchReplaceFailSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchReplaceFailSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchReplaceFailSync(TablePayloadFormat format)
@@ -1512,10 +1512,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchAllSupportedOperationsSync()
         {
-            DoTableBatchAllSupportedOperationsSync(TablePayloadFormat.Json);
-            DoTableBatchAllSupportedOperationsSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchAllSupportedOperationsSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchAllSupportedOperationsSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchAllSupportedOperationsSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchAllSupportedOperationsSync(TablePayloadFormat format)
@@ -1526,7 +1526,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string pk = Guid.NewGuid().ToString();
 
             // insert
-            batch.Insert(GenerateRandomEntity(pk));
+            batch.Insert(GenerateRandomEntity(pk), true);
 
             // delete
             {
@@ -1597,7 +1597,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string pk = Guid.NewGuid().ToString();
 
             // insert
-            batch.Insert(GenerateRandomEntity(pk));
+            batch.Insert(GenerateRandomEntity(pk), true);
 
             // delete
             {
@@ -1678,10 +1678,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchRetrieveSync()
         {
-            DoTableBatchRetrieveSync(TablePayloadFormat.Json);
-            DoTableBatchRetrieveSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchRetrieveSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchRetrieveSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchRetrieveSync(payloadFormat);
+            }
         }
 
         private void DoTableBatchRetrieveSync(TablePayloadFormat format)
@@ -1759,7 +1759,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.Json);
             DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.JsonNoMetadata);
             DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.JsonFullMetadata);
+            #pragma warning disable 0618
             DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.AtomPub);
+            #pragma warning restore 0618
         }
 
         private void DoTableBatchRetrieveWithResolverSync(TablePayloadFormat format)
@@ -1804,10 +1806,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchRetrieveWithITableEntitySync()
         {
-            DoTableBatchRetrieveWithITableEntitySync(TablePayloadFormat.Json);
-            DoTableBatchRetrieveWithITableEntitySync(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchRetrieveWithITableEntitySync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchRetrieveWithITableEntitySync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchRetrieveWithITableEntitySync(payloadFormat);
+            }
         }
 
         private void DoTableBatchRetrieveWithITableEntitySync(TablePayloadFormat format)
@@ -2067,10 +2069,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchOperationsWithEmptyKeys()
         {
-            DoTableBatchOperationsWithEmptyKeys(TablePayloadFormat.Json);
-            DoTableBatchOperationsWithEmptyKeys(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchOperationsWithEmptyKeys(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchOperationsWithEmptyKeys(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchOperationsWithEmptyKeys(payloadFormat);
+            }
         }
 
         private void DoTableBatchOperationsWithEmptyKeys(TablePayloadFormat format)
@@ -2175,10 +2177,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsert1()
         {
-            InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.Json);
-            InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.JsonNoMetadata);
-            InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.JsonFullMetadata);
-            InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertAndDeleteBatchWithNEntities(1, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -2189,10 +2191,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsert10()
         {
-            InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.Json);
-            InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.JsonNoMetadata);
-            InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.JsonFullMetadata);
-            InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertAndDeleteBatchWithNEntities(10, payloadFormat);
+            }
         }
 
 
@@ -2204,10 +2206,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsert99()
         {
-            InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.Json);
-            InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.JsonNoMetadata);
-            InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.JsonFullMetadata);
-            InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertAndDeleteBatchWithNEntities(99, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -2218,10 +2220,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsert100()
         {
-            InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.Json);
-            InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.JsonNoMetadata);
-            InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.JsonFullMetadata);
-            InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertAndDeleteBatchWithNEntities(100, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -2232,10 +2234,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertPOCO100()
         {
-            POCOInsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.Json);
-            POCOInsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.JsonNoMetadata);
-            POCOInsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.JsonFullMetadata);
-            POCOInsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                POCOInsertAndDeleteBatchWithNEntities(100, payloadFormat);
+            }
         }
 
         private void InsertAndDeleteBatchWithNEntities(int n, TablePayloadFormat format)
@@ -2274,7 +2276,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string pk = Guid.NewGuid().ToString();
             for (int m = 0; m < n; m++)
             {
-                batch.Insert(new BaseEntity(pk, Guid.NewGuid().ToString()));
+                batch.Insert(new BaseEntity(pk, Guid.NewGuid().ToString()), true);
             }
 
             IList<TableResult> results = currentTable.ExecuteBatch(batch);
@@ -2305,10 +2307,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertOrMerge1()
         {
-            InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.Json);
-            InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.JsonNoMetadata);
-            InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.JsonFullMetadata);
-            InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertOrMergeBatchWithNEntities(1, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -2319,10 +2321,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertOrMerge10()
         {
-            InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.Json);
-            InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.JsonNoMetadata);
-            InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.JsonFullMetadata);
-            InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertOrMergeBatchWithNEntities(10, payloadFormat);
+            }
         }
 
 
@@ -2334,10 +2336,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertOrMerge99()
         {
-            InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.Json);
-            InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.JsonNoMetadata);
-            InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.JsonFullMetadata);
-            InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertOrMergeBatchWithNEntities(99, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -2348,10 +2350,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchInsertOrMerge100()
         {
-            InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.Json);
-            InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.JsonNoMetadata);
-            InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.JsonFullMetadata);
-            InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                InsertOrMergeBatchWithNEntities(100, payloadFormat);
+            }
         }
 
         private void InsertOrMergeBatchWithNEntities(int n, TablePayloadFormat format)
@@ -2473,10 +2475,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchWithMultipleOperationsOnSameEntityShouldFail()
         {
-            DoTableBatchWithMultipleOperationsOnSameEntityShouldFail(TablePayloadFormat.Json);
-            DoTableBatchWithMultipleOperationsOnSameEntityShouldFail(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchWithMultipleOperationsOnSameEntityShouldFail(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchWithMultipleOperationsOnSameEntityShouldFail(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchWithMultipleOperationsOnSameEntityShouldFail(payloadFormat);
+            }
         }
 
         private void DoTableBatchWithMultipleOperationsOnSameEntityShouldFail(TablePayloadFormat format)
@@ -2519,10 +2521,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchOver100EntitiesShouldThrow()
         {
-            DoTableBatchOver100EntitiesShouldThrow(TablePayloadFormat.Json);
-            DoTableBatchOver100EntitiesShouldThrow(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchOver100EntitiesShouldThrow(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchOver100EntitiesShouldThrow(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchOver100EntitiesShouldThrow(payloadFormat);
+            }
         }
 
         private void DoTableBatchOver100EntitiesShouldThrow(TablePayloadFormat format)
@@ -2555,10 +2557,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchEntityOver1MBShouldThrow()
         {
-            DoTableBatchEntityOver1MBShouldThrow(TablePayloadFormat.Json);
-            DoTableBatchEntityOver1MBShouldThrow(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchEntityOver1MBShouldThrow(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchEntityOver1MBShouldThrow(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchEntityOver1MBShouldThrow(payloadFormat);
+            }
         }
 
         private void DoTableBatchEntityOver1MBShouldThrow(TablePayloadFormat format)
@@ -2592,10 +2594,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchOver4MBShouldThrow()
         {
-            DoTableBatchOver4MBShouldThrow(TablePayloadFormat.Json);
-            DoTableBatchOver4MBShouldThrow(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchOver4MBShouldThrow(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchOver4MBShouldThrow(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchOver4MBShouldThrow(payloadFormat);
+            }
         }
 
         private void DoTableBatchOver4MBShouldThrow(TablePayloadFormat format)
@@ -2716,10 +2718,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchEmptyBatchShouldThrow()
         {
-            DoTableBatchEmptyBatchShouldThrow(TablePayloadFormat.Json);
-            DoTableBatchEmptyBatchShouldThrow(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchEmptyBatchShouldThrow(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchEmptyBatchShouldThrow(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchEmptyBatchShouldThrow(payloadFormat);
+            }
         }
 
         private void DoTableBatchEmptyBatchShouldThrow(TablePayloadFormat format)
@@ -2783,10 +2785,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchWithPropertyOver255CharsShouldThrow()
         {
-            DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.Json);
-            DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchWithPropertyOver255CharsShouldThrow(payloadFormat);
+            }
         }
 
         private void DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat format)
@@ -2823,10 +2825,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.Cloud)]
         public void TableBatchOperationWithRetryHasCorrectNumberOfResults()
         {
-            DoTableBatchOperationWithRetryHasCorrectNumberOfResults(TablePayloadFormat.Json);
-            DoTableBatchOperationWithRetryHasCorrectNumberOfResults(TablePayloadFormat.JsonNoMetadata);
-            DoTableBatchOperationWithRetryHasCorrectNumberOfResults(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchOperationWithRetryHasCorrectNumberOfResults(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchOperationWithRetryHasCorrectNumberOfResults(payloadFormat);
+            }
         }
 
         private void DoTableBatchOperationWithRetryHasCorrectNumberOfResults(TablePayloadFormat format)
@@ -2943,7 +2945,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static void AddInsertToBatch(string pk, TableBatchOperation batch)
         {
-            batch.Insert(GenerateRandomEntity(pk));
+            batch.Insert(GenerateRandomEntity(pk), true);
         }
 
         private static DynamicTableEntity GenerateRandomEntity(string pk)

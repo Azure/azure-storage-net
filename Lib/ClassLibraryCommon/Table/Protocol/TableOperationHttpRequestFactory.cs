@@ -42,6 +42,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         internal static HttpWebRequest BuildRequestForTableQuery(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext ctx, TablePayloadFormat payloadFormat)
         {
             HttpWebRequest msg = BuildRequestCore(uri, builder, "GET", timeout, useVersionHeader, ctx);
+
+            // Set Accept and Content-Type based on the payload format.
             SetAcceptHeaderForHttpWebRequest(msg, payloadFormat);
             Logger.LogInformational(ctx, SR.PayloadFormat, payloadFormat);
             return msg;
@@ -81,7 +83,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
             }
 
-            // prefer header
+            // Prefer header
             if (operation.OperationType == TableOperationType.Insert)
             {
                 msg.Headers.Add("Prefer", operation.EchoContent ? "return-content" : "return-no-content");
@@ -101,7 +103,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 };
 
                 HttpWebRequestAdapterMessage adapterMsg = new HttpWebRequestAdapterMessage(msg, bufferManager);
-
                 if (operation.HttpMethod != "HEAD" && operation.HttpMethod != "GET")
                 {
                     SetContentTypeForAdapterMessage(adapterMsg, payloadFormat);
@@ -132,8 +133,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             HttpWebRequestAdapterMessage adapterMsg = new HttpWebRequestAdapterMessage(msg, bufferManager);
 
+            // Start Batch
             ODataMessageWriter odataWriter = new ODataMessageWriter(adapterMsg, writerSettings);
-
             ODataBatchWriter batchWriter = odataWriter.CreateODataBatchWriter();
             batchWriter.WriteStartBatch();
 
@@ -252,7 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         #endregion
 
         #region Set Headers
-
+        #pragma warning disable 0618
         private static void SetAcceptHeaderForHttpWebRequest(HttpWebRequest msg, TablePayloadFormat payloadFormat)
         {
             if (payloadFormat == TablePayloadFormat.AtomPub)
@@ -320,6 +321,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
             }
         }
+        #pragma warning restore 0618
         #endregion
     }
 }

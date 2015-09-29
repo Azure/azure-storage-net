@@ -307,6 +307,9 @@
     <Compile Include="..\Common\IContinuationToken.cs">
       <Link>IContinuationToken.cs</Link>
     </Compile>
+    <Compile Include="..\Common\IPAddressOrRange.cs">
+      <Link>IPAddressOrRange.cs</Link>
+    </Compile>
     <Compile Include="..\Common\IRequestOptions.cs">
       <Link>IRequestOptions.cs</Link>
     </Compile>
@@ -417,6 +420,21 @@
     </Compile>
     <Compile Include="..\Common\RetryPolicies\RetryInfo.cs">
       <Link>RetryPolicies\RetryInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\SharedAccessAccountPermissions.cs">
+      <Link>SharedAccessAccountPermissions.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\SharedAccessAccountPolicy.cs">
+      <Link>SharedAccessAccountPolicy.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\SharedAccessAccountResourceTypes.cs">
+      <Link>SharedAccessAccountResourceTypes.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\SharedAccessAccountServices.cs">
+      <Link>SharedAccessAccountServices.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\SharedAccessProtocol.cs">
+      <Link>SharedAccessProtocol.cs</Link>
     </Compile>
     <Compile Include="..\Common\Shared\Protocol\AccessPolicyResponseBase.cs">
       <Link>Shared\Protocol\AccessPolicyResponseBase.cs</Link>
@@ -547,6 +565,12 @@
     <Compile Include="..\Common\Table\TableContinuationToken.cs">
       <Link>Table\TableContinuationToken.cs</Link>
     </Compile>
+    <Compile Include="..\Common\Table\TableStorageModel.cs">
+      <Link>Table\TableStorageModel.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\Table\TableStorageEntityContainer.cs">
+      <Link>Table\TableStorageEntityContainer.cs</Link>
+    </Compile>
     <Compile Include="..\Common\Table\TableEntity.cs">
       <Link>Table\TableEntity.cs</Link>
     </Compile>
@@ -604,11 +628,11 @@
     <Compile Include="..\WindowsRuntime\Blob\BlobWriteStreamHelper.cs">
       <Link>Blob\BlobWriteStreamHelper.cs</Link>
     </Compile>
-    <Compile Include="..\WindowsRuntime\Blob\CloudBlob.cs">
-      <Link>Blob\CloudBlob.cs</Link>
-    </Compile>
     <Compile Include="..\WindowsRuntime\Blob\CloudAppendBlob.cs">
       <Link>Blob\CloudAppendBlob.cs</Link>
+    </Compile>
+    <Compile Include="..\WindowsRuntime\Blob\CloudBlob.cs">
+      <Link>Blob\CloudBlob.cs</Link>
     </Compile>
     <Compile Include="..\WindowsRuntime\Blob\CloudBlobClient.cs">
       <Link>Blob\CloudBlobClient.cs</Link>
@@ -762,6 +786,10 @@
     </Reference>
     <Reference Include="Microsoft.Data.OData">
       <HintPath>..\..\packages\Microsoft.Data.OData.5.6.4\lib\portable-net45+wp8+win8+wpa\Microsoft.Data.OData.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.8.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Newtonsoft.Json.6.0.8\lib\portable-net45+wp80+win8+wpa81+aspnetcore50\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Spatial">
       <HintPath>..\..\packages\System.Spatial.5.6.4\lib\portable-net45+wp8+win8+wpa\System.Spatial.dll</HintPath>

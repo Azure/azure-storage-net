@@ -52,7 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 builder.Add("timeout", timeout.Value.ToString(CultureInfo.InvariantCulture));
             }
 
-#if WINDOWS_PHONE
+#if !WINDOWS_DESKTOP
             // Windows Phone does not allow the caller to disable caching, so a random GUID
             // is added to every URI to make it look a different request.
             builder.Add("randomguid", Guid.NewGuid().ToString("N"));

@@ -127,8 +127,22 @@ namespace Microsoft.WindowsAzure.Storage
 
         public static CloudFileClient GenerateCloudFileClient()
         {
-            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint);
-            return new CloudFileClient(baseAddressUri, TestBase.StorageCredentials);
+            CloudFileClient client;
+            if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.FileServiceSecondaryEndpoint))
+            {
+                Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint);
+                client = new CloudFileClient(baseAddressUri, TestBase.StorageCredentials);
+            }
+            else
+            {
+                StorageUri baseAddressUri = new StorageUri(
+                    new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint),
+                    new Uri(TestBase.TargetTenantConfig.FileServiceSecondaryEndpoint));
+                client = new CloudFileClient(baseAddressUri, TestBase.StorageCredentials);
+            }
+
+            client.AuthenticationScheme = DefaultAuthenticationScheme;
+            return client;
         }
 
         public static CloudQueueClient GenerateCloudQueueClient()
@@ -160,7 +174,9 @@ namespace Microsoft.WindowsAzure.Storage
         [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public static void SetPayloadFormatOnDataServiceContext(TableServiceContext ctx, TablePayloadFormat format, CloudTableClient tableClient)
         {
+#pragma warning disable 0618
             if (format == TablePayloadFormat.AtomPub)
+#pragma warning restore 0618
             {
                 ctx.Format.UseAtom();
             }

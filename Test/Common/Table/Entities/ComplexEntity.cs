@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
 {
     public class ComplexEntity : TableEntity 
     {
-        public const int NumberOfNonNullProperties = 26;
+        public const int NumberOfNonNullProperties = 27;
 
         public ComplexEntity()
             : base()
@@ -186,6 +186,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
         {
             get { return doubleOBj; }
             set { doubleOBj = value; }
+        }
+
+        private Double doubleInteger = (Double)1234;
+        public Double DoubleInteger
+        {
+            get { return doubleInteger; }
+            set { doubleInteger = value; }
         }
 
         private Guid? guidNull = null;

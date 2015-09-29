@@ -68,6 +68,7 @@
     <Compile Include="..\Common\TestConfigProcess\*.cs">
       <Link>TestConfigProcess\TestConfigProcess</Link>
     </Compile>
+    <Compile Include="AccountSasTests.cs" />
     <Compile Include="Blob\BlobAnalyticsUnitTests.cs" />
     <Compile Include="Blob\BlobCancellationUnitTests.cs" />
     <Compile Include="Blob\BlobReadStreamTest.cs" />
@@ -77,6 +78,7 @@
     <Compile Include="Blob\BlobWriteStreamTest.cs" />
     <Compile Include="Blob\CloudBlobClientTest.cs" />
     <Compile Include="Blob\CloudBlobContainerTest.cs" />
+    <Compile Include="Blob\CloudAppendBlobTest.cs" />
     <Compile Include="Blob\CloudBlobTest.cs" />
     <Compile Include="Blob\CloudBlockBlobTest.cs" />
     <Compile Include="Blob\CloudBlobDirectoryTest.cs" />
@@ -155,8 +157,8 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <None Include="RT_Test_TemporaryKey.pfx" />
     <None Include="MSSharedLibKey.snk" />
+    <None Include="RT_Test_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj">

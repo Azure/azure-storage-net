@@ -72,7 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         // Delegate that will be executed in the event of an Exception after signing.
         public Action<StorageCommandBase<T>, Exception, OperationContext> RecoveryAction = null;
 
-#if ASPNET_K || PORTABLE
+#if WINDOWS_RT || ASPNET_K || PORTABLE
         public Func<Stream, HttpResponseMessage, string, StorageExtendedErrorInformation> ParseError = null;
 #else
         // Delegate that will be executed in the event of a failure.

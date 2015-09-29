@@ -26,6 +26,7 @@ using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 {
+#pragma warning disable 0618
     /// <summary>
     /// Summary description for TableServiceQueryUnitTests
     /// </summary>
@@ -508,4 +509,5 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 
         #endregion
     }
+#pragma warning restore 0618
 }

@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading;
@@ -116,7 +117,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                             // Throw if users try to encrypt non-string properties.
                             if (kvp.Value.PropertyType != EdmType.String)
                             {
-                                throw new InvalidOperationException(string.Format(SR.UnsupportedPropertyTypeForEncryption, kvp.Value.PropertyType));
+                                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, SR.UnsupportedPropertyTypeForEncryption, kvp.Value.PropertyType));
                             }
 
                             byte[] columnIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(string.Join(partitionKey, rowKey, kvp.Key))));

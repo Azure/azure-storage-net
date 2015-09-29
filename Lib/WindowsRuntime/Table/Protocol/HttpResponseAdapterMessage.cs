@@ -29,11 +29,18 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     {
         private HttpResponseMessage resp = null;
         private Stream str = null;
+        private string responseContentType = null;
 
         public HttpResponseAdapterMessage(HttpResponseMessage resp, Stream str)
+            : this(resp, str, null /* responseContentType */)
+        {
+        }
+
+        public HttpResponseAdapterMessage(HttpResponseMessage resp, Stream str, string responseContentType)
         {
             this.resp = resp;
             this.str = str;
+            this.responseContentType = responseContentType;
         }
 
         public Task<Stream> GetStreamAsync()
@@ -46,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             switch (headerName)
             {
                 case "Content-Type":
-                    return this.resp.Content.Headers.ContentType != null ? this.resp.Content.Headers.ContentType.ToString() : null;
+                    return this.responseContentType != null ? this.responseContentType : (this.resp.Content.Headers.ContentType != null ? this.resp.Content.Headers.ContentType.ToString() : null);
                 case "Content-Range":
                     return this.resp.Content.Headers.ContentRange != null ? this.resp.Content.Headers.ContentRange.ToString() : null;
                 case "Content-MD5":

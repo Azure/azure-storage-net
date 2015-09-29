@@ -68,6 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         static CloudTable currentTable = null;
+        static CloudTableClient tableClient = null;
 
         #endregion
 
@@ -79,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            tableClient = GenerateCloudTableClient();
             currentTable = tableClient.GetTableReference(GenerateRandomTableName());
             currentTable.CreateIfNotExistsAsync().AsTask().Wait();
 
@@ -137,6 +138,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableGenericQueryBasicAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableGenericQueryBasicAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableGenericQueryBasicAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
 
             TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, null);
@@ -156,6 +166,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableGenericQueryWithContinuationAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableGenericQueryWithContinuationAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableGenericQueryWithContinuationAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
 
             OperationContext opContext = new OperationContext();
@@ -296,7 +315,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableGenericQueryOnSupportedTypesAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableGenericQueryOnSupportedTypesAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat format)
+        {
             CloudTableClient client = GenerateCloudTableClient();
+            client.DefaultRequestOptions.PayloadFormat = format;
 
             CloudTable table = client.GetTableReference(GenerateRandomTableName());
             await table.CreateAsync();
@@ -463,8 +491,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableGenericQueryWithInvalidQuery()
+        public async Task TableGenericQueryWithInvalidQueryAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableGenericQueryWithInvalidQueryAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableGenericQueryWithInvalidQueryAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableQuery<ComplexEntity> query = new TableQuery<ComplexEntity>().Where(string.Format("(PartitionKey ) and (RowKey ge '{1}')", "tables_batch_1", "000050"));
 
             OperationContext opContext = new OperationContext();

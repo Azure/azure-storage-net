@@ -50,9 +50,14 @@ namespace Microsoft.WindowsAzure.Storage
                 config.QueueServiceEndpoint = (string)tenantConfigurationElement.Element("QueueServiceEndpoint");
                 config.TableServiceEndpoint = (string)tenantConfigurationElement.Element("TableServiceEndpoint");
                 config.BlobServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("BlobServiceSecondaryEndpoint");
+                config.FileServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("FileServiceSecondaryEndpoint");
                 config.QueueServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("QueueServiceSecondaryEndpoint");
                 config.TableServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("TableServiceSecondaryEndpoint");
                 config.TenantType = (TenantType)Enum.Parse(typeof(TenantType), (string)tenantConfigurationElement.Element("TenantType"), true);
+                config.BlobSecurePortOverride = (string)tenantConfigurationElement.Element("BlobSecurePortOverride");
+                config.FileSecurePortOverride = (string)tenantConfigurationElement.Element("FileSecurePortOverride");
+                config.QueueSecurePortOverride = (string)tenantConfigurationElement.Element("QueueSecurePortOverride");
+                config.TableSecurePortOverride = (string)tenantConfigurationElement.Element("TableSecurePortOverride");
                 tenantConfigurationList.Add(config);
             }
 

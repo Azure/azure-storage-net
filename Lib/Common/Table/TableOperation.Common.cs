@@ -291,8 +291,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates a new table operation that retrieves the contents of
         /// the given entity in a table.
         /// </summary>
-        /// <param name="partitionKey">A string containing the partition key of the entity to be replaced.</param>
-        /// <param name="rowkey">A string containing the row key of the entity to be replaced.</param>
+        /// <param name="partitionKey">A string containing the partition key of the entity to be retrieved.</param>
+        /// <param name="rowkey">A string containing the row key of the entity to be retrieved.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "rowkey", Justification = "Reviewed : rowkey is allowed.")]
         public static TableOperation Retrieve(string partitionKey, string rowkey)

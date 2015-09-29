@@ -392,6 +392,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <returns>A <c>LoggingProperties</c> object containing the properties in the element.</returns>
         private static LoggingProperties ReadLoggingPropertiesFromXml(XElement element)
         {
+            if (element == null)
+            {
+                return new LoggingProperties();
+            }
+
             LoggingOperations state = LoggingOperations.None;
 
             if (bool.Parse(element.Element(DeleteName).Value))
@@ -422,8 +427,13 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="element">The XML element.</param>
         /// <returns>A <c>MetricsProperties</c> object containing the properties in the element.</returns>
-        private static MetricsProperties ReadMetricsPropertiesFromXml(XElement element)
+        internal static MetricsProperties ReadMetricsPropertiesFromXml(XElement element)
         {
+            if (element == null)
+            {
+                return new MetricsProperties();
+            }
+            
             MetricsLevel state = MetricsLevel.None;
 
             if (bool.Parse(element.Element(EnabledName).Value))

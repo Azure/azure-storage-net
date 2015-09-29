@@ -288,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage
                 new ProxyBehavior(session =>
                 {
                     isChunked = session.oResponse.headers.ExistsAndContains("Transfer-Encoding", "chunked");
-                    observedIngressBodyBytes+= session.responseBodyBytes.Length;
+                    observedIngressBodyBytes += session.responseBodyBytes.Length;
                 }, selector, null, TriggerType.AfterSessionComplete),
             }))
             {

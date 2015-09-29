@@ -105,6 +105,11 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
             CloudTable tableHourSecondaryTable = analyticsClient.GetHourMetricsTable(StorageService.Table, StorageLocation.Secondary);
             CloudTable tableMinuteSecondaryTable = analyticsClient.GetMinuteMetricsTable(StorageService.Table, StorageLocation.Secondary);
 
+            CloudTable fileHourPrimaryTable = analyticsClient.GetHourMetricsTable(StorageService.File);
+            CloudTable fileMinutePrimaryTable = analyticsClient.GetMinuteMetricsTable(StorageService.File);
+            CloudTable fileHourSecondaryTable = analyticsClient.GetHourMetricsTable(StorageService.File, StorageLocation.Secondary);
+            CloudTable fileMinuteSecondaryTable = analyticsClient.GetMinuteMetricsTable(StorageService.File, StorageLocation.Secondary);
+
             Assert.AreEqual("$MetricsCapacityBlob", capacityTable.Name);
 
             Assert.AreEqual("$MetricsHourPrimaryTransactionsBlob", blobHourPrimaryTable.Name);
@@ -121,6 +126,11 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
             Assert.AreEqual("$MetricsMinutePrimaryTransactionsTable", tableMinutePrimaryTable.Name);
             Assert.AreEqual("$MetricsHourSecondaryTransactionsTable", tableHourSecondaryTable.Name);
             Assert.AreEqual("$MetricsMinuteSecondaryTransactionsTable", tableMinuteSecondaryTable.Name);
+
+            Assert.AreEqual("$MetricsHourPrimaryTransactionsFile", fileHourPrimaryTable.Name);
+            Assert.AreEqual("$MetricsMinutePrimaryTransactionsFile", fileMinutePrimaryTable.Name);
+            Assert.AreEqual("$MetricsHourSecondaryTransactionsFile", fileHourSecondaryTable.Name);
+            Assert.AreEqual("$MetricsMinuteSecondaryTransactionsFile", fileMinuteSecondaryTable.Name);
         }
 
 #if SYNC

@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;
     using System.Collections.Generic;
+    using Microsoft.WindowsAzure.Storage;
 
     /// <summary>
     /// An interface required for Windows Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.
@@ -146,9 +147,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <param name="headers">A <see cref="SharedAccessBlobHeaders"/> object specifying optional header values to set for a blob accessed with this SAS.</param>
         /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or later.</param>
-        /// <returns>A shared access signature.</returns>
-        string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, string sasVersion);
+        /// <param name="protocols">The allowed protocols (https only, or http and https). Null if you don't want to restrict protocol.</param>
+        /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, SharedAccessProtocol? protocols, IPAddressOrRange ipAddressOrRange);
 #endif
     }
 }

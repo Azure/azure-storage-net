@@ -176,6 +176,20 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessFilePolicy policy, string groupPolicyIdentifier)
         {
+            return this.GetSharedAccessSignature(policy, groupPolicyIdentifier, null, null);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the share.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessFilePolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="groupPolicyIdentifier">A share-level access policy.</param>
+        /// <param name="protocols">The allowed protocols (https only, or http and https). Null if you don't want to restrict protocol.</param>
+        /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        public string GetSharedAccessSignature(SharedAccessFilePolicy policy, string groupPolicyIdentifier, SharedAccessProtocol? protocols, IPAddressOrRange ipAddressOrRange)
+        {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
                 string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
@@ -184,10 +198,10 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             string resourceName = this.GetSharedAccessCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
+            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
             string accountKeyName = accountKey.KeyName;
 
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "s", signature, accountKeyName, Constants.HeaderConstants.TargetStorageVersion);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "s", signature, accountKeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 
             return builder.ToString();
         }

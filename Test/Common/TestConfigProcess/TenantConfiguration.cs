@@ -26,7 +26,12 @@ namespace Microsoft.WindowsAzure.Storage
         public string FileServiceEndpoint { get; internal set; }
         public string QueueServiceEndpoint { get; internal set; }
         public string TableServiceEndpoint { get; internal set; }
+        public string BlobSecurePortOverride { get; internal set; }
+        public string FileSecurePortOverride { get; internal set; }
+        public string TableSecurePortOverride { get; internal set; }
+        public string QueueSecurePortOverride { get; internal set; }
         public string BlobServiceSecondaryEndpoint { get; internal set; }
+        public string FileServiceSecondaryEndpoint { get; internal set; }
         public string QueueServiceSecondaryEndpoint { get; internal set; }
         public string TableServiceSecondaryEndpoint { get; internal set; }
         public TenantType TenantType { get; internal set; }

@@ -199,19 +199,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Returns the canonical name for shared access.
         /// </summary>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
         /// <returns>The canonical name.</returns>
-        private string GetCanonicalName(string sasVersion)
+        private string GetCanonicalName()
         {
             string accountName = this.ServiceClient.Credentials.AccountName;
             string queueName = this.Name;
             string canonicalNameFormat = "/{0}/{1}/{2}";
-            if (sasVersion == Constants.VersionConstants.February2012 || sasVersion == Constants.VersionConstants.August2013)
-            {
-                // Do not prepend service name for older versions
-                canonicalNameFormat = "/{1}/{2}";
-            }
-
+            
             return string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Queue, accountName, queueName);
        }
 
@@ -308,32 +302,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessQueuePolicy policy, string accessPolicyIdentifier)
         {
-            if (!this.ServiceClient.Credentials.IsSharedKey)
-            {
-                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
-                throw new InvalidOperationException(errorMessage);
-            }
-
-            string resourceName = this.GetCanonicalName(Constants.HeaderConstants.TargetStorageVersion);
-            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-
-            string signature = SharedAccessSignatureHelper.GetHash(
-                policy,
-                accessPolicyIdentifier,
-                resourceName,
-                Constants.HeaderConstants.TargetStorageVersion,
-                accountKey.KeyValue);
-
-            string accountKeyName = accountKey.KeyName;
-
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
-                policy,
-                accessPolicyIdentifier,
-                signature,
-                accountKeyName,
-                Constants.HeaderConstants.TargetStorageVersion);
-
-            return builder.ToString();
+            return this.GetSharedAccessSignature(policy, accessPolicyIdentifier, null, null);
         }
 
         /// <summary>
@@ -341,11 +310,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="policy">A <see cref="SharedAccessQueuePolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <param name="accessPolicyIdentifier">A string identifying a stored access policy.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
+        /// <param name="protocols">The allowed protocols (https only, or http and https). Null if you don't want to restrict protocol.</param>
+        /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
-        [Obsolete("This overload has been deprecated because the SAS tokens generated using the current version work fine with old libraries. Please use the other overloads.")]        
-        public string GetSharedAccessSignature(SharedAccessQueuePolicy policy, string accessPolicyIdentifier, string sasVersion)
+        public string GetSharedAccessSignature(SharedAccessQueuePolicy policy, string accessPolicyIdentifier, SharedAccessProtocol? protocols, IPAddressOrRange ipAddressOrRange)
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
@@ -353,15 +322,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 throw new InvalidOperationException(errorMessage);
             }
 
-            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
-            string resourceName = this.GetCanonicalName(validatedSASVersion);
+            string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
 
             string signature = SharedAccessSignatureHelper.GetHash(
                 policy,
                 accessPolicyIdentifier,
                 resourceName,
-                validatedSASVersion,
+                Constants.HeaderConstants.TargetStorageVersion,
+                protocols,
+                ipAddressOrRange,
                 accountKey.KeyValue);
 
             string accountKeyName = accountKey.KeyName;
@@ -371,7 +341,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 accessPolicyIdentifier,
                 signature,
                 accountKeyName,
-                validatedSASVersion);
+                Constants.HeaderConstants.TargetStorageVersion,
+                protocols,
+                ipAddressOrRange);
 
             return builder.ToString();
         }

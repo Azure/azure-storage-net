@@ -22,12 +22,15 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
 #if WINDOWS_DESKTOP
 using System.Threading.Tasks;
+using System.IO;
+using System.Xml.Linq;
 #endif
 
 namespace Microsoft.WindowsAzure.Storage.Queue
@@ -1334,7 +1337,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 TestHelper.ExpectedException(
                     () => sasQueue.PeekMessage(),
                     "Peek when Sas does not allow Read access on the queue",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
 
                 sasQueue.AddMessage(message);
 
@@ -1355,6 +1358,229 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 queue.DeleteIfExists();
             }
+        }
+
+        /// <summary>
+        /// Helper function for testing the IPAddressOrRange funcitonality for queues
+        /// </summary>
+        /// <param name="generateInitialIPAddressOrRange">Function that generates an initial IPAddressOrRange object to use. This is expected to fail on the service.</param>
+        /// <param name="generateFinalIPAddressOrRange">Function that takes in the correct IP address (according to the service) and returns the IPAddressOrRange object
+        /// that should be accepted by the service</param>
+        public void CloudQueueSASIPAddressHelper(Func<IPAddressOrRange> generateInitialIPAddressOrRange, Func<IPAddress, IPAddressOrRange> generateFinalIPAddressOrRange)
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+
+            try
+            {
+                queue.Create();
+                SharedAccessQueuePolicy policy = new SharedAccessQueuePolicy()
+                {
+                    Permissions = SharedAccessQueuePermissions.Read,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                };
+
+                string sampleMessageContent = "sample content";
+                CloudQueueMessage message = new CloudQueueMessage(sampleMessageContent);
+                queue.AddMessage(message);
+
+                // The plan then is to use an incorrect IP address to make a call to the service
+                // ensure that we get an error message
+                // parse the error message to get my actual IP (as far as the service sees)
+                // then finally test the success case to ensure we can actually make requests
+
+                IPAddressOrRange ipAddressOrRange = generateInitialIPAddressOrRange();
+                string queueToken = queue.GetSharedAccessSignature(policy, null, null, ipAddressOrRange);
+                StorageCredentials queueSAS = new StorageCredentials(queueToken);
+                Uri queueSASUri = queueSAS.TransformUri(queue.Uri);
+                StorageUri queueSASStorageUri = queueSAS.TransformUri(queue.StorageUri);
+
+                CloudQueue queueWithSAS = new CloudQueue(queueSASUri);
+                OperationContext opContext = new OperationContext();
+                IPAddress actualIP = null;
+                opContext.ResponseReceived += (sender, e) =>
+                {
+                    Stream stream = e.Response.GetResponseStream();
+                    stream.Seek(0, SeekOrigin.Begin);
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string text = reader.ReadToEnd();
+                        XDocument xdocument = XDocument.Parse(text);
+                        actualIP = IPAddress.Parse(xdocument.Descendants("SourceIP").First().Value);
+                    }
+                };
+
+                bool exceptionThrown = false;
+                CloudQueueMessage resultMessage;
+                try
+                {
+                    resultMessage = queueWithSAS.PeekMessage(null, opContext);
+                }
+                catch (StorageException)
+                {
+                    exceptionThrown = true;
+                    Assert.IsNotNull(actualIP);
+                }
+
+                Assert.IsTrue(exceptionThrown);
+                ipAddressOrRange = generateFinalIPAddressOrRange(actualIP);
+                queueToken = queue.GetSharedAccessSignature(policy, null, null, ipAddressOrRange);
+                queueSAS = new StorageCredentials(queueToken);
+                queueSASUri = queueSAS.TransformUri(queue.Uri);
+                queueSASStorageUri = queueSAS.TransformUri(queue.StorageUri);
+
+                queueWithSAS = new CloudQueue(queueSASUri);
+                resultMessage = queue.PeekMessage();
+                Assert.AreEqual(sampleMessageContent, resultMessage.AsString);
+                Assert.IsTrue(queueWithSAS.StorageUri.PrimaryUri.Equals(queue.Uri));
+                Assert.IsNull(queueWithSAS.StorageUri.SecondaryUri);
+
+                queueWithSAS = new CloudQueue(queueSASStorageUri, null);
+                resultMessage = queue.PeekMessage();
+                Assert.AreEqual(sampleMessageContent, resultMessage.AsString);
+                Assert.IsTrue(queueWithSAS.StorageUri.Equals(queue.StorageUri));
+
+            }
+            finally
+            {
+                queue.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying an IP address or range and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueSASIPAddressQueryParam()
+        {
+            CloudQueueSASIPAddressHelper(() =>
+            {
+                // We need an IP address that will never be a valid source
+                IPAddress invalidIP = IPAddress.Parse("255.255.255.255");
+                return new IPAddressOrRange(invalidIP.ToString());
+            },
+            (IPAddress actualIP) =>
+            {
+                return new IPAddressOrRange(actualIP.ToString());
+            });
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying an IP address or range and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueSASIPRangeQueryParam()
+        {
+            CloudQueueSASIPAddressHelper(() =>
+            {
+                // We need an IP address that will never be a valid source
+                IPAddress invalidIPBegin = IPAddress.Parse("255.255.255.0");
+                IPAddress invalidIPEnd = IPAddress.Parse("255.255.255.255");
+
+                return new IPAddressOrRange(invalidIPBegin.ToString(), invalidIPEnd.ToString());
+            },
+                (IPAddress actualIP) =>
+                {
+                    byte[] actualAddressBytes = actualIP.GetAddressBytes();
+                    byte[] initialAddressBytes = actualAddressBytes.ToArray();
+                    initialAddressBytes[0]--;
+                    byte[] finalAddressBytes = actualAddressBytes.ToArray();
+                    finalAddressBytes[0]++;
+
+                    return new IPAddressOrRange(new IPAddress(initialAddressBytes).ToString(), new IPAddress(finalAddressBytes).ToString());
+                });
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying a shared protocol and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueSASSharedProtocolsQueryParam()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+            try
+            {
+                queue.Create();
+                SharedAccessQueuePolicy policy = new SharedAccessQueuePolicy()
+                {
+                    Permissions = SharedAccessQueuePermissions.Read,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                };
+
+                string sampleMessageContent = "sample content";
+                CloudQueueMessage message = new CloudQueueMessage(sampleMessageContent);
+                queue.AddMessage(message);
+
+                foreach (SharedAccessProtocol? protocol in new SharedAccessProtocol?[] { null, SharedAccessProtocol.HttpsOrHttp, SharedAccessProtocol.HttpsOnly })
+                {
+                    string queueToken = queue.GetSharedAccessSignature(policy, null, protocol, null);
+                    StorageCredentials queueSAS = new StorageCredentials(queueToken);
+                    Uri queueSASUri = new Uri(queue.Uri + queueSAS.SASToken);
+                    StorageUri queueSASStorageUri = new StorageUri(new Uri(queue.StorageUri.PrimaryUri + queueSAS.SASToken), new Uri(queue.StorageUri.SecondaryUri + queueSAS.SASToken));
+
+                    int httpPort = queueSASUri.Port;
+                    int securePort = 443;
+
+                    if (!string.IsNullOrEmpty(TestBase.TargetTenantConfig.QueueSecurePortOverride))
+                    {
+                        securePort = Int32.Parse(TestBase.TargetTenantConfig.QueueSecurePortOverride);
+                    }
+
+                    var schemesAndPorts = new[] {
+                        new { scheme = Uri.UriSchemeHttp, port = httpPort},
+                        new { scheme = Uri.UriSchemeHttps, port = securePort}
+                    };
+
+                    CloudQueue queueWithSAS;
+                    CloudQueueMessage resultMessage;
+
+                    foreach (var item in schemesAndPorts)
+                    {
+                        queueSASUri = TransformSchemeAndPort(queueSASUri, item.scheme, item.port);
+                        queueSASStorageUri = new StorageUri(TransformSchemeAndPort(queueSASStorageUri.PrimaryUri, item.scheme, item.port), TransformSchemeAndPort(queueSASStorageUri.SecondaryUri, item.scheme, item.port));
+
+                        if (protocol.HasValue && protocol == SharedAccessProtocol.HttpsOnly && string.CompareOrdinal(item.scheme, Uri.UriSchemeHttp) == 0)
+                        {
+                            queueWithSAS = new CloudQueue(queueSASUri);
+                            TestHelper.ExpectedException(() => queueWithSAS.PeekMessage(), "Access a queue using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
+
+                            queueWithSAS = new CloudQueue(queueSASStorageUri, null);
+                            TestHelper.ExpectedException(() => queueWithSAS.PeekMessage(), "Access a queue using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
+                        }
+                        else
+                        {
+                            queueWithSAS = new CloudQueue(queueSASUri);
+                            resultMessage = queueWithSAS.PeekMessage();
+                            Assert.AreEqual(sampleMessageContent, resultMessage.AsString);
+
+                            queueWithSAS = new CloudQueue(queueSASStorageUri, null);
+                            resultMessage = queueWithSAS.PeekMessage();
+                            Assert.AreEqual(sampleMessageContent, resultMessage.AsString);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                queue.DeleteIfExists();
+            }
+        }
+
+        private static Uri TransformSchemeAndPort(Uri input, string scheme, int port)
+        {
+            UriBuilder builder = new UriBuilder(input);
+            builder.Scheme = scheme;
+            builder.Port = port;
+            return builder.Uri;
         }
 
         [TestMethod]
@@ -1421,71 +1647,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 queue.Create(null, context);
                 CloudQueueMessage message = new CloudQueueMessage("Hello Signing");
                 queue.AddMessage(message, null, null, null, context);
-            }
-            finally
-            {
-                queue.DeleteIfExists();
-            }
-        }
-
-        [TestMethod]
-        [Description("Test SAS token Generation using the 2012-02-12 version")]
-        [TestCategory(ComponentCategory.Queue)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]        
-        public void CloudQueueOldSASVersion()
-        {
-            CloudQueueClient client = GenerateCloudQueueClient();
-            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
-
-            try
-            {
-                queue.Create();
-                string messageContent = Guid.NewGuid().ToString();
-                CloudQueueMessage message = new CloudQueueMessage(messageContent);
-                queue.AddMessage(message);
-
-                // Prepare SAS authentication with full permissions
-                string id = Guid.NewGuid().ToString();
-                DateTime start = DateTime.UtcNow;
-                DateTime expiry = start.AddMinutes(30);
-                QueuePermissions permissions = new QueuePermissions();
-                SharedAccessQueuePermissions queuePerm = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read | SharedAccessQueuePermissions.Update;
-                permissions.SharedAccessPolicies.Add(id, new SharedAccessQueuePolicy()
-                {
-                    SharedAccessStartTime = start,
-                    SharedAccessExpiryTime = expiry,
-                    Permissions = queuePerm
-                });
-
-                queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
-
-                string sasTokenFromId = queue.GetSharedAccessSignature(null, id, Constants.VersionConstants.February2012);
-                StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
-
-                CloudStorageAccount sasAcc = new CloudStorageAccount(sasCredsFromId, null /* blobEndpoint */, new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint), null /* tableEndpoint */, null /* fileEndpoint */);
-                CloudQueueClient sasClient = sasAcc.CreateCloudQueueClient();
-
-                CloudQueue sasQueueFromSasUri = new CloudQueue(sasClient.Credentials.TransformUri(queue.Uri));
-                CloudQueueMessage receivedMessage = sasQueueFromSasUri.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage.AsString);
-
-                CloudQueue sasQueueFromSasUri1 = new CloudQueue(new Uri(queue.Uri.ToString() + sasTokenFromId));
-                CloudQueueMessage receivedMessage1 = sasQueueFromSasUri1.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage1.AsString);
-
-                CloudQueue sasQueueFromId = new CloudQueue(queue.Uri, sasCredsFromId);
-                CloudQueueMessage receivedMessage2 = sasQueueFromId.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage2.AsString);
-
-                string sasTokenFromPolicy = queue.GetSharedAccessSignature(permissions.SharedAccessPolicies[id], null);
-                StorageCredentials sasCredsFromPolicy = new StorageCredentials(sasTokenFromPolicy);
-                CloudQueue sasQueueFromPolicy = new CloudQueue(queue.Uri, sasCredsFromPolicy);
-                CloudQueueMessage receivedMessage3 = sasQueueFromPolicy.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage3.AsString);
             }
             finally
             {

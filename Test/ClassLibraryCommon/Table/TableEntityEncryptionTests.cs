@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
+#pragma warning disable 0618
     using Microsoft.Azure.KeyVault;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Core;
@@ -1101,4 +1102,5 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return ent;
         }
     }
+#pragma warning restore 0618
 }

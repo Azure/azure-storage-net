@@ -122,10 +122,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertCmd.RetrieveResponseStream = true;
             insertCmd.Handler = client.AuthenticationHandler;
             insertCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
+            insertCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
             insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
-            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx);
+            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
 
             return insertCmd;
         }
@@ -138,8 +139,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableResult result = new TableResult() { Result = operation.Entity };
             deleteCmd.RetrieveResponseStream = false;
             deleteCmd.Handler = client.AuthenticationHandler;
+            deleteCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             deleteCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
+            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return deleteCmd;
@@ -153,8 +155,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableResult result = new TableResult() { Result = operation.Entity };
             mergeCmd.RetrieveResponseStream = false;
             mergeCmd.Handler = client.AuthenticationHandler;
+            mergeCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             mergeCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            mergeCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
+            mergeCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
             mergeCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return mergeCmd;
@@ -169,7 +172,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             replaceCmd.RetrieveResponseStream = false;
             replaceCmd.Handler = client.AuthenticationHandler;
             replaceCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            replaceCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
+            replaceCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            replaceCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
             replaceCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return replaceCmd;
@@ -185,7 +189,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.Handler = client.AuthenticationHandler;
             retrieveCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx);
+            retrieveCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
                   Task.Run(async () =>
@@ -195,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                             return result;
                         }
 
-                        result = await TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx);
+                        result = await TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
                         return result;
                     });
             return retrieveCmd;

@@ -121,6 +121,16 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
                         return this.tableClient.GetTableReference(Constants.AnalyticsConstants.MetricsHourSecondaryTransactionsTable);
                     }
 
+                case StorageService.File:
+                    if (location == StorageLocation.Primary)
+                    {
+                        return this.tableClient.GetTableReference(Constants.AnalyticsConstants.MetricsHourPrimaryTransactionsFile);
+                    }
+                    else
+                    {
+                        return this.tableClient.GetTableReference(Constants.AnalyticsConstants.MetricsHourSecondaryTransactionsFile);
+                    }
+
                 default:
                     throw new ArgumentException(SR.InvalidStorageService);
             }
@@ -174,6 +184,16 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
                     else
                     {
                         return this.tableClient.GetTableReference(Constants.AnalyticsConstants.MetricsMinuteSecondaryTransactionsTable);
+                    }
+
+                case StorageService.File:
+                    if (location == StorageLocation.Primary)
+                    {
+                        return this.tableClient.GetTableReference(Constants.AnalyticsConstants.MetricsMinutePrimaryTransactionsFile);
+                    }
+                    else
+                    {
+                        return this.tableClient.GetTableReference(Constants.AnalyticsConstants.MetricsMinuteSecondaryTransactionsFile);
                     }
 
                 default:

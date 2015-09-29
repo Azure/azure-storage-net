@@ -66,6 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         CloudTable currentTable = null;
+        CloudTableClient tableClient = null;
 
         #endregion
 
@@ -85,7 +86,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestInitialize()]
         public void MyTestInitialize()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            tableClient = GenerateCloudTableClient();
             currentTable = tableClient.GetTableReference(GenerateRandomTableName());
             currentTable.CreateIfNotExistsAsync().AsTask().Wait();
 
@@ -101,7 +102,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void MyTestCleanup()
         {
             currentTable.DeleteIfExistsAsync().AsTask().Wait();
-
             if (TestBase.TableBufferManager != null)
             {
                 Assert.AreEqual(0, TestBase.TableBufferManager.OutstandingBufferCount);
@@ -120,6 +120,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchInsertAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchInsertAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
 
@@ -160,7 +169,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertFailAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchInsertFailAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchInsertFailAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             ITableEntity ent = GenerateRandomEntity("foo");
 
             // add entity
@@ -193,10 +210,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertOrMergeAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchInsertOrMergeAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchInsertOrMergeAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Merge with no pre-existing entity
-            DynamicTableEntity insertOrMergeEntity = new DynamicTableEntity("insertOrMerge entity", "foo");
+            DynamicTableEntity insertOrMergeEntity = new DynamicTableEntity("insertOrMerge entity", "foo" + format.ToString());
             insertOrMergeEntity.Properties.Add("prop1", new EntityProperty("value1"));
 
             TableBatchOperation batch = new TableBatchOperation();
@@ -239,7 +264,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertOrReplaceAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchInsertOrReplaceAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchInsertOrReplaceAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Or Replace with no pre-existing entity
             DynamicTableEntity insertOrReplaceEntity = new DynamicTableEntity("insertOrReplace entity", "foo");
@@ -282,7 +315,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchDeleteAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchDeleteAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchDeleteAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string pk = Guid.NewGuid().ToString();
 
             // Add insert
@@ -320,7 +361,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchDeleteFailAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchDeleteFailAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchDeleteFailAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             ITableEntity ent = GenerateRandomEntity("foo");
 
             // add entity
@@ -361,12 +410,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchMerge()
+        public async Task TableBatchMergeAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchMergeAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchMergeAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
-            DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
+            DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
             baseEntity.Properties.Add("prop1", new EntityProperty("value1"));
             await currentTable.ExecuteAsync(TableOperation.Insert(baseEntity));
 
@@ -394,9 +451,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchMergeFail()
+        public async Task TableBatchMergeFailAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchMergeFailAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchMergeFailAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
@@ -465,12 +530,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchReplace()
+        public async Task TableBatchReplaceAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchReplaceAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchReplaceAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
-            DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
+            DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo" + format.ToString());
             baseEntity.Properties.Add("prop1", new EntityProperty("value1"));
             await currentTable.ExecuteAsync(TableOperation.Insert(baseEntity));
 
@@ -497,9 +570,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchReplaceFail()
+        public async Task TableBatchReplaceFailAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchReplaceFailAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchReplaceFailAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity baseEntity = new DynamicTableEntity("merge test", "foo");
@@ -568,12 +649,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchAllSupportedOperationsAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchAllSupportedOperationsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchAllSupportedOperationsAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
 
             // insert
-            batch.Insert(GenerateRandomEntity(pk));
+            batch.Insert(GenerateRandomEntity(pk), true);
 
             // delete
             {
@@ -641,7 +730,21 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchRetrieveAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchRetrieveAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchRetrieveAsync(TablePayloadFormat format)
+        {
+            if (format == TablePayloadFormat.JsonNoMetadata)
+            {
+                // Would need additional resolver for no metadata json.
+                return;
+            }
+
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             string pk = Guid.NewGuid().ToString();
 
             // Add insert
@@ -705,7 +808,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchRetrieveWithResolverAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchRetrieveWithResolverAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Add insert
             DynamicTableEntity sendEnt = GenerateRandomEntity(Guid.NewGuid().ToString());
@@ -748,7 +859,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchOperationsWithEmptyKeysAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchOperationsWithEmptyKeysAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchOperationsWithEmptyKeysAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = "", RowKey = "" };
@@ -848,7 +967,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsert1()
         {
-            await InsertAndDeleteBatchWithNEntities(1);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertAndDeleteBatchWithNEntities(1, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -859,7 +981,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsert10()
         {
-            await InsertAndDeleteBatchWithNEntities(10);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertAndDeleteBatchWithNEntities(10, payloadFormat);
+            }
         }
 
 
@@ -871,7 +996,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsert99()
         {
-            await InsertAndDeleteBatchWithNEntities(99);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertAndDeleteBatchWithNEntities(99, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -882,16 +1010,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsert100()
         {
-            await InsertAndDeleteBatchWithNEntities(100);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertAndDeleteBatchWithNEntities(100, payloadFormat);
+            }
         }
 
-        private async Task InsertAndDeleteBatchWithNEntities(int n)
+        private async Task InsertAndDeleteBatchWithNEntities(int n, TablePayloadFormat payloadFormat)
         {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
             for (int m = 0; m < n; m++)
             {
-                batch.Insert(GenerateRandomEntity(pk));
+                batch.Insert(GenerateRandomEntity(pk), true);
             }
 
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch);
@@ -922,7 +1054,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertOrMerge1()
         {
-            await InsertOrMergeBatchWithNEntities(1);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertOrMergeBatchWithNEntities(1, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -933,7 +1068,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertOrMerge10()
         {
-            await InsertOrMergeBatchWithNEntities(10);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertOrMergeBatchWithNEntities(10, payloadFormat);
+            }
         }
 
 
@@ -945,7 +1083,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertOrMerge99()
         {
-            await InsertOrMergeBatchWithNEntities(99);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertOrMergeBatchWithNEntities(99, payloadFormat);
+            }
         }
 
         [TestMethod]
@@ -956,11 +1097,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchInsertOrMerge100()
         {
-            await InsertOrMergeBatchWithNEntities(100);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await InsertOrMergeBatchWithNEntities(100, payloadFormat);
+            }
         }
 
-        private async Task InsertOrMergeBatchWithNEntities(int n)
+        private async Task InsertOrMergeBatchWithNEntities(int n, TablePayloadFormat payloadFormat)
         {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
             string pk = Guid.NewGuid().ToString();
 
             TableBatchOperation insertBatch = new TableBatchOperation();
@@ -1013,6 +1158,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchOnSecondaryAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchOnSecondaryAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchOnSecondaryAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             AssertSecondaryEndpoint();
 
             CloudTable table = GenerateCloudTableClient().GetTableReference(GenerateRandomTableName());
@@ -1152,7 +1306,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task TableBatchWithMultipleOperationsOnSameEntityShouldFailAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
             ITableEntity first = GenerateRandomEntity(pk);
@@ -1184,9 +1346,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchOver100EntitiesShouldThrow()
+        public async Task TableBatchOver100EntitiesShouldThrowAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchOver100EntitiesShouldThrowAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
             for (int m = 0; m < 101; m++)
@@ -1212,9 +1382,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchEntityOver1MBShouldThrow()
+        public async Task TableBatchEntityOver1MBShouldThrowAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchEntityOver1MBShouldThrowAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchEntityOver1MBShouldThrowAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
 
@@ -1240,9 +1418,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchOver4MBShouldThrow()
+        public async Task TableBatchOver4MBShouldThrowAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchOver4MBShouldThrowAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchOver4MBShouldThrowAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
 
@@ -1273,7 +1459,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableBatchAddQueryAndOneMoreOperationShouldThrow()
+        public void TableBatchAddQueryAndOneMoreOperationShouldThrowSync()
         {
             TableBatchOperation batch = new TableBatchOperation();
 
@@ -1365,7 +1551,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableBatchLockToPartitionKey()
+        public void TableBatchLockToPartitionKeySync()
         {
             TableBatchOperation batch = new TableBatchOperation();
             batch.Add(TableOperation.Insert(GenerateRandomEntity("foo")));
@@ -1408,9 +1594,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchWithPropertyOver255CharsShouldThrow()
+        public async Task TableBatchWithPropertyOver255CharsShouldThrowAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoTableBatchWithPropertyOver255CharsShouldThrowAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoTableBatchWithPropertyOver255CharsShouldThrowAsync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
             TableBatchOperation batch = new TableBatchOperation();
             string pk = Guid.NewGuid().ToString();
 
@@ -1439,7 +1633,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static void AddInsertToBatch(string pk, TableBatchOperation batch)
         {
-            batch.Insert(GenerateRandomEntity(pk));
+            batch.Insert(GenerateRandomEntity(pk), true);
         }
 
         private static DynamicTableEntity GenerateRandomEntity(string pk)

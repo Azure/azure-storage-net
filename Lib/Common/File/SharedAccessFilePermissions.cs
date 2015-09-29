@@ -48,6 +48,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// List access granted.
         /// </summary>
-        List = 0x8
+        List = 0x8,
+
+        /// <summary>
+        /// Create access granted.
+        /// </summary>
+        Create = 0x10
     }
 }

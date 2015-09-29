@@ -719,6 +719,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal const string JsonNoMetadataAcceptHeaderValue = "application/json;odata=nometadata";
 
         /// <summary>
+        /// Header value argument to set JSON no metadata.
+        /// </summary>
+        internal const string NoMetadata = "odata=nometadata";
+        /// <summary>
         /// Header value to set Content-Type to AtomPub.
         /// </summary>
         internal const string AtomContentTypeHeaderValue = "application/atom+xml";
@@ -782,9 +786,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the value to use for UserAgent header.
             /// </summary>
 #if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "5.0.3-preview";
+            public const string UserAgentProductVersion = "6.0.1-preview";
 #else
-            public const string UserAgentProductVersion = "5.0.2";
+            public const string UserAgentProductVersion = "6.0.0";
 #endif 
 
             /// <summary>
@@ -1066,7 +1070,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2015-02-21";
+            public const string TargetStorageVersion = "2015-04-05";
 
             /// <summary>
             /// Specifies the file type.
@@ -1230,6 +1234,26 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Query component for the signed SAS resource.
             /// </summary>
             public const string SignedResource = "sr";
+
+            /// <summary>
+            /// Query component for the signed SAS resource types.
+            /// </summary>
+            public const string SignedResourceTypes = "srt";
+
+            /// <summary>
+            /// Query component for the signed SAS service.
+            /// </summary>
+            public const string SignedServices = "ss";
+
+            /// <summary>
+            /// Query component for the signed SAS protocol.
+            /// </summary>
+            public const string SignedProtocols = "spr";
+
+            /// <summary>
+            /// Query component for the signed SAS IP.
+            /// </summary>
+            public const string SignedIP = "sip";
 
             /// <summary>
             /// Query component for the SAS table name.
@@ -1469,6 +1493,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string MetricsHourPrimaryTransactionsQueue = "$MetricsHourPrimaryTransactionsQueue";
 
             /// <summary>
+            /// Constant for the file service primary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourPrimaryTransactionsFile = "$MetricsHourPrimaryTransactionsFile";
+
+            /// <summary>
             /// Constant for the blob service primary location minute metrics table.
             /// </summary>
             public const string MetricsMinutePrimaryTransactionsBlob = "$MetricsMinutePrimaryTransactionsBlob";
@@ -1482,6 +1511,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Constant for the queue service primary location minute metrics table.
             /// </summary>
             public const string MetricsMinutePrimaryTransactionsQueue = "$MetricsMinutePrimaryTransactionsQueue";
+
+            /// <summary>
+            /// Constant for the file service primary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinutePrimaryTransactionsFile = "$MetricsMinutePrimaryTransactionsFile";
 
             /// <summary>
             /// Constant for the blob service secondary location hourly metrics table.
@@ -1499,6 +1533,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string MetricsHourSecondaryTransactionsQueue = "$MetricsHourSecondaryTransactionsQueue";
 
             /// <summary>
+            /// Constant for the file service secondary location hourly metrics table.
+            /// </summary>
+            public const string MetricsHourSecondaryTransactionsFile = "$MetricsHourSecondaryTransactionsFile";
+
+            /// <summary>
             /// Constant for the blob service secondary location minute metrics table.
             /// </summary>
             public const string MetricsMinuteSecondaryTransactionsBlob = "$MetricsMinuteSecondaryTransactionsBlob";
@@ -1512,6 +1551,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Constant for the queue service secondary location minute metrics table.
             /// </summary>
             public const string MetricsMinuteSecondaryTransactionsQueue = "$MetricsMinuteSecondaryTransactionsQueue";
+
+            /// <summary>
+            /// Constant for the file service secondary location minute metrics table.
+            /// </summary>
+            public const string MetricsMinuteSecondaryTransactionsFile = "$MetricsMinuteSecondaryTransactionsFile";
 
             /// <summary>
             /// Constant for default logging version.

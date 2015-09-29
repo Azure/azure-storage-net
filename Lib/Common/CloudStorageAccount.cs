@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
 #if !PORTABLE
     using Microsoft.WindowsAzure.Storage.File;
@@ -35,6 +36,7 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Globalization;
     using System.Linq;
     using AccountSetting = System.Collections.Generic.KeyValuePair<string, System.Func<string, bool>>;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     /// <summary>
     /// Represents a Windows Azure Storage account.
@@ -292,14 +294,44 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="useHttps"><c>true</c> to use HTTPS to connect to storage service endpoints; otherwise, <c>false</c>.</param>
         /// <remarks>Using HTTPS to connect to the storage services is recommended.</remarks>
         public CloudStorageAccount(StorageCredentials storageCredentials, string endpointSuffix, bool useHttps)
+            : this(storageCredentials, storageCredentials == null ? null : storageCredentials.AccountName, endpointSuffix, useHttps)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
+        /// credentials and endpoint suffix, and specifies whether to use HTTP or HTTPS to connect to the storage services.
+        /// </summary>
+        /// <param name="storageCredentials">A <see cref="StorageCredentials"/> object.</param>
+        /// <param name="accountName">The name of the account.</param>
+        /// <param name="endpointSuffix">The DNS endpoint suffix for all storage services, e.g. "core.windows.net".</param>
+        /// <param name="useHttps"><c>true</c> to use HTTPS to connect to storage service endpoints; otherwise, <c>false</c>.</param>
+        /// <remarks>Using HTTPS to connect to the storage services is recommended.</remarks>
+        public CloudStorageAccount(StorageCredentials storageCredentials, string accountName, string endpointSuffix, bool useHttps)
         {
             CommonUtility.AssertNotNull("storageCredentials", storageCredentials);
+            if (!string.IsNullOrEmpty(storageCredentials.AccountName))
+            {
+                if (string.IsNullOrEmpty(accountName))
+                {
+                    accountName = storageCredentials.AccountName;
+                }
+                else
+                {
+                    if (string.Compare(storageCredentials.AccountName, accountName, System.StringComparison.Ordinal) != 0)
+                    {
+                        throw new ArgumentException(string.Format(CultureInfo.CurrentCulture, SR.AccountNameMismatch, storageCredentials.AccountName, accountName));
+                    }
+                }
+            }
+
+            CommonUtility.AssertNotNull("AccountName", accountName);
 
             string protocol = useHttps ? "https" : "http";
-            this.BlobStorageUri = ConstructBlobEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
-            this.QueueStorageUri = ConstructQueueEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
-            this.TableStorageUri = ConstructTableEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
-            this.FileStorageUri = ConstructFileEndpoint(protocol, storageCredentials.AccountName, endpointSuffix);
+            this.BlobStorageUri = ConstructBlobEndpoint(protocol, accountName, endpointSuffix);
+            this.QueueStorageUri = ConstructQueueEndpoint(protocol, accountName, endpointSuffix);
+            this.TableStorageUri = ConstructTableEndpoint(protocol, accountName, endpointSuffix);
+            this.FileStorageUri = ConstructFileEndpoint(protocol, accountName, endpointSuffix);
             this.Credentials = storageCredentials;
             this.EndpointSuffix = endpointSuffix;
             this.DefaultEndpoints = true;
@@ -590,6 +622,25 @@ namespace Microsoft.WindowsAzure.Storage
             }
 
             return new CloudFileClient(this.FileStorageUri, this.Credentials);
+        }
+
+        /// <summary>
+        /// Returns a shared access signature for the account.
+        /// </summary>
+        /// <param name="policy">A <see cref="SharedAccessAccountPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <returns>A shared access signature, as a URI query string.</returns>
+        /// <remarks>The query string returned includes the leading question mark.</remarks>
+        public string GetSharedAccessSignature(SharedAccessAccountPolicy policy)
+        {
+            if (!this.Credentials.IsSharedKey)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotCreateSASWithoutAccountKey);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            string signature = SharedAccessSignatureHelper.GetHash(policy, this.Credentials.AccountName, Constants.HeaderConstants.TargetStorageVersion, this.Credentials.Key.KeyValue);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, this.Credentials.Key.KeyName, Constants.HeaderConstants.TargetStorageVersion);
+            return builder.ToString();
         }
 #endif
 

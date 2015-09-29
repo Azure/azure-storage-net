@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using Microsoft.WindowsAzure.Storage.Core;
@@ -24,6 +25,8 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.IO;
+using System.Xml.Linq;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -57,6 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private static void TestAccess(string sasToken, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, CloudBlobContainer container, CloudBlob blob)
         {
+            CloudBlob SASblob;
             StorageCredentials credentials = string.IsNullOrEmpty(sasToken) ?
                 new StorageCredentials() :
                 new StorageCredentials(sasToken);
@@ -66,31 +70,114 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container = new CloudBlobContainer(credentials.TransformUri(container.Uri));
                 if (blob.BlobType == BlobType.BlockBlob)
                 {
-                    blob = container.GetBlockBlobReference(blob.Name);
+                    SASblob = container.GetBlockBlobReference(blob.Name);
                 }
                 else if (blob.BlobType == BlobType.PageBlob)
                 {
-                    blob = container.GetPageBlobReference(blob.Name);
+                    SASblob = container.GetPageBlobReference(blob.Name);
                 }
                 else
                 {
-                    blob = container.GetAppendBlobReference(blob.Name);
+                    SASblob = container.GetAppendBlobReference(blob.Name);
                 }
             }
             else
             {
                 if (blob.BlobType == BlobType.BlockBlob)
                 {
-                    blob = new CloudBlockBlob(credentials.TransformUri(blob.Uri));
+                    SASblob = new CloudBlockBlob(credentials.TransformUri(blob.Uri));
                 }
                 else if (blob.BlobType == BlobType.PageBlob)
                 {
-                    blob = new CloudPageBlob(credentials.TransformUri(blob.Uri));
+                    SASblob = new CloudPageBlob(credentials.TransformUri(blob.Uri));
                 }
                 else
                 {
-                    blob = new CloudAppendBlob(credentials.TransformUri(blob.Uri));
+                    SASblob = new CloudAppendBlob(credentials.TransformUri(blob.Uri));
                 }
+            }
+
+            // We want to ensure that 'create', 'add', and 'write' permissions all allow for correct writing of blobs, as is reasonable.
+            if (((permissions & SharedAccessBlobPermissions.Create) == SharedAccessBlobPermissions.Create) || ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write))
+            {
+                if (blob.BlobType == BlobType.PageBlob)
+                {
+                    CloudPageBlob SASpageBlob = (CloudPageBlob)SASblob;
+                    SASpageBlob.Create(512);
+                    CloudPageBlob pageBlob = (CloudPageBlob)blob;
+                    byte[] buffer = new byte[512];
+                    buffer[0] = 2;  // random data
+
+                    if (((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write))
+                    {
+                        SASpageBlob.UploadFromByteArray(buffer, 0, 512);
+                    }
+                    else
+                    {
+                        TestHelper.ExpectedException(
+                            () => SASpageBlob.UploadFromByteArray(buffer, 0, 512),
+                            "pageBlob SAS token without Write perms should not allow for writing/adding",
+                            HttpStatusCode.Forbidden);
+                        pageBlob.UploadFromByteArray(buffer, 0, 512);
+                    }
+                }
+                else if (blob.BlobType == BlobType.BlockBlob)
+                {
+                    if ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write)
+                    {
+                        UploadText(SASblob, "blob", Encoding.UTF8);
+                    }
+                    else
+                    {
+                        TestHelper.ExpectedException(
+                            () => UploadText(SASblob, "blob", Encoding.UTF8),
+                            "Block blob SAS token without Write or perms should not allow for writing",
+                            HttpStatusCode.Forbidden);
+                        UploadText(blob, "blob", Encoding.UTF8);
+                    }
+                }
+                else // append blob
+                {
+                    // If the sas token contains Feb 2012, append won't be accepted 
+                    if (sasToken.Contains(Constants.VersionConstants.February2012))
+                    {
+                        UploadText(blob, "blob", Encoding.UTF8);
+                    }
+                    else
+                    {
+                        CloudAppendBlob SASAppendBlob = SASblob as CloudAppendBlob;
+                        SASAppendBlob.CreateOrReplace();
+
+                        byte[] textAsBytes = Encoding.UTF8.GetBytes("blob");
+                        using (MemoryStream stream = new MemoryStream())
+                        {
+                            stream.Write(textAsBytes, 0, textAsBytes.Length);
+                            stream.Seek(0, SeekOrigin.Begin);
+
+                            if (((permissions & SharedAccessBlobPermissions.Add) == SharedAccessBlobPermissions.Add) || ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write))
+                            {
+                                SASAppendBlob.AppendBlock(stream, null);
+                            }
+                            else
+                            {
+                                TestHelper.ExpectedException(
+                                    () => SASAppendBlob.AppendBlock(stream, null),
+                                    "Append blob SAS token without Write or Add perms should not allow for writing/adding",
+                                    HttpStatusCode.Forbidden);
+                                stream.Seek(0, SeekOrigin.Begin);
+                                ((CloudAppendBlob)blob).AppendBlock(stream, null);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                TestHelper.ExpectedException(
+                        () => UploadText(SASblob, "blob", Encoding.UTF8),
+                        "UploadText SAS does not allow for writing/adding",
+                        ((blob.BlobType == BlobType.AppendBlob) && (sasToken != null) && (sasToken.Contains(Constants.VersionConstants.February2012))) ? HttpStatusCode.BadRequest : HttpStatusCode.Forbidden);
+                UploadText(blob, "blob", Encoding.UTF8);
             }
 
             if (container != null)
@@ -104,88 +191,79 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     TestHelper.ExpectedException(
                         () => container.ListBlobs().ToArray(),
                         "List blobs while SAS does not allow for listing",
-                        HttpStatusCode.NotFound);
+                        HttpStatusCode.Forbidden);
                 }
             }
 
-            if ((permissions & SharedAccessBlobPermissions.Read) == SharedAccessBlobPermissions.Read)
+            // need to have written to the blob to read from it.
+            if (((permissions & SharedAccessBlobPermissions.Read) == SharedAccessBlobPermissions.Read))
             {
-                blob.FetchAttributes();
+                SASblob.FetchAttributes();
 
                 // Test headers
                 if (headers != null)
                 {
                     if (headers.CacheControl != null)
                     {
-                        Assert.AreEqual(headers.CacheControl, blob.Properties.CacheControl);
+                        Assert.AreEqual(headers.CacheControl, SASblob.Properties.CacheControl);
                     }
 
                     if (headers.ContentDisposition != null)
                     {
-                        Assert.AreEqual(headers.ContentDisposition, blob.Properties.ContentDisposition);
+                        Assert.AreEqual(headers.ContentDisposition, SASblob.Properties.ContentDisposition);
                     }
 
                     if (headers.ContentEncoding != null)
                     {
-                        Assert.AreEqual(headers.ContentEncoding, blob.Properties.ContentEncoding);
+                        Assert.AreEqual(headers.ContentEncoding, SASblob.Properties.ContentEncoding);
                     }
 
                     if (headers.ContentLanguage != null)
                     {
-                        Assert.AreEqual(headers.ContentLanguage, blob.Properties.ContentLanguage);
+                        Assert.AreEqual(headers.ContentLanguage, SASblob.Properties.ContentLanguage);
                     }
 
                     if (headers.ContentType != null)
                     {
-                        Assert.AreEqual(headers.ContentType, blob.Properties.ContentType);
+                        Assert.AreEqual(headers.ContentType, SASblob.Properties.ContentType);
                     }
                 }
             }
             else
             {
                 TestHelper.ExpectedException(
-                    () => blob.FetchAttributes(),
+                    () => SASblob.FetchAttributes(),
                     "Fetch blob attributes while SAS does not allow for reading",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
             }
 
             if ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write)
             {
-                blob.SetMetadata();
+                SASblob.SetMetadata();
             }
             else
             {
                 TestHelper.ExpectedException(
-                    () => blob.SetMetadata(),
+                    () => SASblob.SetMetadata(),
                     "Set blob metadata while SAS does not allow for writing",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
             }
 
             if ((permissions & SharedAccessBlobPermissions.Delete) == SharedAccessBlobPermissions.Delete)
             {
-                blob.Delete();
+                SASblob.Delete();
             }
             else
             {
                 TestHelper.ExpectedException(
-                    () => blob.Delete(),
+                    () => SASblob.Delete(),
                     "Delete blob while SAS does not allow for deleting",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
             }
         }
 
-#pragma warning disable 0618
         private static void TestBlobSAS(CloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers)
         {
-            TestBlobSAS(testBlob, permissions, headers, null);
-        }
-#pragma warning restore 0618
-
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        private static void TestBlobSAS(CloudBlob testBlob, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, string sasVersion)
-        {
-            UploadText(testBlob, "blob", Encoding.UTF8);
-
             SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
             {
                 SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
@@ -193,7 +271,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Permissions = permissions,
             };
 
-            string sasToken = testBlob.GetSharedAccessSignature(policy, headers, null, sasVersion);
+            string sasToken = testBlob.GetSharedAccessSignature(policy, headers, null);
             TestAccess(sasToken, permissions, headers, null, testBlob);
         }
 
@@ -215,7 +293,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string sasToken = this.testContainer.GetSharedAccessSignature(policy);
             //Thread.Sleep(35000);
             CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob");
-            UploadText(testBlockBlob, "blob", Encoding.UTF8);
             TestAccess(sasToken, SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write, null, this.testContainer, testBlockBlob);
 
             StorageCredentials creds = new StorageCredentials(sasToken);
@@ -237,10 +314,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException(
                 () => UploadText(blob, "blob", Encoding.UTF8),
                 "Writing to a blob while SAS does not allow for writing",
-                HttpStatusCode.NotFound);
+                HttpStatusCode.Forbidden);
 
             CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob");
-            testPageBlob.Create(0);
             TestAccess(sasToken2, SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob);
         }
 
@@ -252,7 +328,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlobContainerSASCombinations()
         {
-            for (int i = 1; i < 16; i++)
+            for (int i = 1; i < 0x40; i++)
             {
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
                 SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
@@ -264,15 +340,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 string sasToken = this.testContainer.GetSharedAccessSignature(policy);
 
                 CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob" + i);
-                UploadText(testBlockBlob, "blob", Encoding.UTF8);
                 SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testBlockBlob);
 
                 CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob" + i);
-                UploadText(testPageBlob, "blob", Encoding.UTF8);
                 SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testPageBlob);
 
                 CloudAppendBlob testAppendBlob = this.testContainer.GetAppendBlobReference("appendblob" + i);
-                UploadText(testAppendBlob, "blob", Encoding.UTF8);
                 SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testAppendBlob);
             }
         }
@@ -286,13 +359,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlobContainerPublicAccess()
         {
             CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob");
-            UploadText(testBlockBlob, "blob", Encoding.UTF8);
 
             CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob");
-            UploadText(testPageBlob, "blob", Encoding.UTF8);
 
             CloudAppendBlob testAppendBlob = this.testContainer.GetAppendBlobReference("appendblob");
-            UploadText(testAppendBlob, "blob", Encoding.UTF8);
 
             BlobContainerPermissions permissions = new BlobContainerPermissions();
 
@@ -346,13 +416,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlobContainerPolicy()
         {
             CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob");
-            UploadText(testBlockBlob, "blob", Encoding.UTF8);
 
             CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob");
-            UploadText(testPageBlob, "blob", Encoding.UTF8);
 
             CloudAppendBlob testAppendBlob = this.testContainer.GetAppendBlobReference("appendblob");
-            UploadText(testAppendBlob, "blob", Encoding.UTF8);
 
             SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
             {
@@ -389,7 +456,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobSASCombinations()
         {
-            for (int i = 1; i < 8; i++)
+            for (int i = 1; i < 0x40; i++)
             {
                 CloudBlockBlob testBlob = this.testContainer.GetBlockBlobReference("blob" + i);
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
@@ -405,7 +472,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudPageBlobSASCombinations()
         {
-            for (int i = 1; i < 8; i++)
+            for (int i = 1; i < 0x40; i++)
             {
                 CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + i);
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
@@ -421,7 +488,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudAppendBlobSASCombinations()
         {
-            for (int i = 1; i < 8; i++)
+            for (int i = 1; i < 0x40; i++)
             {
                 CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + i);
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
@@ -437,7 +504,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobSASHeaders()
         {
-            for (int i = 1; i < 8; i++)
+            for (int i = 1; i < 0x40; i++)
             {
                 CloudBlockBlob testBlob = this.testContainer.GetBlockBlobReference("blob" + i);
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
@@ -462,7 +529,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudPageBlobSASHeaders()
         {
-            for (int i = 1; i < 8; i++)
+            for (int i = 1; i < 0x40; i++)
             {
                 CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + i);
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
@@ -487,7 +554,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudAppendBlobSASHeaders()
         {
-            for (int i = 1; i < 8; i++)
+            for (int i = 1; i < 0x40; i++)
             {
                 CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + i);
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
@@ -503,200 +570,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestBlobSAS(testBlob, permissions, headers);
             }
         }
-
-        [TestMethod]
-        [Description("Test access of container with generation of 2012-02-12 SAS token.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudBlobContainer20120212SASVersion()
-        {
-            // Create a policy with read/write access and get SAS.
-            SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
-            {
-                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
-                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
-                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write | SharedAccessBlobPermissions.List,
-            };
-
-            string sasToken = this.testContainer.GetSharedAccessSignature(policy, null, Constants.VersionConstants.February2012);
-            CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob");
-            UploadText(testBlockBlob, "blob", Encoding.UTF8);
-            TestAccess(sasToken, SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write | SharedAccessBlobPermissions.List, null, this.testContainer, testBlockBlob);
-        }
-
-        [TestMethod]
-        [Description("Test all combinations of permissions using generation of 2012-02-12 SAS tokens for block blobs.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudBlockBlob20120212SASVersion()
-        {
-            for (int i = 1; i < 8; i++)
-            {
-                CloudBlockBlob testBlob = this.testContainer.GetBlockBlobReference("blob" + i);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
-                TestBlobSAS(testBlob, permissions, null, Constants.VersionConstants.February2012);
-            }
-        }
-
-        [TestMethod]
-        [Description("Test all combinations of permissions using generation of 2012-02-12 SAS tokens for page blobs.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudPageBlob20120212SASVersion()
-        {
-            for (int i = 1; i < 8; i++)
-            {
-                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + i);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
-                TestBlobSAS(testBlob, permissions, null, Constants.VersionConstants.February2012);
-            }
-        }
-
-        [TestMethod]
-        [Description("Test all combinations of permissions using generation of 2012-02-12 SAS tokens for append blobs.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudAppendBlob20120212SASVersion()
-        {
-            for (int i = 1; i < 8; i++)
-            {
-                CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + i);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
-                TestBlobSAS(testBlob, permissions, null, Constants.VersionConstants.February2012);
-            }
-        }
-
-        [TestMethod]
-        [Description("Test invalid SAS Version for page blobs.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudPageBlobInvalidSASVersion()
-        {
-            try
-            {
-                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + 1);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
-                TestBlobSAS(testBlob, permissions, null, "2012-02-29");
-                Assert.Fail();
-            }
-            catch (ArgumentException e)
-            {
-                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
-            }
-        }
-
-        [TestMethod]
-        [Description("Test invalid SAS Version for block blobs.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudBlockBlobInvalidSASVersion()
-        {
-            try
-            {
-                CloudBlockBlob testBlob = this.testContainer.GetBlockBlobReference("blob" + 1);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
-                TestBlobSAS(testBlob, permissions, null, "2012-02-29");
-                Assert.Fail();
-            }
-            catch (ArgumentException e)
-            {
-                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
-            }
-        }
-
-        [TestMethod]
-        [Description("Test invalid SAS Version for append blobs.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudAppendBlobInvalidSASVersion()
-        {
-            try
-            {
-                CloudAppendBlob testBlob = this.testContainer.GetAppendBlobReference("blob" + 1);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
-                TestBlobSAS(testBlob, permissions, null, "2012-02-29");
-                Assert.Fail();
-            }
-            catch (ArgumentException e)
-            {
-                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
-            }
-        }
-
-        [TestMethod]
-        [Description("Negative test for empty SAS Version.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudPageBlobEmptySASVersion()
-        {
-            try
-            {
-                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + 1);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
-                TestBlobSAS(testBlob, permissions, null, "");
-                Assert.Fail();
-            }
-            catch (ArgumentException e)
-            {
-                Assert.AreEqual(SR.InvalidSASVersion, e.Message);
-            }
-        }
-
-        [TestMethod]
-        [Description("Test 2012-02-12 SAS Version with header values. Should fail.")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]
-        public void CloudPageBlobHeaders20120212SASVersion()
-        {
-            SharedAccessBlobHeaders headers = new SharedAccessBlobHeaders()
-            {
-                CacheControl = "no-transform",
-                ContentDisposition = "attachment",
-                ContentEncoding = "gzip",
-                ContentLanguage = "tr,en",
-                ContentType = "text/html"
-            };
-
-            try
-            {
-                CloudPageBlob testBlob = this.testContainer.GetPageBlobReference("blob" + 1);
-                SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)1;
-                TestBlobSAS(testBlob, permissions, headers, Constants.VersionConstants.February2012);
-                Assert.Fail();
-            }
-            catch (ArgumentException e)
-            {
-                Assert.AreEqual(SR.InvalidHeaders, e.Message);
-            }
-        }
-
+         
         [TestMethod]
         [Description("Perform a SAS request and ensure that the api-version query param exists and the x-ms-version header does not.")]
         [TestCategory(ComponentCategory.Blob)]
@@ -775,6 +649,231 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.DeleteIfExists();
             }
+        }
+
+        /// <summary>
+        /// Helper function for testing the IPAddressOrRange funcitonality for blobs
+        /// </summary>
+        /// <param name="generateInitialIPAddressOrRange">Function that generates an initial IPAddressOrRange object to use. This is expected to fail on the service.</param>
+        /// <param name="generateFinalIPAddressOrRange">Function that takes in the correct IP address (according to the service) and returns the IPAddressOrRange object
+        /// that should be accepted by the service</param>
+        public void CloudBlobSASIPAddressHelper(Func<IPAddressOrRange> generateInitialIPAddressOrRange, Func<IPAddress, IPAddressOrRange> generateFinalIPAddressOrRange)
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+                CloudBlob blob;
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    Permissions = SharedAccessBlobPermissions.Read,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                };
+
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference("bb");
+                byte[] data = new byte[] { 0x1, 0x2, 0x3, 0x4 };
+                blockBlob.UploadFromByteArray(data, 0, 4);
+
+                // The plan then is to use an incorrect IP address to make a call to the service
+                // ensure that we get an error message
+                // parse the error message to get my actual IP (as far as the service sees)
+                // then finally test the success case to ensure we can actually make requests
+
+                IPAddressOrRange ipAddressOrRange = generateInitialIPAddressOrRange();
+                string blockBlobToken = blockBlob.GetSharedAccessSignature(policy, null, null, null, ipAddressOrRange);
+                StorageCredentials blockBlobSAS = new StorageCredentials(blockBlobToken);
+                Uri blockBlobSASUri = blockBlobSAS.TransformUri(blockBlob.Uri);
+                StorageUri blockBlobSASStorageUri = blockBlobSAS.TransformUri(blockBlob.StorageUri);
+
+                blob = new CloudBlob(blockBlobSASUri);
+                byte[] target = new byte[4];
+                OperationContext opContext = new OperationContext();
+                IPAddress actualIP = null;
+                opContext.ResponseReceived += (sender, e) => 
+                    {
+                        Stream stream = e.Response.GetResponseStream();
+                        stream.Seek(0, SeekOrigin.Begin);
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            string text = reader.ReadToEnd();
+                            XDocument xdocument = XDocument.Parse(text);
+                            actualIP = IPAddress.Parse(xdocument.Descendants("SourceIP").First().Value);
+                        }
+                    };
+
+                bool exceptionThrown = false;
+                try
+                {
+                    blob.DownloadRangeToByteArray(target, 0, 0, 4, null, null, opContext);
+                }
+                catch (StorageException)
+                {
+                    exceptionThrown = true;
+                    Assert.IsNotNull(actualIP);
+                }
+
+                Assert.IsTrue(exceptionThrown);
+                ipAddressOrRange = generateFinalIPAddressOrRange(actualIP);
+                blockBlobToken = blockBlob.GetSharedAccessSignature(policy, null, null, null, ipAddressOrRange);
+                blockBlobSAS = new StorageCredentials(blockBlobToken);
+                blockBlobSASUri = blockBlobSAS.TransformUri(blockBlob.Uri);
+                blockBlobSASStorageUri = blockBlobSAS.TransformUri(blockBlob.StorageUri);
+
+
+                blob = new CloudBlob(blockBlobSASUri);
+                blob.DownloadRangeToByteArray(target, 0, 0, 4, null, null, null);
+                for (int i = 0; i < 4; i++)
+                {
+                    Assert.AreEqual(data[i], target[i]);
+                }
+                Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(blockBlob.Uri));
+                Assert.IsNull(blob.StorageUri.SecondaryUri);
+
+                blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                blob.DownloadRangeToByteArray(target, 0, 0, 4, null, null, null);
+                for (int i = 0; i < 4; i++)
+                {
+                    Assert.AreEqual(data[i], target[i]);
+                }
+                Assert.IsTrue(blob.StorageUri.Equals(blockBlob.StorageUri));
+
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying an IP address or range and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSASIPAddressQueryParam()
+        {
+            CloudBlobSASIPAddressHelper(() =>
+            {
+                // We need an IP address that will never be a valid source
+                IPAddress invalidIP = IPAddress.Parse("255.255.255.255");
+                return new IPAddressOrRange(invalidIP.ToString());
+            },
+            (IPAddress actualIP) =>
+            {
+                return new IPAddressOrRange(actualIP.ToString());
+            });
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying an IP address or range and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSASIPRangeQueryParam()
+        {
+            CloudBlobSASIPAddressHelper(() =>
+            {
+                // We need an IP address that will never be a valid source
+                IPAddress invalidIPBegin = IPAddress.Parse("255.255.255.0");
+                IPAddress invalidIPEnd = IPAddress.Parse("255.255.255.255");
+
+                return new IPAddressOrRange(invalidIPBegin.ToString(), invalidIPEnd.ToString());
+            },
+                (IPAddress actualIP) =>
+                {
+                    byte[] actualAddressBytes = actualIP.GetAddressBytes();
+                    byte[] initialAddressBytes = actualAddressBytes.ToArray();
+                    initialAddressBytes[0]--;
+                    byte[] finalAddressBytes = actualAddressBytes.ToArray();
+                    finalAddressBytes[0]++;
+
+                    return new IPAddressOrRange(new IPAddress(initialAddressBytes).ToString(), new IPAddress(finalAddressBytes).ToString());
+                });
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying a shared protocol and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSASSharedProtocolsQueryParam()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+                CloudBlob blob;
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    Permissions = SharedAccessBlobPermissions.Read,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                };
+
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference("bb");
+                blockBlob.PutBlockList(new string[] { });
+
+                foreach (SharedAccessProtocol? protocol in new SharedAccessProtocol?[] { null, SharedAccessProtocol.HttpsOrHttp, SharedAccessProtocol.HttpsOnly })
+                {
+                    string blockBlobToken = blockBlob.GetSharedAccessSignature(policy, null, null, protocol, null);
+                    StorageCredentials blockBlobSAS = new StorageCredentials(blockBlobToken);
+                    Uri blockBlobSASUri = new Uri(blockBlob.Uri + blockBlobSAS.SASToken);
+                    StorageUri blockBlobSASStorageUri = new StorageUri(new Uri(blockBlob.StorageUri.PrimaryUri + blockBlobSAS.SASToken), new Uri(blockBlob.StorageUri.SecondaryUri + blockBlobSAS.SASToken));
+
+                    int httpPort = blockBlobSASUri.Port;
+                    int securePort = 443;
+
+                    if (!string.IsNullOrEmpty(TestBase.TargetTenantConfig.BlobSecurePortOverride))
+                    {
+                        securePort = Int32.Parse(TestBase.TargetTenantConfig.BlobSecurePortOverride);
+                    }
+
+                    var schemesAndPorts = new[] {
+                        new { scheme = Uri.UriSchemeHttp, port = httpPort},
+                        new { scheme = Uri.UriSchemeHttps, port = securePort}
+                    };
+                    
+                    foreach (var item in schemesAndPorts)
+                    {
+                        blockBlobSASUri = TransformSchemeAndPort(blockBlobSASUri, item.scheme, item.port);
+                        blockBlobSASStorageUri = new StorageUri(TransformSchemeAndPort(blockBlobSASStorageUri.PrimaryUri, item.scheme, item.port), TransformSchemeAndPort(blockBlobSASStorageUri.SecondaryUri, item.scheme, item.port));
+
+                        if (protocol.HasValue && protocol.Value == SharedAccessProtocol.HttpsOnly && string.CompareOrdinal(item.scheme, Uri.UriSchemeHttp) == 0)
+                        {
+                            blob = new CloudBlob(blockBlobSASUri);
+                            TestHelper.ExpectedException(() => blob.FetchAttributes(), "Access a blob using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
+
+                            blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                            TestHelper.ExpectedException(() => blob.FetchAttributes(), "Access a blob using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
+                        }
+                        else
+                        {
+                            blob = new CloudBlob(blockBlobSASUri);
+                            blob.FetchAttributes();
+                            Assert.AreEqual(blob.BlobType, BlobType.BlockBlob);
+
+                            blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                            blob.FetchAttributes();
+                            Assert.AreEqual(blob.BlobType, BlobType.BlockBlob);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        private static Uri TransformSchemeAndPort(Uri input, string scheme, int port)
+        {
+            UriBuilder builder = new UriBuilder(input);
+            builder.Scheme = scheme;
+            builder.Port = port;
+            return builder.Uri;
         }
     }
 }

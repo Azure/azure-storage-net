@@ -1,4 +1,18 @@
+Changes in 6.0.0 :
+
+ - All: Support for 2015-04-05 REST version. Please see our REST API documentation and blogs for information about the related added features.
+ - All: Refreshed ASP.NET 5 targets to work with latest RC bits (DNX 4.5.1 and DNX Core 5.0, beta7). 
+ - All: Removed deprecated Shared Access Signature methods that take version as a parameter. 
+ - Tables: Altered default settings for echoContent and payloadFormat. AtomPub payloadFormat is now obsolete. 
+ - Tables: Fixed a bug where filter conditions for doubles were improperly formatted.
+ - Tables: Clarified the error message for batch transactions.
+ - Tables: Added JSON support for Universal Apps, Windows Runtime, PCL, DNX 4.5.1, and DNX Core 5.0 targets.
+ - Tables: Added echo content configurability support for Universal Apps, Windows Runtime, PCL, DNX 4.5.1, and DNX Core 5.0 targets.
+ - Tables: Fixed a bug where a select on a non-existent field resulted in a null reference exception if the corresponding field in the TableEntity was not nullable.
+ - Files: Added support for Minute and Hour Metrics to FileServiceProperties and added support for File Metrics to CloudAnalyticsClient.
+
 Changes in 5.0.2 :
+
  - Blobs: Fixed a bug in the min AppendTextAsync overload that caused overwrite behavior instead of append behavior. Please upgrade to 5.0.2 as soon as possible to avoid this bug.
 
 Changes in 5.0.0 :
@@ -29,6 +43,7 @@ Changes in 4.4.0 Preview :
  - All: Added preview support for client side encryption for blobs, queues and tables.
  - All: Added preview support for building applications via Portable Class Library (Profile 111), as well as Xamarin.iOS and Xamarin.Android.
  - All: Added StringToSign to the client logs in the Shared Access Signature case. 
+ - Blobs: Added AppendBlobs. For more information on this, please refer to the REST API link.
  - Blobs: Created a CloudBlob instantiable class. Users can now get/set properties, metadata, download blobs, create snapshots, copy blobs and perform leasing actions on blobs without knowing the type of the blob. CloudPageBlob, CloudBlockBlob, and CloudAppendBlob now derive from this class.
  - Blobs: Added GetBlobReference on CloudBlobContainer to get a reference to a CloudBlob object that can be used for common operations across blob types. This api does not make a service call.
  - Blobs (ASP.NET): Added missing overloads for StartCopyFromBlob in CloudBlockBlob and CloudPageBlob.
