@@ -69,6 +69,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
 
+        CloudTableClient tableClient = null;
+
         #region Additional test attributes
         //
         // You can use the following additional attributes as you write your tests:
@@ -86,6 +88,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestInitialize()]
         public void MyTestInitialize()
         {
+            tableClient = GenerateCloudTableClient();
+
             if (TestBase.TableBufferManager != null)
             {
                 TestBase.TableBufferManager.OutstandingBufferCount = 0;
@@ -114,9 +118,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableCreateAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableCreateAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableCreateAsync(TablePayloadFormat payloadFormat)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
 
             try
             {
@@ -138,9 +149,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableCreateAlreadyExistsAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableCreateAlreadyExistsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableCreateAlreadyExistsAsync(TablePayloadFormat payloadFormat)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
             OperationContext ctx = new OperationContext();
 
             try
@@ -176,9 +194,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableCreateIfNotExistsAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableCreateIfNotExistsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableCreateIfNotExistsAsync(TablePayloadFormat payloadFormat)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
 
             try
             {
@@ -205,9 +230,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableDeleteAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableDeleteAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableDeleteAsync(TablePayloadFormat payloadFormat)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
 
             try
             {
@@ -231,9 +263,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableDeleteWhenNotExistAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableDeleteWhenNotExistAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableDeleteWhenNotExistAsync(TablePayloadFormat payloadFormat)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
             OperationContext ctx = new OperationContext();
 
             try
@@ -268,9 +307,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableDeleteIfExistsAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableDeleteIfExistsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableDeleteIfExistsAsync(TablePayloadFormat payloadFormat)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
 
             try
             {
@@ -299,9 +345,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableExistsAsync()
         {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableExistsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableExistsAsync(TablePayloadFormat payloadFormat)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
 
             try
             {

@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
+#pragma warning disable 0618
     [TestClass]
     public class TableBatchOperationTaskTest : TableTestBase
     {
@@ -1632,4 +1633,5 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
+#pragma warning restore 0618
 }

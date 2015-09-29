@@ -166,9 +166,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             string valueOperand = null;
 
-            if (edmType == EdmType.Boolean || edmType == EdmType.Double || edmType == EdmType.Int32)
+            if (edmType == EdmType.Boolean || edmType == EdmType.Int32)
             {
                 valueOperand = givenValue;
+            }
+            else if (edmType == EdmType.Double)
+            {
+                bool decimalExists = givenValue.Contains(".");
+                valueOperand = decimalExists ? givenValue : string.Format(CultureInfo.InvariantCulture, "{0}.0", givenValue);
             }
             else if (edmType == EdmType.Int64)
             {

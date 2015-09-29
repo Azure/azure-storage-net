@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             if (modifiedOptions.EncryptionPolicy != null)
             {
-                transform = options.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, true /* noPadding */);
+                transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, true /* noPadding */);
             }
 #endif
 

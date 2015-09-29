@@ -23,12 +23,14 @@ namespace Microsoft.WindowsAzure.Storage.Core
     internal class SR
     {
         public const string AbsoluteAddressNotPermitted = "Address '{0}' is an absolute address. Only relative addresses are permitted.";
+        public const string AccountNameMismatch = "Account names do not match.  First account name is {0}, second is {1}.";
         public const string ArgumentEmptyError = "The argument must not be empty string.";
         public const string ArgumentOutOfRangeError = "The argument is out of range. Value passed: {0}";
         public const string ArgumentTooLargeError = "The argument '{0}' is larger than maximum of '{1}'";
         public const string ArgumentTooSmallError = "The argument '{0}' is smaller than minimum of '{1}'";
         public const string AttemptedEdmTypeForTheProperty = "Attempting to deserialize '{0}' as type '{1}'";
         public const string BatchWithRetreiveContainsOtherOperations = "A batch transaction with a retrieve operation cannot contain any other operations.";
+        public const string BatchErrorInOperation = "Element {0} in the batch returned an unexpected response code.";
         public const string BinaryMessageShouldUseBase64Encoding = "EncodeMessage should be true for binary message.";
         public const string Blob = "blob";
         public const string BlobDataCorrupted = "Blob data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
@@ -43,6 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string CannotCreateSASSignatureForGivenCred = "Cannot create Shared Access Signature as the credentials does not have account name information. Please check that the credentials used support creating Shared Access Signature.";
         public const string CannotCreateSASWithoutAccountKey = "Cannot create Shared Access Signature unless Account Key credentials are used.";
         public const string CannotModifySnapshot = "Cannot perform this operation on a blob representing a snapshot.";
+        public const string CannotTransformNonHttpsUriWithHttpsOnlyCredentials = "Cannot transform a Uri object using a StorageCredentials object that is marked HTTPS only.";
         public const string CannotUpdateKeyWithoutAccountKeyCreds = "Cannot update key unless Account Key credentials are used.";
         public const string CannotUpdateSasWithoutSasCreds = "Cannot update Shared Access Signature unless Sas credentials are used.";
         public const string ConcurrentOperationsNotSupported = "Could not acquire exclusive use of the TableServiceContext, Concurrent operations are not supported.";
@@ -92,6 +95,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidFileListItem = "Invalid file list item returned";
         public const string InvalidGeoReplicationStatus = "Invalid geo-replication status in response: '{0}'";
         public const string InvalidHeaders = "Headers are not supported in the 2012-02-12 version.";
+        public const string InvalidIPAddress = "Error when parsing IP address: IP address is invalid.";
         public const string InvalidLeaseStatus = "Invalid lease status in response: '{0}'";
         public const string InvalidLeaseState = "Invalid lease state in response: '{0}'";
         public const string InvalidLeaseDuration = "Invalid lease duration in response: '{0}'";
@@ -105,6 +109,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidResourceReservedName = "Invalid {0} name. This {0} name is reserved.";
         public const string InvalidSASVersion = "SAS Version invalid. Valid versions include 2012-02-12 and 2013-08-15.";
         public const string InvalidStorageService = "Invalid storage service specified.";
+        public const string IPAddressOrRangeMustBeNullInOldVersion = "IPAddressOrRange must be null when creating a SAS token with an older service version parameter.";
+        public const string IPMustBeIPV4InSAS = "When specifying an IP Address in a SAS token, it must be an IPv4 address. Input address was {0}.";
         public const string IQueryableExtensionObjectMustBeTableQuery = "Query must be a TableQuery<T>";
         public const string JsonNotSupportedOnRT = "JSON payloads are not supported in Windows Runtime.";
         public const string JsonReaderNotInCompletedState = "The JSON reader has not yet reached the completed state.";
@@ -150,7 +156,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string PreconditionFailureIgnored = "Pre-condition failure on a retry is being ignored since the request should have succeeded in the first attempt.";
         public const string PrimaryOnlyCommand = "This operation can only be executed against the primary storage location.";
         public const string PropertyResolverCacheDisabled = "Property resolver cache is disabled.";
-        public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details";
+        public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details.";
+        public const string ProtocolsMustBeNullInOldVersion = "SharedAccessProtocol must be null when creating a SAS token with an older service version parameter.";
         public const string PutBlobNeedsStoreBlobContentMD5 = "When uploading a blob in a single request, StoreBlobContentMD5 must be set to true if UseTransactionalMD5 is true, because the MD5 calculated for the transaction will be stored in the blob.";
         public const string QueryBuilderKeyNotFound = "'{0}' key not found in the query builder.";
         public const string Queue = "queue";
@@ -221,7 +228,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string UnexpectedContinuationType = "Unexpected Continuation Type";
         public const string UnexpectedLocation = "Unexpected Location '{0}'";
         public const string UnexpectedResponseCode = "Unexpected response code, Expected:{0}, Received:{1}";
-        public const string UnexpectedResponseCodeForOperation = "Unexpected response code for operation : ";
         public const string UnsupportedPropertyTypeForEncryption = "Unsupported type : {0} encountered during encryption. Only string properties can be encrypted on the client side.";
         public const string UpdateMessageVisibilityRequired = "Calls to UpdateMessage must include the Visibility flag.";
         public const string UsingDefaultPropertyResolver = "Using the default property resolver to deserialize the entity.";

@@ -132,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         if (!executionState.Resp.IsSuccessStatusCode)
                         {
                             // At this point, don't try to read the stream to parse the error
-                            executionState.ExceptionRef = await Exceptions.PopulateStorageExceptionFromHttpResponseMessage(executionState.Resp, executionState.Cmd.CurrentResult);
+                            executionState.ExceptionRef = await Exceptions.PopulateStorageExceptionFromHttpResponseMessage(executionState.Resp, executionState.Cmd.CurrentResult, executionState.Cmd.ParseError);                            
                         }
 
                         Logger.LogInformational(executionState.OperationContext, SR.TraceResponse, executionState.Cmd.CurrentResult.HttpStatusCode, executionState.Cmd.CurrentResult.ServiceRequestID, executionState.Cmd.CurrentResult.ContentMd5, executionState.Cmd.CurrentResult.Etag);
@@ -174,9 +174,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                                 await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), token);
                                 cmd.ErrorStream.Seek(0, SeekOrigin.Begin);
 #if ASPNET_K || PORTABLE
-                                executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, null /* parseError */, cmd.ErrorStream, executionState.Resp);
+                                executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null), cmd.ErrorStream, executionState.Resp);
 #else
-                                executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, null /* parseError */, cmd.ErrorStream);
+                                executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null), cmd.ErrorStream);
 #endif
                                 throw executionState.ExceptionRef;
                             }
@@ -242,9 +242,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         }
 
 #if ASPNET_K || PORTABLE
-                        StorageException translatedException = StorageException.TranslateException(e, executionState.Cmd.CurrentResult, null, executionState.Resp);
+                        StorageException translatedException = StorageException.TranslateException(e, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null), executionState.Resp);
 #else
-                        StorageException translatedException = StorageException.TranslateException(e, executionState.Cmd.CurrentResult, null);
+                        StorageException translatedException = StorageException.TranslateException(e, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null));
 #endif
                         executionState.ExceptionRef = translatedException;
                         Logger.LogInformational(executionState.OperationContext, SR.TraceRetryCheck, executionState.RetryCount, executionState.Cmd.CurrentResult.HttpStatusCode, translatedException.IsRetryable ? "yes" : "no", translatedException.Message);

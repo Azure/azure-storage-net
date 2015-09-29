@@ -169,11 +169,7 @@ namespace Microsoft.WindowsAzure.Storage
                     if (response != null)
                     {
                         StorageException.PopulateRequestResult(reqResult, response);
-#if WINDOWS_RT
-                        reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(response.GetResponseStream().AsInputStream());
-#else
                         reqResult.ExtendedErrorInformation = parseError(response.GetResponseStream());
-#endif
                     }
                 }
 #endif
@@ -252,12 +248,7 @@ namespace Microsoft.WindowsAzure.Storage
                     if (response != null)
                     {
                         PopulateRequestResult(reqResult, response);
-
-#if WINDOWS_RT
-                        reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(responseStream);
-#else
                         reqResult.ExtendedErrorInformation = parseError(responseStream);
-#endif
                     }
                 }
 #endif

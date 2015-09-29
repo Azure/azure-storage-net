@@ -87,6 +87,8 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 Assert.AreEqual(0, TestBase.FileBufferManager.OutstandingBufferCount);
             }
+
+            client.SetServiceProperties(startProperties);
         }
 
         #endregion
@@ -126,6 +128,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                                     "x-ms-meta-foo"
                                 }
                     });
+
+            props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
+            props.MinuteMetrics.RetentionDays = 8;
+
+            props.HourMetrics.MetricsLevel = MetricsLevel.None;
+            props.HourMetrics.RetentionDays = 1;
 
             client.SetServiceProperties(props);
 
@@ -167,6 +175,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                                     "x-ms-meta-foo"
                                 }
                     });
+
+            props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
+            props.MinuteMetrics.RetentionDays = 8;
+
+            props.HourMetrics.MetricsLevel = MetricsLevel.None;
+            props.HourMetrics.RetentionDays = 1;
 
             using (ManualResetEvent evt = new ManualResetEvent(false))
             {
@@ -520,6 +534,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         private static FileServiceProperties DefaultServiceProperties()
         {
             FileServiceProperties props = new FileServiceProperties();
+            props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.Cors.CorsRules = new List<CorsRule>();
 

@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
+#pragma warning disable 0618
     /// <summary>
     /// Summary description for CloudTableCRUDUnitTaskTests
     /// </summary>
@@ -351,4 +352,5 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
+#pragma warning restore 0618
 }

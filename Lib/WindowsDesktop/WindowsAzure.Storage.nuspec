@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>WindowsAzure.Storage</id>
-    <version>5.0.2</version>
+    <version>6.0.0</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -24,9 +24,11 @@ Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorag
       </group>
       <group targetFramework="win8">
         <dependency id="Microsoft.Data.OData" version="5.6.4" />
+        <dependency id="Newtonsoft.Json" version="6.0.8" />
       </group>
       <group targetFramework="wpa">
         <dependency id="Microsoft.Data.OData" version="5.6.4" />
+        <dependency id="Newtonsoft.Json" version="6.0.8" />
       </group>
       <group targetFramework="wp8">
         <dependency id="Microsoft.Data.OData" version="5.6.4" />

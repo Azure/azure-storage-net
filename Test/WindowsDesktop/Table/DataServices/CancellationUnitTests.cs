@@ -156,7 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
             }
             ctx.SaveChangesWithRetries();
 
-            TableServiceQuery<BaseEntity> query = (from ent in ctx.CreateQuery<BaseEntity>(currentTable.Name)
+            TableServiceQuery<ComplexEntity> query = (from ent in ctx.CreateQuery<ComplexEntity>(currentTable.Name)
                                                    select ent).AsTableServiceQuery(ctx);
 
 

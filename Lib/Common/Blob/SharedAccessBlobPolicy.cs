@@ -59,12 +59,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>The shared access permissions, in string format.</returns>
         public static string PermissionsToString(SharedAccessBlobPermissions permissions) 
         {
-            // The service supports a fixed order => rwdl
+            // The service supports a fixed order => racwdl
             StringBuilder builder = new StringBuilder();
 
             if ((permissions & SharedAccessBlobPermissions.Read) == SharedAccessBlobPermissions.Read)
             {
                 builder.Append("r");
+            }
+
+            if ((permissions & SharedAccessBlobPermissions.Add) == SharedAccessBlobPermissions.Add)
+            {
+                builder.Append("a");
+            }
+
+            if ((permissions & SharedAccessBlobPermissions.Create) == SharedAccessBlobPermissions.Create)
+            {
+                builder.Append("c");
             }
 
             if ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write)
@@ -116,12 +126,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         permissions |= SharedAccessBlobPermissions.List;
                         break;
 
+                    case 'a':
+                        permissions |= SharedAccessBlobPermissions.Add;
+                        break;
+
+                    case 'c':
+                        permissions |= SharedAccessBlobPermissions.Create;
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException("input");
                 }
             }
 
-            // Incase we ever change none to be something other than 0
+            // In case we ever change none to be something other than 0
             if (permissions == 0)
             {
                 permissions |= SharedAccessBlobPermissions.None;

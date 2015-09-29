@@ -36,5 +36,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Table Service.
         /// </summary>
         Table,
+
+        /// <summary>
+        /// File Service.
+        /// </summary>
+        File,
     }
 }

@@ -398,37 +398,29 @@ namespace Microsoft.WindowsAzure.Storage
 
         internal static void AssertFileServicePropertiesAreEqual(FileServiceProperties propsA, FileServiceProperties propsB)
         {
-            if (propsA.Cors != null && propsB.Cors != null)
+            if (propsA == null || propsB == null)
             {
-                Assert.AreEqual(propsA.Cors.CorsRules.Count, propsB.Cors.CorsRules.Count);
-
-                // Check that rules are equal and in the same order.
-                for (int i = 0; i < propsA.Cors.CorsRules.Count; i++)
-                {
-                    CorsRule ruleA = propsA.Cors.CorsRules.ElementAt(i);
-                    CorsRule ruleB = propsB.Cors.CorsRules.ElementAt(i);
-
-                    Assert.IsTrue(
-                        ruleA.AllowedOrigins.Count == ruleB.AllowedOrigins.Count
-                        && !ruleA.AllowedOrigins.Except(ruleB.AllowedOrigins).Any());
-
-                    Assert.IsTrue(
-                        ruleA.ExposedHeaders.Count == ruleB.ExposedHeaders.Count
-                        && !ruleA.ExposedHeaders.Except(ruleB.ExposedHeaders).Any());
-
-                    Assert.IsTrue(
-                        ruleA.AllowedHeaders.Count == ruleB.AllowedHeaders.Count
-                        && !ruleA.AllowedHeaders.Except(ruleB.AllowedHeaders).Any());
-
-                    Assert.IsTrue(ruleA.AllowedMethods == ruleB.AllowedMethods);
-
-                    Assert.IsTrue(ruleA.MaxAgeInSeconds == ruleB.MaxAgeInSeconds);
-                }
+                Assert.IsNull(propsA);
+                Assert.IsNull(propsB);
+            } else
+            {
+                AssertPropertiesAreEqual(propsA, propsA.serviceProperties);
+                AssertPropertiesAreEqual(propsB, propsB.serviceProperties);
+                AssertServicePropertiesAreEqual(propsA.serviceProperties, propsB.serviceProperties);
             }
-            else
+        }
+
+        private static void AssertPropertiesAreEqual(FileServiceProperties fileProps, ServiceProperties props)
+        {
+            if (fileProps == null || props == null)
             {
-                Assert.IsNull(propsA.Cors);
-                Assert.IsNull(propsB.Cors);
+                Assert.IsNull(fileProps);
+                Assert.IsNull(props);
+            } else
+            {
+                Assert.AreEqual(fileProps.Cors, props.Cors);
+                Assert.AreEqual(fileProps.MinuteMetrics, props.MinuteMetrics);
+                Assert.AreEqual(fileProps.HourMetrics, props.HourMetrics);
             }
         }
 
@@ -446,7 +438,7 @@ namespace Microsoft.WindowsAzure.Storage
                 Assert.IsNull(propsA.Logging);
             }
 
-            if (propsA.HourMetrics != null && propsB.Logging != null)
+            if (propsA.HourMetrics != null && propsB.HourMetrics != null)
             {
                 Assert.AreEqual(propsA.HourMetrics.MetricsLevel, propsB.HourMetrics.MetricsLevel);
                 Assert.AreEqual(propsA.HourMetrics.RetentionDays, propsB.HourMetrics.RetentionDays);

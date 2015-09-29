@@ -41,11 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     {
         private IAuthenticationHandler authenticationHandler;
 
-#if WINDOWS_DESKTOP
         private TablePayloadFormat payloadFormat = TablePayloadFormat.Json;
-#else
-        private PayloadFormat payloadFormat = PayloadFormat.AtomPub;
-#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableServiceContext"/> class.

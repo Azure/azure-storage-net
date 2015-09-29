@@ -167,19 +167,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Returns the canonical name for shared access.
         /// </summary>
-        /// <param name="sasVersion">A string indicating the desired SAS version to get canonical name for, in storage service version format.</param>
         /// <returns>The canonical name.</returns>
-        private string GetSharedAccessCanonicalName(string sasVersion)
+        private string GetSharedAccessCanonicalName()
         {
             string accountName = this.ServiceClient.Credentials.AccountName;
             string containerName = this.Name;
 
             string canonicalNameFormat = "/{0}/{1}/{2}";
-            if (sasVersion == Constants.VersionConstants.February2012 || sasVersion == Constants.VersionConstants.August2013)
-            {
-                // Do not prepend service name for older versions
-                canonicalNameFormat = "/{1}/{2}";
-            }
 
             return string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Blob, accountName, containerName);
         }
@@ -193,7 +187,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy)
         {
-            return this.GetSharedAccessSignature(policy, null /* groupPolicyIdentifier */, null /* sasVersion */);
+            return this.GetSharedAccessSignature(policy, null /* groupPolicyIdentifier */);
         }
 
         /// <summary>
@@ -205,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>The query string returned includes the leading question mark.</remarks>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, string groupPolicyIdentifier)
         {
-            return this.GetSharedAccessSignature(policy, groupPolicyIdentifier, null /* sasVersion */);
+            return this.GetSharedAccessSignature(policy, groupPolicyIdentifier, null /* protocols */, null /* ipAddressOrRange */);
         }
 
         /// <summary>
@@ -213,10 +207,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <param name="groupPolicyIdentifier">A container-level access policy.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
+        /// <param name="protocols">The allowed protocols (https only, or http and https). Null if you don't want to restrict protocol.</param>
+        /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         /// <remarks>The query string returned includes the leading question mark.</remarks>
-        public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, string groupPolicyIdentifier, string sasVersion)
+        public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, string groupPolicyIdentifier, SharedAccessProtocol? protocols, IPAddressOrRange ipAddressOrRange)
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
@@ -224,14 +219,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new InvalidOperationException(errorMessage);
             }
 
-            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
-            string resourceName = this.GetSharedAccessCanonicalName(validatedSASVersion);
+            string resourceName = this.GetSharedAccessCanonicalName();
+
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, validatedSASVersion, accountKey.KeyValue);
+            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
             string accountKeyName = accountKey.KeyName;
 
             // Future resource type changes from "c" => "container"
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "c", signature, accountKeyName, validatedSASVersion);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "c", signature, accountKeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 
             return builder.ToString();
         }

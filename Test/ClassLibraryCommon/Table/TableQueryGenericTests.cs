@@ -25,6 +25,7 @@ using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
+#pragma warning disable 0618
     [TestClass]
     public class TableQueryGenericTests : TableTestBase
     {
@@ -123,10 +124,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryBasicSync()
         {
-            DoTableGenericQueryBasicSync(TablePayloadFormat.Json);
-            DoTableGenericQueryBasicSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryBasicSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryBasicSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryBasicSync(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryBasicSync(TablePayloadFormat format)
@@ -152,10 +153,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryComplexWithoutPropertyResolverSync()
         {
-            DoTableGenericQueryComplexWithoutPropertyResolverSync(TablePayloadFormat.Json);
-            DoTableGenericQueryComplexWithoutPropertyResolverSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryComplexWithoutPropertyResolverSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryComplexWithoutPropertyResolverSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryComplexWithoutPropertyResolverSync(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryComplexWithoutPropertyResolverSync(TablePayloadFormat format)
@@ -193,10 +194,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryWithContinuationSync()
         {
-            DoTableGenericQueryWithContinuationSync(TablePayloadFormat.Json);
-            DoTableGenericQueryWithContinuationSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryWithContinuationSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryWithContinuationSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryWithContinuationSync(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryWithContinuationSync(TablePayloadFormat format)
@@ -718,10 +719,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryWithFilter()
         {
-            DoTableGenericQueryWithFilter(TablePayloadFormat.Json);
-            DoTableGenericQueryWithFilter(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryWithFilter(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryWithFilter(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryWithFilter(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryWithFilter(TablePayloadFormat format)
@@ -751,10 +752,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryEnumerateTwice()
         {
-            DoTableGenericQueryEnumerateTwice(TablePayloadFormat.Json);
-            DoTableGenericQueryEnumerateTwice(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryEnumerateTwice(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryEnumerateTwice(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryEnumerateTwice(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryEnumerateTwice(TablePayloadFormat format)
@@ -803,10 +804,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryProjection()
         {
-            DoTableGenericQueryProjection(TablePayloadFormat.Json);
-            DoTableGenericQueryProjection(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryProjection(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryProjection(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryProjection(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryProjection(TablePayloadFormat format)
@@ -829,6 +830,94 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("Projection test with nullable values.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableGenericQueryProjectionWithNull()
+        {
+            CloudTable table = tableClient.GetTableReference(GenerateRandomTableName());
+            try
+            {
+                // Create a new table so we don't pollute the main query table
+                table.CreateIfNotExists();
+
+                // Insert an entity which is missing B, a string, and E, an int
+                DynamicTableEntity entity = new DynamicTableEntity()
+                {
+                    PartitionKey = Guid.NewGuid().ToString(),
+                    RowKey = DateTime.Now.Ticks.ToString()
+                };
+                entity.Properties.Add("A", new EntityProperty("a"));
+                table.Execute(TableOperation.Insert(entity));
+
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, false);
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, false);
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, true);
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, true);
+            }
+            finally
+            {
+                table.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Projection test with incorrect types.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableGenericQueryProjectionWithIncorrectTypes()
+        {
+            CloudTable table = tableClient.GetTableReference(GenerateRandomTableName());
+            try
+            {
+                // Create a new table so we don't pollute the main query table
+                table.CreateIfNotExists();
+
+                // Insert an entity with B as an int and E as a bool
+                // BaseEntity defines B as a string and E as an int
+                DynamicTableEntity entity = new DynamicTableEntity()
+                {
+                    PartitionKey = Guid.NewGuid().ToString(),
+                    RowKey = DateTime.Now.Ticks.ToString()
+                };
+                entity.Properties.Add("A", new EntityProperty("a"));
+                entity.Properties.Add("B", new EntityProperty(1234));
+                entity.Properties.Add("E", new EntityProperty(true));
+                table.Execute(TableOperation.Insert(entity));
+
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, false);
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, false);
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, true);
+                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, true);
+            }
+            finally
+            {
+                table.DeleteIfExists();
+            }
+        }
+
+        public void DoTableGenericQueryProjectionWithSpecialCases(CloudTable table, TablePayloadFormat format, bool disableCompiledSerializers)
+        {
+            table.ServiceClient.DefaultRequestOptions.PayloadFormat = format;
+            BaseEntity.DisableCompiledSerializers = disableCompiledSerializers;
+
+            // Query on A, B, and E
+            TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "B", "E" });
+            IEnumerable<BaseEntity> entities = table.ExecuteQuery(query, null);
+
+            // Verify A has a set value and B and E have type defaults
+            Assert.AreEqual(1, entities.Count());
+            BaseEntity entity = entities.First();
+            Assert.AreEqual("a", entity.A);
+            Assert.IsNull(entity.B);
+            Assert.AreEqual(0, entity.E);      
+        }
+
+        [TestMethod]
         [Description("Basic with resolver")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -836,10 +925,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericWithResolver()
         {
-            DoTableGenericWithResolver(TablePayloadFormat.Json);
-            DoTableGenericWithResolver(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericWithResolver(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericWithResolver(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericWithResolver(payloadFormat);
+            }
         }
 
         private void DoTableGenericWithResolver(TablePayloadFormat format)
@@ -1011,10 +1100,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryResolverWithDynamic()
         {
-            DoTableQueryResolverWithDynamic(TablePayloadFormat.Json);
-            DoTableQueryResolverWithDynamic(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryResolverWithDynamic(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryResolverWithDynamic(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryResolverWithDynamic(payloadFormat);
+            }
         }
 
         private void DoTableQueryResolverWithDynamic(TablePayloadFormat format)
@@ -1056,10 +1145,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQuerySegmentedResolver()
         {
-            DoTableQuerySegmentedResolver(TablePayloadFormat.Json);
-            DoTableQuerySegmentedResolver(TablePayloadFormat.JsonNoMetadata);
-            DoTableQuerySegmentedResolver(TablePayloadFormat.JsonFullMetadata);
-            DoTableQuerySegmentedResolver(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQuerySegmentedResolver(payloadFormat);
+            }
         }
 
         private void DoTableQuerySegmentedResolver(TablePayloadFormat format)
@@ -1112,10 +1201,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQuerySegmentedResolverWithDynamic()
         {
-            DoTableQuerySegmentedResolverWithDynamic(TablePayloadFormat.Json);
-            DoTableQuerySegmentedResolverWithDynamic(TablePayloadFormat.JsonNoMetadata);
-            DoTableQuerySegmentedResolverWithDynamic(TablePayloadFormat.JsonFullMetadata);
-            DoTableQuerySegmentedResolverWithDynamic(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQuerySegmentedResolverWithDynamic(payloadFormat);
+            }
         }
 
         private void DoTableQuerySegmentedResolverWithDynamic(TablePayloadFormat format)
@@ -1287,10 +1376,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryOnSupportedTypes()
         {
-            DoTableGenericQueryOnSupportedTypes(TablePayloadFormat.Json);
-            DoTableGenericQueryOnSupportedTypes(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryOnSupportedTypes(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryOnSupportedTypes(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryOnSupportedTypes(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryOnSupportedTypes(TablePayloadFormat format)
@@ -1424,10 +1513,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryWithSpecificOnSupportedTypes()
         {
-            DoTableGenericQueryWithSpecificOnSupportedTypes(TablePayloadFormat.Json);
-            DoTableGenericQueryWithSpecificOnSupportedTypes(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryWithSpecificOnSupportedTypes(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryWithSpecificOnSupportedTypes(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryWithSpecificOnSupportedTypes(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryWithSpecificOnSupportedTypes(TablePayloadFormat format)
@@ -1559,10 +1648,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryGenericWithTakeCount()
         {
-            DoTableQueryGenericWithTakeCount(TablePayloadFormat.Json);
-            DoTableQueryGenericWithTakeCount(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryGenericWithTakeCount(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryGenericWithTakeCount(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryGenericWithTakeCount(payloadFormat);
+            }
         }
 
         private void DoTableQueryGenericWithTakeCount(TablePayloadFormat format)
@@ -1601,10 +1690,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryGenericWithTakeCountAndResolver()
         {
-            DoTableQueryGenericWithTakeCountAndResolver(TablePayloadFormat.Json);
-            DoTableQueryGenericWithTakeCountAndResolver(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryGenericWithTakeCountAndResolver(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryGenericWithTakeCountAndResolver(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryGenericWithTakeCountAndResolver(payloadFormat);
+            }
         }
 
         private void DoTableQueryGenericWithTakeCountAndResolver(TablePayloadFormat format)
@@ -1637,10 +1726,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryWithInternalType()
         {
-            DoTableGenericQueryWithInternalType(TablePayloadFormat.Json);
-            DoTableGenericQueryWithInternalType(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryWithInternalType(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryWithInternalType(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryWithInternalType(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryWithInternalType(TablePayloadFormat format)
@@ -1717,10 +1806,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryWithInvalidQuery()
         {
-            DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.Json);
-            DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.JsonNoMetadata);
-            DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryWithInvalidQuery(payloadFormat);
+            }
         }
 
         private void DoTableGenericQueryWithInvalidQuery(TablePayloadFormat format)
@@ -1850,4 +1939,5 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
+#pragma warning restore 0618
 }

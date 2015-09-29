@@ -16,17 +16,21 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Xml.Linq;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
+#pragma warning disable 0618
     [TestClass]
     public class TableSasUnitTests : TableTestBase
     {
@@ -153,80 +157,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 sasCreds = new StorageCredentials(sasToken);
                 sasTable = new CloudTable(table.Uri, tableClient.Credentials);
                 sasClient = sasTable.ServiceClient;
-                Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
-            }
-            finally
-            {
-                table.DeleteIfExists();
-            }
-        }
-
-        [TestMethod]
-        [Description("Test TableSas via various constructors using 2012-02-12 version token.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Obsolete("The overload for GetSharedAccessSignature that takes a SAS version has been deprecated because the SAS tokens generated using the current version work fine with old libraries.")]                                    
-        public void TableSASConstructorsOldVersion()
-        {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
-            CloudTable table = tableClient.GetTableReference("T" + Guid.NewGuid().ToString("N"));
-            try
-            {
-                table.Create();
-
-                table.Execute(TableOperation.Insert(new BaseEntity("PK", "RK")));
-
-                // Prepare SAS authentication with full permissions
-                string sasToken = table.GetSharedAccessSignature(
-                    new SharedAccessTablePolicy
-                    {
-                        Permissions = SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query,
-                        SharedAccessExpiryTime = DateTimeOffset.Now.AddMinutes(30)
-                    },
-                    null /* accessPolicyIdentifier */,
-                    null /* startPk */,
-                    null /* startRk */,
-                    null /* endPk */,
-                    null /* endRk */,
-                    Constants.VersionConstants.February2012);
-
-                CloudStorageAccount sasAccount;
-                StorageCredentials sasCreds;
-                CloudTableClient sasClient;
-                CloudTable sasTable;
-                Uri baseUri = new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint);
-
-                // SAS via connection string parse
-                sasAccount = CloudStorageAccount.Parse(string.Format("TableEndpoint={0};SharedAccessSignature={1}", baseUri.AbsoluteUri, sasToken));
-                sasClient = sasAccount.CreateCloudTableClient();
-                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
-                sasTable = sasClient.GetTableReference(table.Name);
-
-                Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
-
-                // SAS via account constructor
-                sasCreds = new StorageCredentials(sasToken);
-                sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri, null);
-                sasClient = sasAccount.CreateCloudTableClient();
-                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
-                sasTable = sasClient.GetTableReference(table.Name);
-                Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
-
-                // SAS via client constructor URI + Creds
-                sasCreds = new StorageCredentials(sasToken);
-                sasClient = new CloudTableClient(baseUri, sasCreds);
-                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
-                sasTable = sasClient.GetTableReference(table.Name);
-                Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
-
-                // SAS via CloudTable constructor Uri + Client
-                sasCreds = new StorageCredentials(sasToken);
-                sasTable = new CloudTable(table.Uri, tableClient.Credentials);
-                sasClient = sasTable.ServiceClient;
-                sasClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
                 Assert.AreEqual(1, sasTable.ExecuteQuery(new TableQuery<BaseEntity>()).Count());
             }
             finally
@@ -559,7 +489,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string endPk,
             string endRk)
         {
-            bool expectSuccess = (accessPermissions & SharedAccessTablePermissions.Query) != 0;
+            bool expectSuccess = ((accessPermissions & SharedAccessTablePermissions.Query) != 0);
 
             Action<BaseEntity, OperationContext> queryDelegate = (tableEntity, ctx) =>
             {
@@ -576,6 +506,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             };
 
 
+
             // Perform test
             TestOperationWithRange(
                 tableName,
@@ -586,7 +517,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 queryDelegate,
                 "point query",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound, 
+                false,
+                expectSuccess);
         }
 
 
@@ -630,7 +563,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 updateDelegate,
                 "update merge",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -673,7 +606,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 updateDelegate,
                 "update replace",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -715,7 +648,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 addDelegate,
                 "add",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.Created : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.Created : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -758,7 +691,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 deleteDelegate,
                 "delete",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -801,7 +734,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 upsertDelegate,
                 "upsert merge",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -844,7 +777,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 upsertDelegate,
                 "upsert replace",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -905,6 +838,44 @@ namespace Microsoft.WindowsAzure.Storage.Table
             HttpStatusCode expectedStatusCode,
             bool isRangeQuery)
         {
+                        TestOperationWithRange(
+                tableName,
+                startPk,
+                startRk,
+                endPk,
+                endRk,
+                runOperationDelegate,
+                opName,
+                expectSuccess,
+                expectedStatusCode,
+                isRangeQuery,
+                false /* isPointQuery */);
+        }
+
+        /// <summary>
+        /// Test a table operation on entities inside and outside the given range.
+        /// </summary>
+        /// <param name="tableName">The name of the table to test.</param>
+        /// <param name="startPk">The start partition key range.</param>
+        /// <param name="startRk">The start row key range.</param>
+        /// <param name="endPk">The end partition key range.</param>
+        /// <param name="endRk">The end row key range.</param>
+        /// <param name="runOperationDelegate">A delegate with the table operation to test.</param>
+        /// <param name="opName">The name of the operation being tested.</param>
+        /// <param name="expectSuccess">Whether the operation should succeed on entities within the range.</param>
+        private void TestOperationWithRange(
+            string tableName,
+            string startPk,
+            string startRk,
+            string endPk,
+            string endRk,
+            Action<BaseEntity, OperationContext> runOperationDelegate,
+            string opName,
+            bool expectSuccess,
+            HttpStatusCode expectedStatusCode,
+            bool isRangeQuery,
+            bool isPointQuery)
+        {
             CloudTableClient referenceClient = GenerateCloudTableClient();
 
             string partitionKey = startPk ?? endPk ?? "M";
@@ -938,7 +909,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     (ctx) => runOperationDelegate(tableEntity, ctx),
                     string.Format("{0} without appropriate permission.", opName),
-                    (int)HttpStatusCode.NotFound);
+                    (int)HttpStatusCode.Forbidden);
             }
 
             if (startPk != null)
@@ -952,7 +923,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     (ctx) => runOperationDelegate(tableEntity, ctx),
                     string.Format("{0} before allowed partition key range", opName),
-                    (int)HttpStatusCode.NotFound);
+                    (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
                 tableEntity.PartitionKey = partitionKey;
             }
 
@@ -967,7 +938,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     (ctx) => runOperationDelegate(tableEntity, ctx),
                     string.Format("{0} after allowed partition key range", opName),
-                    (int)HttpStatusCode.NotFound);
+                    (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
 
                 tableEntity.PartitionKey = partitionKey;
             }
@@ -986,7 +957,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     TestHelper.ExpectedException(
                         (ctx) => runOperationDelegate(tableEntity, ctx),
                         string.Format("{0} before allowed row key range", opName),
-                        (int)HttpStatusCode.NotFound);
+                        (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
 
                     tableEntity.RowKey = rowKey;
                 }
@@ -1006,7 +977,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     TestHelper.ExpectedException(
                         (ctx) => runOperationDelegate(tableEntity, ctx),
                         string.Format("{0} after allowed row key range", opName),
-                        (int)HttpStatusCode.NotFound);
+                        (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
 
                     tableEntity.RowKey = rowKey;
                 }
@@ -1055,22 +1026,22 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 // Test invalid client operations
                 // BUGBUG: ListTables hides the exception. We should fix this
-                // TestHelpers.ExpectedException(() => sasClient.ListTablesSegmented(), "List tables with SAS", HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasClient.GetServiceProperties(), "Get service properties with SAS", (int)HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasClient.SetServiceProperties(properties), "Set service properties with SAS", (int)HttpStatusCode.NotFound);
+                // TestHelpers.ExpectedException(() => sasClient.ListTablesSegmented(), "List tables with SAS", HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException((ctx) => sasClient.GetServiceProperties(), "Get service properties with SAS", (int)HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException((ctx) => sasClient.SetServiceProperties(properties), "Set service properties with SAS", (int)HttpStatusCode.Forbidden);
 
                 CloudTable sasTable = sasClient.GetTableReference(table.Name);
 
                 // Verify that creation fails with SAS
-                TestHelper.ExpectedException((ctx) => sasTable.Create(null, ctx), "Create a table with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasTable.Create(null, ctx), "Create a table with SAS", (int)HttpStatusCode.Forbidden);
 
                 // Create the table.
                 table.Create();
 
                 // Test invalid table operations
-                TestHelper.ExpectedException((ctx) => sasTable.Delete(null, ctx), "Delete a table with SAS", (int)HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasTable.GetPermissions(null, ctx), "Get ACL with SAS", (int)HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasTable.SetPermissions(new TablePermissions(), null, ctx), "Set ACL with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasTable.Delete(null, ctx), "Delete a table with SAS", (int)HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException((ctx) => sasTable.GetPermissions(null, ctx), "Get ACL with SAS", (int)HttpStatusCode.Forbidden);
+                TestHelper.ExpectedException((ctx) => sasTable.SetPermissions(new TablePermissions(), null, ctx), "Set ACL with SAS", (int)HttpStatusCode.Forbidden);
             }
             finally
             {
@@ -1112,7 +1083,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     () => sasTable.Execute(TableOperation.Insert(new BaseEntity("PK", "RK2"))),
                     "Try to insert an entity when SAS doesn't allow inserts",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
 
                 sasTable.Execute(TableOperation.Delete(entity));
 
@@ -1230,21 +1201,21 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     (ctx) => insertDelegate(pkrkEnt, sasTableTransformed, ctx),
                     string.Format("Inserted entity without appropriate SAS permissions."),
-                    (int)HttpStatusCode.NotFound);
+                    (int)HttpStatusCode.Forbidden);
                 TestHelper.ExpectedException(
                      (ctx) => insertDelegate(pkrkEnt, sasTableDirect, ctx),
                     string.Format("Inserted entity without appropriate SAS permissions."),
-                     (int)HttpStatusCode.NotFound);
+                     (int)HttpStatusCode.Forbidden);
 
                 pkrkEnt = new BaseEntity("tables_batch_1", "05");
                 TestHelper.ExpectedException(
                     (ctx) => insertDelegate(pkrkEnt, sasTableTransformed, ctx),
                     string.Format("Inserted entity without appropriate SAS permissions."),
-                    (int)HttpStatusCode.NotFound);
+                    (int)HttpStatusCode.Forbidden);
                 TestHelper.ExpectedException(
                      (ctx) => insertDelegate(pkrkEnt, sasTableDirect, ctx),
                     string.Format("Inserted entity without appropriate SAS permissions."),
-                     (int)HttpStatusCode.NotFound);
+                     (int)HttpStatusCode.Forbidden);
             }
             finally
             {
@@ -1252,6 +1223,238 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
+        #endregion
+
+        #region SASIPAddressTests
+
+        /// <summary>
+        /// Helper function for testing the IPAddressOrRange funcitonality for tables
+        /// </summary>
+        /// <param name="generateInitialIPAddressOrRange">Function that generates an initial IPAddressOrRange object to use. This is expected to fail on the service.</param>
+        /// <param name="generateFinalIPAddressOrRange">Function that takes in the correct IP address (according to the service) and returns the IPAddressOrRange object
+        /// that should be accepted by the service</param>
+        public void CloudTableSASIPAddressHelper(Func<IPAddressOrRange> generateInitialIPAddressOrRange, Func<IPAddress, IPAddressOrRange> generateFinalIPAddressOrRange)
+        {
+            CloudTableClient tableClient = GenerateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference("T" + Guid.NewGuid().ToString("N"));
+
+            try
+            {
+                table.Create();
+                SharedAccessTablePolicy policy = new SharedAccessTablePolicy()
+                {
+                    Permissions = SharedAccessTablePermissions.Query,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                };
+
+                DynamicTableEntity entity = new DynamicTableEntity("PK", "RK", null, new Dictionary<string, EntityProperty>() {{"prop", new EntityProperty(4)}});
+                table.Execute(new TableOperation(entity, TableOperationType.Insert));
+
+                // The plan then is to use an incorrect IP address to make a call to the service
+                // ensure that we get an error message
+                // parse the error message to get my actual IP (as far as the service sees)
+                // then finally test the success case to ensure we can actually make requests
+
+                IPAddressOrRange ipAddressOrRange = generateInitialIPAddressOrRange();
+                string tableToken = table.GetSharedAccessSignature(policy, null, null, null, null, null, null, ipAddressOrRange);
+                StorageCredentials tableSAS = new StorageCredentials(tableToken);
+                Uri tableSASUri = tableSAS.TransformUri(table.Uri);
+                StorageUri tableSASStorageUri = tableSAS.TransformUri(table.StorageUri);
+
+                CloudTable tableWithSAS = new CloudTable(tableSASUri);
+                OperationContext opContext = new OperationContext();
+                IPAddress actualIP = null;
+
+                bool exceptionThrown = false;
+                TableResult result = null;
+                DynamicTableEntity resultEntity = new DynamicTableEntity();
+                TableOperation retrieveOp = new TableOperation(resultEntity, TableOperationType.Retrieve);
+                retrieveOp.RetrievePartitionKey = entity.PartitionKey;
+                retrieveOp.RetrieveRowKey = entity.RowKey;
+                try
+                {
+                    result = tableWithSAS.Execute(retrieveOp, null, opContext);
+                }
+                catch (StorageException e)
+                {
+                    string[] parts = e.RequestInformation.HttpStatusMessage.Split(' ');
+                    actualIP = IPAddress.Parse(parts[parts.Length - 1].Trim('.'));
+                    exceptionThrown = true;
+                    Assert.IsNotNull(actualIP);
+                }
+
+                Assert.IsTrue(exceptionThrown);
+                ipAddressOrRange = generateFinalIPAddressOrRange(actualIP);
+                tableToken = table.GetSharedAccessSignature(policy, null, null, null, null, null, null, ipAddressOrRange);
+                tableSAS = new StorageCredentials(tableToken);
+                tableSASUri = tableSAS.TransformUri(table.Uri);
+                tableSASStorageUri = tableSAS.TransformUri(table.StorageUri);
+
+
+                tableWithSAS = new CloudTable(tableSASUri);
+                resultEntity = new DynamicTableEntity();
+                retrieveOp = new TableOperation(resultEntity, TableOperationType.Retrieve);
+                retrieveOp.RetrievePartitionKey = entity.PartitionKey;
+                retrieveOp.RetrieveRowKey = entity.RowKey;
+                resultEntity = (DynamicTableEntity)tableWithSAS.Execute(retrieveOp).Result;
+    
+                Assert.AreEqual(entity.Properties["prop"].PropertyType, resultEntity.Properties["prop"].PropertyType);
+                Assert.AreEqual(entity.Properties["prop"].Int32Value.Value, resultEntity.Properties["prop"].Int32Value.Value);
+                Assert.IsTrue(table.StorageUri.PrimaryUri.Equals(tableWithSAS.Uri));
+                Assert.IsNull(tableWithSAS.StorageUri.SecondaryUri);
+
+                tableWithSAS = new CloudTable(tableSASStorageUri, null);
+                resultEntity = new DynamicTableEntity();
+                retrieveOp = new TableOperation(resultEntity, TableOperationType.Retrieve);
+                retrieveOp.RetrievePartitionKey = entity.PartitionKey;
+                retrieveOp.RetrieveRowKey = entity.RowKey;
+                resultEntity = (DynamicTableEntity)tableWithSAS.Execute(retrieveOp).Result;
+                Assert.AreEqual(entity.Properties["prop"].PropertyType, resultEntity.Properties["prop"].PropertyType);
+                Assert.AreEqual(entity.Properties["prop"].Int32Value.Value, resultEntity.Properties["prop"].Int32Value.Value);
+                Assert.IsTrue(table.StorageUri.Equals(tableWithSAS.StorageUri));
+            }
+            finally
+            {
+                table.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying an IP address or range and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableSASIPAddressQueryParam()
+        {
+            CloudTableSASIPAddressHelper(() =>
+            {
+                // We need an IP address that will never be a valid source
+                IPAddress invalidIP = IPAddress.Parse("255.255.255.255");
+                return new IPAddressOrRange(invalidIP.ToString());
+            },
+            (IPAddress actualIP) =>
+            {
+                return new IPAddressOrRange(actualIP.ToString());
+            });
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying an IP address or range and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableSASIPRangeQueryParam()
+        {
+            CloudTableSASIPAddressHelper(() =>
+            {
+                // We need an IP address that will never be a valid source
+                IPAddress invalidIPBegin = IPAddress.Parse("255.255.255.0");
+                IPAddress invalidIPEnd = IPAddress.Parse("255.255.255.255");
+
+                return new IPAddressOrRange(invalidIPBegin.ToString(), invalidIPEnd.ToString());
+            },
+                (IPAddress actualIP) =>
+                {
+                    byte[] actualAddressBytes = actualIP.GetAddressBytes();
+                    byte[] initialAddressBytes = actualAddressBytes.ToArray();
+                    initialAddressBytes[0]--;
+                    byte[] finalAddressBytes = actualAddressBytes.ToArray();
+                    finalAddressBytes[0]++;
+
+                    return new IPAddressOrRange(new IPAddress(initialAddressBytes).ToString(), new IPAddress(finalAddressBytes).ToString());
+                });
+        }
+        #endregion
+
+        #region SASHttpsTests
+        [TestMethod]
+        [Description("Perform a SAS request specifying a shared protocol and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableSASSharedProtocolsQueryParam()
+        {
+            CloudTableClient tableClient = GenerateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference("T" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                table.Create();
+                SharedAccessTablePolicy policy = new SharedAccessTablePolicy()
+                {
+                    Permissions = SharedAccessTablePermissions.Query,
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                };
+
+                DynamicTableEntity entity = new DynamicTableEntity("PK", "RK", null, new Dictionary<string, EntityProperty>() { { "prop", new EntityProperty(4) } });
+                table.Execute(new TableOperation(entity, TableOperationType.Insert));
+
+                foreach (SharedAccessProtocol? protocol in new SharedAccessProtocol?[] { null, SharedAccessProtocol.HttpsOrHttp, SharedAccessProtocol.HttpsOnly })
+                {
+                    string tableToken = table.GetSharedAccessSignature(policy, null, null, null, null, null, protocol, null);
+                    StorageCredentials tableSAS = new StorageCredentials(tableToken);
+                    Uri tableSASUri = new Uri(table.Uri + tableSAS.SASToken);
+                    StorageUri tableSASStorageUri = new StorageUri(new Uri(table.StorageUri.PrimaryUri + tableSAS.SASToken), new Uri(table.StorageUri.SecondaryUri + tableSAS.SASToken));
+
+                    int httpPort = tableSASUri.Port;
+                    int securePort = 443;
+
+                    if (!string.IsNullOrEmpty(TestBase.TargetTenantConfig.TableSecurePortOverride))
+                    {
+                        securePort = Int32.Parse(TestBase.TargetTenantConfig.TableSecurePortOverride);
+                    }
+
+                    var schemesAndPorts = new[] {
+                        new { scheme = Uri.UriSchemeHttp, port = httpPort},
+                        new { scheme = Uri.UriSchemeHttps, port = securePort}
+                    };
+
+                    CloudTable tableWithSAS = null;
+                    TableOperation retrieveOp = TableOperation.Retrieve(entity.PartitionKey, entity.RowKey);
+
+                    foreach (var item in schemesAndPorts)
+                    {
+                        tableSASUri = TransformSchemeAndPort(tableSASUri, item.scheme, item.port);
+                        tableSASStorageUri = new StorageUri(TransformSchemeAndPort(tableSASStorageUri.PrimaryUri, item.scheme, item.port), TransformSchemeAndPort(tableSASStorageUri.SecondaryUri, item.scheme, item.port));
+
+                        if (protocol.HasValue && protocol.Value == SharedAccessProtocol.HttpsOnly && string.CompareOrdinal(item.scheme, Uri.UriSchemeHttp) == 0)
+                        {
+                            tableWithSAS = new CloudTable(tableSASUri);
+                            TestHelper.ExpectedException(() => tableWithSAS.Execute(retrieveOp), "Access a table using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
+
+                            tableWithSAS = new CloudTable(tableSASStorageUri, null);
+                            TestHelper.ExpectedException(() => tableWithSAS.Execute(retrieveOp), "Access a table using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
+                        }
+                        else
+                        {
+                            tableWithSAS = new CloudTable(tableSASUri);
+                            TableResult result = tableWithSAS.Execute(retrieveOp);
+                            Assert.AreEqual(entity.Properties["prop"], ((DynamicTableEntity)result.Result).Properties["prop"]);
+
+                            tableWithSAS = new CloudTable(tableSASStorageUri, null);
+                            result = tableWithSAS.Execute(retrieveOp);
+                            Assert.AreEqual(entity.Properties["prop"], ((DynamicTableEntity)result.Result).Properties["prop"]);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                table.DeleteIfExists();
+            }
+        }
+
+        private static Uri TransformSchemeAndPort(Uri input, string scheme, int port)
+        {
+            UriBuilder builder = new UriBuilder(input);
+            builder.Scheme = scheme;
+            builder.Port = port;
+            return builder.Uri;
+        }
         #endregion
 
         #region Test Helpers
@@ -1281,4 +1484,5 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
+#pragma warning restore 0618
 }

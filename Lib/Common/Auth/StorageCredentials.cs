@@ -37,6 +37,11 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         private UriQueryBuilder queryBuilder;
 
         /// <summary>
+        /// A value indicating whether or not this StorageCredentials object is meant for HTTPS access only.
+        /// </summary>
+        private bool isHttpsOnly;
+
+        /// <summary>
         /// Gets the associated shared access signature token for the credentials.
         /// </summary>
         /// <value>The shared access signature token.</value>
@@ -84,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         {
             get
             {
-                return (this.SASToken != null) && (this.AccountName == null);
+                return (this.SASToken != null);
             }
         }
 
@@ -287,6 +292,16 @@ namespace Microsoft.WindowsAzure.Storage.Auth
 #endif
         public Uri TransformUri(Uri resourceUri)
         {
+            CommonUtility.AssertNotNull("resourceUri", resourceUri);
+#if WINDOWS_RT || PORTABLE || ASPNET_K
+            if (this.isHttpsOnly && (string.CompareOrdinal(resourceUri.Scheme, "https") != 0))
+#else
+            if (this.isHttpsOnly && (string.CompareOrdinal(resourceUri.Scheme, Uri.UriSchemeHttps) != 0))
+#endif
+            {
+                throw new ArgumentException(SR.CannotTransformNonHttpsUriWithHttpsOnlyCredentials);
+            }
+
             if (this.IsSAS)
             {
                 return this.queryBuilder.AddToUri(resourceUri);
@@ -365,13 +380,20 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         private void UpdateQueryBuilder()
         {
             this.queryBuilder = new UriQueryBuilder();
+            this.isHttpsOnly = false;
             IDictionary<string, string> parameters = HttpWebUtility.ParseQueryString(this.SASToken);
             foreach (KeyValuePair<string, string> parameter in parameters)
             {
+                if (string.CompareOrdinal(parameter.Key, Constants.QueryConstants.SignedProtocols) == 0 && string.CompareOrdinal(parameter.Value, "https") == 0)
+                {
+                    this.isHttpsOnly = true;
+                }
+
                 this.queryBuilder.Add(parameter.Key, parameter.Value);
             }
 
             this.queryBuilder.Add(Constants.QueryConstants.ApiVersion, Constants.HeaderConstants.TargetStorageVersion);
+            
         }
     }
 }

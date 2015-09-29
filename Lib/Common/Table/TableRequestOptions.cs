@@ -57,8 +57,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
                 this.OperationExpiryTime = other.OperationExpiryTime;
                 this.PayloadFormat = other.PayloadFormat;
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 this.PropertyResolver = other.PropertyResolver;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 this.EncryptionPolicy = other.EncryptionPolicy;
                 this.RequireEncryption = other.RequireEncryption;
                 this.EncryptionResolver = other.EncryptionResolver;
@@ -76,23 +76,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                             ?? RetryPolicies.LocationMode.PrimaryOnly;
             modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
             modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-            modifiedOptions.PayloadFormat = (modifiedOptions.PayloadFormat 
-                                                ?? serviceClient.DefaultRequestOptions.PayloadFormat)
-                                                ?? TablePayloadFormat.Json;
-#else
-            modifiedOptions.PayloadFormat = (modifiedOptions.PayloadFormat 
-                                                ?? serviceClient.DefaultRequestOptions.PayloadFormat)
-                                                ?? TablePayloadFormat.AtomPub;
-#endif
+            modifiedOptions.PayloadFormat = (
+                modifiedOptions.PayloadFormat 
+                ?? serviceClient.DefaultRequestOptions.PayloadFormat)
+                ?? TablePayloadFormat.Json;
 
             if (!modifiedOptions.OperationExpiryTime.HasValue && modifiedOptions.MaximumExecutionTime.HasValue)
             {
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             modifiedOptions.PropertyResolver = modifiedOptions.PropertyResolver ?? serviceClient.DefaultRequestOptions.PropertyResolver;
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
             modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
             modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
             modifiedOptions.EncryptionResolver = modifiedOptions.EncryptionResolver ?? serviceClient.DefaultRequestOptions.EncryptionResolver;
@@ -236,20 +231,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 if (value.HasValue)
                 {
-#if WINDOWS_RT
-                if (value.Value == TablePayloadFormat.Json || value.Value == TablePayloadFormat.JsonNoMetadata || value.Value == TablePayloadFormat.JsonFullMetadata)
-                {
-                    throw new ArgumentException(SR.JsonNotSupportedOnRT, "value");
-                }
-#endif
                     this.payloadFormat = value.Value;
                 }
             }
         }
 
-        // For now, this is ok since we don't have RT support. Has to change to internal once we do. In that case, we can add overloads to Table operation
-        // methods to take in EdmTypeResolver.
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         private Func<string, string, string, string, EdmType> propertyResolver = null;
 
         /// <summary>
@@ -261,6 +247,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             set { this.propertyResolver = value; }
         }
 
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         private Func<string, string, string, bool> encryptionResolver = null;
 
         /// <summary>

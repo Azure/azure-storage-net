@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #if WINDOWS_RT || ASPNET_K || PORTABLE
     using System.Globalization;
     using System.IO;
+    using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
@@ -30,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     internal class Exceptions
     {
 #if WINDOWS_RT || ASPNET_K || PORTABLE
-        internal async static Task<StorageException> PopulateStorageExceptionFromHttpResponseMessage(HttpResponseMessage response, RequestResult currentResult)
+        internal async static Task<StorageException> PopulateStorageExceptionFromHttpResponseMessage(HttpResponseMessage response, RequestResult currentResult, Func<Stream, HttpResponseMessage, string, StorageExtendedErrorInformation> parseError)
         {
             if (!response.IsSuccessStatusCode)
             {
@@ -61,7 +62,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 try
                 {
                     Stream errStream = await response.Content.ReadAsStreamAsync();
-                    currentResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(errStream.AsInputStream());
+                    if (parseError != null)
+                    {
+                        currentResult.ExtendedErrorInformation = parseError(errStream, response, response.Content.Headers.ContentType.ToString());
+                    }
+                    else
+                    {
+                        currentResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(errStream.AsInputStream());
+                    }
                 }
                 catch (Exception)
                 {

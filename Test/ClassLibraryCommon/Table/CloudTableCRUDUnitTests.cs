@@ -144,10 +144,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableCreateSync()
         {
-            DoCloudTableCreateSync(TablePayloadFormat.Json);
-            DoCloudTableCreateSync(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableCreateSync(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableCreateSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableCreateSync(payloadFormat);
+            }
         }
 
         private void DoCloudTableCreateSync(TablePayloadFormat format)
@@ -177,10 +177,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableCreateAlreadyExistsSync()
         {
-            DoCloudTableCreateAlreadyExistsSync(TablePayloadFormat.Json);
-            DoCloudTableCreateAlreadyExistsSync(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableCreateAlreadyExistsSync(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableCreateAlreadyExistsSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableCreateAlreadyExistsSync(payloadFormat);
+            }
         }
 
         private void DoCloudTableCreateAlreadyExistsSync(TablePayloadFormat format)
@@ -417,10 +417,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableCreateIfNotExistsSync()
         {
-            DoCloudTableCreateIfNotExistsSync(TablePayloadFormat.Json);
-            DoCloudTableCreateIfNotExistsSync(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableCreateIfNotExistsSync(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableCreateIfNotExistsSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableCreateIfNotExistsSync(payloadFormat);
+            }
         }
 
         private void DoCloudTableCreateIfNotExistsSync(TablePayloadFormat format)
@@ -632,10 +632,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableDeleteSync()
         {
-            DoCloudTableDeleteSync(TablePayloadFormat.Json);
-            DoCloudTableDeleteSync(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableDeleteSync(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableDeleteSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableDeleteSync(payloadFormat);
+            }
         }
 
         private void DoCloudTableDeleteSync(TablePayloadFormat format)
@@ -667,10 +667,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableDeleteWhenNotExistSync()
         {
-            DoCloudTableDeleteWhenNotExistSync(TablePayloadFormat.Json);
-            DoCloudTableDeleteWhenNotExistSync(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableDeleteWhenNotExistSync(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableDeleteWhenNotExistSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableDeleteWhenNotExistSync(payloadFormat);
+            }
         }
 
         private void DoCloudTableDeleteWhenNotExistSync(TablePayloadFormat format)
@@ -878,14 +878,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableDeleteIfExistsSync()
         {
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.Json, false);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonNoMetadata, false);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonFullMetadata, false);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.AtomPub, false);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.Json, true);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonNoMetadata, true);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.JsonFullMetadata, true);
-            DoCloudTableDeleteIfExistsSync(TablePayloadFormat.AtomPub, true);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableDeleteIfExistsSync(payloadFormat, false);
+                DoCloudTableDeleteIfExistsSync(payloadFormat, true);
+            }
         }
 
         private void DoCloudTableDeleteIfExistsSync(TablePayloadFormat format, bool simulateParallelDelete)
@@ -937,14 +934,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableDeleteIfExistsAPM()
         {
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.Json, false);
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonNoMetadata, false);
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonFullMetadata, false);
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.AtomPub, false);
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.Json, true);
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonNoMetadata, true);
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.JsonFullMetadata, true);
-            DoCloudTableDeleteIfExistsAPM(TablePayloadFormat.AtomPub, true);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableDeleteIfExistsAPM(payloadFormat, false);
+                DoCloudTableDeleteIfExistsAPM(payloadFormat, true);
+            }
         }
 
         private void DoCloudTableDeleteIfExistsAPM(TablePayloadFormat format, bool simulateParallelDelete)
@@ -1175,10 +1169,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableExistsSync()
         {
-            DoCloudTableExistsSync(TablePayloadFormat.Json);
-            DoCloudTableExistsSync(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableExistsSync(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableExistsSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableExistsSync(payloadFormat);
+            }
         }
 
         private void DoCloudTableExistsSync(TablePayloadFormat format)

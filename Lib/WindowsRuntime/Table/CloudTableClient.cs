@@ -331,6 +331,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx);
             retCmd.RetrieveResponseStream = true;
+            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             retCmd.Handler = this.AuthenticationHandler;
             retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
@@ -511,6 +512,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx);
             retCmd.RetrieveResponseStream = true;
+            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             retCmd.Handler = this.AuthenticationHandler;
             retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);

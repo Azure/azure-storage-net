@@ -259,7 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();
             tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert);
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert, false);
             operation.IsTableEntity = true;
 
 #if ASPNET_K
@@ -520,9 +520,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #region Exists
         /// <summary>
-        /// Checks existence of the queue.
+        /// Checks existence of the table.
         /// </summary>
-        /// <returns><c>true</c> if the queue exists.</returns>
+        /// <returns><c>true</c> if the table exists.</returns>
 #if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync()
 #else
@@ -533,11 +533,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Checks existence of the queue.
+        /// Checks existence of the table.
         /// </summary>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-        /// <returns><c>true</c> if the queue exists.</returns>
+        /// <returns><c>true</c> if the table exists.</returns>
 #if ASPNET_K || PORTABLE
         public Task<bool> ExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -552,12 +552,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
 #if ASPNET_K || PORTABLE
         /// <summary>
-        /// Checks existence of the queue.
+        /// Checks existence of the table.
         /// </summary>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns><c>true</c> if the queue exists.</returns>
+        /// <returns><c>true</c> if the table exists.</returns>
         public Task<bool> ExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.ExistsAsync(false, requestOptions, operationContext, cancellationToken);
@@ -565,13 +565,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
 
         /// <summary>
-        /// Checks existence of the queue.
+        /// Checks existence of the table.
         /// </summary>
         /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns><c>true</c> if the queue exists.</returns>
+        /// <returns><c>true</c> if the table exists.</returns>
 #if ASPNET_K || PORTABLE
         private Task<bool> ExistsAsync(bool primaryOnly, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
 #else
@@ -688,6 +688,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions.ApplyToStorageCommand(putCmd);
             putCmd.Handler = this.ServiceClient.AuthenticationHandler;
             putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            putCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
@@ -772,6 +773,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.Handler = this.ServiceClient.AuthenticationHandler;
             getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            getCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.GetAcl(uri, serverTimeout, cnt, ctx);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);

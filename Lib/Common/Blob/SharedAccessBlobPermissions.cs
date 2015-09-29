@@ -41,13 +41,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         Write = 0x2,
 
         /// <summary>
-        /// Delete access granted for blobs.
+        /// Delete access granted.
         /// </summary>
         Delete = 0x4,
 
         /// <summary>
         /// List access granted.
         /// </summary>
-        List = 0x8
+        List = 0x8,
+
+        /// <summary>
+        /// Add access granted.
+        /// </summary>
+        Add = 0x10,
+
+        /// <summary>
+        /// Create access granted.
+        /// </summary>
+        Create = 0x20
     }
 }

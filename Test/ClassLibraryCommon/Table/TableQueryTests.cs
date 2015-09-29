@@ -127,10 +127,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryBasicSync()
         {
-            DoTableQueryBasicSync(TablePayloadFormat.Json);
-            DoTableQueryBasicSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryBasicSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryBasicSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryBasicSync(payloadFormat);
+            }
         }
 
         private void DoTableQueryBasicSync(TablePayloadFormat format)
@@ -158,10 +158,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryWithContinuationSync()
         {
-            DoTableQueryWithContinuationSync(TablePayloadFormat.Json);
-            DoTableQueryWithContinuationSync(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryWithContinuationSync(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryWithContinuationSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryWithContinuationSync(payloadFormat);
+            }
         }
 
         private void DoTableQueryWithContinuationSync(TablePayloadFormat format)
@@ -629,10 +629,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryWithFilter()
         {
-            DoTableQueryWithFilter(TablePayloadFormat.Json);
-            DoTableQueryWithFilter(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryWithFilter(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryWithFilter(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryWithFilter(payloadFormat);
+            }
         }
 
         private void DoTableQueryWithFilter(TablePayloadFormat format)
@@ -663,10 +663,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryEnumerateTwice()
         {
-            DoTableQueryEnumerateTwice(TablePayloadFormat.Json);
-            DoTableQueryEnumerateTwice(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryEnumerateTwice(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryEnumerateTwice(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryEnumerateTwice(payloadFormat);
+            }
         }
 
         private void DoTableQueryEnumerateTwice(TablePayloadFormat format)
@@ -714,10 +714,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryProjection()
         {
-            DoTableQueryProjection(TablePayloadFormat.Json);
-            DoTableQueryProjection(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryProjection(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryProjection(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryProjection(payloadFormat);
+            }
         }
 
         private void DoTableQueryProjection(TablePayloadFormat format)
@@ -746,10 +746,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryOnSupportedTypes()
         {
-            DoTableQueryOnSupportedTypes(TablePayloadFormat.Json);
-            DoTableQueryOnSupportedTypes(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryOnSupportedTypes(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryOnSupportedTypes(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryOnSupportedTypes(payloadFormat);
+            }
         }
 
         private void DoTableQueryOnSupportedTypes(TablePayloadFormat format)
@@ -775,6 +775,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     complexEntity.Bool = m % 2 == 0 ? true : false;
                     complexEntity.BoolPrimitive = m % 2 == 0 ? true : false;
                     complexEntity.Double = m + ((double)m / 100);
+                    complexEntity.DoubleInteger = m;
                     complexEntity.DoublePrimitive = m + ((double)m / 100);
                     complexEntity.Int32 = m;
                     complexEntity.IntegerPrimitive = m;
@@ -820,6 +821,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForDouble("DoublePrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef["DoublePrimitive"].DoubleValue.Value), 50);
+
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDouble("Double", QueryComparisons.GreaterThanOrEqual,
+                        middleRef["DoubleInteger"].DoubleValue.Value), 50);
 
                 // 5. Filter on Integer
                 ExecuteQueryAndAssertResults(table,
@@ -883,10 +888,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableRegionalQueryOnSupportedTypes()
         {
-            DoTableRegionalQueryOnSupportedTypes(TablePayloadFormat.Json);
-            DoTableRegionalQueryOnSupportedTypes(TablePayloadFormat.JsonNoMetadata);
-            DoTableRegionalQueryOnSupportedTypes(TablePayloadFormat.JsonFullMetadata);
-            DoTableRegionalQueryOnSupportedTypes(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableRegionalQueryOnSupportedTypes(payloadFormat);
+            }
         }
 
         private void DoTableRegionalQueryOnSupportedTypes(TablePayloadFormat format)
@@ -1024,10 +1029,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryEmptyValue()
         {
-            DoTableQueryEmptyValue(TablePayloadFormat.Json);
-            DoTableQueryEmptyValue(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryEmptyValue(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryEmptyValue(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryEmptyValue(payloadFormat);
+            }
         }
 
         private void DoTableQueryEmptyValue(TablePayloadFormat format)
@@ -1061,10 +1066,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryWithTakeCount()
         {
-            DoTableQueryWithTakeCount(TablePayloadFormat.Json);
-            DoTableQueryWithTakeCount(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryWithTakeCount(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryWithTakeCount(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryWithTakeCount(payloadFormat);
+            }
         }
 
         private void DoTableQueryWithTakeCount(TablePayloadFormat format)
@@ -1096,10 +1101,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryWithTakeCountAndResolver()
         {
-            DoTableQueryWithTakeCountAndResolver(TablePayloadFormat.Json);
-            DoTableQueryWithTakeCountAndResolver(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryWithTakeCountAndResolver(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryWithTakeCountAndResolver(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryWithTakeCountAndResolver(payloadFormat);
+            }
         }
 
         private void DoTableQueryWithTakeCountAndResolver(TablePayloadFormat format)
@@ -1136,10 +1141,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryWithInvalidTakeCount()
         {
-            DoTableQueryWithInvalidTakeCount(TablePayloadFormat.Json);
-            DoTableQueryWithInvalidTakeCount(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryWithInvalidTakeCount(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryWithInvalidTakeCount(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryWithInvalidTakeCount(payloadFormat);
+            }
         }
 
         private void DoTableQueryWithInvalidTakeCount(TablePayloadFormat format)
@@ -1182,10 +1187,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryWithInvalidQuery()
         {
-            DoTableQueryWithInvalidQuery(TablePayloadFormat.Json);
-            DoTableQueryWithInvalidQuery(TablePayloadFormat.JsonNoMetadata);
-            DoTableQueryWithInvalidQuery(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryWithInvalidQuery(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryWithInvalidQuery(payloadFormat);
+            }
         }
 
         private void DoTableQueryWithInvalidQuery(TablePayloadFormat format)

@@ -413,20 +413,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A shared access signature, as a URI query string.</returns>
         public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier)
         {
-            if (!this.ServiceClient.Credentials.IsSharedKey)
-            {
-                string errorMessage = string.Format(CultureInfo.InvariantCulture, SR.CannotCreateSASWithoutAccountKey);
-                throw new InvalidOperationException(errorMessage);
-            }
-
-            string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */, Constants.HeaderConstants.TargetStorageVersion);
-            StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-            string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
-
-            // Future resource type changes from "c" => "container"
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion);
-
-            return builder.ToString();
+            return this.GetSharedAccessSignature(policy, headers, groupPolicyIdentifier, null, null);
         }
 
         /// <summary>
@@ -435,10 +422,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
         /// <param name="headers">A <see cref="SharedAccessBlobHeaders"/> object specifying optional header values to set for a blob accessed with this SAS.</param>
         /// <param name="groupPolicyIdentifier">A string identifying a stored access policy.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
+        /// <param name="protocols">The allowed protocols (https only, or http and https). Null if you don't want to restrict protocol.</param>
+        /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
-        [Obsolete("This overload has been deprecated because the SAS tokens generated using the current version work fine with old libraries. Please use the other overloads.")]
-        public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, string sasVersion)
+        public string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, SharedAccessProtocol? protocols, IPAddressOrRange ipAddressOrRange)
         {
             if (!this.ServiceClient.Credentials.IsSharedKey)
             {
@@ -446,13 +433,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new InvalidOperationException(errorMessage);
             }
 
-            string validatedSASVersion = SharedAccessSignatureHelper.ValidateSASVersionString(sasVersion);
-            string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */, validatedSASVersion);
+            string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */);
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-            string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, validatedSASVersion, accountKey.KeyValue);
+            string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
 
             // Future resource type changes from "c" => "container"
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, validatedSASVersion);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 
             return builder.ToString();
         }
@@ -465,9 +451,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>This is used by both Shared Access and Copy blob operations.</para>
         /// </summary>
         /// <param name="ignoreSnapshotTime">Indicates if the snapshot time is ignored.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c>.</param>
         /// <returns>The canonical name of the blob.</returns>
-        private string GetCanonicalName(bool ignoreSnapshotTime, string sasVersion)
+        private string GetCanonicalName(bool ignoreSnapshotTime)
         {
             string accountName = this.ServiceClient.Credentials.AccountName;
             string containerName = this.Container.Name;
@@ -475,12 +460,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             // Replace \ with / for uri compatibility when running under .net 4.5. 
             string blobName = this.Name.Replace('\\', '/');
             string canonicalNameFormat = "/{0}/{1}/{2}/{3}";
-            if (sasVersion == Constants.VersionConstants.February2012 || sasVersion == Constants.VersionConstants.August2013)
-            {
-                // Do not prepend service name for older versions
-                canonicalNameFormat = "/{1}/{2}/{3}";
-            }
-
             string canonicalName = string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Blob, accountName, containerName, blobName);
  
              if (!ignoreSnapshotTime && this.SnapshotTime != null)

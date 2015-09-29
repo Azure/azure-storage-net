@@ -164,10 +164,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void ListTablesNoPrefix()
         {
-            DoListTablesNoPrefix(TablePayloadFormat.Json);
-            DoListTablesNoPrefix(TablePayloadFormat.JsonNoMetadata);
-            DoListTablesNoPrefix(TablePayloadFormat.JsonFullMetadata);
-            DoListTablesNoPrefix(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoListTablesNoPrefix(payloadFormat);
+            }
         }
 
         private void DoListTablesNoPrefix(TablePayloadFormat format)
@@ -191,10 +191,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void ListTablesWithPrefixBasic()
         {
-            DoListTablesWithPrefixBasic(TablePayloadFormat.Json);
-            DoListTablesWithPrefixBasic(TablePayloadFormat.JsonNoMetadata);
-            DoListTablesWithPrefixBasic(TablePayloadFormat.JsonFullMetadata);
-            DoListTablesWithPrefixBasic(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoListTablesWithPrefixBasic(payloadFormat);
+            }
         }
 
         private void DoListTablesWithPrefixBasic(TablePayloadFormat format)
@@ -384,10 +384,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudTableClientListTablesSharedKeyLite()
         {
-            DoCloudTableClientListTablesSharedKeyLite(TablePayloadFormat.Json);
-            DoCloudTableClientListTablesSharedKeyLite(TablePayloadFormat.JsonNoMetadata);
-            DoCloudTableClientListTablesSharedKeyLite(TablePayloadFormat.JsonFullMetadata);
-            DoCloudTableClientListTablesSharedKeyLite(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoCloudTableClientListTablesSharedKeyLite(payloadFormat);
+            }
         }
 
         private void DoCloudTableClientListTablesSharedKeyLite(TablePayloadFormat format)
@@ -587,10 +587,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void ListTablesSegmentedBasicSync()
         {
-            DoListTablesSegmentedBasicSync(TablePayloadFormat.Json);
-            DoListTablesSegmentedBasicSync(TablePayloadFormat.JsonNoMetadata);
-            DoListTablesSegmentedBasicSync(TablePayloadFormat.JsonFullMetadata);
-            DoListTablesSegmentedBasicSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoListTablesSegmentedBasicSync(payloadFormat);
+            }
         }
 
         private void DoListTablesSegmentedBasicSync(TablePayloadFormat format)
@@ -619,10 +619,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void ListTablesSegmentedMaxResultsSync()
         {
-            DoListTablesSegmentedMaxResultsSync(TablePayloadFormat.Json);
-            DoListTablesSegmentedMaxResultsSync(TablePayloadFormat.JsonNoMetadata);
-            DoListTablesSegmentedMaxResultsSync(TablePayloadFormat.JsonFullMetadata);
-            DoListTablesSegmentedMaxResultsSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoListTablesSegmentedMaxResultsSync(payloadFormat);
+            }
         }
 
         private void DoListTablesSegmentedMaxResultsSync(TablePayloadFormat format)
@@ -654,10 +654,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void ListTablesSegmentedWithPrefixSync()
         {
-            DoListTablesSegmentedWithPrefixSync(TablePayloadFormat.Json);
-            DoListTablesSegmentedWithPrefixSync(TablePayloadFormat.JsonNoMetadata);
-            DoListTablesSegmentedWithPrefixSync(TablePayloadFormat.JsonFullMetadata);
-            DoListTablesSegmentedWithPrefixSync(TablePayloadFormat.AtomPub);
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoListTablesSegmentedWithPrefixSync(payloadFormat);
+            }
         }
 
         private void DoListTablesSegmentedWithPrefixSync(TablePayloadFormat format)

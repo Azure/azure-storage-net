@@ -906,7 +906,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();
             tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert);
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert, false);
             operation.IsTableEntity = true;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
 
@@ -941,7 +941,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();
             tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert);
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert, false);
             operation.IsTableEntity = true;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
 

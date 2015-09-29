@@ -165,7 +165,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task ListTablesSegmentedBasicAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableDeleteIfExistsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableDeleteIfExistsAsync(TablePayloadFormat payloadFormat)
+        {
             CloudTableClient tableClient = GenerateCloudTableClient();
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
 
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
@@ -177,7 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             while (segment.ContinuationToken != null);
 
-           //  Assert.AreEqual(totalResults.Count, tableClient.ListTables().Count());
+            // Assert.AreEqual(totalResults.Count, tableClient.ListTables().Count());
         }
 
         [TestMethod]
@@ -188,7 +197,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task ListTablesSegmentedMaxResultsAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoListTablesSegmentedMaxResultsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoListTablesSegmentedMaxResultsAsync(TablePayloadFormat payloadFormat)
+        {
             CloudTableClient tableClient = GenerateCloudTableClient();
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
 
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
@@ -214,7 +232,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task ListTablesSegmentedWithPrefixAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoListTablesSegmentedWithPrefixAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoListTablesSegmentedWithPrefixAsync(TablePayloadFormat payloadFormat)
+        {
             CloudTableClient tableClient = GenerateCloudTableClient();
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
 
             TableResultSegment segment = null;
             List<CloudTable> totalResults = new List<CloudTable>();
@@ -241,9 +268,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task CloudTableClientListTablesSegmentedSharedKeyLite()
+        public async Task CloudTableClientListTablesSegmentedSharedKeyLiteAsync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableClientListTablesSegmentedSharedKeyLiteAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableClientListTablesSegmentedSharedKeyLiteAsync(TablePayloadFormat payloadFormat)
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
+            tableClient.DefaultRequestOptions.PayloadFormat = payloadFormat;
             tableClient.AuthenticationScheme = AuthenticationScheme.SharedKeyLite;
 
             TableResultSegment segment = null;
@@ -269,10 +305,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableClientGetServiceStatsAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableClientGetServiceStatsAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableClientGetServiceStatsAsync(TablePayloadFormat payloadFormat)
+        {
             AssertSecondaryEndpoint();
 
             CloudTableClient client = GenerateCloudTableClient();
             client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
+            client.DefaultRequestOptions.PayloadFormat = payloadFormat;
             TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
         }
 
@@ -285,7 +330,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudTableClientServerTimeoutAsync()
         {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                await DoCloudTableClientServerTimeoutAsync(payloadFormat);
+            }
+        }
+
+        private async Task DoCloudTableClientServerTimeoutAsync(TablePayloadFormat payloadFormat)
+        {
             CloudTableClient client = GenerateCloudTableClient();
+            client.DefaultRequestOptions.PayloadFormat = payloadFormat;
 
             string timeout = null;
             OperationContext context = new OperationContext();

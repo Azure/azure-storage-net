@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
     /// </summary>
     public sealed class FileServiceProperties
     {
-        private ServiceProperties serviceProperties;
+        internal ServiceProperties serviceProperties;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileServiceProperties"/> class.
@@ -42,8 +42,6 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public FileServiceProperties()
         {
             this.serviceProperties = new ServiceProperties();
-            this.serviceProperties.HourMetrics = null;
-            this.serviceProperties.MinuteMetrics = null;
             this.serviceProperties.Logging = null;
         }
 
@@ -55,12 +53,44 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             get 
             {
-               return this.serviceProperties.Cors;
+                return this.serviceProperties.Cors;
             }
 
             set
             {
                 this.serviceProperties.Cors = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the hour metrics properties.
+        /// </summary>
+        /// <value>The metrics properties.</value>
+        public MetricsProperties HourMetrics
+        {
+            get
+            {
+                return this.serviceProperties.HourMetrics;
+            }
+            set
+            {
+                this.serviceProperties.HourMetrics = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the minutes metrics properties.
+        /// </summary>
+        /// <value>The metrics properties.</value>
+        public MetricsProperties MinuteMetrics
+        {
+            get
+            {
+                return this.serviceProperties.MinuteMetrics;
+            }
+            set
+            {
+                this.serviceProperties.MinuteMetrics = value;
             }
         }
 
@@ -71,11 +101,16 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A <c>ServiceProperties</c> object containing the properties in the XML document.</returns>
         internal static FileServiceProperties FromServiceXml(XDocument servicePropertiesDocument)
         {
-            XElement servicePropertiesElement = servicePropertiesDocument.Element(ServiceProperties.StorageServicePropertiesName);
+            XElement servicePropertiesElement =
+                servicePropertiesDocument.Element(ServiceProperties.StorageServicePropertiesName);
 
             FileServiceProperties properties = new FileServiceProperties
             {
-                Cors = ServiceProperties.ReadCorsPropertiesFromXml(servicePropertiesElement.Element(ServiceProperties.CorsName))
+                Cors = ServiceProperties.ReadCorsPropertiesFromXml(servicePropertiesElement.Element(ServiceProperties.CorsName)),
+                HourMetrics = ServiceProperties.ReadMetricsPropertiesFromXml(
+                    servicePropertiesElement.Element(ServiceProperties.HourMetricsName)),
+                MinuteMetrics = ServiceProperties.ReadMetricsPropertiesFromXml(
+                    servicePropertiesElement.Element(ServiceProperties.MinuteMetricsName))
             };
 
             return properties;

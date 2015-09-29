@@ -69,11 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             this.DefaultRequestOptions = new TableRequestOptions();
             this.DefaultRequestOptions.RetryPolicy = new ExponentialRetry();
             this.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryOnly;
-#if !WINDOWS_RT
             this.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.Json;
-#else
-            this.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.AtomPub;
-#endif
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
 
@@ -196,8 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Gets and sets the table payload format for requests against any table accessed with this <see cref="CloudTableClient"/> object.
         /// </summary>
         /// <value>A <see cref="TablePayloadFormat"/> enumeration value.</value>
-        /// <remarks>By default, this property is set to <see cref="TablePayloadFormat.Json"/> for .NET and Windows Phone. For Windows Runtime,
-        /// it is set to <see cref="TablePayloadFormat.AtomPub"/>.</remarks>
+        /// <remarks>By default, this property is set to <see cref="TablePayloadFormat.Json"/>.</remarks>
         [Obsolete("Use DefaultRequestOptions.PayloadFormat.")]
         public TablePayloadFormat? PayloadFormat
         {
@@ -208,15 +203,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             set
             {
-#if WINDOWS_RT
-                if (value.HasValue)
-                {
-                    if (value.Value == TablePayloadFormat.Json || value.Value == TablePayloadFormat.JsonNoMetadata || value.Value == TablePayloadFormat.JsonFullMetadata)
-                    {
-                        throw new ArgumentException(SR.JsonNotSupportedOnRT, "value");
-                    }
-                }
-#endif
                 this.DefaultRequestOptions.PayloadFormat = value;
             }
         }

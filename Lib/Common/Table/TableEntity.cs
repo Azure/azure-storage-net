@@ -522,19 +522,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     exprs.Add(Expression.Assign(propName, Expression.Constant(prop.Name)));
                     exprs.Add(Expression.Assign(tempProp, Expression.Call(GetKeyOrNullFromDictionaryMethodInfo, propName, dictVariable, ctxParam)));
 
-                    exprs.Add(
-
-                            // If property is not null
-                            Expression.IfThen(Expression.NotEqual(tempProp, Expression.Constant(null)),
-
-                            // then if prop.Isnull, objProp.SetValue(null)
-                            Expression.IfThenElse(Expression.Call(tempProp, EntityPropertyIsNullInfo),
-
-                            // then
-                            Expression.Call(Expression.Convert(instanceParam, type), prop.FindSetProp(), Expression.Convert(Expression.Constant(null), prop.PropertyType)),
-
-                            // else set entity property based on type
-                           readExpr)));
+                    // If property is not null
+                    exprs.Add(Expression.IfThen(Expression.NotEqual(tempProp, Expression.Constant(null)), readExpr));
                 }
             }
 

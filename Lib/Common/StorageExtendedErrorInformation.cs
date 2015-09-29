@@ -25,6 +25,9 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+#if WINDOWS_RT || PORTABLE || ASPNET_K
+    using System.Net.Http;
+#endif
     using System.Xml;
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
@@ -61,7 +64,7 @@ namespace Microsoft.WindowsAzure.Storage
         public string ErrorMessage { get; internal set; }
 
         /// <summary>
-        /// Gets additional error details.
+        /// Gets additional error details from XML-formatted input stream.
         /// </summary>
         /// <value>An <see cref="IDictionary{TKey,TValue}"/> containing the additional error details.</value>
         public IDictionary<string, string> AdditionalDetails { get; internal set; }
@@ -74,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
         /// <summary>
-        /// Gets the error details from stream.
+        /// Gets the error details from an XML-formatted error stream.
         /// </summary>
         /// <param name="inputStream">The input stream.</param>
         /// <returns>The error details.</returns>
@@ -117,8 +120,11 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="response">The web response.</param>
         /// <param name="contentType">The response Content-Type.</param>
         /// <returns>The error details.</returns>
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if WINDOWS_RT || ASPNET_K || PORTABLE
+        public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpResponseMessage response, string contentType)
+#else
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpWebResponse response, string contentType)
+#endif
         {
             CommonUtility.AssertNotNull("inputStream", inputStream);
             CommonUtility.AssertNotNull("response", response);
@@ -131,7 +137,6 @@ namespace Microsoft.WindowsAzure.Storage
             HttpResponseAdapterMessage responseMessage = new HttpResponseAdapterMessage(response, inputStream, contentType);
             return ReadAndParseExtendedError(responseMessage);
         }
-#endif
 
         /// <summary>
         /// Gets the error details from the stream using OData library.
@@ -160,7 +165,6 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="responseMessage">The IODataResponseMessage to parse.</param>
         /// <returns>The error details.</returns>
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         public static StorageExtendedErrorInformation ReadAndParseExtendedError(IODataResponseMessage responseMessage)
         {
             StorageExtendedErrorInformation storageExtendedError = null;
@@ -201,7 +205,6 @@ namespace Microsoft.WindowsAzure.Storage
 
             return storageExtendedError;
         }
-#endif
 
 #region IXmlSerializable
 

@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Auth
 {
+    using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core.Util;
@@ -42,12 +43,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// Get the complete query builder for creating the Shared Access Signature query.
         /// </summary>
         /// <param name="policy">The shared access policy to hash.</param>
-        /// <param name="headers">The optional header values to set for a blob returned with this SAS. Not valid for the 2012-02-12 version.</param>
+        /// <param name="headers">The optional header values to set for a blob returned with this SAS.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
         /// <param name="resourceType">Either "b" for blobs or "c" for containers.</param>
         /// <param name="signature">The signature to use.</param>
         /// <param name="accountKeyName">The name of the key used to create the signature, or <c>null</c> if the key is implicit.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
         /// <returns>The finished query builder.</returns>
         internal static UriQueryBuilder GetSignature(
             SharedAccessBlobPolicy policy,
@@ -56,7 +59,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string resourceType,
             string signature,
             string accountKeyName,
-            string sasVersion)
+            string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange
+            )
         {
             CommonUtility.AssertNotNullOrEmpty("resourceType", resourceType);
 
@@ -67,6 +73,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIdentifier, accessPolicyIdentifier);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, accountKeyName);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.Signature, signature);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedProtocols, GetProtocolString(protocols));
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIP, ipAddressOrRange == null ? null : ipAddressOrRange.ToString());
 
             if (policy != null)
             {
@@ -102,6 +110,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="signature">The signature to use.</param>
         /// <param name="accountKeyName">The name of the key used to create the signature, or <c>null</c> if the key is implicit.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
         /// <returns>The finished query builder.</returns>
         internal static UriQueryBuilder GetSignature(
             SharedAccessFilePolicy policy,
@@ -110,7 +120,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string resourceType,
             string signature,
             string accountKeyName,
-            string sasVersion)
+            string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceType", resourceType);
 
@@ -121,6 +133,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIdentifier, accessPolicyIdentifier);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, accountKeyName);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.Signature, signature);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedProtocols, GetProtocolString(protocols));
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIP, ipAddressOrRange == null ? null : ipAddressOrRange.ToString());
 
             if (policy != null)
             {
@@ -154,13 +168,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="signature">The signature to use.</param>
         /// <param name="accountKeyName">The name of the key used to create the signature, or <c>null</c> if the key is implicit.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
         /// <returns>The finished query builder.</returns>
         internal static UriQueryBuilder GetSignature(
             SharedAccessQueuePolicy policy,
             string accessPolicyIdentifier,
             string signature,
             string accountKeyName,
-            string sasVersion)
+            string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange)
         {
             CommonUtility.AssertNotNull("signature", signature);
 
@@ -170,6 +188,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIdentifier, accessPolicyIdentifier);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, accountKeyName);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.Signature, signature);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedProtocols, GetProtocolString(protocols));
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIP, ipAddressOrRange == null ? null : ipAddressOrRange.ToString());
 
             if (policy != null)
             {
@@ -199,6 +219,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="signature">The signature to use.</param>
         /// <param name="accountKeyName">The name of the key used to create the signature, or <c>null</c> if the key is implicit.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
         /// <returns>The finished query builder.</returns>
         internal static UriQueryBuilder GetSignature(
             SharedAccessTablePolicy policy,
@@ -210,7 +232,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string endRowKey,
             string signature,
             string accountKeyName,
-            string sasVersion)
+            string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange)
         {          
             CommonUtility.AssertNotNull("signature", signature);
 
@@ -225,6 +249,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIdentifier, accessPolicyIdentifier);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, accountKeyName);
             AddEscapedIfNotNull(builder, Constants.QueryConstants.Signature, signature);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedProtocols, GetProtocolString(protocols));
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIP, ipAddressOrRange == null ? null : ipAddressOrRange.ToString());
 
             if (policy != null)
             {
@@ -236,6 +262,45 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                 {
                     AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedPermissions, permissions);
                 }
+            }
+
+            return builder;
+        }
+
+        internal static UriQueryBuilder GetSignature(
+            SharedAccessAccountPolicy policy,
+            string signature,
+            string accountKeyName,
+            string sasVersion)
+        {
+            CommonUtility.AssertNotNull("signature", signature);
+            CommonUtility.AssertNotNull("policy", policy);
+
+            UriQueryBuilder builder = new UriQueryBuilder();
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedVersion, sasVersion);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedKey, accountKeyName);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.Signature, signature);
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedProtocols, policy.Protocols == null ? null : GetProtocolString(policy.Protocols.Value));
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedIP, policy.IPAddressOrRange == null ? null : policy.IPAddressOrRange.ToString());
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedStart, GetDateTimeOrNull(policy.SharedAccessStartTime));
+            AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedExpiry, GetDateTimeOrNull(policy.SharedAccessExpiryTime));
+
+            string resourceTypes = SharedAccessAccountPolicy.ResourceTypesToString(policy.ResourceTypes);
+            if (!string.IsNullOrEmpty(resourceTypes))
+            {
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedResourceTypes, resourceTypes);
+            }
+
+            string services = SharedAccessAccountPolicy.ServicesToString(policy.Services);
+            if (!string.IsNullOrEmpty(services))
+            {
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedServices, services);
+            }
+
+            string permissions = SharedAccessAccountPolicy.PermissionsToString(policy.Permissions);
+            if (!string.IsNullOrEmpty(permissions))
+            {
+                AddEscapedIfNotNull(builder, Constants.QueryConstants.SignedPermissions, permissions);
             }
 
             return builder;
@@ -263,6 +328,23 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string result = value != null ? value.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) : null;
             return result;
         }
+
+#if !PORTABLE
+        /// <summary>
+        /// Converts the specified value to either a string representation or <c>null</c>.
+        /// </summary>
+        /// <param name="protocols">The protocols to convert</param>
+        /// <returns>A string representing the specified value.</returns>
+        internal static string GetProtocolString(SharedAccessProtocol? protocols)
+        {
+            if (!protocols.HasValue)
+            {
+                return null;
+            }
+
+            return protocols.Value == SharedAccessProtocol.HttpsOnly ? "https" : "https,http";
+        }
+#endif 
 
         /// <summary>
         /// Escapes and adds the specified name/value pair to the query builder if it is not null.
@@ -334,6 +416,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
         /// <param name="resourceName">The canonical resource string, unescaped.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
         /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
         /// <returns>The signed hash.</returns>
         internal static string GetHash(
@@ -341,6 +425,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string accessPolicyIdentifier,
             string resourceName,
             string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange,
             byte[] keyValue)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
@@ -362,18 +448,23 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             ////                     signedexpiry + "\n" +
             ////                     canonicalizedresource + "\n" +
             ////                     signedidentifier + "\n" +
+            ////                     signedIP + "\n" + 
+            ////                     signedProtocol + "\n" + 
             ////                     signedversion
             ////
             //// HMAC-SHA256(UTF8.Encode(StringToSign))
+            ////
 
             string stringToSign = string.Format(
                                      CultureInfo.InvariantCulture,
-                                     "{0}\n{1}\n{2}\n{3}\n{4}\n{5}",
+                                     "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}",
                                      permissions,
                                      GetDateTimeOrEmpty(startTime),
                                      GetDateTimeOrEmpty(expiryTime),
                                      resourceName,
                                      accessPolicyIdentifier,
+                                     ipAddressOrRange == null ? string.Empty : ipAddressOrRange.ToString(),
+                                     GetProtocolString(protocols),
                                      sasVersion);
 
             Logger.LogVerbose(null /* operationContext */, SR.TraceStringToSign, stringToSign);
@@ -392,6 +483,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="endRowKey">The end row key, or <c>null</c>.</param>
         /// <param name="resourceName">The canonical resource string, unescaped.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
         /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
         /// <returns>The signed hash.</returns>
         internal static string GetHash(
@@ -403,6 +496,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string endRowKey,
             string resourceName,
             string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange,
             byte[] keyValue)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
@@ -424,6 +519,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             ////                     signedexpiry + "\n" +
             ////                     canonicalizedresource + "\n" +
             ////                     signedidentifier + "\n" +
+            ////                     signedIP + "\n" + 
+            ////                     signedProtocol + "\n" + 
             ////                     signedversion + "\n" +
             ////                     startpk + "\n" +
             ////                     startrk + "\n" +
@@ -431,15 +528,18 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             ////                     endrk
             ////
             //// HMAC-SHA256(UTF8.Encode(StringToSign))
+            //// 
 
             string stringToSign = string.Format(
                                      CultureInfo.InvariantCulture,
-                                     "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}",
+                                     "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}",
                                      permissions,
                                      GetDateTimeOrEmpty(startTime),
                                      GetDateTimeOrEmpty(expiryTime),
                                      resourceName,
                                      accessPolicyIdentifier,
+                                     ipAddressOrRange == null ? string.Empty : ipAddressOrRange.ToString(),
+                                     GetProtocolString(protocols),
                                      sasVersion,
                                      startPartitionKey,
                                      startRowKey,
@@ -455,10 +555,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// Get the signature hash embedded inside the Shared Access Signature.
         /// </summary>
         /// <param name="policy">The shared access policy to hash.</param>
-        /// <param name="headers">The optional header values to set for a blob returned with this SAS. Not valid for the 2012-02-12 version.</param>
+        /// <param name="headers">The optional header values to set for a blob returned with this SAS.</param>
         /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
         /// <param name="resourceName">The canonical resource string, unescaped.</param>
         /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
         /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
         /// <returns>The signed hash.</returns>
         internal static string GetHash(
@@ -467,6 +569,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
             string accessPolicyIdentifier,
             string resourceName,
             string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange,
             byte[] keyValue)
         {
             CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
@@ -482,109 +586,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                 startTime = policy.SharedAccessStartTime;
                 expiryTime = policy.SharedAccessExpiryTime;
             }
-            
-            //// StringToSign =      signedpermissions + "\n" +
-            ////                     signedstart + "\n" +
-            ////                     signedexpiry + "\n" +
-            ////                     canonicalizedresource + "\n" +
-            ////                     signedidentifier + "\n" +
-            ////                     signedversion + "\n" +
-            ////                     cachecontrol + "\n" +
-            ////                     contentdisposition + "\n" +
-            ////                     contentencoding + "\n" +
-            ////                     contentlanguage + "\n" +
-            ////                     contenttype 
-            ////
-            //// HMAC-SHA256(UTF8.Encode(StringToSign))
-            ////
-            //// Note that the final five headers are invalid for the 2012-02-12 version.
-
-            string stringToSign = string.Format(
-                                    CultureInfo.InvariantCulture,
-                                    "{0}\n{1}\n{2}\n{3}\n{4}\n{5}",
-                                    permissions,
-                                    GetDateTimeOrEmpty(startTime),
-                                    GetDateTimeOrEmpty(expiryTime),
-                                    resourceName,
-                                    accessPolicyIdentifier,
-                                    sasVersion);
-
-            if (string.Equals(sasVersion, Constants.VersionConstants.February2012))
-            {
-                if (headers != null)
-                {
-                    string errorString = string.Format(CultureInfo.CurrentCulture, SR.InvalidHeaders);
-                    throw new ArgumentException(errorString);
-                }
-            }
-            else
-            {
-                string cacheControl = null;
-                string contentDisposition = null;
-                string contentEncoding = null;
-                string contentLanguage = null;
-                string contentType = null;
-                if (headers != null)
-                {
-                    cacheControl = headers.CacheControl;
-                    contentDisposition = headers.ContentDisposition;
-                    contentEncoding = headers.ContentEncoding;
-                    contentLanguage = headers.ContentLanguage;
-                    contentType = headers.ContentType;
-                }
-
-                stringToSign = stringToSign + string.Format(
-                                                CultureInfo.InvariantCulture,
-                                                "\n{0}\n{1}\n{2}\n{3}\n{4}",
-                                                cacheControl,
-                                                contentDisposition,
-                                                contentEncoding,
-                                                contentLanguage,
-                                                contentType);
-            }
-
-            Logger.LogVerbose(null /* operationContext */, SR.TraceStringToSign, stringToSign);
-
-            return CryptoUtility.ComputeHmac256(keyValue, stringToSign);
-        }
-
-        /// <summary>
-        /// Get the signature hash embedded inside the Shared Access Signature.
-        /// </summary>
-        /// <param name="policy">The shared access policy to hash.</param>
-        /// <param name="headers">The optional header values to set for a file returned with this SAS.</param>
-        /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
-        /// <param name="resourceName">The canonical resource string, unescaped.</param>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
-        /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
-        /// <returns>The signed hash.</returns>
-        internal static string GetHash(
-            SharedAccessFilePolicy policy,
-            SharedAccessFileHeaders headers,
-            string accessPolicyIdentifier,
-            string resourceName,
-            string sasVersion,
-            byte[] keyValue)
-        {
-            CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
-            CommonUtility.AssertNotNull("keyValue", keyValue);
-            CommonUtility.AssertNotNullOrEmpty("sasVersion", sasVersion);
-
-            string permissions = null;
-            DateTimeOffset? startTime = null;
-            DateTimeOffset? expiryTime = null;
-            if (policy != null)
-            {
-                permissions = SharedAccessFilePolicy.PermissionsToString(policy.Permissions);
-                startTime = policy.SharedAccessStartTime;
-                expiryTime = policy.SharedAccessExpiryTime;
-            }
 
             //// StringToSign =      signedpermissions + "\n" +
             ////                     signedstart + "\n" +
             ////                     signedexpiry + "\n" +
             ////                     canonicalizedresource + "\n" +
             ////                     signedidentifier + "\n" +
+            ////                     signedIP + "\n" + 
+            ////                     signedProtocol + "\n" + 
             ////                     signedversion + "\n" +
             ////                     cachecontrol + "\n" +
             ////                     contentdisposition + "\n" +
@@ -611,12 +620,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 
             string stringToSign = string.Format(
                                     CultureInfo.InvariantCulture,
-                                    "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}",
+                                    "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}",
                                     permissions,
                                     GetDateTimeOrEmpty(startTime),
                                     GetDateTimeOrEmpty(expiryTime),
                                     resourceName,
                                     accessPolicyIdentifier,
+                                    ipAddressOrRange == null ? string.Empty : ipAddressOrRange.ToString(),
+                                    GetProtocolString(protocols),
                                     sasVersion,
                                     cacheControl,
                                     contentDisposition,
@@ -628,32 +639,120 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 
             return CryptoUtility.ComputeHmac256(keyValue, stringToSign);
         }
-#endif
 
         /// <summary>
-        /// Check to see if the SAS Version string provided is valid.
+        /// Get the signature hash embedded inside the Shared Access Signature.
         /// </summary>
-        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format. Value must be <c>2012-02-12</c> or <c>2013-08-15</c></param>
-        /// <returns>The valid SAS version string or the default (storage version) if given was null/invalid.</returns>
-        internal static string ValidateSASVersionString(string sasVersion)
+        /// <param name="policy">The shared access policy to hash.</param>
+        /// <param name="headers">The optional header values to set for a file returned with this SAS.</param>
+        /// <param name="accessPolicyIdentifier">An optional identifier for the policy.</param>
+        /// <param name="resourceName">The canonical resource string, unescaped.</param>
+        /// <param name="sasVersion">A string indicating the desired SAS version to use, in storage service version format.</param>
+        /// <param name="protocols">The HTTP/HTTPS protocols for Account SAS.</param>
+        /// <param name="ipAddressOrRange">The IP range for IPSAS.</param>
+        /// <param name="keyValue">The key value retrieved as an atomic operation used for signing.</param>
+        /// <returns>The signed hash.</returns>
+        internal static string GetHash(
+            SharedAccessFilePolicy policy,
+            SharedAccessFileHeaders headers,
+            string accessPolicyIdentifier,
+            string resourceName,
+            string sasVersion,
+            SharedAccessProtocol? protocols,
+            IPAddressOrRange ipAddressOrRange,
+            byte[] keyValue)
         {
-            if (sasVersion == null)
+            CommonUtility.AssertNotNullOrEmpty("resourceName", resourceName);
+            CommonUtility.AssertNotNull("keyValue", keyValue);
+            CommonUtility.AssertNotNullOrEmpty("sasVersion", sasVersion);
+
+            string permissions = null;
+            DateTimeOffset? startTime = null;
+            DateTimeOffset? expiryTime = null;
+            if (policy != null)
             {
-                return Constants.HeaderConstants.TargetStorageVersion;
+                permissions = SharedAccessFilePolicy.PermissionsToString(policy.Permissions);
+                startTime = policy.SharedAccessStartTime;
+                expiryTime = policy.SharedAccessExpiryTime;
             }
-            else if (string.Equals(sasVersion, Constants.VersionConstants.August2013))
+
+            //// StringToSign =      signedpermissions + "\n" +
+            ////                     signedstart + "\n" +
+            ////                     signedexpiry + "\n" +
+            ////                     canonicalizedresource + "\n" +
+            ////                     signedidentifier + "\n" +
+            ////                     signedIP + "\n" + 
+            ////                     signedProtocol + "\n" + 
+            ////                     signedversion + "\n" +
+            ////                     cachecontrol + "\n" +
+            ////                     contentdisposition + "\n" +
+            ////                     contentencoding + "\n" +
+            ////                     contentlanguage + "\n" +
+            ////                     contenttype 
+            ////
+            //// HMAC-SHA256(UTF8.Encode(StringToSign))
+            ////
+
+            string cacheControl = null;
+            string contentDisposition = null;
+            string contentEncoding = null;
+            string contentLanguage = null;
+            string contentType = null;
+            if (headers != null)
             {
-                return Constants.VersionConstants.August2013;
+                cacheControl = headers.CacheControl;
+                contentDisposition = headers.ContentDisposition;
+                contentEncoding = headers.ContentEncoding;
+                contentLanguage = headers.ContentLanguage;
+                contentType = headers.ContentType;
             }
-            else if (string.Equals(sasVersion, Constants.VersionConstants.February2012))
-            {
-                return Constants.VersionConstants.February2012;
-            }
-            else
-            {
-                string errorString = string.Format(CultureInfo.CurrentCulture, SR.InvalidSASVersion);
-                throw new ArgumentException(errorString);
-            }
+
+            string stringToSign = string.Format(
+                                    CultureInfo.InvariantCulture,
+                                    "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}",
+                                    permissions,
+                                    GetDateTimeOrEmpty(startTime),
+                                    GetDateTimeOrEmpty(expiryTime),
+                                    resourceName,
+                                    accessPolicyIdentifier,
+                                    ipAddressOrRange == null ? string.Empty : ipAddressOrRange.ToString(),
+                                    GetProtocolString(protocols),
+                                    sasVersion,
+                                    cacheControl,
+                                    contentDisposition,
+                                    contentEncoding,
+                                    contentLanguage,
+                                    contentType);
+
+            Logger.LogVerbose(null /* operationContext */, SR.TraceStringToSign, stringToSign);
+
+            return CryptoUtility.ComputeHmac256(keyValue, stringToSign);
         }
+
+        internal static string GetHash(
+            SharedAccessAccountPolicy policy,
+            string accountName,
+            string sasVersion,
+            byte[] keyValue)
+        {
+            string stringToSign = string.Format(
+                                    CultureInfo.InvariantCulture,
+                                    "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}",
+                                    accountName,
+                                    SharedAccessAccountPolicy.PermissionsToString(policy.Permissions),
+                                    SharedAccessAccountPolicy.ServicesToString(policy.Services),
+                                    SharedAccessAccountPolicy.ResourceTypesToString(policy.ResourceTypes),
+                                    GetDateTimeOrEmpty(policy.SharedAccessStartTime),
+                                    GetDateTimeOrEmpty(policy.SharedAccessExpiryTime),
+                                    policy.IPAddressOrRange == null ? string.Empty : policy.IPAddressOrRange.ToString(),
+                                    GetProtocolString(policy.Protocols),
+                                    sasVersion,
+                                    string.Empty);
+
+            Logger.LogVerbose(null /* operationContext */, SR.TraceStringToSign, stringToSign);
+
+            return CryptoUtility.ComputeHmac256(keyValue, stringToSign);
+        }
+#endif
     }
 }

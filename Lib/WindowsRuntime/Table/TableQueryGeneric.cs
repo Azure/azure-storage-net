@@ -177,12 +177,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.RetrieveResponseStream = true;
             queryCmd.Handler = client.AuthenticationHandler;
             queryCmd.BuildClient = HttpClientFactory.BuildHttpClient;
+            queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             queryCmd.Builder = builder;
-            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx);
+            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, ctx);
+                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;
