@@ -21,7 +21,7 @@ complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http:
     - Insert/Peek Queue Messages
     - Advanced Queue Operations
 	
-## Getting started
+## Getting Started
 
 The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://azure.microsoft.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
 
@@ -32,7 +32,7 @@ For the best development experience, developers should use the official Microsof
 - .NET Framework 4.0: As of October 2012, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4 release and above.
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
-- ASP.NET 5 (DNX 4.5.1 and DNXCore 5.0, beta4): Storage Client Libraries for .NET are available to support ASP.NET 5 application development. This support is currently in preview. 
+- DNX 4.5.1 and DNXCore 5.0, beta7: Storage Client Libraries for .NET are available to support ASP.NET 5 application development. This support is currently in preview. 
 - Portable Class Library Profile 111: Storage Client Libraries are available to support building PCL Profile 111 applications, as well as for Xamarin application development. This support is currently in preview.
  
 ## Requirements
@@ -40,6 +40,16 @@ For the best development experience, developers should use the official Microsof
 - Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://account.windowsazure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
 - Hosting: To host your .NET code in Microsoft Azure, you additionally need to download the full Microsoft Azure SDK for .NET - which includes packaging,
     emulation, and deployment tools, or use Microsoft Azure Web Sites to deploy ASP.NET web applications.
+
+## Versioning Information
+
+- The Storage Client Library uses [the semantic versioning scheme.](http://semver.org/)
+- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (DNX & DNXCore, PCL/Xamarin).
+
+## Use with the Azure Storage Emulator
+
+- The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests. 
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.2. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 
@@ -60,7 +70,7 @@ cd azure-storage-net
 ### Via NuGet
 
 To get the binaries of this library as distributed by Microsoft, ready for use
-within your project you can also have them installed by the .NET package manager [NuGet](http://www.nuget.org/).
+within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/WindowsAzure.Storage/).
 
 `Install-Package WindowsAzure.Storage`
 
