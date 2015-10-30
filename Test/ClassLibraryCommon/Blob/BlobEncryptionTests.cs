@@ -81,7 +81,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.Create();
                 int size = 5 * 1024 * 1024;
                 byte[] buffer = GetRandomBuffer(size);
-                
+
                 if (partial)
                 {
                     size = 2 * 1024 * 1024;
@@ -759,10 +759,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 // Compare that the decrypted contents match the input data.
                 byte[] outputArray = outputStream.ToArray();
-                
+
                 for (int i = 0; i < outputArray.Length; i++)
                 {
-                    int bufferOffset = (int) (blobOffset.HasValue ? blobOffset : 0);
+                    int bufferOffset = (int)(blobOffset.HasValue ? blobOffset : 0);
                     Assert.AreEqual(buffer[bufferOffset + i], outputArray[i]);
                 }
             }
@@ -1182,7 +1182,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 uploadOptions.EncryptionPolicy = null;
 
                 stream = new MemoryStream(buffer);
-                TestHelper.ExpectedException<InvalidOperationException>( 
+                TestHelper.ExpectedException<InvalidOperationException>(
                     () => blob.UploadFromStream(stream, size, null, uploadOptions, null),
                     "Not specifying a policy when RequireEnryption is set to true should throw.");
 
@@ -1223,7 +1223,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         [TestMethod]
         [Description("Validate partial blob encryption with RequireEncryption flag.")]
-        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
@@ -1331,6 +1331,192 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             return blob;
+        }
+
+        [TestMethod]
+        [Description("Validate that the bug where we did not encrypt data if certain access conditions were specified no longer exists.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionOpenWriteStreamAPMWithAccessCondition()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                int size = (int)(1 * Constants.MB);
+                container.Create();
+                byte[] buffer = GetRandomBuffer(size);
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+                blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB);
+
+                blob.UploadText("Sample initial text");
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the resolver to be used for unwrapping.
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions()
+                {
+                    EncryptionPolicy = uploadPolicy,
+                    RequireEncryption = true
+                };
+
+                AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
+
+                using (MemoryStream stream = new NonSeekableMemoryStream(buffer))
+                {
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        blob.EndUploadFromStream(blob.BeginUploadFromStream(
+                                            stream, size, accessCondition, uploadOptions, null, ar => waitHandle.Set(), null));
+                    }
+                }
+
+                // Download the encrypted blob.
+                // Create the decryption policy to be used for download. There is no need to specify the
+                // key when the policy is only going to be used for downloads. Resolver is sufficient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+
+                // Set the decryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions()
+                {
+                    EncryptionPolicy = downloadPolicy,
+                    RequireEncryption = true
+                };
+
+                // Download and decrypt the encrypted contents from the blob.
+                MemoryStream outputStream = new MemoryStream();
+                blob.DownloadToStream(outputStream, null, downloadOptions, null);
+
+                // Ensure that the user stream is open.
+                outputStream.Seek(0, SeekOrigin.Begin);
+
+                // Compare that the decrypted contents match the input data.
+                byte[] outputArray = outputStream.ToArray();
+                TestHelper.AssertBuffersAreEqualUptoIndex(outputArray, buffer, size - 1);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Validate that we will do a single PutBlob call when uplaoding an encrypted blob if the data is short enough.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionCountOperations()
+        {
+            BlobRequestOptions options = new BlobRequestOptions();
+            options.SingleBlobUploadThresholdInBytes = 8 * Constants.MB - 3;  // We should test a non-multiple of 16
+            options.ParallelOperationThreadCount = 1;
+
+            Boolean[] bothBools = new Boolean[] { true, false };
+
+            foreach (bool isAPM in bothBools)
+            {
+                foreach (bool calculateMD5 in bothBools)
+                {
+                    options.StoreBlobContentMD5 = calculateMD5;
+                    options.UseTransactionalMD5 = calculateMD5;
+                    options.DisableContentMD5Validation = !calculateMD5;
+                    this.CountOperationsHelper(10, 1, true, isAPM, options);
+                    this.CountOperationsHelper((int)(1 * Constants.MB), 1, true, isAPM, options);
+
+                    // This one should not call put, because encryption padding will put it over length.
+                    this.CountOperationsHelper((int)(options.SingleBlobUploadThresholdInBytes - 2), 3, true, isAPM, options);
+                    this.CountOperationsHelper((int)(13 * Constants.MB), 5, true, isAPM, options);
+                }
+            }
+        }
+
+        private void CountOperationsHelper(int size, int targetUploadOperations, bool streamSeekable, bool isAPM, BlobRequestOptions options)
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                byte[] buffer = GetRandomBuffer(size);
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+                blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB);
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the resolver to be used for unwrapping.
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                options.EncryptionPolicy = uploadPolicy;
+                OperationContext opContext = new OperationContext();
+
+                int uploadCount = 0;
+                opContext.SendingRequest += (sender, e) => uploadCount++;
+
+                using (MemoryStream stream = streamSeekable ? new MemoryStream(buffer) : new NonSeekableMemoryStream(buffer))
+                {
+                    if (isAPM)
+                    {
+                        using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                        {
+                            blob.EndUploadFromStream(blob.BeginUploadFromStream(
+                                                stream, size, null, options, opContext, ar => waitHandle.Set(), null));
+                        }
+                    }
+                    else
+                    {
+                        blob.UploadFromStream(stream, size, null, options, opContext);
+                    }
+
+                    // Ensure that the user stream is open if it's seekable.
+                    if (streamSeekable)
+                    {
+                        Assert.IsTrue(stream.CanSeek);
+                    }
+                }
+
+                // Download the encrypted blob.
+                // Create the decryption policy to be used for download. There is no need to specify the
+                // key when the policy is only going to be used for downloads. Resolver is sufficient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+
+                // Set the decryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions() { EncryptionPolicy = downloadPolicy };
+
+                // Download and decrypt the encrypted contents from the blob.
+                MemoryStream outputStream = new MemoryStream();
+                blob.DownloadToStream(outputStream, null, downloadOptions, null);
+
+                // Ensure that the user stream is open.
+                outputStream.Seek(0, SeekOrigin.Begin);
+
+                // Compare that the decrypted contents match the input data.
+                byte[] outputArray = outputStream.ToArray();
+                TestHelper.AssertBuffersAreEqualUptoIndex(outputArray, buffer, size - 1);
+                Assert.AreEqual(targetUploadOperations, uploadCount, "Incorrect number of operations in encrypted blob upload.");
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
         }
     }
 }

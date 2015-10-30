@@ -89,6 +89,9 @@
     <Compile Include="Blob\MemoryOutputStream.cs" />
     <Compile Include="Blob\SASTests.cs" />
     <Compile Include="Blob\ExceptionHResultTest.cs" />
+    <Compile Include="File\CloudFileServiceTest.cs" />
+    <Compile Include="File\CopyFileTest.cs" />
+    <Compile Include="File\FileSASTests.cs" />
     <Compile Include="File\FileStreamTests.cs" />
     <Compile Include="File\FileUploadDownloadTest.cs" />
     <Compile Include="File\FileExceptionHResultTest.cs" />

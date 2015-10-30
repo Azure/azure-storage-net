@@ -1623,6 +1623,300 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("A test to check retrieve projection functionality selecting all valid columns.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableRetrieveWithFullProjectionSync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableRetrieveWithFullProjectionSync(payloadFormat);
+            }
+        }
+
+        private void DoTableRetrieveWithFullProjectionSync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+
+            // Insert entity
+            DynamicTableEntity sendEnt = new DynamicTableEntity();
+            sendEnt.PartitionKey = Guid.NewGuid().ToString();
+            sendEnt.RowKey = Guid.NewGuid().ToString();
+            sendEnt.Properties = new ComplexEntity().WriteEntity(null);
+            currentTable.Execute(TableOperation.Insert(sendEnt));
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                PropertyResolver = (partitionKey, rowKey, propName, propValue) => ComplexEntity.ComplexEntityPropertyResolver(partitionKey, rowKey, propName, propValue)
+            };
+
+            List<string> selectedColumns = new List<string>();
+            foreach (string key in sendEnt.Properties.Keys)
+            {
+                // Exclude null params since the service will ignore these on entity creation.
+                if (!key.Contains("Null"))
+                {
+                    selectedColumns.Add(key);
+                }
+            }
+
+            // Retrieve entity
+            TableResult result = currentTable.Execute(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, selectedColumns), options, null);
+            Assert.AreEqual(result.HttpStatusCode, (int)HttpStatusCode.OK);
+            DynamicTableEntity retrievedEntity = result.Result as DynamicTableEntity;
+
+            // Validate entity
+            foreach (string key in selectedColumns)
+            {
+                Assert.AreEqual(sendEnt[key], retrievedEntity[key]);
+            }
+        }
+
+        [TestMethod]
+        [Description("A test to check retrieve projection functionality selecting all valid columns.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableRetrieveWithFullProjectionWithEmptySelectSync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableRetrieveWithFullProjectionWithEmptySelectSync(payloadFormat);
+            }
+        }
+
+        private void DoTableRetrieveWithFullProjectionWithEmptySelectSync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+
+            // Insert entity
+            DynamicTableEntity sendEnt = new DynamicTableEntity();
+            sendEnt.PartitionKey = Guid.NewGuid().ToString();
+            sendEnt.RowKey = Guid.NewGuid().ToString();
+            sendEnt.Properties = new ComplexEntity().WriteEntity(null);
+            currentTable.Execute(TableOperation.Insert(sendEnt));
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                PropertyResolver = (partitionKey, rowKey, propName, propValue) => ComplexEntity.ComplexEntityPropertyResolver(partitionKey, rowKey, propName, propValue)
+            };
+
+            List<string> selectedColumns = new List<string>();
+
+            // Retrieve entity
+            TableResult result = currentTable.Execute(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, selectedColumns), options, null);
+            Assert.AreEqual(result.HttpStatusCode, (int)HttpStatusCode.OK);
+            DynamicTableEntity retrievedEntity = result.Result as DynamicTableEntity;
+
+            // Validate entity
+            foreach (string key in retrievedEntity.Properties.Keys)
+            {
+                Assert.AreEqual(sendEnt[key], retrievedEntity[key]);
+            }
+        }
+
+        [TestMethod]
+        [Description("A test to check retrieve projection functionality selecting only a subset of the columns.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableRetrieveWithPartialProjectionSync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableRetrieveWithPartialProjectionSync(payloadFormat);
+            }
+        }
+
+        private void DoTableRetrieveWithPartialProjectionSync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+
+            // Insert entity
+            DynamicTableEntity sendEnt = new DynamicTableEntity();
+            sendEnt.PartitionKey = Guid.NewGuid().ToString();
+            sendEnt.RowKey = Guid.NewGuid().ToString();
+            sendEnt.Properties = new ComplexEntity().WriteEntity(null);
+            currentTable.Execute(TableOperation.Insert(sendEnt));
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                PropertyResolver = (partitionKey, rowKey, propName, propValue) => ComplexEntity.ComplexEntityPropertyResolver(partitionKey, rowKey, propName, propValue)
+            };
+
+            List<string> selectedColumns = new List<string>
+            {
+                "Double",
+                "IntegerPrimitive",
+                "BoolPrimitive"
+            };
+
+            // Retrieve entity
+            TableResult result = currentTable.Execute(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, selectedColumns), options, null);
+            Assert.AreEqual(result.HttpStatusCode, (int)HttpStatusCode.OK);
+            DynamicTableEntity retrievedEntity = result.Result as DynamicTableEntity;
+
+            // Validate entity
+            foreach (string key in sendEnt.Properties.Keys)
+            {
+                if (selectedColumns.Contains(key))
+                {
+                    Assert.AreEqual(sendEnt.Properties[key], retrievedEntity.Properties[key]);
+                }
+                else
+                {
+                    Assert.IsFalse(retrievedEntity.Properties.ContainsKey(key));
+                }
+            }
+        }
+
+        [TestMethod]
+        [Description("A test to check retrieve projection functionality edge cases by comparing query results with retrieve results.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableRetrieveWithProjectionEdgeCasesSync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableRetrieveWithProjectionEdgeCasesSync(payloadFormat);
+            }
+        }
+
+        private void DoTableRetrieveWithProjectionEdgeCasesSync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+
+            // Insert entity
+            DynamicTableEntity sendEnt = new DynamicTableEntity();
+            sendEnt.PartitionKey = Guid.NewGuid().ToString();
+            sendEnt.RowKey = Guid.NewGuid().ToString();
+            sendEnt.Properties = new ComplexEntity().WriteEntity(null);
+            currentTable.Execute(TableOperation.Insert(sendEnt));
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                PropertyResolver = (partitionKey, rowKey, propName, propValue) => ComplexEntity.ComplexEntityPropertyResolver(partitionKey, rowKey, propName, propValue)
+            };
+
+            List<string> selectedColumns = new List<string>
+            {
+                "BoolPrimitive",
+                "InvalidProperty"
+            };
+
+            // Query entity
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, sendEnt.PartitionKey)).Select(selectedColumns);
+            DynamicTableEntity retrievedEntityByQuery = currentTable.ExecuteQuerySegmented(query, null, options).Results[0] as DynamicTableEntity;
+
+            // Retrieve entity
+            TableResult result = currentTable.Execute(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, selectedColumns), options, null);
+            DynamicTableEntity retrievedEntityByRetrieve = result.Result as DynamicTableEntity;
+
+            // Validate entity
+            Assert.AreEqual(retrievedEntityByQuery.Properties["BoolPrimitive"], retrievedEntityByRetrieve.Properties["BoolPrimitive"]);
+            Assert.AreEqual(retrievedEntityByQuery.Properties["InvalidProperty"], retrievedEntityByRetrieve.Properties["InvalidProperty"]);
+            Assert.AreEqual(retrievedEntityByRetrieve.Properties["BoolPrimitive"].PropertyType, EdmType.Boolean);
+            Assert.AreEqual(retrievedEntityByRetrieve.Properties["InvalidProperty"].PropertyType, EdmType.String);
+            Assert.AreEqual(retrievedEntityByRetrieve.Properties["InvalidProperty"].StringValue, null);
+        }
+
+        [TestMethod]
+        [Description("A test to check retrieve projection functionality with the overload of type TableResult.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableRetrieveWithTableResultOverloadWithProjectionSync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableRetrieveWithTableResultOverloadWithProjectionSync(payloadFormat);
+            }
+        }
+
+        private void DoTableRetrieveWithTableResultOverloadWithProjectionSync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+
+            // Insert entity
+            DynamicTableEntity sendEnt = new DynamicTableEntity();
+            sendEnt.PartitionKey = Guid.NewGuid().ToString();
+            sendEnt.RowKey = Guid.NewGuid().ToString();
+            sendEnt.Properties = new ComplexEntity().WriteEntity(null);
+            sendEnt.Properties.Add("foo", new EntityProperty("bar"));
+            currentTable.Execute(TableOperation.Insert(sendEnt));
+
+            EntityResolver<string> resolver = (pk, rk, ts, props, etag) => pk + rk + props["foo"].StringValue + props.Count;
+
+            List<string> selectedColumns = new List<string>();
+            foreach (string key in sendEnt.Properties.Keys)
+            {
+                // Exclude null params since the service will ignore these on entity creation.
+                if (!key.Contains("Null"))
+                {
+                    selectedColumns.Add(key);
+                }
+            }
+
+            // Retrieve entity
+            TableResult result = currentTable.Execute(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, resolver, selectedColumns));
+            Assert.AreEqual(result.HttpStatusCode, (int)HttpStatusCode.OK);
+
+            // Since there are properties in ComplexEntity set to null, we do not receive those from the server. Hence we need to check for non null values.
+            Assert.AreEqual((string)result.Result, sendEnt.PartitionKey + sendEnt.RowKey + sendEnt["foo"].StringValue + ComplexEntity.NumberOfNonNullProperties);
+        }
+
+        [TestMethod]
+        [Description("A test to check retrieve projection functionality with the generic overload.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableRetrieveWithGenericOverloadWithProjectionSync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableRetrieveWithGenericOverloadWithProjectionSync(payloadFormat);
+            }
+        }
+
+        private void DoTableRetrieveWithGenericOverloadWithProjectionSync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+
+            // Insert entity
+            string pk = Guid.NewGuid().ToString();
+            string rk = Guid.NewGuid().ToString();
+            TableEntity.DisableCompiledSerializers = true;
+            ComplexEntity sendEnt = new ComplexEntity(pk, rk);
+            sendEnt.String = "ResetTestTotested";
+            sendEnt.Double = (Double)5678.5678;
+            sendEnt.IntegerPrimitive = 5678;
+            currentTable.Execute(TableOperation.Insert(sendEnt));
+
+            List<string> selectedColumns = new List<string>
+            {
+                "Double",
+                "IntegerPrimitive"
+            };
+
+            // Retrieve entity
+            TableResult result = currentTable.Execute(TableOperation.Retrieve<ComplexEntity>(sendEnt.PartitionKey, sendEnt.RowKey, selectedColumns));
+            ComplexEntity retEntity = result.Result as ComplexEntity;
+
+            // Validate entity
+            Assert.AreEqual(retEntity.Double, sendEnt.Double);
+            Assert.AreEqual(retEntity.IntegerPrimitive, sendEnt.IntegerPrimitive);
+            Assert.AreNotEqual(retEntity.String, sendEnt.String);
+        }
+
+        [TestMethod]
         [Description("A test to check retrieve functionality Sync")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]

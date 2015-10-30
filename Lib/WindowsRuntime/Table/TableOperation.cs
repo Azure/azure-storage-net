@@ -185,6 +185,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions.ApplyToStorageCommand(retrieveCmd);
 
             TableResult result = new TableResult();
+            if (operation.SelectColumns != null && operation.SelectColumns.Count > 0)
+            {
+                retrieveCmd.Builder = operation.GenerateQueryBuilder();
+            }
+
             retrieveCmd.CommandLocationMode = operation.isPrimaryOnlyRetrieve ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.Handler = client.AuthenticationHandler;

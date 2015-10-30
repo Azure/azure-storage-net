@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Microsoft.WindowsAzure.Storage.Table.Protocol;
     using System;
     using System.IO;
@@ -201,6 +202,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions.ApplyToStorageCommand(retrieveCmd);
 
             TableResult result = new TableResult();
+            if (operation.SelectColumns != null && operation.SelectColumns.Count > 0)
+            {
+                // If encryption policy is set, then add the encryption metadata column to Select columns in order to be able to decrypt properties.
+                if (requestOptions.EncryptionPolicy != null)
+                {
+                    operation.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails);
+                    operation.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails);
+                }
+
+                retrieveCmd.Builder = operation.GenerateQueryBuilder();
+            }
+
             retrieveCmd.CommandLocationMode = operation.isPrimaryOnlyRetrieve ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.SignRequest = client.AuthenticationHandler.SignRequest;

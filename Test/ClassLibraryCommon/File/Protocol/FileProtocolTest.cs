@@ -271,6 +271,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             }
         }
 
+        [Ignore]
         [TestMethod]
         [Description("Get a share with empty header excluded/included from signature and verify request succeeded")]
         [TestCategory(ComponentCategory.File)]

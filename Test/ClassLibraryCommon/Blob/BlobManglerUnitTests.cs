@@ -50,6 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        [Ignore]
         [TestMethod]
         [Description("Validate the Ingress Egress Counters for blob operations")]
         [TestCategory(ComponentCategory.Blob)]

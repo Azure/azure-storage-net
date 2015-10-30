@@ -246,5 +246,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return aesProvider.CreateEncryptor();
             }
         }
+
+        internal long GetEncryptedLength(long unencryptedLength, bool noPadding)
+        {
+            // Note that this will only work for the AES_CBC_256 alrogithm we're currently using - if we change algorithms, 
+            // or give the user a choice, we'll need to change this code appropriately.
+            if (noPadding)
+            {
+                return unencryptedLength;
+            }
+            else
+            {
+                return unencryptedLength + (16 - (unencryptedLength % 16));
+            }
+        }
     }
 }

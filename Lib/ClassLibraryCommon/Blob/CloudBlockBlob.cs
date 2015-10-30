@@ -137,6 +137,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             StorageAsyncResult<CloudBlobStream> storageAsyncResult = new StorageAsyncResult<CloudBlobStream>(callback, state);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
 
+            Action<StorageAsyncResult<CloudBlobStream>> prepareStorageAsyncResult = localStorageAsyncResult =>
+                {
+                    modifiedOptions.AssertPolicyIfRequired();
+
+                    if (modifiedOptions.EncryptionPolicy != null)
+                    {
+                        ICryptoTransform transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
+                        localStorageAsyncResult.Result = new BlobEncryptedWriteStream(this, accessCondition, modifiedOptions, operationContext, transform);
+                    }
+                    else
+                    {
+                        localStorageAsyncResult.Result = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
+                    }
+
+                    localStorageAsyncResult.OnComplete();
+                };
+
             if ((accessCondition != null) && accessCondition.IsConditional)
             {
                 ICancellableAsyncResult result = this.BeginFetchAttributes(
@@ -172,8 +189,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             return;
                         }
 
-                        storageAsyncResult.Result = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
-                        storageAsyncResult.OnComplete();
+                        prepareStorageAsyncResult(storageAsyncResult);
                     },
                     null /* state */);
 
@@ -181,21 +197,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-                modifiedOptions.AssertPolicyIfRequired();
-
-                if (modifiedOptions.EncryptionPolicy != null)
-                {
-                    ICryptoTransform transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
-                    storageAsyncResult.Result = new BlobEncryptedWriteStream(this, accessCondition, modifiedOptions, operationContext, transform);
-                }
-                else
-#endif
-                {
-                    storageAsyncResult.Result = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
-                }
-
-                storageAsyncResult.OnComplete();
+                prepareStorageAsyncResult(storageAsyncResult);
             }
 
             return storageAsyncResult;
@@ -344,38 +346,68 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            bool lessThanSingleBlobThreshold = source.CanSeek
-                                               && (length ?? source.Length - source.Position)
-                                               <= modifiedOptions.SingleBlobUploadThresholdInBytes.Value;
+            bool lessThanSingleBlobThreshold = CloudBlockBlob.IsLessThanSingleBlobThreshold(source, length, modifiedOptions, false);
             modifiedOptions.AssertPolicyIfRequired();
 
-            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold && modifiedOptions.EncryptionPolicy == null)
+            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold)
             {
-                string contentMD5 = null;
-                if (modifiedOptions.StoreBlobContentMD5.Value)
+                bool usingEncryption = modifiedOptions.EncryptionPolicy != null;
+                Stream sourceStream = source;
+                using (MemoryStream tempStream = !usingEncryption ? null : new MemoryStream())
                 {
-                    using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+                    // Encrypt if necessary
+                    if (usingEncryption)
                     {
-                        StreamDescriptor streamCopyState = new StreamDescriptor();
-                        long startPosition = source.Position;
-                        source.WriteToSync(Stream.Null, length, null /* maxLength */, true, true, tempExecutionState, streamCopyState);
-                        source.Position = startPosition;
-                        contentMD5 = streamCopyState.Md5;
-                    }
-                }
-                else
-                {
-                    // Throw exception if we need to use Transactional MD5 but cannot store it
-                    if (modifiedOptions.UseTransactionalMD5.Value)
-                    {
-                        throw new ArgumentException(SR.PutBlobNeedsStoreBlobContentMD5, "options");
-                    }
-                }
+                        modifiedOptions.AssertPolicyIfRequired();
+                        if (modifiedOptions.EncryptionPolicy.EncryptionMode != BlobEncryptionMode.FullBlob)
+                        {
+                            throw new InvalidOperationException(SR.InvalidEncryptionMode, null);
+                        }
 
-                Executor.ExecuteSync(
-                    this.PutBlobImpl(source, length, contentMD5, accessCondition, modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext);
+                        ICryptoTransform transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
+                        CryptoStream cryptoStream = new CryptoStream(tempStream, transform, CryptoStreamMode.Write);
+                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(options))
+                        {
+                            source.WriteToSync(cryptoStream, length, null, false, true, tempExecutionState, null);
+                            cryptoStream.FlushFinalBlock();
+                        }
+
+                        // After the tempStream has been written to, we need to seek back to the beginning, so that it can be read from.
+                        tempStream.Seek(0, SeekOrigin.Begin);
+                        length = tempStream.Length;
+                        sourceStream = tempStream;
+                    }
+
+                    // Calculate MD5 if necessary
+                    // Note that we cannot do this while we encrypt, it must be a separate step, because we want the MD5 of the encrypted data, 
+                    // not the unencrypted data.
+                    string contentMD5 = null;
+                    if (modifiedOptions.StoreBlobContentMD5.Value)
+                    {
+                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+                        {
+                            StreamDescriptor streamCopyState = new StreamDescriptor();
+                            long startPosition = sourceStream.Position;
+                            sourceStream.WriteToSync(Stream.Null, length, null /* maxLength */, true, true, tempExecutionState, streamCopyState);
+                            sourceStream.Position = startPosition;
+                            contentMD5 = streamCopyState.Md5;
+                        }
+                    }
+                    else
+                    {
+                        // Throw exception if we need to use Transactional MD5 but cannot store it
+                        if (modifiedOptions.UseTransactionalMD5.Value)
+                        {
+                            throw new ArgumentException(SR.PutBlobNeedsStoreBlobContentMD5, "options");
+                        }
+                    }
+
+                    // Execute the put blob.
+                    Executor.ExecuteSync(
+                        this.PutBlobImpl(sourceStream, length, contentMD5, accessCondition, modifiedOptions),
+                        modifiedOptions.RetryPolicy,
+                        operationContext);
+                }
             }
             else
             {
@@ -483,76 +515,129 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
 
-            bool lessThanSingleBlobThreshold = source.CanSeek &&
-                (length ?? source.Length - source.Position) <= modifiedOptions.SingleBlobUploadThresholdInBytes.Value;
+            bool lessThanSingleBlobThreshold = CloudBlockBlob.IsLessThanSingleBlobThreshold(source, length, modifiedOptions, false);
             modifiedOptions.AssertPolicyIfRequired();
             
-            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold && modifiedOptions.EncryptionPolicy == null)
+            if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold)
             {
-                if (modifiedOptions.StoreBlobContentMD5.Value)
-                {
-                    long startPosition = source.Position;
-                    StreamDescriptor streamCopyState = new StreamDescriptor();
-                    source.WriteToAsync(
-                        Stream.Null,
-                        length,
-                        null /* maxLength */,
-                        true,
-                        tempExecutionState,
-                        streamCopyState,
-                        completedState =>
-                        {
-                            storageAsyncResult.UpdateCompletedSynchronously(completedState.CompletedSynchronously);
+                // Because we may or may not want to calculate the MD5, and we may or may not want to encrypt, rather than have four branching code
+                // paths, here we have an action that we will run, which continually gets added to, depending on which operations we need to do.
+                // The confusing part is that we have to build it from the bottom up.
 
-                            try
-                            {
-                                lock (storageAsyncResult.CancellationLockerObject)
-                                {
-                                    storageAsyncResult.CancelDelegate = null;
-                                    if (completedState.ExceptionRef != null)
-                                    {
-                                        storageAsyncResult.OnComplete(completedState.ExceptionRef);
-                                    }
-                                    else
-                                    {
-                                        source.Position = startPosition;
-                                        this.UploadFromStreamHandler(
-                                            source,
+                string md5 = null;
+                Stream sourceStream = source;
+                Action actionToRun = null;
+
+                Action uploadAction = () =>
+                    {
+                        if (md5 == null && modifiedOptions.UseTransactionalMD5.Value)
+                        {
+                            throw new ArgumentException(SR.PutBlobNeedsStoreBlobContentMD5, "options");
+                        }
+
+                        this.UploadFromStreamHandler(
+                                            sourceStream,
                                             length,
-                                            streamCopyState.Md5,
+                                            md5,
                                             accessCondition,
                                             operationContext,
                                             modifiedOptions,
                                             storageAsyncResult);
-                                    }
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                storageAsyncResult.OnComplete(e);
-                            }
-                        });
 
-                    // We do not need to do this inside a lock, as storageAsyncResult is
-                    // not returned to the user yet.
-                    storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
-                }
-                else
+                    };
+                actionToRun = uploadAction;
+
+                if (modifiedOptions.StoreBlobContentMD5.Value)
                 {
-                    if (modifiedOptions.UseTransactionalMD5.Value)
+                    Action<Action> calculateMD5 = (continuation) =>
                     {
-                        throw new ArgumentException(SR.PutBlobNeedsStoreBlobContentMD5, "options");
-                    }
+                        long startPosition = sourceStream.Position;
+                        StreamDescriptor streamCopyState = new StreamDescriptor();
+                        sourceStream.WriteToAsync(
+                            Stream.Null,
+                            length,
+                            null /* maxLength */,
+                            true,
+                            tempExecutionState,
+                            streamCopyState,
+                            completedState =>
+                            {
+                                ContinueAsyncOperation(storageAsyncResult, completedState, () =>
+                                    {
+                                        if (completedState.ExceptionRef != null)
+                                        {
+                                            storageAsyncResult.OnComplete(completedState.ExceptionRef);
+                                        }
+                                        else
+                                        {
+                                            sourceStream.Position = startPosition;
+                                            md5 = streamCopyState.Md5;
+                                            continuation();
+                                        }
+                                    });
+                            });
 
-                    this.UploadFromStreamHandler(
-                        source,
-                        length,
-                        null /* contentMD5 */,
-                        accessCondition,
-                        operationContext,
-                        modifiedOptions,
-                        storageAsyncResult);
+                        storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
+                        if (storageAsyncResult.CancelRequested)
+                        {
+                            storageAsyncResult.Cancel();
+                        }
+                    };
+                    Action oldActionToRun = actionToRun;
+                    actionToRun = () => calculateMD5(oldActionToRun);
                 }
+
+                if (modifiedOptions.EncryptionPolicy != null)
+                {
+                    Action<Action> encryptStream = continuation =>
+                        {
+                            SyncMemoryStream syncMemoryStream = new SyncMemoryStream();
+                            options.AssertPolicyIfRequired();
+
+                            sourceStream = syncMemoryStream;
+
+                            if (modifiedOptions.EncryptionPolicy.EncryptionMode != BlobEncryptionMode.FullBlob)
+                            {
+                                throw new InvalidOperationException(SR.InvalidEncryptionMode, null);
+                            }
+
+                            ICryptoTransform transform = options.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
+                            CryptoStream cryptoStream = new CryptoStream(syncMemoryStream, transform, CryptoStreamMode.Write);
+                            StreamDescriptor streamCopyState = new StreamDescriptor();
+
+                            source.WriteToAsync(cryptoStream, length, null, false, tempExecutionState, streamCopyState, completedState =>
+                                {
+                                    ContinueAsyncOperation(storageAsyncResult, completedState, () =>
+                                        {
+                                            if (completedState.ExceptionRef != null)
+                                            {
+                                                storageAsyncResult.OnComplete(completedState.ExceptionRef);
+                                            }
+                                            else
+                                            {
+                                                // Flush the CryptoStream in order to make sure that the last block of data is flushed. This call is a sync call
+                                                // but it is ok to have it because we're just writing to a memory stream.
+                                                cryptoStream.FlushFinalBlock();
+
+                                                // After the tempStream has been written to, we need to seek back to the beginning, so that it can be read from.
+                                                sourceStream.Seek(0, SeekOrigin.Begin);
+                                                length = syncMemoryStream.Length;
+                                                continuation();
+                                            }
+                                        });
+                                });
+
+                            storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
+                            if (storageAsyncResult.CancelRequested)
+                            {
+                                storageAsyncResult.Cancel();
+                            }
+                        };
+                    Action oldActionToRun = actionToRun;
+                    actionToRun = () => encryptStream(oldActionToRun);
+                }
+
+                actionToRun();
             }
             else
             {
@@ -562,12 +647,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     operationContext,
                     ar =>
                     {
-                        storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-
-                        lock (storageAsyncResult.CancellationLockerObject)
-                        {
-                            storageAsyncResult.CancelDelegate = null;
-                            try
+                        ContinueAsyncOperation(storageAsyncResult, ar, () =>
                             {
                                 CloudBlobStream blobStream = this.EndOpenWrite(ar);
                                 storageAsyncResult.OperationState = blobStream;
@@ -581,34 +661,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                     null /* streamCopyState */,
                                     completedState =>
                                     {
-                                        storageAsyncResult.UpdateCompletedSynchronously(completedState.CompletedSynchronously);
-                                        if (completedState.ExceptionRef != null)
+                                        ContinueAsyncOperation(storageAsyncResult, completedState, () =>
                                         {
-                                            storageAsyncResult.OnComplete(completedState.ExceptionRef);
-                                        }
-                                        else
-                                        {
-                                            try
+                                            if (completedState.ExceptionRef != null)
                                             {
-                                                lock (storageAsyncResult.CancellationLockerObject)
-                                                {
-                                                    storageAsyncResult.CancelDelegate = null;
-                                                    ICancellableAsyncResult commitResult = blobStream.BeginCommit(
-                                                            CloudBlob.BlobOutputStreamCommitCallback,
-                                                            storageAsyncResult);
+                                                storageAsyncResult.OnComplete(completedState.ExceptionRef);
+                                            }
+                                            else
+                                            {
+                                                ICancellableAsyncResult commitResult = blobStream.BeginCommit(
+                                                        CloudBlob.BlobOutputStreamCommitCallback,
+                                                        storageAsyncResult);
 
-                                                    storageAsyncResult.CancelDelegate = commitResult.Cancel;
-                                                    if (storageAsyncResult.CancelRequested)
-                                                    {
-                                                        storageAsyncResult.Cancel();
-                                                    }
+                                                storageAsyncResult.CancelDelegate = commitResult.Cancel;
+                                                if (storageAsyncResult.CancelRequested)
+                                                {
+                                                    storageAsyncResult.Cancel();
                                                 }
                                             }
-                                            catch (Exception e)
-                                            {
-                                                storageAsyncResult.OnComplete(e);
-                                            }
-                                        }
+                                        });
                                     });
 
                                 storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
@@ -616,12 +687,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 {
                                     storageAsyncResult.Cancel();
                                 }
-                            }
-                            catch (Exception e)
-                            {
-                                storageAsyncResult.OnComplete(e);
-                            }
-                        }
+                            });
                     },
                     null /* state */);
 
@@ -2541,6 +2607,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             };
 
             return putCmd;
+        }
+
+        private static bool IsLessThanSingleBlobThreshold(Stream source, long? length, BlobRequestOptions modifiedOptions, bool noPadding)
+        {
+            if (!source.CanSeek)
+            {
+                return false;
+            }
+
+            length = length ?? source.Length - source.Position;
+
+            if (modifiedOptions.EncryptionPolicy != null)
+            {
+                length = modifiedOptions.EncryptionPolicy.GetEncryptedLength(length.Value, noPadding);
+            }
+
+            return length <= modifiedOptions.SingleBlobUploadThresholdInBytes.Value;
+        }
+
+        private static void ContinueAsyncOperation(StorageAsyncResult<NullType> storageAsyncResult, IAsyncResult result, Action actionToTakeInTheLock)
+        {
+            storageAsyncResult.UpdateCompletedSynchronously(result.CompletedSynchronously);
+            try
+            {
+                lock (storageAsyncResult.CancellationLockerObject)
+                {
+                    storageAsyncResult.CancelDelegate = null;
+                    actionToTakeInTheLock();
+                }
+            }
+            catch (Exception e)
+            {
+                storageAsyncResult.OnComplete(e);
+            }
         }
     }
 }

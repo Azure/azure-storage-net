@@ -172,8 +172,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             else if (edmType == EdmType.Double)
             {
-                bool decimalExists = givenValue.Contains(".");
-                valueOperand = decimalExists ? givenValue : string.Format(CultureInfo.InvariantCulture, "{0}.0", givenValue);
+                int parsedInt;
+                bool isInteger = int.TryParse(givenValue, out parsedInt);
+                valueOperand = isInteger ? string.Format(CultureInfo.InvariantCulture, "{0}.0", givenValue) : givenValue;
             }
             else if (edmType == EdmType.Int64)
             {

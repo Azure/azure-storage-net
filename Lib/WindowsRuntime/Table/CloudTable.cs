@@ -212,13 +212,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
         #endregion
 
-#if !PORTABLE
-        #region Create
+#region Create
 
         /// <summary>
         /// Creates the Table.
         /// </summary>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync()
 #else
@@ -234,7 +233,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task CreateAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -262,7 +261,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert, false);
             operation.IsTableEntity = true;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return this.ServiceClient.ExecuteAsync(TableConstants.TableServiceTablesName, operation, requestOptions, operationContext, cancellationToken);
 #else
             return this.ServiceClient.ExecuteAsync(TableConstants.TableServiceTablesName, operation, requestOptions, operationContext).AsTask().AsAsyncAction();
@@ -277,7 +276,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Creates the table if it does not already exist.
         /// </summary>
         /// <returns><c>true</c> if table was created; otherwise, <c>false</c>.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> CreateIfNotExistsAsync()
 #else
         public IAsyncOperation<bool> CreateIfNotExistsAsync()
@@ -292,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>        
         /// <returns><c>true</c> if table was created; otherwise, <c>false</c>.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> CreateIfNotExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.CreateIfNotExistsAsync(requestOptions, operationContext, CancellationToken.None);
@@ -313,7 +312,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 if (await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
@@ -329,7 +328,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 {
                     try
                     {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                         await this.CreateAsync(requestOptions, operationContext, cancellationToken);
 #else
                         await this.CreateAsync(requestOptions, operationContext).AsTask(cancellationToken);
@@ -357,7 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         }
                     }
                 }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             }, cancellationToken);
 #else
             });
@@ -370,7 +369,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Deletes the Table.
         /// </summary>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync()
 #else
@@ -386,7 +385,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task DeleteAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -414,7 +413,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableOperation operation = new TableOperation(tblEntity, TableOperationType.Delete);
             operation.IsTableEntity = true;
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return this.ServiceClient.ExecuteAsync(TableConstants.TableServiceTablesName, operation, requestOptions, operationContext, cancellationToken);
 #else
             return this.ServiceClient.ExecuteAsync(TableConstants.TableServiceTablesName, operation, requestOptions, operationContext).AsTask().AsAsyncAction();
@@ -428,7 +427,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Deletes the table if it already exists.
         /// </summary>
         /// <returns><c>true</c> if the table already existed and was deleted; otherwise, <c>false</c>.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> DeleteIfExistsAsync()
 #else
         public IAsyncOperation<bool> DeleteIfExistsAsync()
@@ -443,7 +442,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns><c>true</c> if the table already existed and was deleted; otherwise, <c>false</c>.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<bool> DeleteIfExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.DeleteIfExistsAsync(requestOptions, operationContext, CancellationToken.None);
@@ -465,7 +464,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             operationContext = operationContext ?? new OperationContext();
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 if (!await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
@@ -481,7 +480,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 {
                     try
                     {
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
                         await this.DeleteAsync(requestOptions, operationContext, cancellationToken);
 #else
                         await this.DeleteAsync(requestOptions, operationContext).AsTask(cancellationToken);
@@ -509,14 +508,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         }
                     }
                 }
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             }, cancellationToken);
 #else
             });
 #endif
         }
         #endregion
-#endif
 
         #region Exists
         /// <summary>
@@ -613,7 +611,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Sets permissions for the Table.
         /// </summary>
         /// <param name="permissions">The permissions to apply to the Table.</param>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public Task SetPermissionsAsync(TablePermissions permissions)
 #else
@@ -631,7 +629,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task SetPermissionsAsync(TablePermissions permissions, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetPermissionsAsync(permissions, requestOptions, operationContext, CancellationToken.None);
@@ -650,7 +648,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             /// <summary>
             /// Sets permissions for the Table.
             /// </summary>
@@ -705,7 +703,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Gets the permissions settings for the Table.
         /// </summary>
         /// <returns>The Table's permissions.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TablePermissions> GetPermissionsAsync()
 #else
         public IAsyncOperation<TablePermissions> GetPermissionsAsync()
@@ -720,7 +718,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>The Table's permissions.</returns>
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<TablePermissions> GetPermissionsAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.GetPermissionsAsync(requestOptions, operationContext, CancellationToken.None);
@@ -739,7 +737,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
             /// <summary>
             /// Gets the permissions settings for the Table.
             /// </summary>

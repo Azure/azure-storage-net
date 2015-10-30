@@ -97,6 +97,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
+            HttpStatusCode failureCode = sasToken == null ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden;
+
             // We want to ensure that 'create', 'add', and 'write' permissions all allow for correct writing of blobs, as is reasonable.
             if (((permissions & SharedAccessBlobPermissions.Create) == SharedAccessBlobPermissions.Create) || ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write))
             {
@@ -117,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         TestHelper.ExpectedException(
                             () => SASpageBlob.UploadFromByteArray(buffer, 0, 512),
                             "pageBlob SAS token without Write perms should not allow for writing/adding",
-                            HttpStatusCode.Forbidden);
+                            failureCode);
                         pageBlob.UploadFromByteArray(buffer, 0, 512);
                     }
                 }
@@ -132,7 +134,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         TestHelper.ExpectedException(
                             () => UploadText(SASblob, "blob", Encoding.UTF8),
                             "Block blob SAS token without Write or perms should not allow for writing",
-                            HttpStatusCode.Forbidden);
+                            failureCode);
                         UploadText(blob, "blob", Encoding.UTF8);
                     }
                 }
@@ -163,7 +165,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 TestHelper.ExpectedException(
                                     () => SASAppendBlob.AppendBlock(stream, null),
                                     "Append blob SAS token without Write or Add perms should not allow for writing/adding",
-                                    HttpStatusCode.Forbidden);
+                                    failureCode);
                                 stream.Seek(0, SeekOrigin.Begin);
                                 ((CloudAppendBlob)blob).AppendBlock(stream, null);
                             }
@@ -176,7 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                         () => UploadText(SASblob, "blob", Encoding.UTF8),
                         "UploadText SAS does not allow for writing/adding",
-                        ((blob.BlobType == BlobType.AppendBlob) && (sasToken != null) && (sasToken.Contains(Constants.VersionConstants.February2012))) ? HttpStatusCode.BadRequest : HttpStatusCode.Forbidden);
+                        ((blob.BlobType == BlobType.AppendBlob) && (sasToken != null) && (sasToken.Contains(Constants.VersionConstants.February2012))) ? HttpStatusCode.BadRequest : failureCode);
                 UploadText(blob, "blob", Encoding.UTF8);
             }
 
@@ -191,7 +193,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     TestHelper.ExpectedException(
                         () => container.ListBlobs().ToArray(),
                         "List blobs while SAS does not allow for listing",
-                        HttpStatusCode.Forbidden);
+                        failureCode);
                 }
             }
 
@@ -234,7 +236,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => SASblob.FetchAttributes(),
                     "Fetch blob attributes while SAS does not allow for reading",
-                    HttpStatusCode.Forbidden);
+                    failureCode);
             }
 
             if ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write)
@@ -246,7 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => SASblob.SetMetadata(),
                     "Set blob metadata while SAS does not allow for writing",
-                    HttpStatusCode.Forbidden);
+                    failureCode);
             }
 
             if ((permissions & SharedAccessBlobPermissions.Delete) == SharedAccessBlobPermissions.Delete)
@@ -258,7 +260,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => SASblob.Delete(),
                     "Delete blob while SAS does not allow for deleting",
-                    HttpStatusCode.Forbidden);
+                    failureCode);
             }
         }
 
