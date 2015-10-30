@@ -758,43 +758,43 @@ byte[] input)
 
         internal static EntityProperty CreateEntityPropertyFromObject(object value, Type type)
         {
-            if (value is string)
+            if (type == typeof(string))
             {
                 return new EntityProperty((string)value);
             }
-            else if (value is byte[])
+            else if (type == typeof(byte[]))
             {
                 return new EntityProperty((byte[])value);
             }
-            else if (value is bool || value is bool?)
+            else if (type == typeof(bool) || type==typeof(bool?))
             {
                 return new EntityProperty(EdmType.Boolean) { PropertyAsObject = value };
             }
-            else if (value is DateTime || value is DateTime?)
+            else if (type == typeof(DateTime)|| type == typeof(DateTime?))
             {
                 return new EntityProperty(EdmType.DateTime) { PropertyAsObject = value };
             }
-            else if (value is DateTimeOffset)
+            else if (type == typeof(DateTimeOffset))
             {
                 return new EntityProperty((DateTimeOffset)value);
             }
-            else if (value is DateTimeOffset?)
+            else if (type == typeof(DateTimeOffset?))
             {
                 return new EntityProperty((DateTimeOffset?)value);
             }
-            else if (value is double || value is double?)
+            else if (type == typeof(double)|| type == typeof(double?))
             {
                 return new EntityProperty(EdmType.Double) { PropertyAsObject = value };
             }
-            else if (value is Guid || value is Guid?)
+            else if (type == typeof(Guid?)|| type == typeof(Guid))
             {
-                return new EntityProperty(EdmType.Guid) { PropertyAsObject = value };
+                return new EntityProperty(EdmType.Guid) { PropertyAsObject=value};
             }
-            else if (value is int || value is int?)
+            else if (type == typeof(int)|| type == typeof(int?))
             {
-                return new EntityProperty(EdmType.Int32) { PropertyAsObject = value };
+                return new EntityProperty(EdmType.Int32) { PropertyAsObject=value};
             }
-            else if (value is long || value is long?)
+            else if (type == typeof(long)|| type == typeof(long?))
             {
                 return new EntityProperty(EdmType.Int64) { PropertyAsObject = value };
             }
