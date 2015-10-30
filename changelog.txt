@@ -1,3 +1,13 @@
+Changes in 6.1.0 :
+
+ - All: Refreshed ASP.NET 5 targets to work with latest RC bits (DNX 4.5.1 and DNX Core 5.0, beta8). 
+ - All: Added support for Account Shared Access Signatures to the PCL, enabling scenarios such as ListContainers, CreateTable, GetQueueServiceProperties, etc. 
+ - Blobs: Added a performance enhancement - uploading data using client-side encryption used to always call PutBlock + PutblockList, even if the library should be calling PutBlob.
+ - Blobs: Fixed a bug where uploading data using client-side encryption, async or APM, and with an access condition, will in some cases upload the data unencrypted.
+ - Tables: Added support for projecting columns with the Retrieve operation.
+ - Tables: Fixed a bug where some table queries with client-side decryption were not formatted correctly, resulting in empty entity results.
+ - Files: Fixed bug in Windows Runtime where FetchAttributes API did not update copyState.
+
 Changes in 6.0.0 :
 
  - All: Support for 2015-04-05 REST version. Please see our REST API documentation and blogs for information about the related added features.

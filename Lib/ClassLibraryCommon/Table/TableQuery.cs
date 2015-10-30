@@ -538,7 +538,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions.AssertPolicyIfRequired();
 
             // If encryption policy is set, then add the encryption metadata column to Select columns in order to be able to decrypt properties.
-            if (requestOptions.EncryptionPolicy != null && query.SelectColumns != null)
+            if (requestOptions.EncryptionPolicy != null && query.SelectColumns != null && query.SelectColumns.Count() > 0)
             {
                 query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails);
                 query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails);

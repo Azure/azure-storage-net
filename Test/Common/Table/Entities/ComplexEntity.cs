@@ -382,6 +382,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
                     return EdmType.Guid;
 
                 case "Double":
+                case "DoubleInteger":
                 case "DoubleN":
                 case "DoubleNull":
                 case "DoublePrimitive":

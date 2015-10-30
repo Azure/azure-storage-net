@@ -2486,6 +2486,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             this.attributes.Properties = properties;
             this.attributes.Metadata = FileHttpResponseParsers.GetMetadata(response);
+            this.attributes.CopyState = FileHttpResponseParsers.GetCopyAttributes(response);
         }
 
         /// <summary>

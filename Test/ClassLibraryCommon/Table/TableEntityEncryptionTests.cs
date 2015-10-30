@@ -424,6 +424,48 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("Checks to ensure that when querying with encryption, if we don't request any specific columns, we get all the data back.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableQueryProjectionEncryptionNoSelect()
+        {
+            // Insert Entity
+            EncryptedBaseEntity ent1 = new EncryptedBaseEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
+            ent1.Populate();
+
+            EncryptedBaseEntity ent2 = new EncryptedBaseEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() };
+            ent2.Populate();
+
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            TableRequestOptions options = new TableRequestOptions() { EncryptionPolicy = new TableEncryptionPolicy(aesKey, null) };
+            currentTable.Execute(TableOperation.Insert(ent1), options, null);
+            currentTable.Execute(TableOperation.Insert(ent2), options, null);
+
+            tableClient.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.Json;
+
+            // Create the resolver to be used for unwrapping.
+            DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+            resolver.Add(aesKey);
+            TableEncryptionPolicy encryptionPolicy = new TableEncryptionPolicy(null, resolver);
+
+            IEnumerable<EncryptedBaseEntity> entities = null;
+            CloudTableClient encryptingTableClient = new CloudTableClient(this.tableClient.StorageUri, this.tableClient.Credentials);
+            encryptingTableClient.DefaultRequestOptions.EncryptionPolicy = encryptionPolicy;
+            encryptingTableClient.DefaultRequestOptions.RequireEncryption = true;
+
+            entities = encryptingTableClient.GetTableReference(currentTable.Name).CreateQuery<EncryptedBaseEntity>().Select(ent => ent);
+
+            foreach (EncryptedBaseEntity ent in entities)
+            {
+                ent.Validate();
+            }
+        }
+
+        [TestMethod]
         [Description("Basic projection test with encryption")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]

@@ -147,6 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
+        [Ignore]
         [TestMethod]
         [Description("Upload from text to a file")]
         [TestCategory(ComponentCategory.File)]

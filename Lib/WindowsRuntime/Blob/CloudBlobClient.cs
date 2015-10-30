@@ -89,14 +89,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of containers.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<ContainerResultSegment> ListContainersSegmentedAsync(BlobContinuationToken currentToken)
 #else
         public IAsyncOperation<ContainerResultSegment> ListContainersSegmentedAsync(BlobContinuationToken currentToken)
@@ -111,7 +110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, BlobContinuationToken currentToken)
 #else
         public IAsyncOperation<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, BlobContinuationToken currentToken)
@@ -133,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.ListContainersSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
@@ -155,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K  || PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of containers
         /// whose names begin with the specified prefix.
@@ -184,7 +183,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return new ContainerResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
             }, cancellationToken);
         }
-#endif
 #endif
 
         /// <summary>
@@ -482,13 +480,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #region Analytics
 
-#if !PORTABLE
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<ServiceProperties> GetServicePropertiesAsync()
 #else
         public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync()
@@ -504,7 +501,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<ServiceProperties> GetServicePropertiesAsync(BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(options, operationContext, CancellationToken.None);
@@ -524,7 +521,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -575,7 +572,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="properties">The blob service properties.</param>
         /// <returns>The properties of the blob service.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task SetServicePropertiesAsync(ServiceProperties properties)
 #else
         public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties)
@@ -592,7 +589,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The properties of the blob service.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task SetServicePropertiesAsync(ServiceProperties properties, BlobRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
@@ -610,7 +607,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -664,7 +661,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns>The blob service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<ServiceStats> GetServiceStatsAsync()
 #else
         public IAsyncOperation<ServiceStats> GetServiceStatsAsync()
@@ -680,7 +677,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<ServiceStats> GetServiceStatsAsync(BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetServiceStatsAsync(options, operationContext, CancellationToken.None);
@@ -700,7 +697,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets service stats for the Blob service.
         /// </summary>
@@ -736,7 +733,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;
         }
-#endif
 #endregion
     }
 }

@@ -24,6 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
+    using System.Text;
 
     /// <summary>
     /// Represents a single table operation.
@@ -111,6 +112,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Gets or sets the value that represents whether the message payload should be returned in the response.
         /// </summary>
         internal bool EchoContent { get; set; }
+
+        /// <summary>
+        /// List of columns to project with for the retrieve operation.
+        /// </summary>
+        internal List<string> SelectColumns { get; set; }
 
         /// <summary>
         /// Creates a new table operation that deletes the given entity
@@ -240,13 +246,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
         /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
-        /// <param name="rowkey">A string containing the row key of the entity to retrieve.</param>        
+        /// <param name="rowkey">A string containing the row key of the entity to retrieve.</param>
+        /// <param name="selectColumns">List of column names for projection.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         [SuppressMessage("Microsoft.Design",
             "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "Reviewed")]
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "rowkey",
             Justification = "Reviewed : towkey is acceptable.")]
-        public static TableOperation Retrieve<TElement>(string partitionKey, string rowkey)
+        public static TableOperation Retrieve<TElement>(string partitionKey, string rowkey, List<string> selectColumns = null)
             where TElement : ITableEntity
         {
             CommonUtility.AssertNotNull("partitionKey", partitionKey);
@@ -257,6 +264,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 RetrievePartitionKey = partitionKey,
                 RetrieveRowKey = rowkey,
+                SelectColumns = selectColumns,
                 RetrieveResolver =
                     (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(
                             pk,
@@ -276,15 +284,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
         /// <param name="rowkey">A string containing the row key of the entity to retrieve.</param>
         /// <param name="resolver">The <see cref="EntityResolver{TResult}"/> implementation to project the entity to retrieve as a particular type in the result.</param>
+        /// <param name="selectedColumns">List of column names for projection.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "rowkey", Justification = "Reviewed : rowkey is acceptable.")]
-        public static TableOperation Retrieve<TResult>(string partitionKey, string rowkey, EntityResolver<TResult> resolver)
+        public static TableOperation Retrieve<TResult>(string partitionKey, string rowkey, EntityResolver<TResult> resolver, List<string> selectedColumns = null)
         {
             CommonUtility.AssertNotNull("partitionKey", partitionKey);
             CommonUtility.AssertNotNull("rowkey", rowkey);
 
             // Create and return the table operation.
-            return new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey, RetrieveResolver = (pk, rk, ts, prop, etag) => resolver(pk, rk, ts, prop, etag) };
+            return new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey, RetrieveResolver = (pk, rk, ts, prop, etag) => resolver(pk, rk, ts, prop, etag), SelectColumns = selectedColumns };
         }
 
         /// <summary>
@@ -293,15 +302,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="partitionKey">A string containing the partition key of the entity to be retrieved.</param>
         /// <param name="rowkey">A string containing the row key of the entity to be retrieved.</param>
+        /// <param name="selectedColumns">List of column names for projection.</param>
         /// <returns>The <see cref="TableOperation"/> object.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "rowkey", Justification = "Reviewed : rowkey is allowed.")]
-        public static TableOperation Retrieve(string partitionKey, string rowkey)
+        public static TableOperation Retrieve(string partitionKey, string rowkey, List<string> selectedColumns = null)
         {
             CommonUtility.AssertNotNull("partitionKey", partitionKey);
             CommonUtility.AssertNotNull("rowkey", rowkey);
 
             // Create and return the table operation.
-            return new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey };
+            return new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey, SelectColumns = selectedColumns };
         }
 
         private static object DynamicEntityResolver(string partitionKey, string rowKey, DateTimeOffset timestamp, IDictionary<string, EntityProperty> properties, string etag)
@@ -356,6 +366,64 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 return NavigationHelper.AppendPathToSingleUri(uri, string.Format(CultureInfo.InvariantCulture, "{0}({1})", tableName, identity));
             }
+        }
+
+        internal UriQueryBuilder GenerateQueryBuilder()
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+
+            // select
+            if (this.SelectColumns != null && this.SelectColumns.Count > 0)
+            {
+                StringBuilder colBuilder = new StringBuilder();
+                bool foundRk = false;
+                bool foundPk = false;
+                bool foundTs = false;
+
+                for (int m = 0; m < this.SelectColumns.Count; m++)
+                {
+                    if (this.SelectColumns[m] == TableConstants.PartitionKey)
+                    {
+                        foundPk = true;
+                    }
+                    else if (this.SelectColumns[m] == TableConstants.RowKey)
+                    {
+                        foundRk = true;
+                    }
+                    else if (this.SelectColumns[m] == TableConstants.Timestamp)
+                    {
+                        foundTs = true;
+                    }
+
+                    colBuilder.Append(this.SelectColumns[m]);
+                    if (m < this.SelectColumns.Count - 1)
+                    {
+                        colBuilder.Append(",");
+                    }
+                }
+
+                if (!foundPk)
+                {
+                    colBuilder.Append(",");
+                    colBuilder.Append(TableConstants.PartitionKey);
+                }
+
+                if (!foundRk)
+                {
+                    colBuilder.Append(",");
+                    colBuilder.Append(TableConstants.RowKey);
+                }
+
+                if (!foundTs)
+                {
+                    colBuilder.Append(",");
+                    colBuilder.Append(TableConstants.Timestamp);
+                }
+
+                builder.Add(TableConstants.Select, colBuilder.ToString());
+            }
+
+            return builder;
         }
     }
 }

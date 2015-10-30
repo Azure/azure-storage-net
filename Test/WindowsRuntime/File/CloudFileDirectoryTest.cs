@@ -154,6 +154,60 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Verify that a file directory's metadata can be updated")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectorySetMetadataAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                await directory.CreateAsync();
+
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                await directory2.FetchAttributesAsync();
+                Assert.AreEqual(0, directory2.Metadata.Count);
+
+                directory.Metadata["key1"] = null;
+                OperationContext context = new OperationContext();
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await directory.SetMetadataAsync(null /* accessConditions */, null /* options */, context),
+                    context,
+                    "Metadata keys should have a non-null value",
+                    HttpStatusCode.Unused);
+
+                directory.Metadata["key1"] = "";
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await directory.SetMetadataAsync(null /* accessConditions */, null /* options */, context),
+                    context,
+                    "Metadata keys should have a non-empty value",
+                    HttpStatusCode.Unused);
+
+                directory.Metadata["key1"] = "value1";
+                await directory.SetMetadataAsync(null /* accessConditions */, null /* options */, context);
+
+                await directory2.FetchAttributesAsync();
+                Assert.AreEqual(1, directory2.Metadata.Count);
+                Assert.AreEqual("value1", directory2.Metadata["key1"]);
+
+                directory.Metadata.Clear();
+                await directory.SetMetadataAsync(null /* accessConditions */, null /* options */, context);
+
+                await directory2.FetchAttributesAsync();
+                Assert.AreEqual(0, directory2.Metadata.Count);
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().AsTask().Wait();
+            }
+        }
+
+        [TestMethod]
         [Description("Try to delete a non-existing directory")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

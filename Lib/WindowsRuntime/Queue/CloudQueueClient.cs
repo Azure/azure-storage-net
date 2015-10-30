@@ -87,13 +87,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of queues.
         /// </summary>
         /// <param name="currentToken">A <see cref="QueueContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<QueueResultSegment> ListQueuesSegmentedAsync(QueueContinuationToken currentToken)
 #else
         public IAsyncOperation<QueueResultSegment> ListQueuesSegmentedAsync(QueueContinuationToken currentToken)
@@ -108,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="prefix">The queue name prefix.</param>
         /// <param name="currentToken">A <see cref="QueueContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueContinuationToken currentToken)
 #else
         public IAsyncOperation<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueContinuationToken currentToken)
@@ -129,7 +128,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext)
         {
             return this.ListQueuesSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
@@ -153,7 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Returns a result segment containing a collection of queues
         /// whose names begin with the specified prefix.
@@ -245,7 +244,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<ServiceProperties> GetServicePropertiesAsync()
 #else
         public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync()
@@ -261,7 +260,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<ServiceProperties> GetServicePropertiesAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(options, operationContext, CancellationToken.None);
@@ -280,7 +279,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -328,7 +327,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="properties">The queue service properties.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task SetServicePropertiesAsync(ServiceProperties properties)
 #else
         public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties)
@@ -345,7 +344,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
@@ -363,7 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -416,7 +415,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>The queue service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<ServiceStats> GetServiceStatsAsync()
 #else
         public IAsyncOperation<ServiceStats> GetServiceStatsAsync()
@@ -432,7 +431,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The queue service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<ServiceStats> GetServiceStatsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetServiceStatsAsync(options, operationContext, CancellationToken.None);
@@ -452,7 +451,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Gets the stats of the queue service.
         /// </summary>
@@ -490,6 +489,5 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
 #endregion
-#endif
     }
 }

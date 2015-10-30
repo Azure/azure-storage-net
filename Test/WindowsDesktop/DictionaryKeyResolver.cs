@@ -31,11 +31,11 @@ namespace Microsoft.WindowsAzure.Storage
             keys[key.Kid] = key;
         }
 
-        public async Task<IKey> ResolveKeyAsync(string kid, CancellationToken token)
+        public Task<IKey> ResolveKeyAsync(string kid, CancellationToken token)
         {
             IKey result;
             keys.TryGetValue(kid, out result);
-            return result;
+            return new Task<IKey>(() => result);
         }
     }
 }

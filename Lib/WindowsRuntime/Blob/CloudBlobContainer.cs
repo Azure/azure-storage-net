@@ -42,11 +42,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <remarks>Containers hold directories, which are encapsulated as <see cref="CloudBlobDirectory"/> objects, and directories hold block blobs and page blobs. Directories can also contain sub-directories.</remarks>
     public sealed partial class CloudBlobContainer
     {
-#if !PORTABLE
         /// <summary>
         /// Creates the container.
         /// </summary>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task CreateAsync()
@@ -64,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task CreateAsync(BlobRequestOptions options, OperationContext operationContext)
@@ -83,7 +82,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and what level of access is to be allowed.</param>                                                        
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task CreateAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext)
@@ -104,7 +103,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Creates the container and specifies the level of access to the container's data.
         /// </summary>
@@ -130,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE
         public Task<bool> CreateIfNotExistsAsync()
 #else
         public IAsyncOperation<bool> CreateIfNotExistsAsync()
@@ -146,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<bool> CreateIfNotExistsAsync(BlobRequestOptions options, OperationContext operationContext)
 #else
         public IAsyncOperation<bool> CreateIfNotExistsAsync(BlobRequestOptions options, OperationContext operationContext)
@@ -163,7 +162,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.CreateIfNotExistsAsync(accessType, options, operationContext, CancellationToken.None);
@@ -212,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Creates the container if it does not already exist and specifies the level of access to the container's data.
         /// </summary>
@@ -268,7 +267,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Deletes the container.
         /// </summary>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync()
@@ -287,7 +286,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task DeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -308,7 +307,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Deletes the container.
         /// </summary>
@@ -334,7 +333,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns><c>true</c> if the container already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<bool> DeleteIfExistsAsync()
 #else
         public IAsyncOperation<bool> DeleteIfExistsAsync()
@@ -351,7 +350,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteIfExistsAsync(accessCondition, options, operationContext, CancellationToken.None);
@@ -400,7 +399,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Deletes the container if it already exists.
         /// </summary>
@@ -451,7 +450,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }, cancellationToken);
         }
-#endif
 #endif 
 
         /// <summary>
@@ -616,7 +614,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Sets permissions for the container.
         /// </summary>
         /// <param name="permissions">The permissions to apply to the container.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(BlobContainerPermissions permissions)
@@ -636,7 +634,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetPermissionsAsync(BlobContainerPermissions permissions, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -657,7 +655,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Sets permissions for the container.
         /// </summary>
@@ -684,7 +682,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns>The container's permissions.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<BlobContainerPermissions> GetPermissionsAsync()
 #else
         public IAsyncOperation<BlobContainerPermissions> GetPermissionsAsync()
@@ -701,7 +699,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The container's permissions.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         public Task<BlobContainerPermissions> GetPermissionsAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetPermissionsAsync(accessCondition, options, operationContext, CancellationToken.None);
@@ -718,7 +716,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K
+#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the permissions settings for the container.
         /// </summary>
@@ -876,11 +874,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if !PORTABLE
         /// <summary>
         /// Sets the container's user-defined metadata.
         /// </summary>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task SetMetadataAsync()
@@ -901,7 +898,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.SetMetadataAsync(accessCondition, options, operationContext, CancellationToken.None);
@@ -918,7 +915,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Sets the container's user-defined metadata.
         /// </summary>
@@ -948,7 +945,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <returns>The ID of the acquired lease.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId)
 #else
         public IAsyncOperation<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId)
@@ -969,7 +966,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The ID of the acquired lease.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.AcquireLeaseAsync(leaseTime, proposedLeaseId, accessCondition, options, operationContext, CancellationToken.None);
@@ -986,7 +983,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Acquires a lease on this container.
         /// </summary>
@@ -1015,7 +1012,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Renews a lease on this container.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container, including a required lease ID.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task RenewLeaseAsync(AccessCondition accessCondition)
@@ -1034,7 +1031,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container, including a required lease ID.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task RenewLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -1055,7 +1052,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Renews a lease on this container.
         /// </summary>
@@ -1083,7 +1080,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container, including a required lease ID.</param>
         /// <returns>The new lease ID.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition)
 #else
         public IAsyncOperation<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition)
@@ -1101,7 +1098,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The new lease ID.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.ChangeLeaseAsync(proposedLeaseId, accessCondition, options, operationContext, CancellationToken.None);
@@ -1118,7 +1115,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Changes the lease ID on this container.
         /// </summary>
@@ -1144,7 +1141,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Releases the lease on this container.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container, including a required lease ID.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ReleaseLeaseAsync(AccessCondition accessCondition)
@@ -1163,7 +1160,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container, including a required lease ID.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests, and to provide additional runtime information about the operation.</param>
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public Task ReleaseLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -1184,7 +1181,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Releases the lease on this container.
         /// </summary>
@@ -1213,7 +1210,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// or zero for infinite leases.</param>
         /// <returns>A <see cref="TimeSpan"/> representing the amount of time before the lease ends, to the second.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod)
 #else
         public IAsyncOperation<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod)
@@ -1233,7 +1230,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation. This object is used to track requests, and to provide additional runtime information about the operation.</param>
         /// <returns>A <see cref="TimeSpan"/> representing the amount of time before the lease ends, to the second.</returns>
         [DoesServiceRequest]
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         public Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.BreakLeaseAsync(breakPeriod, accessCondition, options, operationContext, CancellationToken.None);
@@ -1250,7 +1247,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K 
+#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Breaks the current lease on this container.
         /// </summary>
@@ -1492,7 +1489,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return putCmd;
         }
-#endif 
 
         /// <summary>
         /// Implementation for the FetchAttributes method.
@@ -1580,6 +1576,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return putCmd;
         }
 
+#if !PORTABLE
         /// <summary>
         /// Implementation for the SetPermissions method.
         /// </summary>
@@ -1649,6 +1646,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return getCmd;
         }
+#endif
 
         /// <summary>
         /// Selects the protocol response.

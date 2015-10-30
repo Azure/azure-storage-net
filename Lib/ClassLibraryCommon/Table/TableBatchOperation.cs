@@ -40,15 +40,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
         /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
-        /// <param name="rowKey">A string containing the row key of the entity to retrieve.</param>        
+        /// <param name="rowKey">A string containing the row key of the entity to retrieve.</param>
+        /// <param name="selectedColumns">List of column names for projection.</param>
         [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "Reviewed.")]
-        public void Retrieve<TElement>(string partitionKey, string rowKey) where TElement : ITableEntity
+        public void Retrieve<TElement>(string partitionKey, string rowKey, List<string> selectedColumns = null) where TElement : ITableEntity
         {
             CommonUtility.AssertNotNull("partitionKey", partitionKey);
             CommonUtility.AssertNotNull("rowkey", rowKey);
 
             // Add the table operation.
-            this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowKey, RetrieveResolver = (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(pk, rk, ts, prop, etag) });
+            this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowKey, SelectColumns = selectedColumns, RetrieveResolver = (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(pk, rk, ts, prop, etag) });
         }
 
         /// <summary>
@@ -58,13 +59,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
         /// <param name="rowKey">A string containing the row key of the entity to retrieve.</param>
         /// <param name="resolver">The <see cref="EntityResolver{TResult}"/> implementation to project the entity to retrieve as a particular type in the result.</param>
-        public void Retrieve<TResult>(string partitionKey, string rowKey, EntityResolver<TResult> resolver)
+        /// <param name="selectedColumns">List of column names for projection.</param>
+        public void Retrieve<TResult>(string partitionKey, string rowKey, EntityResolver<TResult> resolver, List<string> selectedColumns = null)
         {
             CommonUtility.AssertNotNull("partitionKey", partitionKey);
             CommonUtility.AssertNotNull("rowkey", rowKey);
 
             // Add the table operation.
-            this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowKey, RetrieveResolver = (pk, rk, ts, prop, etag) => resolver(pk, rk, ts, prop, etag) });
+            this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowKey, SelectColumns = selectedColumns, RetrieveResolver = (pk, rk, ts, prop, etag) => resolver(pk, rk, ts, prop, etag) });
         }
 
         #endregion
