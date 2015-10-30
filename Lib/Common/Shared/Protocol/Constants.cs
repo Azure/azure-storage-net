@@ -788,7 +788,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #if ASPNET_K || PORTABLE
             public const string UserAgentProductVersion = "6.1.1-preview";
 #else
-            public const string UserAgentProductVersion = "6.1.0";
+            public const string UserAgentProductVersion = "6.1.1";
 #endif 
 
             /// <summary>
