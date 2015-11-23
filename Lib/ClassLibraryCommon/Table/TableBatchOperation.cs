@@ -52,6 +52,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
             this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowKey, SelectColumns = selectedColumns, RetrieveResolver = (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(pk, rk, ts, prop, etag) });
         }
 
+        // 6.0 BACKCOMPAT OVERLOAD -- DO NOT TOUCH
+        /// <summary>
+        /// Inserts a <see cref="TableOperation"/> into the batch that retrieves an entity based on its row key and partition key. The entity will be deserialized into the specified class type which extends <see cref="ITableEntity"/>.
+        /// </summary>
+        /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
+        /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
+        /// <param name="rowKey">A string containing the row key of the entity to retrieve.</param>
+        [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter",
+            Justification = "Reviewed.")]
+        public void Retrieve<TElement>(string partitionKey, string rowKey) where TElement : ITableEntity
+        {
+            Retrieve<TElement>(partitionKey, rowKey, selectedColumns: null);
+        }
+
         /// <summary>
         /// Adds a table operation to retrieve an entity of the specified class type with the specified partition key and row key to the batch operation.
         /// </summary>
