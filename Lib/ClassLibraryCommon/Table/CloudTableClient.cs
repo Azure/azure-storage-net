@@ -112,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [DoesServiceRequest]
         public IEnumerable<CloudTable> ListTables(string prefix = null, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
+            requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
             CloudTable serviceTable = this.GetTableReference(TableConstants.TableServiceTablesName);
 
@@ -156,7 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [DoesServiceRequest]
         public TableResultSegment ListTablesSegmented(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
+            requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
             CloudTable serviceTable = this.GetTableReference(TableConstants.TableServiceTablesName);
             TableQuerySegment<DynamicTableEntity> res =
@@ -213,7 +213,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginListTablesSegmented(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
+            requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
             CloudTable serviceTable = this.GetTableReference(TableConstants.TableServiceTablesName);
 

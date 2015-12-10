@@ -1,5 +1,5 @@
 ﻿{
-  "version": "6.1.1.0",
+  "version": "6.2.1.0",
   "dependencies": {
     "xunit": "2.1.0-*",
     "xunit.runner.dnx": "2.1.0-*",
@@ -12,13 +12,6 @@
   },
 
   "frameworks": {
-    "dnx451": {
-      "frameworkAssemblies": {
-        "System.Net.Http": "",
-        "System.ServiceModel": "",
-        "System.Linq": ""
-      }
-    },
     "dnxcore50": {
       "dependencies": {
         "System.Runtime": "4.0.20-beta-*"
@@ -27,7 +20,9 @@
   },
 
   "compilationOptions": {
-    "define": [ "ASPNET_K", "XUNIT" ]
+    "define": [ "ASPNET_K", "XUNIT" ],
+	"delaySign": true,
+    "keyFile":  "MSSharedLibKey.snk"
   },
 
   "compile": [

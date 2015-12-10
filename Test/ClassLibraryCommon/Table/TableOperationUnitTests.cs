@@ -323,8 +323,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             client.DefaultRequestOptions.MaximumExecutionTime = null;
             Assert.IsTrue(client.DefaultRequestOptions.MaximumExecutionTime.Equals(null));
 
-            client.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(1);
-            Assert.IsTrue(client.DefaultRequestOptions.MaximumExecutionTime.Equals(TimeSpan.FromSeconds(1)));
+            client.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromMilliseconds(50);
+            Assert.IsTrue(client.DefaultRequestOptions.MaximumExecutionTime.Equals(TimeSpan.FromMilliseconds(50)));
 
             // Try an operation taking longer than 1 second
             TableBatchOperation batch = new TableBatchOperation();

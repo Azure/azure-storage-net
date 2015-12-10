@@ -298,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     async () => await sasQueue.PeekMessageAsync(null, context),
                     context,
                     "Peek when Sas does not allow Read access on the queue",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
 
                 await sasQueue.AddMessageAsync(message);
 

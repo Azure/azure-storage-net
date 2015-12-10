@@ -1,3 +1,11 @@
+Changes in 6.2.0 :
+
+- All: Refreshed ASP.NET 5 targets to work with latest RC bits (DNX Core 5.0, rc1).
+- All: The dnx and net target frameworks have been unified, and DNXCore target framework has been renamed to Dotnet5.4. All DNX4.5.1 projects will take a dependency on the regular Windows Desktop dll.
+- All: Fixed bug that caused issue with Windows Phone 8.1 Apps.
+- Tables: Added overloads to retrieve API that don't include the optional selectedColumns param to maintain backwards compatibility. 
+- Tables: Fixed bug where creating a table with an EncryptionPolicy set resulted in an exception.
+
 Changes in 6.1.0 :
 
  - All: Refreshed ASP.NET 5 targets to work with latest RC bits (DNX 4.5.1 and DNX Core 5.0, beta8). 

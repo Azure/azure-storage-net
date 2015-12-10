@@ -110,7 +110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         async () => await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, null, null, null, operationContext),
                         operationContext,
                         "List blobs while SAS does not allow for listing",
-                        HttpStatusCode.NotFound);
+                        HttpStatusCode.Forbidden);
                 }
             }
 
@@ -153,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     async () => await blob.FetchAttributesAsync(null, null, operationContext),
                     operationContext,
                     "Fetch blob attributes while SAS does not allow for reading",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
             }
 
             if ((permissions & SharedAccessBlobPermissions.Write) == SharedAccessBlobPermissions.Write)
@@ -166,7 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     async () => await blob.SetMetadataAsync(null, null, operationContext),
                     operationContext,
                     "Set blob metadata while SAS does not allow for writing",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
             }
 
             if ((permissions & SharedAccessBlobPermissions.Delete) == SharedAccessBlobPermissions.Delete)
@@ -179,7 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     async () => await blob.DeleteAsync(DeleteSnapshotsOption.None, null, null, operationContext),
                     operationContext,
                     "Delete blob while SAS does not allow for deleting",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
             }
         }
 
@@ -239,7 +239,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 async () => await UploadTextAsync(blob, "blob", Encoding.UTF8, null, null, operationContext),
                 operationContext,
                 "Writing to a blob while SAS does not allow for writing",
-                HttpStatusCode.NotFound);
+                HttpStatusCode.Forbidden);
 
             CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob");
             await testPageBlob.CreateAsync(0);

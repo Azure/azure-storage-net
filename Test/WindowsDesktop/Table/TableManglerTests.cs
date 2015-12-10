@@ -172,6 +172,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #region TableQuery
 
+        [Ignore]
         [TestMethod]
         [Description("TableIngressEgressQuery")]
         [TestCategory(ComponentCategory.Table)]

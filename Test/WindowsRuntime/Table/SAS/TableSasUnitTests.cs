@@ -523,7 +523,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 queryDelegate,
                 "point query",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound,
+                false,
+                expectSuccess);
         }
 
 
@@ -566,7 +568,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 updateDelegate,
                 "update merge",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden,
+                false,
+                false);
         }
 
         /// <summary>
@@ -608,7 +612,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 updateDelegate,
                 "update replace",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden,
+                false,
+                false);
         }
 
         /// <summary>
@@ -649,7 +655,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 addDelegate,
                 "add",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.Created : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.Created : HttpStatusCode.Forbidden,
+                false,
+                false);
         }
 
         /// <summary>
@@ -691,7 +699,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 deleteDelegate,
                 "delete",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden,
+                false,
+                false);
         }
 
         /// <summary>
@@ -733,7 +743,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 upsertDelegate,
                 "upsert merge",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden,
+                false,
+                false);
         }
 
         /// <summary>
@@ -775,7 +787,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 upsertDelegate,
                 "upsert replace",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.NotFound);
+                expectSuccess ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden,
+                false,
+                false);
         }
 
         /// <summary>
@@ -789,41 +803,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="runOperationDelegate">A delegate with the table operation to test.</param>
         /// <param name="opName">The name of the operation being tested.</param>
         /// <param name="expectSuccess">Whether the operation should succeed on entities within the range.</param>
-        private async Task TestOperationWithRange(
-            string tableName,
-            string startPk,
-            string startRk,
-            string endPk,
-            string endRk,
-            Action<BaseEntity, OperationContext> runOperationDelegate,
-            string opName,
-            bool expectSuccess,
-            HttpStatusCode expectedStatusCode)
-        {
-            await TestOperationWithRange(
-                tableName,
-                startPk,
-                startRk,
-                endPk,
-                endRk,
-                runOperationDelegate,
-                opName,
-                expectSuccess,
-                expectedStatusCode,
-                false /* isRangeQuery */);
-        }
-
-        /// <summary>
-        /// Test a table operation on entities inside and outside the given range.
-        /// </summary>
-        /// <param name="tableName">The name of the table to test.</param>
-        /// <param name="startPk">The start partition key range.</param>
-        /// <param name="startRk">The start row key range.</param>
-        /// <param name="endPk">The end partition key range.</param>
-        /// <param name="endRk">The end row key range.</param>
-        /// <param name="runOperationDelegate">A delegate with the table operation to test.</param>
-        /// <param name="opName">The name of the operation being tested.</param>
-        /// <param name="expectSuccess">Whether the operation should succeed on entities within the range.</param>
+        /// <param name="expectedStatusCode">The status code expected for the response.</param>
+        /// <param name="isRangeQuery">Specifies if the operation is a range query.</param>
         private async Task TestOperationWithRange(
             string tableName,
             string startPk,
@@ -835,6 +816,47 @@ namespace Microsoft.WindowsAzure.Storage.Table
             bool expectSuccess,
             HttpStatusCode expectedStatusCode,
             bool isRangeQuery)
+        {
+            await TestOperationWithRange(
+                tableName,
+                startPk,
+                startRk,
+                endPk,
+                endRk,
+                runOperationDelegate,
+                opName,
+                expectSuccess,
+                expectedStatusCode,
+                isRangeQuery,
+                false /* isPointQuery */);
+        }
+
+        /// <summary>
+        /// Test a table operation on entities inside and outside the given range.
+        /// </summary>
+        /// <param name="tableName">The name of the table to test.</param>
+        /// <param name="startPk">The start partition key range.</param>
+        /// <param name="startRk">The start row key range.</param>
+        /// <param name="endPk">The end partition key range.</param>
+        /// <param name="endRk">The end row key range.</param>
+        /// <param name="runOperationDelegate">A delegate with the table operation to test.</param>
+        /// <param name="opName">The name of the operation being tested.</param>
+        /// <param name="expectSuccess">Whether the operation should succeed on entities within the range.</param>
+        /// <param name="expectedStatusCode">The status code expected for the response.</param>
+        /// <param name="isRangeQuery">Specifies if the operation is a range query.</param>
+        /// <param name="isPointQuery">Specifies if the operation is a point query.</param>
+        private async Task TestOperationWithRange(
+            string tableName,
+            string startPk,
+            string startRk,
+            string endPk,
+            string endRk,
+            Action<BaseEntity, OperationContext> runOperationDelegate,
+            string opName,
+            bool expectSuccess,
+            HttpStatusCode expectedStatusCode,
+            bool isRangeQuery,
+            bool isPointQuery)
         {
             CloudTableClient referenceClient = GenerateCloudTableClient();
 
@@ -869,7 +891,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     (ctx) => runOperationDelegate(tableEntity, ctx),
                     string.Format("{0} without appropriate permission.", opName),
-                    (int)HttpStatusCode.NotFound);
+                    (int)HttpStatusCode.Forbidden);
             }
 
             if (startPk != null)
@@ -883,7 +905,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     (ctx) => runOperationDelegate(tableEntity, ctx),
                     string.Format("{0} before allowed partition key range", opName),
-                    (int)HttpStatusCode.NotFound);
+                    (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
                 tableEntity.PartitionKey = partitionKey;
             }
 
@@ -898,7 +920,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ExpectedException(
                     (ctx) => runOperationDelegate(tableEntity, ctx),
                     string.Format("{0} after allowed partition key range", opName),
-                    (int)HttpStatusCode.NotFound);
+                    (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
 
                 tableEntity.PartitionKey = partitionKey;
             }
@@ -917,7 +939,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     TestHelper.ExpectedException(
                         (ctx) => runOperationDelegate(tableEntity, ctx),
                         string.Format("{0} before allowed row key range", opName),
-                        (int)HttpStatusCode.NotFound);
+                        (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
 
                     tableEntity.RowKey = rowKey;
                 }
@@ -937,7 +959,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     TestHelper.ExpectedException(
                         (ctx) => runOperationDelegate(tableEntity, ctx),
                         string.Format("{0} after allowed row key range", opName),
-                        (int)HttpStatusCode.NotFound);
+                        (int)(isPointQuery ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden));
 
                     tableEntity.RowKey = rowKey;
                 }
@@ -1045,7 +1067,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     async () => await sasTable.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK2")), null, context),
                     context,
                     "Try to insert an entity when SAS doesn't allow inserts",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.Forbidden);
 
                 await sasTable.ExecuteAsync(TableOperation.Delete(entity));
 

@@ -131,6 +131,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="properties">A collection containing the <see cref="IDictionary{TKey,TValue}"/> of string property names mapped to values of type <see cref="EntityProperty"/> to store in this <see cref="DynamicTableEntity"/> instance.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <remarks>The properties dictionary passed to this API is stored internally as a reference, not a copy.</remarks>
         public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
             this.Properties = properties;

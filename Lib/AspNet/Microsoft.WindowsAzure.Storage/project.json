@@ -1,7 +1,7 @@
 ﻿{
-    "version": "6.1.1.0",
+    "version": "6.2.1.0",
     "authors": [ "Microsoft Corporation" ],
-    "description": "Azure Storage SDK for ASP.NET 5 Preview",
+    "description": "Azure Storage SDK for CoreCLR Preview",
     "dependencies": {
         "Microsoft.Data.OData": "5.6.4",
         "Microsoft.Data.Services.Client": "5.6.4",
@@ -9,7 +9,7 @@
         "Newtonsoft.Json":  "6.0.8"
     },
     "frameworks": {
-        "dnxcore50": {
+        "dotnet5.4": {
             "dependencies": {
                 "System.Collections": "4.0.11-beta-*",
                 "System.Collections.Concurrent": "4.0.11-beta-*",
@@ -51,23 +51,14 @@
                 "System.Xml.XDocument": "4.0.11-beta-*",
                 "System.Xml.XmlSerializer": "4.0.0-beta-*"
             }
-        },
-        "dnx451": {
-            "frameworkAssemblies": {
-                "System.Data": "",
-                "System.Data.DataSetExtensions": "",
-                "System.Runtime": "",
-                "System.Xml": "",
-                "System.Xml.Linq": "",
-                "System.Runtime.Serialization.Xml": "",
-                "System.Net.Http": ""
-            }
         }
     },
     "compilationOptions": {
         "define": [ "ASPNET_K" ],
         "allowUnsafe": false,
-        "warningsAsErrors": true
+        "warningsAsErrors": true,
+		"delaySign": true,
+        "keyFile":  "MSSharedLibKey.snk"
     },
     "compile": [
         "**/*.cs",

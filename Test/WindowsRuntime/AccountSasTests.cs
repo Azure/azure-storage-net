@@ -496,7 +496,6 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     using (MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(blobText)))
                     {
-
                         await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await appendBlobWithSAS.AppendBlockAsync(memStream.AsInputStream()), "Append a block to an append blob should fail with SAS without Add or Write and Object-level perms.");
                         memStream.Seek(0, SeekOrigin.Begin);
                         await appendBlob.AppendBlockAsync(memStream.AsInputStream());

@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
             IKey result;
             keys.TryGetValue(kid, out result);
-            return new Task<IKey>(() => result);
+            return new TaskFactory().StartNew<IKey>(() => result);
         }
     }
 }

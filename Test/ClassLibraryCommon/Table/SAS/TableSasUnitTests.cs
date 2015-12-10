@@ -505,8 +505,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
             };
 
-
-
             // Perform test
             TestOperationWithRange(
                 tableName,
@@ -826,6 +824,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="runOperationDelegate">A delegate with the table operation to test.</param>
         /// <param name="opName">The name of the operation being tested.</param>
         /// <param name="expectSuccess">Whether the operation should succeed on entities within the range.</param>
+        /// <param name="expectedStatusCode">The status code expected for the response.</param>
+        /// <param name="isRangeQuery">Specifies if the operation is a range query.</param>
         private void TestOperationWithRange(
             string tableName,
             string startPk,
@@ -863,6 +863,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="runOperationDelegate">A delegate with the table operation to test.</param>
         /// <param name="opName">The name of the operation being tested.</param>
         /// <param name="expectSuccess">Whether the operation should succeed on entities within the range.</param>
+        /// <param name="expectedStatusCode">The status code expected for the response.</param>
+        /// <param name="isRangeQuery">Specifies if the operation is a range query.</param>
+        /// <param name="isPointQuery">Specifies if the operation is a point query.</param>
         private void TestOperationWithRange(
             string tableName,
             string startPk,
