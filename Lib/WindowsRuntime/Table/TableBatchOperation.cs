@@ -97,6 +97,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="batch">The input <see cref="TableBatchOperation"/>, which acts as the <c>this</c> instance for the extension method.</param>
         /// <param name="partitionKey">A string containing the partition key of the entity to be retrieved.</param>
         /// <param name="rowkey">A string containing the row key of the entity to be retrieved.</param>
+        public void Retrieve<TElement>(string partitionKey, string rowkey) where TElement : ITableEntity
+        {
+            Retrieve<TElement>(partitionKey, rowkey, selectedColumns: null);
+        }
+
+        /// <summary>
+        /// Adds a table operation that retrieves an entity with the specified partition key and row key to the batch operation.  The entity will be deserialized into the specified class type which extends <see cref="ITableEntity"/>.
+        /// </summary>
+        /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
+        /// <param name="batch">The input <see cref="TableBatchOperation"/>, which acts as the <c>this</c> instance for the extension method.</param>
+        /// <param name="partitionKey">A string containing the partition key of the entity to be retrieved.</param>
+        /// <param name="rowkey">A string containing the row key of the entity to be retrieved.</param>
         /// <param name="selectedColumns">List of column names for projection.</param>
         public void Retrieve<TElement>(string partitionKey, string rowkey, List<string> selectedColumns = null) where TElement : ITableEntity
         {
@@ -105,6 +117,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // Add the table operation.
             this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey, SelectColumns = selectedColumns, RetrieveResolver = (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(pk, rk, ts, prop, etag) });
+        }
+
+        /// <summary>
+        /// Adds a table operation that retrieves an entity with the specified partition key and row key to the batch operation.
+        /// </summary>
+        /// <typeparam name="TResult">The return type which the specified <see cref="EntityResolver{T}"/> will resolve the given entity to.</typeparam>
+        /// <param name="batch">The input <see cref="TableBatchOperation"/>, which acts as the <c>this</c> instance for the extension method.</param>
+        /// <param name="partitionKey">A string containing the partition key of the entity to be retrieved.</param>
+        /// <param name="rowkey">A string containing the row key of the entity to be retrieved.</param>
+        /// <param name="resolver">The <see cref="EntityResolver{R}"/> implementation to project the entity to retrieve as a particular type in the result.</param>
+        public void Retrieve<TResult>(string partitionKey, string rowkey, EntityResolver<TResult> resolver)
+        {
+            Retrieve<TResult>(partitionKey, rowkey, resolver, selectedColumns: null);
         }
 
         /// <summary>

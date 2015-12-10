@@ -755,8 +755,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #elif ASPNET_K
 #if DNXCORE50
                 UserAgentComment = "(ASP.NET Core 5.0)";
-#else
-                UserAgentComment = "(ASP.NET 5.0)";
 #endif
 #elif PORTABLE
                 UserAgentComment = "(Portable Class Library)";
@@ -786,9 +784,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the value to use for UserAgent header.
             /// </summary>
 #if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "6.1.1-preview";
+            public const string UserAgentProductVersion = "6.2.1-preview";
 #else
-            public const string UserAgentProductVersion = "6.1.1";
+            public const string UserAgentProductVersion = "6.2.0";
 #endif 
 
             /// <summary>

@@ -120,3 +120,13 @@ TestResults/
 
 #VS14 sln.ide files
 *.sln.ide/
+
+# ProjectK Build Files
+buildfre.*
+objfre/
+*.playlist
+Test/AspNet/Microsoft.WindowsAzure.Storage.Test/TestConfigurations.xml
+Lib/AspNet/Microsoft.WindowsAzure.Storage/project.lock.json
+Test/AspNet/Microsoft.WindowsAzure.Storage.Test/project.lock.json
+Test/AspNet/XUnitForMsTest/project.lock.json
+UpgradeLog.htm

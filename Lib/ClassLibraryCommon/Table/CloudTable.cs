@@ -901,7 +901,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [DoesServiceRequest]
         public void Create(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
+            requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();
@@ -936,7 +936,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginCreate(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
+            requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();
@@ -1592,7 +1592,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns><c>true</c> if table exists; otherwise, <c>false</c>.</returns>
         private bool Exists(bool primaryOnly, TableRequestOptions requestOptions, OperationContext operationContext)
         {
-            requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
+            requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();
@@ -1646,7 +1646,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         private ICancellableAsyncResult BeginExists(bool primaryOnly, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
+            requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();

@@ -1,6 +1,10 @@
+Tracking Breaking Changes since 6.0
+
+- All: The dnx and net target frameworks have been unified, and DNXCore target framework has been renamed to Dotnet5.4. All DNX4.5.1 projects will take a dependency on the regular Windows Desktop dll.
+
 Tracking Breaking Changes since 5.0
 
-- All: Certain error messages returned by the Azure Storage Services have changed in the 2015-04-05 service version. 
+- All: Certain error messages returned by the Azure Storage Services have changed in the 2015-04-05 service version.
 - All: Removed deprecated Shared Access Signature methods that take version as a parameter. 
 - Tables: Altered default settings for echoContent and payloadFormat. AtomPub payloadFormat is now obsolete.
 - Tables: Changed the client error message for batch transactions to be more clear.

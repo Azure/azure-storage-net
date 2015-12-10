@@ -96,6 +96,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return modifiedOptions;
         }
 
+        internal static TableRequestOptions ApplyDefaultsAndClearEncryption(TableRequestOptions requestOptions, CloudTableClient serviceClient)
+        {
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, serviceClient);
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            modifiedOptions.RequireEncryption = false;
+            modifiedOptions.EncryptionPolicy = null;
+            modifiedOptions.EncryptionResolver = null;
+#endif
+            return modifiedOptions;
+        }
+
         internal void ApplyToStorageCommand<T>(RESTCommand<T> cmd)
         {
             if (this.LocationMode.HasValue)
