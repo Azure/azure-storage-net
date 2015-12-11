@@ -33,9 +33,10 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("6.2.1.0")]
-[assembly: AssemblyFileVersion("6.2.1.0")]
-[assembly: AssemblyInformationalVersion("6.2.1.0-preview")]
+[assembly: AssemblyVersion("6.2.2.0")]
+[assembly: AssemblyFileVersion("6.2.2.0")]
+[assembly: AssemblyInformationalVersion("6.2.2.0-preview")]
+
 [assembly: InternalsVisibleTo(
     "Microsoft.WindowsAzure.Storage.Test, PublicKey=" +
     "0024000004800000940000000602000000240000525341310004000001000100b5fc90e7027f67" +

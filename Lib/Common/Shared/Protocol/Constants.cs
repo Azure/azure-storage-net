@@ -782,9 +782,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the value to use for UserAgent header.
             /// </summary>
 #if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "6.2.1-preview";
+            public const string UserAgentProductVersion = "6.2.2-preview";
 #else
-            public const string UserAgentProductVersion = "6.2.1";
+            public const string UserAgentProductVersion = "6.2.2";
 #endif 
 
             /// <summary>
