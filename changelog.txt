@@ -1,3 +1,7 @@
+Changes in 6.2.2-preview :
+
+- All: Fixed bug with CoreCLR UserAgent string.
+
 Changes in 6.2.0 :
 
 - All: Refreshed ASP.NET 5 targets to work with latest RC bits (DNX Core 5.0, rc1).
