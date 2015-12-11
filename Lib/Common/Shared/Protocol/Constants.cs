@@ -753,9 +753,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
 #elif ASPNET_K
-#if DNXCORE50
                 UserAgentComment = "(ASP.NET Core 5.0)";
-#endif
 #elif PORTABLE
                 UserAgentComment = "(Portable Class Library)";
 #else
