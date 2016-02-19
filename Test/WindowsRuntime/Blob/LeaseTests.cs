@@ -570,23 +570,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(-1)),
                 "acquire a lease with -1 duration");
 
-            await TestHelper.ExpectedExceptionAsync(
-                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(1), null /* proposed lease ID */, null, null, operationContext),
-                operationContext,
-                "acquire a lease with 1 s duration",
-                HttpStatusCode.BadRequest);
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(1), null /* proposed lease ID */),
+                "acquire a lease with 1 s duration");
 
-            await TestHelper.ExpectedExceptionAsync(
-                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(14), null /* proposed lease ID */, null, null, operationContext),
-                operationContext,
-                "acquire a lease that is too short",
-                HttpStatusCode.BadRequest);
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(14), null /* proposed lease ID */),
+                "acquire a lease that is too short");
 
-            await TestHelper.ExpectedExceptionAsync(
-                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(61), null /* proposed lease ID */, null, null, operationContext),
-                operationContext,
-                "acquire a lease that is too long",
-                HttpStatusCode.BadRequest);
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(61), null /* proposed lease ID */),
+                "acquire a lease that is too long");
 
             await TestHelper.ExpectedExceptionAsync(
                 async () => await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, invalidLeaseId, null, null, operationContext),
@@ -635,11 +629,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 async () => await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(-1), null, null, operationContext),
                 "break with negative break time");
 
-            await TestHelper.ExpectedExceptionAsync(
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                 async () => await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(61), null, null, operationContext),
-                operationContext,
-                "break with too large break time",
-                HttpStatusCode.BadRequest);
+                "break with too large break time");
         }
 
         [TestMethod]
@@ -2126,23 +2118,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(-1)),
                 "acquire a lease with -1 duration");
 
-            await TestHelper.ExpectedExceptionAsync(
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                 async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(1), null /* proposed lease ID */, null, null, operationContext),
-                operationContext,
-                "acquire a lease with 1 s duration",
-                HttpStatusCode.BadRequest);
+                "acquire a lease with 1 s duration");
 
-            await TestHelper.ExpectedExceptionAsync(
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                 async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(14), null /* proposed lease ID */, null, null, operationContext),
-                operationContext,
-                "acquire a lease that is too short",
-                HttpStatusCode.BadRequest);
+                "acquire a lease that is too short");
 
-            await TestHelper.ExpectedExceptionAsync(
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                 async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(61), null /* proposed lease ID */, null, null, operationContext),
-                operationContext,
-                "acquire a lease that is too long",
-                HttpStatusCode.BadRequest);
+                "acquire a lease that is too long");
 
             await TestHelper.ExpectedExceptionAsync(
                 async () => await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, invalidLeaseId, null, null, operationContext),
@@ -2191,11 +2177,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 async () => await leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(-1)),
                 "break with negative break time");
 
-            await TestHelper.ExpectedExceptionAsync(
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                 async () => await leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(61), null, null, operationContext),
-                operationContext,
-                "break with too large break time",
-                HttpStatusCode.BadRequest);
+                "break with too large break time");
 
             await this.DeleteAllAsync();
         }

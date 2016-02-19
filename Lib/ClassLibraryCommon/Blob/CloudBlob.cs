@@ -1784,7 +1784,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
@@ -1806,7 +1806,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
@@ -1822,7 +1822,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
@@ -1858,7 +1858,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1872,7 +1872,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
@@ -1887,7 +1887,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -1904,7 +1904,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -3124,7 +3124,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAttributes">The attributes.</param>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If null, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -3136,7 +3136,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int leaseDuration = -1;
             if (leaseTime.HasValue)
             {
-                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(1), TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(Constants.MinimumLeaseDuration), TimeSpan.FromSeconds(Constants.MaximumLeaseDuration));
                 leaseDuration = (int)leaseTime.Value.TotalSeconds;
             }
 
@@ -3272,7 +3272,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int? breakSeconds = null;
             if (breakPeriod.HasValue)
             {
-                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.Zero, TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.FromSeconds(Constants.MinimumBreakLeasePeriod), TimeSpan.FromSeconds(Constants.MaximumBreakLeasePeriod));
                 breakSeconds = (int)breakPeriod.Value.TotalSeconds;
             }
 

@@ -426,6 +426,26 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constant signaling the resource's lease is fixed (finite).
         /// </summary>
         public const string LeaseFixedValue = "fixed";
+        
+        /// <summary>
+        /// Constant for the minimum period of time that a lease can be broken in. 
+        /// </summary>
+        public const int MinimumBreakLeasePeriod = 0;
+
+        /// <summary>
+        /// Constant for the maximum period of time that a lease can be broken in.
+        /// </summary>
+        public const int MaximumBreakLeasePeriod = 60;
+
+        /// <summary>
+        /// Constant for the minimum duration of a lease.
+        /// </summary>
+        public const int MinimumLeaseDuration = 15;
+
+        /// <summary>
+        /// Constant for the maximum non-infinite duration of a lease.
+        /// </summary>
+        public const int MaximumLeaseDuration = 60;
 
         /// <summary>
         /// Constant for a pending copy.
