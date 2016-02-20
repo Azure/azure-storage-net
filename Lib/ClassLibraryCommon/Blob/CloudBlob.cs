@@ -3271,7 +3271,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int leaseDuration = -1;
             if (leaseTime.HasValue)
             {
-                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(1), TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(60));
                 leaseDuration = (int)leaseTime.Value.TotalSeconds;
             }
 
