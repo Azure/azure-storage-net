@@ -570,20 +570,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(-1), null /* proposed lease ID */),
                 "acquire a lease with -1 duration");
 
-            await TestHelper.ExpectedExceptionAsync(
-                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(1), null /* proposed lease ID */, null, null, operationContext),
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(1), null /* proposed lease ID */),
                 operationContext,
                 "acquire a lease with 1 s duration",
                 HttpStatusCode.BadRequest);
 
-            await TestHelper.ExpectedExceptionAsync(
-                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(14), null /* proposed lease ID */, null, null, operationContext),
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(14), null /* proposed lease ID */),
                 operationContext,
                 "acquire a lease that is too short",
                 HttpStatusCode.BadRequest);
 
-            await TestHelper.ExpectedExceptionAsync(
-                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(61), null /* proposed lease ID */, null, null, operationContext),
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(61), null /* proposed lease ID */),
                 operationContext,
                 "acquire a lease that is too long",
                 HttpStatusCode.BadRequest);
@@ -635,7 +635,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 async () => await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(-1), null, null, operationContext),
                 "break with negative break time");
 
-            await TestHelper.ExpectedExceptionAsync(
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                 async () => await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(61), null, null, operationContext),
                 operationContext,
                 "break with too large break time",

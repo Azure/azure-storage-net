@@ -11,7 +11,7 @@
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
-//    limitations under the License.
+//    limitations under the License.f
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
@@ -422,6 +422,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constant signaling the resource's lease is fixed (finite).
         /// </summary>
         public const string LeaseFixedValue = "fixed";
+
+        /// <summary>
+        /// Constant for the minimum duration of a lease.
+        /// </summary>
+        public const int MinimumLeaseDuration = 15;
+
+        /// <summary>
+        /// Constant for the maximum duration of a lease
+        /// </summary>
+        public const int MaximumLeaseDuration = 60;
 
         /// <summary>
         /// Constant for a pending copy.
