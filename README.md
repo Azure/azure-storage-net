@@ -127,6 +127,8 @@ Tests for the client-side encryption preview support also depend on KeyVault.Ext
 
 - [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
+Running tests locally will require you to have an Azure account with a Storage container configured in it. To use this container you will need to make a copy of the /Test/Common/TestConfiguration.xml file in the same location and name that file LocalTestConfiguration.xml. The LocalTestConfiguration file is where you will need to enter in the keys and endpoints for the Azure Storage container that you want to use while testing.
+
 ## Code Samples
 
 > Note:

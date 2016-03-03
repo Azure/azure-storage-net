@@ -23,7 +23,7 @@ namespace Microsoft.WindowsAzure.Storage
 
     public class TestConfigurations
     {
-        public const string DefaultTestConfigFilePath = @"TestConfigurations.xml";
+        public const string DefaultTestConfigFilePath = @"LocalTestConfigurations.xml";
         public string TargetTenantName { get; private set; }
         public IEnumerable<TenantConfiguration> TenantConfigurations { get; private set; }
 

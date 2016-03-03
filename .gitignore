@@ -132,3 +132,4 @@ Test/AspNet/XUnitForMsTest/project.lock.json
 UpgradeLog.htm
 Test/FaultInjection/Dependencies/DotNet2/FiddlerCore.dll
 Test/FaultInjection/Dependencies/DotNet4/FiddlerCore4.dll
+Test/Common/LocalTestConfigurations.xml
