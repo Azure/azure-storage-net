@@ -1,7 +1,9 @@
+Changes in 7.0.0
+- Blobs: Fixed boundary checks for lease durations and break lease period to be in line with REST endpoints
+
 Changes in 6.2.2-preview :
 
 - All: Fixed bug with CoreCLR UserAgent string.
-- Blobs: Fixed boundary checks for lease durations and break lease period to be in line with REST endpoints
 
 Changes in 6.2.0 :
 
