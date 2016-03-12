@@ -1889,7 +1889,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int? breakSeconds = null;
             if (breakPeriod.HasValue)
             {
-                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.FromSeconds(Constants.MinimumLeaseDuration), TimeSpan.FromSeconds(Constants.MaximumLeaseDuration));
+                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.FromSeconds(Constants.MinimumBreakLeasePeriod), TimeSpan.FromSeconds(Constants.MaximumBreakLeasePeriod));
                 breakSeconds = (int)breakPeriod.Value.TotalSeconds;
             }
 
