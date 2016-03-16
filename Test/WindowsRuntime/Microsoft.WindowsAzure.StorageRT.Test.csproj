@@ -141,10 +141,8 @@
     <Content Include="..\Common\Readme.txt">
       <Link>Readme.txt</Link>
     </Content>
-    <Content Include="..\Common\TestConfigurations.xml">
-      <Link>TestConfigurations.xml</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
+    <Content Include="..\Common\TestConfigurationsTemplate.xml">
+      <Link>TestConfigurationsTemplate.xml</Link>
     </Content>
     <Content Include="Images\UnitTestLogo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -159,6 +157,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup Condition="Exists('..\Common\TestConfigurations.xml')">
+  	<Content Include="..\Common\TestConfigurations.xml">
+      <Link>TestConfigurations.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content> 
+  </ItemGroup> 
   <ItemGroup>
     <None Include="MSSharedLibKey.snk" />
     <None Include="RT_Test_TemporaryKey.pfx" />
