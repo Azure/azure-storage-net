@@ -127,6 +127,11 @@
     <Content Include="..\Common\Readme.txt">
       <Link>Readme.txt</Link>
     </Content>
+    <Content Include="..\Common\TestConfigurationsTemplate.xml">
+      <Link>TestConfigurationsTemplate.xml</Link>
+    </Content>	
+  </ItemGroup>
+  <ItemGroup Condition="Exists('..\Common\TestConfigurations.xml')">
     <Content Include="..\Common\TestConfigurations.xml">
       <Link>TestConfigurations.xml</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
