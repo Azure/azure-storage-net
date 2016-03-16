@@ -5,6 +5,7 @@ Changes since 6.2.2-preview :
 Changes in 6.2.2-preview :
 
 - All: Fixed bug with CoreCLR UserAgent string.
+- Blobs: Fixed boundary checks for lease durations to be in line with REST endpointsf
 
 Changes in 6.2.0 :
 

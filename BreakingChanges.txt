@@ -2,6 +2,7 @@ Tracking Breaking Changes since 6.0
 
 - All: TestConfigurations.xml has been deleted and added to the .gitignore file to keep users from accidentally leaking their credentials. To continue running tests, simply add the same file back after you get the latest code.
 - All: The dnx and net target frameworks have been unified, and DNXCore target framework has been renamed to Dotnet5.4. All DNX4.5.1 projects will take a dependency on the regular Windows Desktop dll.
+- Blobs: Change boundary checks for lease duration to be in line with those used in the REST endpoints
 
 Tracking Breaking Changes since 5.0
 
