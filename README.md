@@ -167,7 +167,7 @@ We gladly accept community contributions.
 
 - Issues: Please report bugs using the Issues section of GitHub
 - Forums: Interact with the development teams on StackOverflow or the Microsoft Azure Forums
-- Source Code Contributions: Please follow the [contribution guidelines for Microsoft Azure open source](http://azure.github.io/guidelines/) that details information on onboarding as a contributor 
+- Source Code Contributions: Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute code.
 
 For general suggestions about Microsoft Azure please use our [UserVoice forum](http://feedback.azure.com/forums/34192--general-feedback).
 

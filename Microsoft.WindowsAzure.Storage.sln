@@ -1,10 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{CE1EB2B6-0DA8-43D4-A2E1-001804697009}"
 	ProjectSection(SolutionItems) = preProject
+		BreakingChanges.txt = BreakingChanges.txt
+		changelog.txt = changelog.txt
+		CONTRIBUTING.md = CONTRIBUTING.md
+		README.md = README.md
 		Lib\WindowsDesktop\WindowsAzure.Storage.nuspec = Lib\WindowsDesktop\WindowsAzure.Storage.nuspec
 	EndProjectSection
 EndProject

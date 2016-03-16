@@ -112,6 +112,9 @@ UpgradeLog*.XML
 AppPackages/
 Packages/
 
+# Test Config
+Test/Common/TestConfigurations.xml
+
 # Test Results
 TestResults/
 
