@@ -41,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage
     /// <summary>
     /// Represents a Windows Azure Storage account.
     /// </summary>
-    public sealed class CloudStorageAccount
+    public sealed class CloudStorageAccount : ICloudStorageAccount
     {
         /// <summary>
         /// The FISMA compliance default value.
