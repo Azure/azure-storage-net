@@ -1,6 +1,7 @@
 Changes since 6.2.2-preview :
 
 - All: TestConfigurations.xml has been deleted and added to the .gitignore file to keep users from accidentally leaking their credentials. To continue running tests, simply add the same file back after you get the latest code.
+- Blobs: Fixed boundary checks for lease durations and break lease period to be in line with REST endpoints
 
 Changes in 6.2.2-preview :
 

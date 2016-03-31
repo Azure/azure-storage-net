@@ -2368,7 +2368,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int leaseDuration = -1;
             if (leaseTime.HasValue)
             {
-                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(1), TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(Constants.MinimumLeaseDuration), TimeSpan.FromSeconds(Constants.MaximumLeaseDuration));
                 leaseDuration = (int)leaseTime.Value.TotalSeconds;
             }
 
@@ -2491,7 +2491,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int? breakSeconds = null;
             if (breakPeriod.HasValue)
             {
-                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.Zero, TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.FromSeconds(Constants.MinimumBreakLeasePeriod), TimeSpan.FromSeconds(Constants.MaximumBreakLeasePeriod));
                 breakSeconds = (int)breakPeriod.Value.TotalSeconds;
             }
 

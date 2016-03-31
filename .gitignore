@@ -133,3 +133,5 @@ Lib/AspNet/Microsoft.WindowsAzure.Storage/project.lock.json
 Test/AspNet/Microsoft.WindowsAzure.Storage.Test/project.lock.json
 Test/AspNet/XUnitForMsTest/project.lock.json
 UpgradeLog.htm
+Test/FaultInjection/Dependencies/DotNet2/FiddlerCore.dll
+Test/FaultInjection/Dependencies/DotNet4/FiddlerCore4.dll
