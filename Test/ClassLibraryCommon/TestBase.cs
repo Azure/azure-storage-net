@@ -26,10 +26,17 @@ namespace Microsoft.WindowsAzure.Storage
     {
         static TestBase()
         {
-            XElement element = XElement.Load(TestConfigurations.DefaultTestConfigFilePath);
-            TestConfigurations configurations = TestConfigurations.ReadFromXml(element);
+            try
+            {
+                XElement element = XElement.Load(TestConfigurations.DefaultTestConfigFilePath);
+                TestConfigurations configurations = TestConfigurations.ReadFromXml(element);
 
-            TestBase.Initialize(configurations);
+                TestBase.Initialize(configurations);
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                throw new System.IO.FileNotFoundException("To run tests you need to supply a TestConfigurations.xml file with credentials in the Test/Common folder. Use TestConfigurationsTemplate.xml as a template.");
+            }            
         }
     }
 }
