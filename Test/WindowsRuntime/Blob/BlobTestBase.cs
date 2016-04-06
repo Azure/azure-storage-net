@@ -92,17 +92,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CloudAppendBlob blob1 = blob as CloudAppendBlob;
                     await blob1.CreateOrReplaceAsync();
-                    await blob1.AppendBlockAsync(stream.AsInputStream(), null);
+                    await blob1.AppendBlockAsync(stream, null);
                 }
                 else if (blob.BlobType == BlobType.PageBlob)
                 {
                     CloudPageBlob pageBlob = blob as CloudPageBlob;
-                    await pageBlob.UploadFromStreamAsync(stream.AsInputStream(), accessCondition, options, operationContext);
+                    await pageBlob.UploadFromStreamAsync(stream, accessCondition, options, operationContext);
                 }
                 else
                 {
                     CloudBlockBlob blockBlob = blob as CloudBlockBlob;
-                    await blockBlob.UploadFromStreamAsync(stream.AsInputStream(), accessCondition, options, operationContext);
+                    await blockBlob.UploadFromStreamAsync(stream, accessCondition, options, operationContext);
                 }
             }
         }
@@ -111,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             using (MemoryStream stream = new MemoryStream())
             {
-                await blob.DownloadToStreamAsync(stream.AsOutputStream(), accessCondition, options, operationContext);
+                await blob.DownloadToStreamAsync(stream, accessCondition, options, operationContext);
                 byte[] buffer = stream.ToArray();
                 return encoding.GetString(buffer, 0, buffer.Length);
             }

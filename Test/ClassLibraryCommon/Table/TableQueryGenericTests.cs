@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
+using Microsoft.WindowsAzure.Storage.Table.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +26,6 @@ using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#pragma warning disable 0618
     [TestClass]
     public class TableQueryGenericTests : TableTestBase
     {
@@ -806,26 +806,71 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
             {
-                DoTableGenericQueryProjection(payloadFormat);
+                DoTableGenericQueryProjection(payloadFormat, false);
+                DoTableGenericQueryProjection(payloadFormat, true);
             }
         }
 
-        private void DoTableGenericQueryProjection(TablePayloadFormat format)
+        private void DoTableGenericQueryProjection(TablePayloadFormat format, bool projectSystemProperties)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
+
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "C" });
 
             foreach (BaseEntity ent in currentTable.ExecuteQuery(query))
             {
-                Assert.IsNotNull(ent.PartitionKey);
-                Assert.IsNotNull(ent.RowKey);
-                Assert.IsNotNull(ent.Timestamp);
-
                 Assert.AreEqual(ent.A, "a");
                 Assert.IsNull(ent.B);
                 Assert.AreEqual(ent.C, "c");
                 Assert.IsNull(ent.D);
                 Assert.AreEqual(ent.E, 0);
+
+                if (tableClient.DefaultRequestOptions.ProjectSystemProperties.HasValue)
+                {
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.PartitionKey == default(string), "Missing expected " + TableConstants.PartitionKey);
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.RowKey == default(string), "Missing expected " + TableConstants.RowKey);
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.Timestamp == default(DateTimeOffset), "Missing expected " + TableConstants.Timestamp);
+                }
+            }
+        }
+
+        [TestMethod]
+        [Description("Basic projection test")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableGenericQueryProjectionSpecifyingSystemProperties()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableGenericQueryProjectionSpecifyingSystemProperties(payloadFormat, false);
+                DoTableGenericQueryProjectionSpecifyingSystemProperties(payloadFormat, true);
+            }
+        }
+
+        private void DoTableGenericQueryProjectionSpecifyingSystemProperties(TablePayloadFormat format, bool projectSystemProperties)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
+
+            TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "C", TableConstants.PartitionKey, TableConstants.Timestamp });
+
+            foreach (BaseEntity ent in currentTable.ExecuteQuery(query))
+            {
+                Assert.AreEqual(ent.A, "a");
+                Assert.IsNull(ent.B);
+                Assert.AreEqual(ent.C, "c");
+                Assert.IsNull(ent.D);
+                Assert.AreEqual(ent.E, 0);
+                Assert.AreNotEqual(default(string), ent.PartitionKey);
+                Assert.AreNotEqual(default(DateTimeOffset), ent.Timestamp);
+
+                if (tableClient.DefaultRequestOptions.ProjectSystemProperties.HasValue)
+                {
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.RowKey == default(string), "Missing expected " + TableConstants.RowKey);
+                }
             }
         }
 
@@ -853,9 +898,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 table.Execute(TableOperation.Insert(entity));
 
                 DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, false);
-                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, false);
                 DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, true);
-                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, true);
             }
             finally
             {
@@ -890,9 +933,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 table.Execute(TableOperation.Insert(entity));
 
                 DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, false);
-                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, false);
                 DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.Json, true);
-                DoTableGenericQueryProjectionWithSpecialCases(table, TablePayloadFormat.AtomPub, true);
             }
             finally
             {
@@ -1939,5 +1980,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
-#pragma warning restore 0618
 }

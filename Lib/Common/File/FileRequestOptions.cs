@@ -39,7 +39,34 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Stores the maximum execution time.
         /// </summary>
         private TimeSpan? maximumExecutionTime;
-        
+
+        /// <summary>
+        /// Defines the absolute default option values, should neither the user nor client specify anything.
+        /// </summary>
+        internal static FileRequestOptions BaseDefaultRequestOptions = new FileRequestOptions()
+        {
+            RetryPolicy = new NoRetry(),
+            LocationMode = RetryPolicies.LocationMode.PrimaryOnly,
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            RequireEncryption = null,
+#endif
+
+            ServerTimeout = null,
+            MaximumExecutionTime = null,
+            ParallelOperationThreadCount = 1,
+
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
+            DisableContentMD5Validation = true,
+            StoreFileContentMD5 = false,
+            UseTransactionalMD5 = false,
+#else
+            DisableContentMD5Validation = false,
+            StoreFileContentMD5 = false,
+            UseTransactionalMD5 = false,
+#endif
+        };
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FileRequestOptions"/> class.
         /// </summary>
@@ -76,19 +103,37 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             FileRequestOptions modifiedOptions = new FileRequestOptions(options);
 
-            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
-            modifiedOptions.LocationMode = (modifiedOptions.LocationMode
-                                            ?? serviceClient.DefaultRequestOptions.LocationMode)
-                                            ?? RetryPolicies.LocationMode.PrimaryOnly;
+            modifiedOptions.RetryPolicy = 
+                modifiedOptions.RetryPolicy 
+                ?? serviceClient.DefaultRequestOptions.RetryPolicy 
+                ?? BaseDefaultRequestOptions.RetryPolicy;
+
+            modifiedOptions.LocationMode = 
+                modifiedOptions.LocationMode 
+                ?? serviceClient.DefaultRequestOptions.LocationMode 
+                ?? BaseDefaultRequestOptions.LocationMode;
+
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
+            modifiedOptions.RequireEncryption = 
+                modifiedOptions.RequireEncryption 
+                ?? serviceClient.DefaultRequestOptions.RequireEncryption 
+                ?? BaseDefaultRequestOptions.RequireEncryption;
 #endif
 
-            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
-            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
-            modifiedOptions.ParallelOperationThreadCount = (modifiedOptions.ParallelOperationThreadCount
-                                                           ?? serviceClient.DefaultRequestOptions.ParallelOperationThreadCount)
-                                                           ?? 1;
+            modifiedOptions.ServerTimeout = 
+                modifiedOptions.ServerTimeout 
+                ?? serviceClient.DefaultRequestOptions.ServerTimeout 
+                ?? BaseDefaultRequestOptions.ServerTimeout;
+
+            modifiedOptions.MaximumExecutionTime = 
+                modifiedOptions.MaximumExecutionTime 
+                ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime 
+                ?? BaseDefaultRequestOptions.MaximumExecutionTime;
+
+            modifiedOptions.ParallelOperationThreadCount = 
+                modifiedOptions.ParallelOperationThreadCount 
+                ?? serviceClient.DefaultRequestOptions.ParallelOperationThreadCount 
+                ?? BaseDefaultRequestOptions.ParallelOperationThreadCount;
 
             if (applyExpiry && !modifiedOptions.OperationExpiryTime.HasValue && modifiedOptions.MaximumExecutionTime.HasValue)
             {
@@ -96,19 +141,24 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
 
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
-            modifiedOptions.DisableContentMD5Validation = true;
-            modifiedOptions.StoreFileContentMD5 = false;
-            modifiedOptions.UseTransactionalMD5 = false;
+            modifiedOptions.DisableContentMD5Validation =  BaseDefaultRequestOptions.DisableContentMD5Validation;
+            modifiedOptions.StoreFileContentMD5 = BaseDefaultRequestOptions.StoreFileContentMD5;
+            modifiedOptions.UseTransactionalMD5 = BaseDefaultRequestOptions.UseTransactionalMD5;
 #else
-            modifiedOptions.DisableContentMD5Validation = (modifiedOptions.DisableContentMD5Validation
-                                                            ?? serviceClient.DefaultRequestOptions.DisableContentMD5Validation)
-                                                            ?? false;
-            modifiedOptions.StoreFileContentMD5 = (modifiedOptions.StoreFileContentMD5
-                                                    ?? serviceClient.DefaultRequestOptions.StoreFileContentMD5)
-                                                    ?? false;
-            modifiedOptions.UseTransactionalMD5 = (modifiedOptions.UseTransactionalMD5
-                                                    ?? serviceClient.DefaultRequestOptions.UseTransactionalMD5)
-                                                    ?? false;
+            modifiedOptions.DisableContentMD5Validation = 
+                modifiedOptions.DisableContentMD5Validation 
+                ?? serviceClient.DefaultRequestOptions.DisableContentMD5Validation 
+                ?? BaseDefaultRequestOptions.DisableContentMD5Validation;
+
+            modifiedOptions.StoreFileContentMD5 = 
+                modifiedOptions.StoreFileContentMD5 
+                ?? serviceClient.DefaultRequestOptions.StoreFileContentMD5 
+                ?? BaseDefaultRequestOptions.StoreFileContentMD5;
+
+            modifiedOptions.UseTransactionalMD5 = 
+                modifiedOptions.UseTransactionalMD5 
+                ?? serviceClient.DefaultRequestOptions.UseTransactionalMD5 
+                ?? BaseDefaultRequestOptions.UseTransactionalMD5;
 #endif
 
             return modifiedOptions;

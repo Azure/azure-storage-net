@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// <summary>
     /// Represents a share in the Windows Azure File service.
     /// </summary>
-    public sealed partial class CloudFileShare
+    public partial class CloudFileShare
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFileShare"/> class.
@@ -56,17 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="shareAddress">The absolute URI to the share.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudFileShare"/> object.</returns>
-        public static CloudFileShare Create(StorageUri shareAddress, StorageCredentials credentials)
-        {
-            return new CloudFileShare(shareAddress, credentials);
-        }
-
-        internal CloudFileShare(StorageUri shareAddress, StorageCredentials credentials)
-#else
         public CloudFileShare(StorageUri shareAddress, StorageCredentials credentials)
-#endif 
         {
             CommonUtility.AssertNotNull("shareAddress", shareAddress);
             CommonUtility.AssertNotNull("shareAddress", shareAddress.PrimaryUri);

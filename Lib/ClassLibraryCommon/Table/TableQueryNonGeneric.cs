@@ -164,7 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails);
             }
 
-            UriQueryBuilder builder = query.GenerateQueryBuilder();
+            UriQueryBuilder builder = query.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
 
             if (token != null)
             {
@@ -198,7 +198,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<RESULT_TYPE>(TableQuery query, TableContinuationToken token, CloudTableClient client, CloudTable table, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions)
         {
-            UriQueryBuilder builder = query.GenerateQueryBuilder();
+            UriQueryBuilder builder = query.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
 
             if (token != null)
             {

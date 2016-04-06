@@ -18,7 +18,9 @@
 namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
@@ -35,11 +37,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="properties">Properties to set on the share.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Create(Uri uri, FileShareProperties properties, int? timeout, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Create(Uri uri, FileShareProperties properties, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             
-            HttpRequestMessage request = HttpRequestMessageFactory.Create(uri, timeout, shareBuilder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.Create(uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
             if (properties != null && properties.Quota.HasValue)
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.ShareQuota, properties.Quota.Value);
@@ -55,11 +57,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Delete(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Delete(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
 
-            HttpRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, shareBuilder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -71,11 +73,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
 
-            HttpRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, shareBuilder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -87,11 +89,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
 
-            HttpRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, shareBuilder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -103,10 +105,10 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            HttpRequestMessage request = HttpRequestMessageFactory.SetMetadata(uri, timeout, shareBuilder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.SetMetadata(uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -119,14 +121,14 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="properties">The share's properties.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage SetProperties(Uri uri, int? timeout, FileShareProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage SetProperties(Uri uri, int? timeout, FileShareProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             CommonUtility.AssertNotNull("properties", properties);
 
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             shareBuilder.Add(Constants.QueryConstants.Component, "properties");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, shareBuilder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
             if (properties.Quota.HasValue)
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.ShareQuota, properties.Quota.Value);
@@ -141,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// </summary>
         /// <param name="request">The web request.</param>
         /// <param name="metadata">The user-defined metadata.</param>
-        public static void AddMetadata(HttpRequestMessage request, IDictionary<string, string> metadata)
+        public static void AddMetadata(StorageRequestMessage request, IDictionary<string, string> metadata)
         {
             HttpRequestMessageFactory.AddMetadata(request, metadata);
         }
@@ -152,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="request">The web request.</param>
         /// <param name="name">The metadata name.</param>
         /// <param name="value">The metadata value.</param>
-        public static void AddMetadata(HttpRequestMessage request, string name, string value)
+        public static void AddMetadata(StorageRequestMessage request, string name, string value)
         {
             HttpRequestMessageFactory.AddMetadata(request, name, value);
         }
@@ -165,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="listingContext">A set of parameters for the listing operation.</param>
         /// <param name="detailsIncluded">Additional details to return with the listing.</param>
         /// <returns>A web request for the specified operation.</returns>
-        public static HttpRequestMessage List(Uri uri, int? timeout, ListingContext listingContext, ShareListingDetails detailsIncluded, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage List(Uri uri, int? timeout, ListingContext listingContext, ShareListingDetails detailsIncluded, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "list");
@@ -193,7 +195,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 builder.Add("include", "metadata");
             }
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -204,9 +206,9 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns><returns>A web request to use to perform the operation.</returns></returns>
-        public static HttpRequestMessage GetAcl(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetAcl(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.GetAcl(uri, timeout, GetShareUriQueryBuilder(), content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.GetAcl(uri, timeout, GetShareUriQueryBuilder(), content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -219,9 +221,9 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="publicAccess">The type of public access to allow for the share.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns><returns>A web request to use to perform the operation.</returns></returns>
-        public static HttpRequestMessage SetAcl(Uri uri, int? timeout, FileSharePublicAccessType publicAccess, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage SetAcl(Uri uri, int? timeout, FileSharePublicAccessType publicAccess, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.SetAcl(uri, timeout, GetShareUriQueryBuilder(), content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.SetAcl(uri, timeout, GetShareUriQueryBuilder(), content, operationContext, canonicalizer, credentials);
 
             request.ApplyAccessCondition(accessCondition);
             return request;
@@ -232,13 +234,13 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <returns>A HttpRequestMessage to get the service stats.</returns>
-        public static HttpRequestMessage GetStats(Uri uri, int? timeout, OperationContext operationContext)
+        /// <returns>A StorageRequestMessage to get the service stats.</returns>
+        public static StorageRequestMessage GetStats(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             shareBuilder.Add(Constants.QueryConstants.Component, "stats");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, shareBuilder, null /* content */, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, shareBuilder, null /* content */, operationContext, canonicalizer, credentials);
 
             return request;
         }

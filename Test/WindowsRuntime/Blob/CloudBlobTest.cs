@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
-                    await blob.PutBlockAsync(block, stream.AsInputStream(), null);
+                    await blob.PutBlockAsync(block, stream, null);
                 }
             }
 
@@ -104,7 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference(BlobName);
-                await blockBlob.UploadFromStreamAsync(originalData.AsInputStream());
+                await blockBlob.UploadFromStreamAsync(originalData);
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
                 await blob.FetchAttributesAsync();
@@ -142,7 +142,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await WaitForCopyAsync(snapshotCopy);
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
-                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()).AsStreamForRead())
+                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()))
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blockBlob.PutBlockListAsync(new List<string>());
                 await blob.FetchAttributesAsync();
 
-                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()).AsStreamForRead())
+                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()))
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
@@ -167,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -212,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }

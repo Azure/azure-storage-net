@@ -26,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage
 {
     public partial class TestHelper
     {
+
         /// <summary>
         /// Compares the streams from the current position to the end.
         /// </summary>
@@ -44,6 +45,32 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 srcRead = await srcAsStream.ReadAsync(srcBuffer, 0, srcBuffer.Length);
                 dstRead = await dstAsStream.ReadAsync(dstBuffer, 0, dstBuffer.Length);
+
+                Assert.AreEqual(srcRead, dstRead);
+
+                for (int i = 0; i < srcRead; i++)
+                {
+                    Assert.AreEqual(srcBuffer[i], dstBuffer[i]);
+                }
+            }
+            while (srcRead > 0);
+        }
+
+        /// <summary>
+        /// Compares the streams from the current position to the end.
+        /// </summary>
+        internal static async Task AssertStreamsAreEqualAsync(Stream src, Stream dst)
+        {
+            byte[] srcBuffer = new byte[64 * 1024];
+            int srcRead;
+
+            byte[] dstBuffer = new byte[64 * 1024];
+            int dstRead;
+
+            do
+            {
+                srcRead = await src.ReadAsync(srcBuffer, 0, srcBuffer.Length);
+                dstRead = await dst.ReadAsync(dstBuffer, 0, dstBuffer.Length);
 
                 Assert.AreEqual(srcRead, dstRead);
 

@@ -154,6 +154,9 @@
     <Compile Include="..\Common\Blob\ListBlockItem.cs">
       <Link>Blob\ListBlockItem.cs</Link>
     </Compile>
+    <Compile Include="..\Common\Blob\PageDiffRange.cs">
+      <Link>Blob\PageDiffRange.cs</Link>
+    </Compile>
     <Compile Include="..\Common\Blob\PageRange.cs">
       <Link>Blob\PageRange.cs</Link>
     </Compile>
@@ -180,6 +183,9 @@
     </Compile>
     <Compile Include="..\Common\Blob\Protocol\GetBlockListResponse.cs">
       <Link>Blob\Protocol\GetBlockListResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\Blob\Protocol\GetPageDiffRangesResponse.cs">
+      <Link>Blob\Protocol\GetPageDiffRangesResponse.cs</Link>
     </Compile>
     <Compile Include="..\Common\Blob\Protocol\GetPageRangesResponse.cs">
       <Link>Blob\Protocol\GetPageRangesResponse.cs</Link>
@@ -255,6 +261,9 @@
     </Compile>
     <Compile Include="..\Common\Core\NullType.cs">
       <Link>Core\NullType.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\Core\SasQueryBuilder.cs">
+      <Link>Core\SasQueryBuilder.cs</Link>
     </Compile>
     <Compile Include="..\Common\Core\SR.cs">
       <Link>Core\SR.cs</Link>
@@ -613,8 +622,8 @@
     <Compile Include="..\Common\Table\TableServiceTable.cs">
       <Link>Table\TableServiceTable.cs</Link>
     </Compile>
-    <Compile Include="..\WindowsRuntime\Auth\Protocol\NoOpAuthenticationHttpHandler.cs">
-      <Link>Auth\Protocol\NoOpAuthenticationHttpHandler.cs</Link>
+    <Compile Include="..\WindowsRuntime\Auth\Protocol\StorageAuthenticationHttpHandler.cs">
+      <Link>Auth\Protocol\StorageAuthenticationHttpHandler.cs</Link>
     </Compile>
     <Compile Include="..\WindowsRuntime\Blob\BlobReadStream.cs">
       <Link>Blob\BlobReadStream.cs</Link>
@@ -697,8 +706,8 @@
     <Compile Include="..\WindowsRuntime\Core\Util\HttpResponseMessageUtils.cs">
       <Link>Core\Util\HttpResponseMessageUtils.cs</Link>
     </Compile>
-    <Compile Include="..\WindowsRuntime\Core\Util\WindowsAzureErrorCode.cs">
-      <Link>Core\Util\WindowsAzureErrorCode.cs</Link>
+    <Compile Include="..\WindowsRuntime\Core\StorageRequestMessage.cs">
+      <Link>Core\StorageRequestMessage.cs</Link>
     </Compile>
     <Compile Include="..\WindowsRuntime\ExceptionInfo.cs">
       <Link>ExceptionInfo.cs</Link>
@@ -774,9 +783,6 @@
     </Compile>
     <Compile Include="..\WindowsRuntime\Table\TableQuerySegmentNonGeneric.cs">
       <Link>Table\TableQuerySegmentNonGeneric.cs</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\WrappedStorageException.cs">
-      <Link>WrappedStorageException.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

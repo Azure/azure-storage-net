@@ -25,8 +25,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Net;
     using System.Net.Http;
-#if ASPNET_K || PORTABLE
     using System.Threading;
+
+#if ASPNET_K || PORTABLE
 #else
     using Windows.Foundation;
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -36,13 +37,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <summary>
     /// Represents a single table operation.
     /// </summary>
-    public sealed partial class TableOperation
+    public partial class TableOperation
     {
-#if ASPNET_K || PORTABLE
         internal Task<TableResult> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        internal IAsyncOperation<TableResult> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
-#endif
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, client);
             operationContext = operationContext ?? new OperationContext();
@@ -98,19 +95,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new NotSupportedException();
             }
 
-#if ASPNET_K || PORTABLE
             return Task.Run(() => Executor.ExecuteAsync(
                                             cmdToExecute,
                                             modifiedOptions.RetryPolicy,
                                             operationContext,                                                                       
                                             cancellationToken), cancellationToken);
-#else
-            return AsyncInfo.Run((cancellationToken) => Executor.ExecuteAsync(
-                                                                       cmdToExecute,
-                                                                       modifiedOptions.RetryPolicy,
-                                                                       operationContext,
-                                                                       cancellationToken));
-#endif
         }
 
         private static RESTCommand<TableResult> InsertImpl(TableOperation operation, CloudTableClient client, string tableName, TableRequestOptions requestOptions)
@@ -120,10 +109,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             insertCmd.RetrieveResponseStream = true;
-            insertCmd.Handler = client.AuthenticationHandler;
-            insertCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             insertCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
+            insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
@@ -138,10 +125,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             deleteCmd.RetrieveResponseStream = false;
-            deleteCmd.Handler = client.AuthenticationHandler;
             deleteCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            deleteCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
+            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return deleteCmd;
@@ -154,10 +139,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             mergeCmd.RetrieveResponseStream = false;
-            mergeCmd.Handler = client.AuthenticationHandler;
             mergeCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            mergeCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            mergeCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
+            mergeCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             mergeCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return mergeCmd;
@@ -170,10 +153,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             replaceCmd.RetrieveResponseStream = false;
-            replaceCmd.Handler = client.AuthenticationHandler;
-            replaceCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             replaceCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            replaceCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
+            replaceCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             replaceCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
             return replaceCmd;
@@ -187,15 +168,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableResult result = new TableResult();
             if (operation.SelectColumns != null && operation.SelectColumns.Count > 0)
             {
-                retrieveCmd.Builder = operation.GenerateQueryBuilder();
+                retrieveCmd.Builder = operation.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
             }
 
             retrieveCmd.CommandLocationMode = operation.isPrimaryOnlyRetrieve ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
             retrieveCmd.RetrieveResponseStream = true;
-            retrieveCmd.Handler = client.AuthenticationHandler;
-            retrieveCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retrieveCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value);
+            retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
                   Task.Run(async () =>

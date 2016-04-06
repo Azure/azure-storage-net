@@ -55,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public void MyTestInitialize()
         {
             this.testShare = GetRandomShareReference();
-            this.testShare.CreateAsync().AsTask().Wait();
+            this.testShare.CreateAsync().Wait();
 
             if (TestBase.FileBufferManager != null)
             {
@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCleanup]
         public void MyTestCleanup()
         {
-            this.testShare.DeleteAsync().AsTask().Wait();
+            this.testShare.DeleteAsync().Wait();
             this.testShare = null;
             if (TestBase.FileBufferManager != null)
             {
@@ -478,7 +478,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 

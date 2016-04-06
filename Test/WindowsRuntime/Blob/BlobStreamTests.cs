@@ -83,10 +83,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(srcStream.AsInputStream(), null, null, null);
+                    await blob.UploadFromStreamAsync(srcStream, null, null, null);
                     using (var blobStream = await blob.OpenReadAsync())
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         blobStreamForRead.Seek(2048, 0);
                         byte[] buff = new byte[100];
                         int numRead = await blobStreamForRead.ReadAsync(buff, 0, 100);
@@ -96,7 +96,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -117,13 +117,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
-                    Stream blobStreamForWrite = blobStream.AsStreamForWrite();
+                    Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
                     await blobStreamForWrite.FlushAsync();
 
                     byte[] testBuffer = new byte[2048];
                     MemoryStream dstStream = new MemoryStream(testBuffer);
-                    await blob.DownloadRangeToStreamAsync(dstStream.AsOutputStream(), null, null);
+                    await blob.DownloadRangeToStreamAsync(dstStream, null, null);
 
                     MemoryStream memStream = new MemoryStream(buffer);
                     TestHelper.AssertStreamsAreEqual(memStream, dstStream);
@@ -131,7 +131,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -151,8 +151,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(srcStream.AsInputStream());
-                    using (Stream dstStreamForRead = (await blob.OpenReadAsync()).AsStreamForRead())
+                    await blob.UploadFromStreamAsync(srcStream);
+                    using (Stream dstStreamForRead = (await blob.OpenReadAsync()))
                     {
                         TestHelper.AssertStreamsAreEqual(srcStream, dstStreamForRead);
                     }
@@ -160,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -181,21 +181,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 
                 using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
-                    Stream blobStreamForWrite = blobStream.AsStreamForWrite();
+                    Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
                     await blobStreamForWrite.FlushAsync();
                 }
 
                 using (var dstStream = await blob.OpenReadAsync())
                 {
-                    Stream dstStreamForRead = dstStream.AsStreamForRead();
+                    Stream dstStreamForRead = dstStream;
                     MemoryStream memoryStream = new MemoryStream(buffer);
                     TestHelper.AssertStreamsAreEqual(memoryStream, dstStreamForRead);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -217,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 MemoryStream memoryStream = new MemoryStream(buffer);
                 using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
-                    Stream blobStreamForWrite = blobStream.AsStreamForWrite();
+                    Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
 
                     Assert.AreEqual(blobStreamForWrite.Position, 2048);
@@ -237,13 +237,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (var dstStream = await blob.OpenReadAsync())
                 {
-                    Stream dstStreamForRead = dstStream.AsStreamForRead();
+                    Stream dstStreamForRead = dstStream;
                     TestHelper.AssertStreamsAreEqual(memoryStream, dstStreamForRead);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -265,7 +265,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 MemoryStream memoryStream = new MemoryStream(buffer);
                 using (var blobStream = await blob.OpenWriteAsync(2048))
                 {
-                    Stream blobStreamForWrite = blobStream.AsStreamForWrite();
+                    Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
                     byte[] testBuffer = new byte[2048];
                     try
@@ -282,7 +282,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -303,12 +303,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(srcStream.AsInputStream());
+                    await blob.UploadFromStreamAsync(srcStream);
                     bool thrown = false;
                     byte[] testBuffer = new byte[2048];
                     using (var blobStream = await blob.OpenReadAsync())
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         try
                         {
                             await blobStreamForRead.WriteAsync(testBuffer, 0, 2048);
@@ -324,7 +324,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }

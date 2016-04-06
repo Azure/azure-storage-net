@@ -220,8 +220,18 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                             {
                                 cmd.CurrentResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(mimePartResponseMessage.GetStream());
                             }
-                            
+
                             cmd.CurrentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
+                            if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
+                            {
+                                string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
+                                cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n"));
+                            }
+                            else
+                            {
+                                cmd.CurrentResult.HttpStatusMessage = mimePartResponseMessage.StatusCode.ToString();
+                            }
+                            
                             throw new StorageException(
                                    cmd.CurrentResult,
                                    cmd.CurrentResult.ExtendedErrorInformation != null ? cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage : SR.ExtendedErrorUnavailable,
@@ -240,6 +250,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                             }
 
                             cmd.CurrentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
+                            if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
+                            {
+                                string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
+                                cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n"));
+                            }
+                            else
+                            {
+                                cmd.CurrentResult.HttpStatusMessage = mimePartResponseMessage.StatusCode.ToString();
+                            }
 
                             string indexString = Convert.ToString(index);
 

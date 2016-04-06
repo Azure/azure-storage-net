@@ -707,8 +707,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
-
-#pragma warning restore 0618
         
         [TestMethod]
         [Description("Test conditional access on a container")]

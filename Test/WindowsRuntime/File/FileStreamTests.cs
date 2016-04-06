@@ -45,10 +45,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(srcStream.AsInputStream(), null, null, null);
+                    await file.UploadFromStreamAsync(srcStream, null, null, null);
                     using (var fileStream = await file.OpenReadAsync())
                     {
-                        Stream fileStreamForRead = fileStream.AsStreamForRead();
+                        Stream fileStreamForRead = fileStream;
                         fileStreamForRead.Seek(2048, 0);
                         byte[] buff = new byte[100];
                         int numRead = await fileStreamForRead.ReadAsync(buff, 0, 100);
@@ -58,7 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -79,13 +79,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (var fileStream = await file.OpenWriteAsync(2048))
                 {
-                    Stream fileStreamForWrite = fileStream.AsStreamForWrite();
+                    Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
                     await fileStreamForWrite.FlushAsync();
 
                     byte[] testBuffer = new byte[2048];
                     MemoryStream dstStream = new MemoryStream(testBuffer);
-                    await file.DownloadRangeToStreamAsync(dstStream.AsOutputStream(), null, null);
+                    await file.DownloadRangeToStreamAsync(dstStream, null, null);
 
                     MemoryStream memStream = new MemoryStream(buffer);
                     TestHelper.AssertStreamsAreEqual(memStream, dstStream);
@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -113,10 +113,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(srcStream.AsInputStream());
+                    await file.UploadFromStreamAsync(srcStream);
 
                     var dstStream = await file.OpenReadAsync();
-                    using (Stream dstStreamForRead = dstStream.AsStreamForRead())
+                    using (Stream dstStreamForRead = dstStream)
                     {
                         TestHelper.AssertStreamsAreEqual(srcStream, dstStreamForRead);
                     }
@@ -124,7 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -145,21 +145,21 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 using (var fileStream = await file.OpenWriteAsync(2048))
                 {
-                    Stream fileStreamForWrite = fileStream.AsStreamForWrite();
+                    Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
                     await fileStreamForWrite.FlushAsync();
                 }
 
                 using (var dstStream = await file.OpenReadAsync())
                 {
-                    Stream dstStreamForRead = dstStream.AsStreamForRead();
+                    Stream dstStreamForRead = dstStream;
                     MemoryStream memoryStream = new MemoryStream(buffer);
                     TestHelper.AssertStreamsAreEqual(memoryStream, dstStreamForRead);
                 }
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -181,7 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 MemoryStream memoryStream = new MemoryStream(buffer);
                 using (var fileStream = await file.OpenWriteAsync(2048))
                 {
-                    Stream fileStreamForWrite = fileStream.AsStreamForWrite();
+                    Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
 
                     Assert.AreEqual(fileStreamForWrite.Position, 2048);
@@ -201,13 +201,13 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 using (var dstStream = await file.OpenReadAsync())
                 {
-                    Stream dstStreamForRead = dstStream.AsStreamForRead();
+                    Stream dstStreamForRead = dstStream;
                     TestHelper.AssertStreamsAreEqual(memoryStream, dstStreamForRead);
                 }
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -229,7 +229,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 MemoryStream memoryStream = new MemoryStream(buffer);
                 using (var fileStream = await file.OpenWriteAsync(2048))
                 {
-                    Stream fileStreamForWrite = fileStream.AsStreamForWrite();
+                    Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
                     byte[] testBuffer = new byte[2048];
                     try
@@ -246,7 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -267,12 +267,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(srcStream.AsInputStream());
+                    await file.UploadFromStreamAsync(srcStream);
                     bool thrown = false;
                     byte[] testBuffer = new byte[2048];
                     using (var fileStream = await file.OpenReadAsync())
                     {
-                        Stream fileStreamForRead = fileStream.AsStreamForRead();
+                        Stream fileStreamForRead = fileStream;
                         try
                         {
                             await fileStreamForRead.WriteAsync(testBuffer, 0, 2048);
@@ -288,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
     }

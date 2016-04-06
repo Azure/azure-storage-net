@@ -98,14 +98,14 @@ namespace Microsoft.WindowsAzure.Storage.Core
                     originalBlob.Write(buffer, 0, buffer.Length);
                     originalBlob.Seek(0, SeekOrigin.Begin);
 
-                    await blob.PutBlockAsync(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), originalBlob.AsInputStream(), null);
+                    await blob.PutBlockAsync(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), originalBlob, null);
 
                     Assert.IsTrue(originalBlob.CanSeek);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }

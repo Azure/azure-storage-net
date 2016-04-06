@@ -870,6 +870,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        [TestMethod]
+        [Description("Perform a SAS request specifying a shared protocol and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSASSharedProtocolsQueryParamInvalid()
+        {
+            SharedAccessProtocol? protocol = default(SharedAccessProtocol);
+            SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+            {
+                Permissions = SharedAccessBlobPermissions.Read,
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+            };
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference("bb");
+
+            TestHelper.ExpectedException<ArgumentException>(
+            () => blockBlob.GetSharedAccessSignature(policy, null /* headers */, null /* stored access policy ID */, protocol, null /* IP address or range */),
+            "Creating a SAS should throw when using an invalid value for the Protocol enum.",
+            String.Format(SR.InvalidProtocolsInSAS, protocol));
+        }
+
         private static Uri TransformSchemeAndPort(Uri input, string scheme, int port)
         {
             UriBuilder builder = new UriBuilder(input);

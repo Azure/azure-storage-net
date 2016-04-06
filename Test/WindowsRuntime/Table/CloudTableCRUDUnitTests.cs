@@ -137,7 +137,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                tableRef.DeleteIfExistsAsync().AsTask().Wait();
+                tableRef.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -178,7 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                tableRef.DeleteIfExistsAsync().AsTask().Wait();
+                tableRef.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -214,7 +214,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                tableRef.DeleteIfExistsAsync().AsTask().Wait();
+                tableRef.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -251,7 +251,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                tableRef.DeleteIfExistsAsync().AsTask().Wait();
+                tableRef.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -291,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                tableRef.DeleteIfExistsAsync().AsTask().Wait();
+                tableRef.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -329,7 +329,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                tableRef.DeleteIfExistsAsync().AsTask().Wait();
+                tableRef.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -366,7 +366,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                tableRef.DeleteIfExistsAsync().AsTask().Wait();
+                tableRef.DeleteIfExistsAsync().Wait();
             }
         }
 

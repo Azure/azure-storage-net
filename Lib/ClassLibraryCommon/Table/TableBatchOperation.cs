@@ -41,18 +41,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
         /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
         /// <param name="rowKey">A string containing the row key of the entity to retrieve.</param>
-        [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "Reviewed.")]
-        public void Retrieve<TElement>(string partitionKey, string rowKey) where TElement : ITableEntity
-        {
-            Retrieve<TElement>(partitionKey, rowKey, selectedColumns: null);
-        }
-
-        /// <summary>
-        /// Inserts a <see cref="TableOperation"/> into the batch that retrieves an entity based on its row key and partition key. The entity will be deserialized into the specified class type which extends <see cref="ITableEntity"/>.
-        /// </summary>
-        /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
-        /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
-        /// <param name="rowKey">A string containing the row key of the entity to retrieve.</param>
         /// <param name="selectedColumns">List of column names for projection.</param>
         [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "Reviewed.")]
         public void Retrieve<TElement>(string partitionKey, string rowKey, List<string> selectedColumns = null) where TElement : ITableEntity
@@ -62,18 +50,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // Add the table operation.
             this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowKey, SelectColumns = selectedColumns, RetrieveResolver = (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(pk, rk, ts, prop, etag) });
-        }
-
-        /// <summary>
-        /// Adds a table operation to retrieve an entity of the specified class type with the specified partition key and row key to the batch operation.
-        /// </summary>
-        /// <typeparam name="TResult">The return type which the specified <see cref="EntityResolver{TResult}"/> will resolve the given entity to.</typeparam>
-        /// <param name="partitionKey">A string containing the partition key of the entity to retrieve.</param>
-        /// <param name="rowKey">A string containing the row key of the entity to retrieve.</param>
-        /// <param name="resolver">The <see cref="EntityResolver{TResult}"/> implementation to project the entity to retrieve as a particular type in the result.</param>
-        public void Retrieve<TResult>(string partitionKey, string rowKey, EntityResolver<TResult> resolver)
-        {
-            Retrieve<TResult>(partitionKey, rowKey, resolver, selectedColumns: null);
         }
 
         /// <summary>
@@ -109,6 +85,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new InvalidOperationException(SR.EmptyBatchOperation);
             }
 
+            if (this.operations.Count > 100)
+            {
+                throw new InvalidOperationException(SR.BatchExceededMaximumNumberOfOperations);
+            }
+
             return Executor.ExecuteSync(BatchImpl(this, client, table, modifiedOptions), modifiedOptions.RetryPolicy, operationContext);
         }
 #endif
@@ -124,6 +105,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             if (this.operations.Count == 0)
             {
                 throw new InvalidOperationException(SR.EmptyBatchOperation);
+            }
+
+            if (this.operations.Count > 100)
+            {
+                throw new InvalidOperationException(SR.BatchExceededMaximumNumberOfOperations);
             }
 
             return Executor.BeginExecuteAsync(

@@ -25,12 +25,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     public enum TablePayloadFormat
     {
         /// <summary>
-        /// Use AtomPub.
-        /// </summary>
-        [Obsolete("Please use a JSON payload format for table operations.")]
-        AtomPub,
-
-        /// <summary>
         /// Use JSON with full metadata.
         /// </summary>
         JsonFullMetadata,

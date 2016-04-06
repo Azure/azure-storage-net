@@ -138,10 +138,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         public ServiceProperties()
         {
-            this.Logging = new LoggingProperties();
-            this.HourMetrics = new MetricsProperties();
-            this.MinuteMetrics = new MetricsProperties();
-            this.Cors = new CorsProperties();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the ServiceProperties class.
+        /// </summary>
+        public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null)
+        {
+            this.Logging = logging;
+            this.HourMetrics = hourMetrics;
+            this.MinuteMetrics = minuteMetrics;
+            this.Cors = cors;
         }
 
         /// <summary>
@@ -152,24 +159,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         {
             get;
             set;
-        }
-
-        /// <summary>
-        /// Gets or sets the hour metrics properties.
-        /// </summary>
-        /// <value>The metrics properties.</value>
-        [Obsolete("Metrics has been renamed to HourMetrics.")]
-        public MetricsProperties Metrics
-        {
-            get
-            {
-                return this.HourMetrics;
-            }
-
-            set
-            {
-                this.HourMetrics = value;
-            }
         }
 
         /// <summary>
@@ -241,8 +230,14 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Converts these properties into XML for communicating with the service.
         /// </summary>
         /// <returns>An XML document containing the service properties.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "SetServiceProperties", Justification = "API name is properly spelled")]
         internal XDocument ToServiceXml()
         {
+            if (this.Logging == null && this.HourMetrics == null && this.MinuteMetrics == null && this.Cors == null && this.DefaultServiceVersion == null)
+            {
+                throw new InvalidOperationException(SR.SetServicePropertiesRequiresNonNullSettings);
+            }
+
             XElement storageServiceElement = new XElement(StorageServicePropertiesName);
 
             if (this.Logging != null)
@@ -394,7 +389,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         {
             if (element == null)
             {
-                return new LoggingProperties();
+                return null;
             }
 
             LoggingOperations state = LoggingOperations.None;
@@ -431,7 +426,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         {
             if (element == null)
             {
-                return new MetricsProperties();
+                return null;
             }
             
             MetricsLevel state = MetricsLevel.None;
@@ -461,13 +456,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <returns>A <c>CorsProperties</c> object containing the properties in the element.</returns>
         internal static CorsProperties ReadCorsPropertiesFromXml(XElement element)
         {
-            CorsProperties ret = new CorsProperties();
-
-            // Check that CORS properties exist
             if (element == null)
             {
-                return ret;
+                return null;
             }
+
+            CorsProperties ret = new CorsProperties();
 
             IEnumerable<XElement> corsRules = element.Descendants(CorsRuleName);
 

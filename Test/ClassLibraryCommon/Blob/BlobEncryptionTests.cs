@@ -286,7 +286,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 // Upload the encrypted contents to the blob.
-                blob.UploadFromFile(inputFileName, FileMode.Open, null, uploadOptions, null);
+                blob.UploadFromFile(inputFileName, null, uploadOptions, null);
 
                 // Download the encrypted blob.
                 // Create the decryption policy to be used for download. There is no need to specify the

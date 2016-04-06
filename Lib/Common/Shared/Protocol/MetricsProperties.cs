@@ -23,6 +23,22 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
     public sealed class MetricsProperties
     {
         /// <summary>
+        /// Initializes a new instance of the MetricsProperties class.
+        /// </summary>
+        public MetricsProperties()
+            : this(Constants.AnalyticsConstants.MetricsVersionV1)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the MetricsProperties class.
+        /// </summary>
+        public MetricsProperties(string version)
+        {
+            this.Version = version;
+        }
+
+        /// <summary>
         /// Gets or sets the version of the analytics service.
         /// </summary>
         /// <value>A string identifying the version of the service.</value>

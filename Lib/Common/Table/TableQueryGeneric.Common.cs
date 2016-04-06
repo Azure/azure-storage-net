@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <summary>
     /// Represents a query against a Windows Azure table.
     /// </summary>
-    public sealed partial class TableQuery<TElement>
+    public partial class TableQuery<TElement>
     {
         #region Properties
 
@@ -129,7 +129,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
 #region Impl
 
-        internal UriQueryBuilder GenerateQueryBuilder()
+        internal UriQueryBuilder GenerateQueryBuilder(bool? projectSystemProperties)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
 
@@ -175,22 +175,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     }
                 }
 
-                if (!foundPk)
+                if (projectSystemProperties.Value)
                 {
-                    colBuilder.Append(",");
-                    colBuilder.Append(TableConstants.PartitionKey);
-                }
+                    if (!foundPk)
+                    {
+                        colBuilder.Append(",");
+                        colBuilder.Append(TableConstants.PartitionKey);
+                    }
 
-                if (!foundRk)
-                {
-                    colBuilder.Append(",");
-                    colBuilder.Append(TableConstants.RowKey);
-                }
+                    if (!foundRk)
+                    {
+                        colBuilder.Append(",");
+                        colBuilder.Append(TableConstants.RowKey);
+                    }
 
-                if (!foundTs)
-                {
-                    colBuilder.Append(",");
-                    colBuilder.Append(TableConstants.Timestamp);
+                    if (!foundTs)
+                    {
+                        colBuilder.Append(",");
+                        colBuilder.Append(TableConstants.Timestamp);
+                    }
                 }
 
                 builder.Add(TableConstants.Select, colBuilder.ToString());

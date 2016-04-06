@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <summary>
     /// Represents a single table operation.
     /// </summary>
-    public sealed partial class TableOperation
+    public partial class TableOperation
     {
 #if SYNC
         internal TableResult Execute(CloudTableClient client, CloudTable table, TableRequestOptions requestOptions, OperationContext operationContext)
@@ -211,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     operation.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails);
                 }
 
-                retrieveCmd.Builder = operation.GenerateQueryBuilder();
+                retrieveCmd.Builder = operation.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
             }
 
             retrieveCmd.CommandLocationMode = operation.isPrimaryOnlyRetrieve ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;

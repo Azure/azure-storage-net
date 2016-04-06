@@ -21,7 +21,6 @@ namespace Microsoft.WindowsAzure.Storage.Auth
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
 
@@ -34,12 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
     /// </summary>
     public sealed class StorageCredentials
     {
-        private UriQueryBuilder queryBuilder;
-
-        /// <summary>
-        /// A value indicating whether or not this StorageCredentials object is meant for HTTPS access only.
-        /// </summary>
-        private bool isHttpsOnly;
+        private SasQueryBuilder queryBuilder;
 
         /// <summary>
         /// Gets the associated shared access signature token for the credentials.
@@ -89,7 +83,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         {
             get
             {
-                return (this.SASToken != null);
+                return this.SASToken != null;
             }
         }
 
@@ -293,14 +287,6 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         public Uri TransformUri(Uri resourceUri)
         {
             CommonUtility.AssertNotNull("resourceUri", resourceUri);
-#if WINDOWS_RT || PORTABLE || ASPNET_K
-            if (this.isHttpsOnly && (string.CompareOrdinal(resourceUri.Scheme, "https") != 0))
-#else
-            if (this.isHttpsOnly && (string.CompareOrdinal(resourceUri.Scheme, Uri.UriSchemeHttps) != 0))
-#endif
-            {
-                throw new ArgumentException(SR.CannotTransformNonHttpsUriWithHttpsOnlyCredentials);
-            }
 
             if (this.IsSAS)
             {
@@ -332,8 +318,13 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         /// <returns>The account access key.</returns>
         public string ExportBase64EncodedKey()
         {
-            StorageAccountKey localKey = this.Key;
-            return (localKey.KeyValue == null) ? null : Convert.ToBase64String(localKey.KeyValue);
+            StorageAccountKey thisAccountKey = this.Key;
+            return GetBase64EncodedKey(thisAccountKey);
+        }
+
+        private static string GetBase64EncodedKey(StorageAccountKey accountKey)
+        {
+            return (accountKey.KeyValue == null) ? null : Convert.ToBase64String(accountKey.KeyValue);
         }
 
         internal string ToString(bool exportSecrets)
@@ -370,30 +361,23 @@ namespace Microsoft.WindowsAzure.Storage.Auth
             }
             else
             {
+                StorageAccountKey thisAccountKey = this.Key;
+                StorageAccountKey otherAccountKey = other.Key;
+
                 return string.Equals(this.SASToken, other.SASToken) &&
                     string.Equals(this.AccountName, other.AccountName) &&
-                    string.Equals(this.KeyName, other.KeyName) &&
-                    string.Equals(this.ExportBase64EncodedKey(), other.ExportBase64EncodedKey());
+                    string.Equals(thisAccountKey.KeyName, otherAccountKey.KeyName) &&
+                    string.Equals(GetBase64EncodedKey(thisAccountKey), GetBase64EncodedKey(otherAccountKey));
             }
         }
 
         private void UpdateQueryBuilder()
         {
-            this.queryBuilder = new UriQueryBuilder();
-            this.isHttpsOnly = false;
-            IDictionary<string, string> parameters = HttpWebUtility.ParseQueryString(this.SASToken);
-            foreach (KeyValuePair<string, string> parameter in parameters)
-            {
-                if (string.CompareOrdinal(parameter.Key, Constants.QueryConstants.SignedProtocols) == 0 && string.CompareOrdinal(parameter.Value, "https") == 0)
-                {
-                    this.isHttpsOnly = true;
-                }
+            SasQueryBuilder newQueryBuilder = new SasQueryBuilder(this.SASToken);
 
-                this.queryBuilder.Add(parameter.Key, parameter.Value);
-            }
+            newQueryBuilder.Add(Constants.QueryConstants.ApiVersion, Constants.HeaderConstants.TargetStorageVersion);
 
-            this.queryBuilder.Add(Constants.QueryConstants.ApiVersion, Constants.HeaderConstants.TargetStorageVersion);
-            
+            this.queryBuilder = newQueryBuilder;
         }
     }
 }

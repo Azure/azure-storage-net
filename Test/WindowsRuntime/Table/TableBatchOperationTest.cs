@@ -88,7 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             tableClient = GenerateCloudTableClient();
             currentTable = tableClient.GetTableReference(GenerateRandomTableName());
-            currentTable.CreateIfNotExistsAsync().AsTask().Wait();
+            currentTable.CreateIfNotExistsAsync().Wait();
 
             if (TestBase.TableBufferManager != null)
             {
@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCleanup()]
         public void MyTestCleanup()
         {
-            currentTable.DeleteIfExistsAsync().AsTask().Wait();
+            currentTable.DeleteIfExistsAsync().Wait();
             if (TestBase.TableBufferManager != null)
             {
                 Assert.AreEqual(0, TestBase.TableBufferManager.OutstandingBufferCount);
@@ -183,7 +183,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             // add entity
             await currentTable.ExecuteAsync(TableOperation.Insert(ent));
 
-
             TableBatchOperation batch = new TableBatchOperation();
             batch.Insert(ent);
 
@@ -195,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             catch (Exception)
             {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.Conflict, new string[] { "EntityAlreadyExists" }, "The specified entity already exists");
+                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.Conflict, new string[] { "EntityAlreadyExists" }, "The specified entity already exists", "The specified entity already exists");
             }
         }
         #endregion
@@ -1190,47 +1189,47 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Exception e = await TestHelper.ExpectedExceptionAsync<Exception>(
                 async () => await table.ExecuteBatchAsync(batch, options, context),
                 "Batch operations other than retrieve should not be sent to secondary");
-            Assert.AreEqual(SR.PrimaryOnlyCommand, RequestResult.TranslateFromExceptionMessage(e.Message).ExceptionInfo.Message);
+            Assert.AreEqual(SR.PrimaryOnlyCommand, e.Message);
 
             batch = new TableBatchOperation();
             batch.InsertOrMerge(new DynamicTableEntity("PartitionKey", "RowKey"));
 
-            e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+            e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                 async () => await table.ExecuteBatchAsync(batch, options, null),
                 "Batch operations other than retrieve should not be sent to secondary");
-            Assert.AreEqual(SR.PrimaryOnlyCommand, RequestResult.TranslateFromExceptionMessage(e.Message).ExceptionInfo.Message);
+            Assert.AreEqual(SR.PrimaryOnlyCommand, e.Message);
 
             batch = new TableBatchOperation();
             batch.InsertOrReplace(new DynamicTableEntity("PartitionKey", "RowKey"));
 
-            e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+            e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                 async () => await table.ExecuteBatchAsync(batch, options, null),
                 "Batch operations other than retrieve should not be sent to secondary");
-            Assert.AreEqual(SR.PrimaryOnlyCommand, RequestResult.TranslateFromExceptionMessage(e.Message).ExceptionInfo.Message);
+            Assert.AreEqual(SR.PrimaryOnlyCommand, e.Message);
 
             batch = new TableBatchOperation();
             batch.Merge(new DynamicTableEntity("PartitionKey", "RowKey") { ETag = "*" });
 
-            e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+            e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                 async () => await table.ExecuteBatchAsync(batch, options, null),
                 "Batch operations other than retrieve should not be sent to secondary");
-            Assert.AreEqual(SR.PrimaryOnlyCommand, RequestResult.TranslateFromExceptionMessage(e.Message).ExceptionInfo.Message);
+            Assert.AreEqual(SR.PrimaryOnlyCommand, e.Message);
 
             batch = new TableBatchOperation();
             batch.Replace(new DynamicTableEntity("PartitionKey", "RowKey") { ETag = "*" });
 
-            e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+            e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                 async () => await table.ExecuteBatchAsync(batch, options, null),
                 "Batch operations other than retrieve should not be sent to secondary");
-            Assert.AreEqual(SR.PrimaryOnlyCommand, RequestResult.TranslateFromExceptionMessage(e.Message).ExceptionInfo.Message);
+            Assert.AreEqual(SR.PrimaryOnlyCommand, e.Message);
 
             batch = new TableBatchOperation();
             batch.Delete(new DynamicTableEntity("PartitionKey", "RowKey") { ETag = "*" });
 
-            e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+            e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                 async () => await table.ExecuteBatchAsync(batch, options, null),
                 "Batch operations other than retrieve should not be sent to secondary");
-            Assert.AreEqual(SR.PrimaryOnlyCommand, RequestResult.TranslateFromExceptionMessage(e.Message).ExceptionInfo.Message);
+            Assert.AreEqual(SR.PrimaryOnlyCommand, e.Message);
         }
         #endregion
         #region Boundary Conditions
@@ -1320,7 +1319,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ITableEntity first = GenerateRandomEntity(pk);
             batch.Insert(first);
 
-            for (int m = 0; m < 99; m++)
+            for (int m = 0; m < 98; m++)
             {
                 batch.Insert(GenerateRandomEntity(pk));
             }
@@ -1337,42 +1336,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             catch (Exception)
             {
                 TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, new string[] { "99:One of the request inputs is not valid." }, false);
-            }
-        }
-
-        [TestMethod]
-        [Description("Ensure that a batch with over 100 entities will throw")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableBatchOver100EntitiesShouldThrowAsync()
-        {
-            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
-            {
-                await DoTableBatchOver100EntitiesShouldThrowAsync(payloadFormat);
-            }
-        }
-
-        private async Task DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat format)
-        {
-            tableClient.DefaultRequestOptions.PayloadFormat = format;
-            TableBatchOperation batch = new TableBatchOperation();
-            string pk = Guid.NewGuid().ToString();
-            for (int m = 0; m < 101; m++)
-            {
-                batch.Insert(GenerateRandomEntity(pk));
-            }
-
-            OperationContext opContext = new OperationContext();
-            try
-            {
-                await currentTable.ExecuteBatchAsync(batch, null, opContext);
-                Assert.Fail();
-            }
-            catch (Exception)
-            {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "One of the request inputs is not valid.");
             }
         }
 
@@ -1543,6 +1506,32 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await TestHelper.ExpectedExceptionAsync<InvalidOperationException>(
                 async () => await currentTable.ExecuteBatchAsync(batch),
                 "Empty batch operation should fail");
+        }
+
+        [TestMethod]
+        [Description("A test to peform batch insert with batch size of 101. Should fail client-side.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task TableBatchTooManyOperationsAsync()
+        {
+            TableBatchOperation batch = new TableBatchOperation();
+            try
+            {
+                for (int m = 0; m < 101; m++)
+                {
+                    batch.Insert(GenerateRandomEntity("testpk"), true);
+                }
+
+                await currentTable.ExecuteBatchAsync(batch);
+
+                Assert.Fail("Batch commands with more than 101 operations should fail.");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(e.Message, SR.BatchExceededMaximumNumberOfOperations);
+            }
         }
 
         [TestMethod]

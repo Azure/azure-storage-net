@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="leaseId">The lease id.</param>
-        internal static void AddLeaseId(this HttpRequestMessage request, string leaseId)
+        internal static void AddLeaseId(this StorageRequestMessage request, string leaseId)
         {
             if (leaseId != null)
             {
@@ -44,7 +44,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="request">The web request.</param>
         /// <param name="name">The metadata name.</param>
         /// <param name="value">The metadata value.</param>
-        internal static void AddOptionalHeader(this HttpRequestMessage request, string name, string value)
+        internal static void AddOptionalHeader(this StorageRequestMessage request, string name, string value)
         {
             if (!string.IsNullOrEmpty(value))
             {
@@ -58,7 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="request">The web request.</param>
         /// <param name="name">The header name.</param>
         /// <param name="value">The header value.</param>
-        internal static void AddOptionalHeader(this HttpRequestMessage request, string name, int? value)
+        internal static void AddOptionalHeader(this StorageRequestMessage request, string name, int? value)
         {
             if (value.HasValue)
             {
@@ -72,7 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="request">The web request.</param>
         /// <param name="name">The header name.</param>
         /// <param name="value">The header value.</param>
-        internal static void AddOptionalHeader(this HttpRequestMessage request, string name, long? value)
+        internal static void AddOptionalHeader(this StorageRequestMessage request, string name, long? value)
         {
             if (value.HasValue)
             {
@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="request">The request to be modified.</param>
         /// <param name="accessCondition">Access condition to be added to the request.</param>
-        internal static void ApplyLeaseId(this HttpRequestMessage request, AccessCondition accessCondition)
+        internal static void ApplyLeaseId(this StorageRequestMessage request, AccessCondition accessCondition)
         {
             if (accessCondition != null)
             {
@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="request">The request to be modified.</param>
         /// <param name="accessCondition">Access condition to be added to the request.</param>
-        internal static void ApplySequenceNumberCondition(this HttpRequestMessage request, AccessCondition accessCondition)
+        internal static void ApplySequenceNumberCondition(this StorageRequestMessage request, AccessCondition accessCondition)
         {
             if (accessCondition != null)
             {
@@ -116,7 +116,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="request">The request to be modified.</param>
         /// <param name="accessCondition">Access condition to be added to the request.</param>
-        internal static void ApplyAccessCondition(this HttpRequestMessage request, AccessCondition accessCondition)
+        internal static void ApplyAccessCondition(this StorageRequestMessage request, AccessCondition accessCondition)
         {
             if (accessCondition != null)
             {
@@ -149,7 +149,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="request">The request to be modified.</param>
         /// <param name="accessCondition">Access condition to be added to the request.</param>
-        internal static void ApplyAppendCondition(this HttpRequestMessage request, AccessCondition accessCondition)
+        internal static void ApplyAppendCondition(this StorageRequestMessage request, AccessCondition accessCondition)
         {
             if (accessCondition != null)
             {
@@ -163,7 +163,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="request">The request to be modified.</param>
         /// <param name="accessCondition">Access condition to be added to the request.</param>
-        internal static void ApplyAccessConditionToSource(this HttpRequestMessage request, AccessCondition accessCondition)
+        internal static void ApplyAccessConditionToSource(this StorageRequestMessage request, AccessCondition accessCondition)
         {
             if (accessCondition != null)
             {

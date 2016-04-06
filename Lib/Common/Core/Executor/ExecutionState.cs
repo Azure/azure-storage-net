@@ -260,9 +260,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         }
 
 #if WINDOWS_RT || ASPNET_K || PORTABLE
-        internal HttpClient Client { get; set; }
-
-        internal HttpRequestMessage Req { get; set; }
+        internal StorageRequestMessage Req { get; set; }
 
         private HttpResponseMessage resp = null;
 

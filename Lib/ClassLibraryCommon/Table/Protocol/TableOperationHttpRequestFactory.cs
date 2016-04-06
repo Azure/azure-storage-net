@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             if (operation.HttpMethod != "HEAD" && operation.HttpMethod != "GET")
             {
-                SetContentTypeForHttpWebRequest(msg, payloadFormat);
+                msg.ContentType = Constants.JsonContentTypeHeaderValue;
             }
 
             if (operation.OperationType == TableOperationType.InsertOrMerge || operation.OperationType == TableOperationType.Merge)
@@ -105,7 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 HttpWebRequestAdapterMessage adapterMsg = new HttpWebRequestAdapterMessage(msg, bufferManager);
                 if (operation.HttpMethod != "HEAD" && operation.HttpMethod != "GET")
                 {
-                    SetContentTypeForAdapterMessage(adapterMsg, payloadFormat);
+                    adapterMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
                 }
                 
                 ODataMessageWriter odataWriter = new ODataMessageWriter(adapterMsg, writerSettings, new TableStorageModel(accountName));
@@ -253,14 +253,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         #endregion
 
         #region Set Headers
-        #pragma warning disable 0618
         private static void SetAcceptHeaderForHttpWebRequest(HttpWebRequest msg, TablePayloadFormat payloadFormat)
         {
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                msg.Accept = Constants.AtomAcceptHeaderValue;
-            }
-            else if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
+            if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
             {
                 msg.Accept = Constants.JsonFullMetadataAcceptHeaderValue;
             }
@@ -274,38 +269,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
         }
 
-        private static void SetContentTypeForHttpWebRequest(HttpWebRequest msg, TablePayloadFormat payloadFormat)
-        {
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                msg.ContentType = Constants.AtomContentTypeHeaderValue;
-            }
-            else
-            {
-                msg.ContentType = Constants.JsonContentTypeHeaderValue;
-            }
-        }
-
-        private static void SetContentTypeForAdapterMessage(HttpWebRequestAdapterMessage adapterMsg, TablePayloadFormat payloadFormat)
-        {
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                adapterMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.AtomContentTypeHeaderValue);
-            }
-            else
-            {
-                adapterMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
-            }
-        }
-
         private static void SetAcceptAndContentTypeForODataBatchMessage(ODataBatchOperationRequestMessage mimePartMsg, TablePayloadFormat payloadFormat)
         {
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadAcceptHeader, Constants.AtomAcceptHeaderValue);
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.AtomContentTypeHeaderValue);
-            }
-            else if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
+            if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
             {
                 mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadAcceptHeader, Constants.JsonFullMetadataAcceptHeaderValue);
                 mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
@@ -321,7 +287,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
             }
         }
-        #pragma warning restore 0618
         #endregion
     }
 }

@@ -157,7 +157,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
 
@@ -257,7 +257,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
         }
@@ -287,7 +287,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
         }
@@ -317,7 +317,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
         }
@@ -371,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
         }
@@ -413,7 +413,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
         }
@@ -442,7 +442,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 finally
                 {
 
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
         }
@@ -535,7 +535,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().AsTask().Wait();
+                    container.DeleteIfExistsAsync().Wait();
                 }
             }
         }

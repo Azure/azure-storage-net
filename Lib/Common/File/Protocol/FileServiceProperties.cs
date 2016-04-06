@@ -42,7 +42,14 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public FileServiceProperties()
         {
             this.serviceProperties = new ServiceProperties();
-            this.serviceProperties.Logging = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileServiceProperties"/> class.
+        /// </summary>
+        public FileServiceProperties(MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null)
+        {
+            this.serviceProperties = new ServiceProperties(null, hourMetrics, minuteMetrics, cors);
         }
 
         /// <summary>

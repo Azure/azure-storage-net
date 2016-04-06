@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 #else
     public
 #endif    
-        class UriQueryBuilder
+    class UriQueryBuilder
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="UriQueryBuilder"/> class.
@@ -47,15 +47,15 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <param name="builder">The <see cref="UriQueryBuilder"/> whose elements are copied to the new <see cref="UriQueryBuilder"/>.</param>
         public UriQueryBuilder(UriQueryBuilder builder)
         {
-            this.parameters = builder != null ?
-                new Dictionary<string, string>(builder.parameters) :
+            this.Parameters = builder != null ?
+                new Dictionary<string, string>(builder.Parameters) :
                 new Dictionary<string, string>();
         }
-
+        
         /// <summary>
         /// Stores the query parameters.
         /// </summary>
-        private Dictionary<string, string> parameters;
+        protected IDictionary<string, string> Parameters { get; private set; }
 
         /// <summary>
         /// Gets the query string value associated with the given name.
@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             get
             {
                 string value;
-                if (this.parameters.TryGetValue(name, out value))
+                if (this.Parameters.TryGetValue(name, out value))
                 {
                     return value;
                 }
@@ -82,14 +82,28 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// </summary>
         /// <param name="name">The query string name.</param>
         /// <param name="value">The query string value.</param>
-        public void Add(string name, string value)
+        public virtual void Add(string name, string value)
         {
             if (value != null)
             {
                 value = Uri.EscapeDataString(value);
             }
 
-            this.parameters.Add(name, value);
+            this.Parameters.Add(name, value);
+        }
+
+        /// <summary>
+        /// Add multiple query string values with URI escaping.
+        /// </summary>
+        /// <param name="parameters">The set of query string name/value pairs</param>
+        public void AddRange(IEnumerable<KeyValuePair<string, string>> parameters)
+        {
+            CommonUtility.AssertNotNull("parameters", parameters);
+
+            foreach (KeyValuePair<string, string> parameter in parameters)
+            {
+                this.Add(parameter.Key, parameter.Value);
+            }
         }
 
         /// <summary>
@@ -103,7 +117,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             StringBuilder sb = new StringBuilder();
             bool first = true;
 
-            foreach (KeyValuePair<string, string> pair in this.parameters)
+            foreach (KeyValuePair<string, string> pair in this.Parameters)
             {
                 if (first)
                 {
@@ -145,7 +159,17 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> object containing the original URI, including any existing query parameters.</param>
         /// <returns>A <see cref="System.Uri"/> object with the new query parameter appended.</returns>
-        public Uri AddToUri(Uri uri)
+        public virtual Uri AddToUri(Uri uri)
+        {
+            return this.AddToUriCore(uri);
+        }
+
+        /// <summary>
+        /// Adds a query parameter to a URI.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> object containing the original URI, including any existing query parameters.</param>
+        /// <returns>A <see cref="System.Uri"/> object with the new query parameter appended.</returns>
+        protected Uri AddToUriCore(Uri uri)
         {
             if (uri == null)
             {

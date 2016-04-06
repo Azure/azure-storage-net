@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Net;
 using System.Text;
@@ -48,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void TestInitialize()
         {
             this.testContainer = GetRandomContainerReference();
-            this.testContainer.CreateAsync().AsTask().Wait();
+            this.testContainer.CreateAsync().Wait();
 
             if (TestBase.BlobBufferManager != null)
             {
@@ -59,7 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCleanup]
         public void TestCleanup()
         {
-            this.testContainer.DeleteAsync().AsTask().Wait();
+            this.testContainer.DeleteAsync().Wait();
             this.testContainer = null;
             if (TestBase.BlobBufferManager != null)
             {
@@ -67,7 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private static async Task TestAccessAsync(string sasToken, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, CloudBlobContainer container, CloudBlob blob)
+        private static async Task TestAccessAsync(string sasToken, SharedAccessBlobPermissions permissions, SharedAccessBlobHeaders headers, CloudBlobContainer container, CloudBlob blob, HttpStatusCode setBlobMetadataWhileSasExpectedStatusCode = HttpStatusCode.Forbidden, HttpStatusCode deleteBlobWhileSasExpectedStatusCode = HttpStatusCode.Forbidden, HttpStatusCode listBlobWhileSasExpectedStatusCode = HttpStatusCode.Forbidden)
         {
             OperationContext operationContext = new OperationContext();
             StorageCredentials credentials = string.IsNullOrEmpty(sasToken) ?
@@ -110,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         async () => await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, null, null, null, operationContext),
                         operationContext,
                         "List blobs while SAS does not allow for listing",
-                        HttpStatusCode.Forbidden);
+                        listBlobWhileSasExpectedStatusCode);
                 }
             }
 
@@ -166,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     async () => await blob.SetMetadataAsync(null, null, operationContext),
                     operationContext,
                     "Set blob metadata while SAS does not allow for writing",
-                    HttpStatusCode.Forbidden);
+                    setBlobMetadataWhileSasExpectedStatusCode);
             }
 
             if ((permissions & SharedAccessBlobPermissions.Delete) == SharedAccessBlobPermissions.Delete)
@@ -179,7 +180,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     async () => await blob.DeleteAsync(DeleteSnapshotsOption.None, null, null, operationContext),
                     operationContext,
                     "Delete blob while SAS does not allow for deleting",
-                    HttpStatusCode.Forbidden);
+                    deleteBlobWhileSasExpectedStatusCode);
             }
         }
 
@@ -295,14 +296,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             permissions.PublicAccess = BlobContainerPublicAccessType.Container;
             await this.testContainer.SetPermissionsAsync(permissions);
             await Task.Delay(30 * 1000);
-            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob);
-            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob);
+            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob, setBlobMetadataWhileSasExpectedStatusCode: HttpStatusCode.NotFound, deleteBlobWhileSasExpectedStatusCode: HttpStatusCode.NotFound);
+            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob, setBlobMetadataWhileSasExpectedStatusCode: HttpStatusCode.NotFound, deleteBlobWhileSasExpectedStatusCode: HttpStatusCode.NotFound);
 
             permissions.PublicAccess = BlobContainerPublicAccessType.Blob;
             await this.testContainer.SetPermissionsAsync(permissions);
             await Task.Delay(30 * 1000);
-            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob);
-            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob);
+            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob, setBlobMetadataWhileSasExpectedStatusCode: HttpStatusCode.NotFound, deleteBlobWhileSasExpectedStatusCode: HttpStatusCode.NotFound, listBlobWhileSasExpectedStatusCode: HttpStatusCode.NotFound);
+            await SASTests.TestAccessAsync(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob, setBlobMetadataWhileSasExpectedStatusCode: HttpStatusCode.NotFound, deleteBlobWhileSasExpectedStatusCode: HttpStatusCode.NotFound, listBlobWhileSasExpectedStatusCode: HttpStatusCode.NotFound);
         }
 
         [TestMethod]
@@ -389,6 +390,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 await TestBlobSASAsync(testBlob, permissions, headers);
             }
+        }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying a shared protocol and ensure that everything works properly.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSASSharedProtocolsQueryParamInvalid()
+        {
+            SharedAccessProtocol? protocol = default(SharedAccessProtocol);
+            SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+            {
+                Permissions = SharedAccessBlobPermissions.Read,
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+            };
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference("bb");
+
+            TestHelper.ExpectedException<ArgumentException>(
+            () => blockBlob.GetSharedAccessSignature(policy, null /* headers */, null /* stored access policy ID */, protocol, null /* IP address or range */),
+            "Creating a SAS should throw when using an invalid value for the Protocol enum.",
+            String.Format(SR.InvalidProtocolsInSAS, protocol));
         }
     }
 }

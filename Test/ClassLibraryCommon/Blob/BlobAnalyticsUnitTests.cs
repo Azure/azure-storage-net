@@ -842,11 +842,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             
             client.SetServiceProperties(props);
 
-            ServiceProperties newProps = new ServiceProperties();
-
-            newProps.Logging = null;
-            newProps.HourMetrics = null;
-            newProps.MinuteMetrics = null;
+            ServiceProperties newProps = new ServiceProperties(cors: new CorsProperties());
 
             newProps.Cors.CorsRules.Add(
                 new CorsRule()
@@ -889,6 +885,65 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
         #endregion
 
+
+        [TestMethod]
+        [Description("Test Blob SetServiceProperties with empty Logging and Metrics properties")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void TestSetServicePropertiesWithoutMetricsAndLoggingProperties()
+        {
+            ServiceProperties serviceProperties = new ServiceProperties(cors: new CorsProperties());
+            Microsoft.WindowsAzure.Storage.Shared.Protocol.CorsRule rule = new Microsoft.WindowsAzure.Storage.Shared.Protocol.CorsRule();
+            rule.AllowedHeaders.Add("x-ms-meta-xyz");
+            rule.AllowedHeaders.Add("x-ms-meta-data*");
+            rule.AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put;
+            rule.ExposedHeaders.Add("x-ms-meta-source*");
+            rule.AllowedOrigins.Add("*");
+            rule.AllowedMethods = CorsHttpMethods.Get;
+            serviceProperties.Cors.CorsRules.Add(rule);
+
+            client.SetServiceProperties(serviceProperties);
+        }
+
+        [TestMethod]
+        [Description("Test Blob SetServiceProperties with empty cors properties")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void TestSetServicePropertiesWithoutCorsProperties()
+        {
+            ServiceProperties serviceProperties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties());
+
+            serviceProperties.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
+            serviceProperties.Logging.RetentionDays = 5;
+            serviceProperties.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
+
+            serviceProperties.HourMetrics.MetricsLevel = MetricsLevel.Service;
+            serviceProperties.HourMetrics.RetentionDays = 6;
+            serviceProperties.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+
+            serviceProperties.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
+            serviceProperties.MinuteMetrics.RetentionDays = 6;
+            serviceProperties.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+
+            client.SetServiceProperties(serviceProperties);
+        }
+
+        [TestMethod]
+        [Description("Test Blob SetServiceProperties with no properties set")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void TestSetServicePropertiesWithNoProperties()
+        {
+            ServiceProperties serviceProperties = new ServiceProperties();
+            TestHelper.ExpectedException<ArgumentException>(() => client.SetServiceProperties(serviceProperties), "At least one service property needs to be non-null for SetServiceProperties API.");
+        }
+
         #region Test Helpers
         private void TestCorsRules(CloudBlobClient client, IList<CorsRule> corsProps)
         {
@@ -905,7 +960,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private static ServiceProperties DefaultServiceProperties()
         {
-            ServiceProperties props = new ServiceProperties();
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
