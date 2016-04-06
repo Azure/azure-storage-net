@@ -135,10 +135,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await fileStream.WriteAsync(buffer, 0, buffer.Length);
                 }
 
-                await file.UploadFromFileAsync(inputFileName, FileMode.Open);
+                await file.UploadFromFileAsync(inputFileName);
 
                 OperationContext context = new OperationContext();
-                await file.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context);
+                await file.UploadFromFileAsync(inputFileName, null, null, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 await TestHelper.ExpectedExceptionAsync<IOException>(

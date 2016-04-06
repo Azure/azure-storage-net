@@ -1,7 +1,29 @@
 Tracking Breaking Changes since 6.0
 
+- All: Support for 2015-07-08 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.3.
+- All (WinRT): All apis now return Task objects instead of IAsync* objects. Please see our blog post for more info.
 - All: TestConfigurations.xml has been deleted and added to the .gitignore file to keep users from accidentally leaking their credentials. To continue running tests, simply add the same file back after you get the latest code.
+- All: Virtualized all service call APIs and unsealed their classes.
+- All: Updated the UserAgent string to match the Azure Storage standard.
 - All: The dnx and net target frameworks have been unified, and DNXCore target framework has been renamed to Dotnet5.4. All DNX4.5.1 projects will take a dependency on the regular Windows Desktop dll.
+- All: Windows Runtime no longer uses WrappedStorageExceptions or HResults. Catch StorageException and check HTTP status code instead.
+- All: SetServiceProperties APIs no longer instantiates Logging, HourMetrics, MinuteMetrics, or Cors instance variables. New LoggingProperties, MetricsProperties, and CorsProperties objects will need to be set for those variables before they can be assigned.
+- All: LoggingProperties and MetricsProperties Version now defaults to "1.0" or Constants.AnalyticsConstants.MetricsVersionV1 or LoggingVersionV1.
+- All: Removed deprecated SharedKeyLiteAuthenticationHandler, use SharedKeyAuthenticationHandler instead.
+- All: Removed deprecated request options setters on the *Client class object in favor of setting request options on Client's DefaultRequestOptions object.
+- All: When creating a SAS token with a non-null SharedAccessProtocol, only valid enum values are permitted.  All other values will now throw an ArgumentException.
+- Blobs: Removed deprecated (Begin/End)StartCopyFromBlob(Async) APIs in favor of using (Begin/End)StartCopy(Async) APIs.
+- Blobs: Removed deprecated GetSubdirectoryReference API in favor of GetDirectoryReference.
+- Blobs: Removed FileMode parameter for UploadFromFile* and AppendFromFile* APIs since there is only 1 valid option (FileMode.Open).
+- Blobs: When downloading blob to local file fails, file created for download will be cleaned up.
+- Blobs: proposedLeaseId for minimum AcquireLease API overloads defaults to null.
+- Tables: Removed deprecated AtomPub payloadFormat support.
+- Tables: Fixed a bug in table batch where storage exceptions resulted in operation contexts with incorrect HttpStatusMessage.
+- Tables: Batching validation was added for batch sizes exceeding 100 operations.
+- Tables: Batching validation was added for null partition keys and row keys.
+- Tables: Removed deprecated overloads for Table.Retrieve APIs.
+- Files: When downloading file to local system file fails, file created for download will be cleaned up.
+- Queues: Removed deprecated EndBeginClear API in favor of EndClear.
 
 Tracking Breaking Changes since 5.0
 

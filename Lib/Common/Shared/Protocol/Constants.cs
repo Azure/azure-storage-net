@@ -82,12 +82,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public static readonly TimeSpan DefaultClientSideTimeout = TimeSpan.FromMinutes(5);
 
         /// <summary>
-        /// Default server side timeout for all service clients.
-        /// </summary>
-        [Obsolete("Server-side timeout is not required by default.")]
-        public static readonly TimeSpan DefaultServerSideTimeout = TimeSpan.FromSeconds(90);
-
-        /// <summary>
         /// Maximum Retry Policy back-off
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Backoff", Justification = "Reviewed")]
@@ -207,6 +201,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for page ranges.
         /// </summary>
         public const string PageRangeElement = "PageRange";
+
+        /// <summary>
+        /// XML element for clear ranges.
+        /// </summary>
+        public const string ClearRangeElement = "ClearRange";
 
         /// <summary>
         /// XML element for page list elements.
@@ -699,11 +698,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal const string XMLAcceptHeaderValue = "application/xml";
 
         /// <summary>
-        /// Header value to set Accept to AtomPub.
-        /// </summary>
-        internal const string AtomAcceptHeaderValue = "application/atom+xml,application/atomsvc+xml,application/xml";
-
-        /// <summary>
         /// Header value to set Accept to JsonLight.
         /// </summary>
         internal const string JsonLightAcceptHeaderValue = "application/json;odata=minimalmetadata";
@@ -722,10 +716,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Header value argument to set JSON no metadata.
         /// </summary>
         internal const string NoMetadata = "odata=nometadata";
-        /// <summary>
-        /// Header value to set Content-Type to AtomPub.
-        /// </summary>
-        internal const string AtomContentTypeHeaderValue = "application/atom+xml";
 
         /// <summary>
         /// Header value to set Content-Type to JSON.
@@ -753,7 +743,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
 #elif ASPNET_K
-                UserAgentComment = "(ASP.NET Core 5.0)";
+                UserAgentComment = "(.NET Core 5.0)";
 #elif PORTABLE
                 UserAgentComment = "(Portable Class Library)";
 #else
@@ -776,15 +766,15 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductName = "WA-Storage";
+            public const string UserAgentProductName = "Azure-Storage";
 
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
 #if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "6.2.2-preview";
+            public const string UserAgentProductVersion = "7.0.1-preview";
 #else
-            public const string UserAgentProductVersion = "6.2.2";
+            public const string UserAgentProductVersion = "7.0.0";
 #endif 
 
             /// <summary>
@@ -1066,7 +1056,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2015-04-05";
+            public const string TargetStorageVersion = "2015-07-08";
 
             /// <summary>
             /// Specifies the file type.

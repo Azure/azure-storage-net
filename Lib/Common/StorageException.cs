@@ -38,17 +38,13 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
     /// <summary>
-    /// Represents an exception thrown by the Windows Azure storage service.
+    /// Represents an exception thrown by the Azure Storage service.
     /// </summary>
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     [Serializable]
 #endif
 
-#if WINDOWS_RT
-    internal class StorageException : COMException
-#else
     public class StorageException : Exception
-#endif
     {
         /// <summary>
         /// Gets the <see cref="RequestResult"/> object for this <see cref="StorageException"/> object.
@@ -56,6 +52,9 @@ namespace Microsoft.WindowsAzure.Storage
         /// <value>The <see cref="RequestResult"/> object for this <see cref="StorageException"/> object.</value>
         public RequestResult RequestInformation { get; private set; }
 
+        /// <summary>
+        /// Indicates if exception is retryable.
+        /// </summary>
         internal bool IsRetryable { get; set; }
 
         /// <summary>
@@ -88,8 +87,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageException"/> class with serialized data.
         /// </summary>
-        /// <param name="context">The <see cref="System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination.</param>
         /// <param name="info">The <see cref="System.Runtime.Serialization.SerializationInfo"/> object that holds serialized object data for the exception being thrown.</param>
+        /// <param name="context">The <see cref="System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination.</param>
         /// <remarks>This constructor is called during de-serialization to reconstitute the exception object transmitted over a stream.</remarks>
         protected StorageException(SerializationInfo info, StreamingContext context) :
             base(info, context) 
@@ -104,8 +103,8 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Populates a <see cref="System.Runtime.Serialization.SerializationInfo"/> object with the data needed to serialize the target object.
         /// </summary>
-        /// <param name="context">The destination context for this serialization.</param>
         /// <param name="info">The <see cref="System.Runtime.Serialization.SerializationInfo"/> object to populate with data.</param>
+        /// <param name="context">The destination context for this serialization.</param>
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info != null)

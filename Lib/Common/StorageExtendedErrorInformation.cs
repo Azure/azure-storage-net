@@ -81,12 +81,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="inputStream">The input stream.</param>
         /// <returns>The error details.</returns>
-#if WINDOWS_RT
-        internal
-#else
-        public
-#endif
-        static StorageExtendedErrorInformation ReadFromStream(Stream inputStream)
+        public static StorageExtendedErrorInformation ReadFromStream(Stream inputStream)
         {
             CommonUtility.AssertNotNull("inputStream", inputStream);
 

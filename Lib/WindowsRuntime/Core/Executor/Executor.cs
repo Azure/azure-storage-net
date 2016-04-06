@@ -58,14 +58,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         {
             // Note all code below will reference state, not params directly, this will allow common code with multiple executors (APM, Sync, Async)
             using (ExecutionState<T> executionState = new ExecutionState<T>(cmd, policy, operationContext))
+            using (CancellationTokenSource timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
                 bool shouldRetry = false;
                 TimeSpan delay = TimeSpan.Zero;
 
                 // Note - The service accepts both api-version and x-ms-version and therefore it is ok to add x-ms-version to all requests.
+                
                 // Create a new client
-                HttpClient client = cmd.BuildClient(cmd, cmd.Handler, true, executionState.OperationContext);
-                client.Timeout = TimeSpan.FromMilliseconds(int.MaxValue);
+                HttpClient client = HttpClientFactory.Instance;
 
                 do
                 {
@@ -100,7 +101,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         // 4. Set timeout
                         if (executionState.OperationExpiryTime.HasValue)
                         {
-                            client.Timeout = executionState.RemainingTimeout;
+                            // set the token to cancel after timing out, if the higher token hasn't already been cancelled
+                            timeoutTokenSource.CancelAfter(executionState.RemainingTimeout);
+                        }
+                        else
+                        {
+                            // effectively prevent timeout
+                            timeoutTokenSource.CancelAfter(int.MaxValue);
                         }
 
                         Executor.CheckTimeout<T>(executionState, true);
@@ -114,9 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         storageEx.IsRetryable = false;
                         executionState.ExceptionRef = storageEx;
 
-                        // Need to throw wrapped Exception with message as serialized exception info stuff. 
-                        int hResult = WrappedStorageException.GenerateHResult(executionState.ExceptionRef, executionState.Cmd.CurrentResult);
-                        throw new WrappedStorageException(executionState.Cmd.CurrentResult.WriteAsXml(), executionState.ExceptionRef, hResult);
+                        throw executionState.ExceptionRef;
                     }
 
                     // Enter Retryable Section of execution
@@ -125,14 +130,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         // Send Request 
                         executionState.CurrentOperation = ExecutorOperation.BeginGetResponse;
                         Logger.LogInformational(executionState.OperationContext, SR.TraceGetResponse);
-                        executionState.Resp = await client.SendAsync(executionState.Req, HttpCompletionOption.ResponseHeadersRead, token);
+                        executionState.Resp = await client.SendAsync(executionState.Req, HttpCompletionOption.ResponseHeadersRead, timeoutTokenSource.Token);
                         executionState.CurrentOperation = ExecutorOperation.EndGetResponse;
 
                         // Since HttpClient wont throw for non success, manually check and populate an exception
                         if (!executionState.Resp.IsSuccessStatusCode)
                         {
                             // At this point, don't try to read the stream to parse the error
-                            executionState.ExceptionRef = await Exceptions.PopulateStorageExceptionFromHttpResponseMessage(executionState.Resp, executionState.Cmd.CurrentResult, executionState.Cmd.ParseError);                            
+                            executionState.ExceptionRef = await Exceptions.PopulateStorageExceptionFromHttpResponseMessage(executionState.Resp, executionState.Cmd.CurrentResult, executionState.Cmd.ParseError);
                         }
 
                         Logger.LogInformational(executionState.OperationContext, SR.TraceResponse, executionState.Cmd.CurrentResult.HttpStatusCode, executionState.Cmd.CurrentResult.ServiceRequestID, executionState.Cmd.CurrentResult.ContentMd5, executionState.Cmd.CurrentResult.Etag);
@@ -171,7 +176,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                             try
                             {
                                 cmd.ErrorStream = new MemoryStream();
-                                await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), token);
+                                await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), timeoutTokenSource.Token);
                                 cmd.ErrorStream.Seek(0, SeekOrigin.Begin);
 #if ASPNET_K || PORTABLE
                                 executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null), cmd.ErrorStream, executionState.Resp);
@@ -207,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                                 {
                                     executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
                                     Logger.LogInformational(executionState.OperationContext, SR.TraceDownload);
-                                    await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, null /* copyLength */, null /* maxLength */, cmd.CalculateMd5ForResponseStream, executionState, cmd.StreamCopyState, token);
+                                    await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, null /* copyLength */, null /* maxLength */, cmd.CalculateMd5ForResponseStream, executionState, cmd.StreamCopyState, timeoutTokenSource.Token);
                                 }
                                 finally
                                 {
@@ -303,13 +308,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     if (!shouldRetry || (executionState.OperationExpiryTime.HasValue && (DateTime.Now + delay).CompareTo(executionState.OperationExpiryTime.Value) > 0))
                     {
                         Logger.LogError(executionState.OperationContext, shouldRetry ? SR.TraceRetryDecisionTimeout : SR.TraceRetryDecisionPolicy, executionState.ExceptionRef.Message);
-#if WINDOWS_RT || ASPNET_K || PORTABLE
-                        // Need to throw wrapped Exception with message as serialized exception info stuff. 
-                        int hResult = WrappedStorageException.GenerateHResult(executionState.ExceptionRef, executionState.Cmd.CurrentResult);
-                        throw new WrappedStorageException(executionState.Cmd.CurrentResult.WriteAsXml(), executionState.ExceptionRef, hResult);
-#else
-                        throw executionState.ExceptionRef; // throw base exception for desktop
-#endif
+                        throw executionState.ExceptionRef;
                     }
                     else
                     {

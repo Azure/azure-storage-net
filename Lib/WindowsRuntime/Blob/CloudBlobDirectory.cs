@@ -17,10 +17,10 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-#if ASPNET_K || PORTABLE
     using System.Threading;
     using System.Threading.Tasks;
-#else
+
+#if WINDOWS_RT
     using Windows.Foundation;
 #endif
 
@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// Represents a virtual directory of blobs, designated by a delimiter character.
     /// </summary>
     /// <remarks>Containers, which are encapsulated as <see cref="CloudBlobContainer"/> objects, hold directories, and directories hold block blobs and page blobs. Directories can also contain sub-directories.</remarks>
-    public sealed partial class CloudBlobDirectory
+    public partial class CloudBlobDirectory
     {
         /// <summary>
         /// Returns a result segment containing a collection of blob items 
@@ -37,11 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="currentToken">A <see cref="BlobContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken)
-#else
-        public IAsyncOperation<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken)
-#endif
+        public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken)
         {
             return this.ListBlobsSegmentedAsync(false, BlobListingDetails.None, null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
         }
@@ -59,19 +55,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.ListBlobsSegmentedAsync(useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.Container.ListBlobsSegmentedAsync(this.Prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext);
-        }
-#endif
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of blob items 
         /// in the container.
@@ -86,10 +74,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
-        public Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.Container.ListBlobsSegmentedAsync(this.Prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken);
         }
-#endif
     }
 }

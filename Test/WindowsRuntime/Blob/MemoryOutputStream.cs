@@ -23,7 +23,7 @@ using Windows.Storage.Streams;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-#if ASPNET_K
+
     internal sealed class MemoryOutputStream : MemoryStream
     {
         public MemoryStream UnderlyingStream {
@@ -33,43 +33,4 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
     }
-#else
-    internal sealed class MemoryOutputStream : IOutputStream
-    {
-        private IOutputStream outputStream;
-
-        public MemoryStream UnderlyingStream { get; private set; }
-
-        public MemoryOutputStream()
-        {
-            this.UnderlyingStream = new MemoryStream();
-            this.outputStream = this.UnderlyingStream.AsOutputStream();
-        }
-
-        public IAsyncOperation<bool> FlushAsync()
-        {
-            return this.outputStream.FlushAsync();
-        }
-
-        public IAsyncOperationWithProgress<uint, uint> WriteAsync(IBuffer buffer)
-        {
-            return this.outputStream.WriteAsync(buffer);
-        }
-
-        public void Dispose()
-        {
-            if (this.outputStream != null)
-            {
-                this.outputStream.Dispose();
-                this.outputStream = null;
-            }
-
-            if (this.UnderlyingStream != null)
-            {
-                this.UnderlyingStream.Dispose();
-                this.UnderlyingStream = null;
-            }
-        }
-    }
-#endif
 }

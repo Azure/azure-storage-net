@@ -95,7 +95,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
-                queue.DeleteIfExistsAsync().AsTask().Wait();
+                queue.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
-                queue.DeleteIfExistsAsync().AsTask().Wait();
+                queue.DeleteIfExistsAsync().Wait();
             }
         }
 

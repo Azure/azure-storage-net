@@ -1125,5 +1125,41 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
             }
         }
+
+        [TestMethod]
+        [Description("Check for null pk/rk")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableClientNullPartitionKeyRowKeyCheck()
+        {
+            CloudTableClient client = GenerateCloudTableClient();
+            var table = client.GetTableReference("newtable");
+            table.CreateIfNotExists();
+            try
+            {
+                TableBatchOperation batch = new TableBatchOperation();
+                TableEntity entity = new TableEntity(null, "foo");
+                batch.InsertOrMerge(entity);
+                table.ExecuteBatch(batch);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(ArgumentNullException));
+            }
+
+            try
+            {
+                TableBatchOperation batch = new TableBatchOperation();
+                TableEntity entity = new TableEntity("foo", null);
+                batch.InsertOrMerge(entity);
+                table.ExecuteBatch(batch);
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(ArgumentNullException));
+            }
+        }
     }
 }

@@ -1420,110 +1420,113 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableQueryableProjection()
         {
+            DoTableQueryableProjection(false);
+            DoTableQueryableProjection(true);
+        }
+        
+        private void DoTableQueryableProjection(bool projectSystemProperties)
+        {
             OperationContext opContext = new OperationContext();
-            var baseQuery = currentTable.CreateQuery<POCOEntity>().WithContext(opContext);
+            var baseQuery = 
+                currentTable.CreateQuery<POCOEntity>()
+                .WithContext(opContext)
+                .WithOptions(new TableRequestOptions(tableClient.DefaultRequestOptions) { ProjectSystemProperties = projectSystemProperties });
 
             var pocoRes = (from ent in baseQuery
                            select new ProjectedPOCO()
                            {
                                PartitionKey = ent.PartitionKey,
-                               RowKey = ent.RowKey,
                                Timestamp = ent.Timestamp,
                                a = ent.a,
                                c = ent.c
-                           });
-            int count = 0;
+                           })
+                           .ToList(); // materialize, since we'll want the count later
 
             foreach (ProjectedPOCO ent in pocoRes)
             {
-                Assert.IsNotNull(ent.PartitionKey);
-                Assert.IsNotNull(ent.RowKey);
-                Assert.IsNotNull(ent.Timestamp);
-
                 Assert.AreEqual(ent.a, "a");
                 Assert.IsNull(ent.b);
                 Assert.AreEqual(ent.c, "c");
                 Assert.IsNull(ent.d);
-                count++;
+
+                Assert.AreNotEqual(default(string), ent.PartitionKey, "Missing expected PartitionKey");
+                Assert.AreEqual(default(string), ent.RowKey, "Has unexpected RowKey");
+                Assert.AreNotEqual(default(DateTimeOffset), ent.Timestamp, "Missing expected Timestamp");
             }
 
-            // Project a single property via Select
-            var stringRes = (from ent in baseQuery
-                             select ent.b).ToList();
-
-            Assert.AreEqual(stringRes.Count, count);
+            var expectedPocoResultCount = pocoRes.Count();
 
             // Project a single property and modify it via Select
-            TestHelper.ExpectedException<TargetInvocationException>(() => (from ent in complexEntityTable.CreateQuery<ComplexEntity>()
+            TestHelper.ExpectedException<TargetInvocationException>(() => (from ent in complexEntityTable.CreateQuery<ComplexEntity>().WithOptions(new TableRequestOptions(tableClient.DefaultRequestOptions) { ProjectSystemProperties = projectSystemProperties })
                                                                        where ent.RowKey == "0050"
                                                                        select (ent.Int32 + 1)).Single(), "Specifying any operation after last navigation other than take should fail");
 
-            TestHelper.ExpectedException<TargetInvocationException>(() => (from ent in complexEntityTable.CreateQuery<ComplexEntity>()
+            TestHelper.ExpectedException<TargetInvocationException>(() => (from ent in complexEntityTable.CreateQuery<ComplexEntity>().WithOptions(new TableRequestOptions(tableClient.DefaultRequestOptions) { ProjectSystemProperties = projectSystemProperties })
                                                                            where ent.RowKey.CompareTo("0050") > 0
                                                                            select ent.Int32).Skip(5).Single(), "Specifying any operation after last navigation other than take should fail");
 
             // TableQuery.Project no resolver
-            IQueryable<POCOEntity> projectionResult = (from ent in baseQuery
-                                                       select TableQuery.Project(ent, "a", "b"));
-            count = 0;
+            var projectionResult = (from ent in baseQuery
+                                    select TableQuery.Project(ent, "a", "b"))
+                                    .ToList();
+
             foreach (POCOEntity ent in projectionResult)
             {
-                Assert.IsNotNull(ent.PartitionKey);
-                Assert.IsNotNull(ent.RowKey);
-                Assert.IsNotNull(ent.Timestamp);
-
                 Assert.AreEqual(ent.a, "a");
                 Assert.AreEqual(ent.b, "b");
                 Assert.IsNull(ent.c);
                 Assert.IsNull(ent.test);
-                count++;
+
+                Assert.AreNotEqual(projectSystemProperties, ent.PartitionKey == default(string), "Missing expected PartitionKey");
+                Assert.AreNotEqual(projectSystemProperties, ent.RowKey == default(string), "Missing expected RowKey");
+                Assert.AreNotEqual(projectSystemProperties, ent.Timestamp == default(DateTimeOffset), "Missing expected Timestamp");
             }
 
-            Assert.AreEqual(stringRes.Count, count);
+            Assert.AreEqual(expectedPocoResultCount, projectionResult.Count);
 
             // TableQuery.Project with resolver
-            IQueryable<string> resolverRes = (from ent in baseQuery
-                                              select TableQuery.Project(ent, "a", "b")).Resolve((pk, rk, ts, props, etag) => props["a"].StringValue);
-            count = 0;
+            var resolverRes = (from ent in baseQuery
+                               select TableQuery.Project(ent, "a", "b"))
+                               .Resolve((pk, rk, ts, props, etag) => props["a"].StringValue)
+                               .ToList();
+
             foreach (string s in resolverRes)
             {
                 Assert.AreEqual(s, "a");
-                count++;
             }
 
-            Assert.AreEqual(stringRes.Count, count);
+            Assert.AreEqual(expectedPocoResultCount, resolverRes.Count);
 
             // Project multiple properties via Select
-            IEnumerable<Tuple<string, string>> result = (from ent in baseQuery
-                                                         select new Tuple<string, string>
-                                                             (
-                                                                 ent.a,
-                                                                 ent.b
-                                                             )).ToList();
+            var result = (from ent in baseQuery
+                          select new Tuple<string, string>
+                              (
+                                  ent.a,
+                                  ent.b
+                              ))
+                         .ToList();
 
-            count = 0;
-            foreach (Tuple<string, string> entTuple in (IEnumerable<Tuple<string, string>>)result)
+            foreach (Tuple<string, string> entTuple in result)
             {
                 Assert.AreEqual("a", entTuple.Item1);
                 Assert.AreEqual("b", entTuple.Item2);
-                count++;
             }
            
-            Assert.AreEqual(1500, count);
+            Assert.AreEqual(1500, result.Count);
 
             // Project with query options
-            TableQuery<ProjectedPOCO> queryOptionsResult = (from ent in baseQuery
-                                                         where (ent.PartitionKey == "tables_batch_1" && ent.RowKey.CompareTo("0050") > 0)
-                                                         select new ProjectedPOCO()
-                                                         {
-                                                             PartitionKey = ent.PartitionKey,
-                                                             RowKey = ent.RowKey,
-                                                             Timestamp = ent.Timestamp,
-                                                             a = ent.a,
-                                                             c = ent.c
-                                                         }).AsTableQuery<ProjectedPOCO>();
+            var queryOptionsResult = (from ent in baseQuery
+                                      where (ent.PartitionKey == "tables_batch_1" && ent.RowKey.CompareTo("0050") > 0)
+                                      select new ProjectedPOCO()
+                                      {
+                                        PartitionKey = ent.PartitionKey,
+                                        RowKey = ent.RowKey,
+                                        Timestamp = ent.Timestamp,
+                                        a = ent.a,
+                                        c = ent.c
+                                      }).AsTableQuery<ProjectedPOCO>()
+                                      .ToList();
             
-            count = 0;
             foreach (ProjectedPOCO ent in queryOptionsResult)
             {
                 Assert.IsNotNull(ent.PartitionKey);
@@ -1534,9 +1537,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.IsNull(ent.b);
                 Assert.AreEqual(ent.c, "c");
                 Assert.IsNull(ent.d);
-                count++;
             }
-            Assert.AreEqual(49, count);
+
+            Assert.AreEqual(49, queryOptionsResult.Count);
 
             // Project to an anonymous type
             var anonymousRes = (from ent in baseQuery
@@ -1544,24 +1547,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                 {
                                     a = ent.a,
                                     b = ent.b
-                                });
-            Assert.AreEqual(1500, anonymousRes.ToList().Count);
+                                })
+                                .ToList();
+
+            Assert.AreEqual(1500, anonymousRes.Count);
 
             // Project with resolver
-            IQueryable<string> resolverResult = (from ent in baseQuery
-                                                 select new ProjectedPOCO()
-                                                 {
-                                                     a = ent.a,
-                                                     c = ent.c
-                                                 }).AsTableQuery<ProjectedPOCO>().Resolve((pk, rk, ts, props, etag) => props["a"].StringValue);
-            count = 0;
+            var resolverResult = (from ent in baseQuery
+                                  select new ProjectedPOCO()
+                                  {
+                                      a = ent.a,
+                                      c = ent.c
+                                  }).AsTableQuery<ProjectedPOCO>().Resolve((pk, rk, ts, props, etag) => props["a"].StringValue)
+                                  .ToList();
+
             foreach (string s in resolverResult)
             {
                 Assert.AreEqual(s, "a");
-                count++;
             }
 
-            Assert.AreEqual(stringRes.Count, count);
+            Assert.AreEqual(expectedPocoResultCount, resolverResult.Count);
 
             // Single with entity types
             ProjectedPOCO singleRes = (from ent in baseQuery
@@ -1579,7 +1584,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsNull(singleRes.b);
             Assert.AreEqual("c", singleRes.c);
             Assert.IsNull(singleRes.d);
+            Assert.AreEqual("tables_batch_1", singleRes.PartitionKey);
             Assert.AreEqual("0050", singleRes.RowKey);
+            Assert.AreNotEqual(default(DateTimeOffset), singleRes.Timestamp);
 
             // SingleOrDefault
             ProjectedPOCO singleOrDefaultRes = (from ent in baseQuery
@@ -1597,7 +1604,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsNull(singleOrDefaultRes.b);
             Assert.AreEqual("c", singleOrDefaultRes.c);
             Assert.IsNull(singleOrDefaultRes.d);
+            Assert.AreEqual("tables_batch_1", singleOrDefaultRes.PartitionKey);
             Assert.AreEqual("0050", singleOrDefaultRes.RowKey);
+            Assert.AreNotEqual(default(DateTimeOffset), singleOrDefaultRes.Timestamp);
 
             // First with entity types
             ProjectedPOCO firstRes = (from ent in baseQuery
@@ -1615,7 +1624,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsNull(firstRes.b);
             Assert.AreEqual("c", firstRes.c);
             Assert.IsNull(firstRes.d);
+            Assert.AreEqual("tables_batch_1", firstRes.PartitionKey);
             Assert.AreEqual("0051", firstRes.RowKey);
+            Assert.AreNotEqual(default(DateTimeOffset), firstRes.Timestamp);
 
             // FirstOrDefault with entity types
             ProjectedPOCO firstOrDefaultRes = (from ent in baseQuery
@@ -1633,7 +1644,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsNull(firstOrDefaultRes.b);
             Assert.AreEqual("c", firstOrDefaultRes.c);
             Assert.IsNull(firstOrDefaultRes.d);
+            Assert.AreEqual("tables_batch_1", firstOrDefaultRes.PartitionKey);
             Assert.AreEqual("0051", firstOrDefaultRes.RowKey);
+            Assert.AreNotEqual(default(DateTimeOffset), firstOrDefaultRes.Timestamp);
         }
 
         [TestMethod]

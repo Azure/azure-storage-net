@@ -83,7 +83,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             for (int m = 0; m < 20; m++)
             {
                 CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
-                tableRef.CreateIfNotExistsAsync().AsTask().Wait();
+                tableRef.CreateIfNotExistsAsync().Wait();
                 createdTables.Add(tableRef);
             }
 
@@ -92,7 +92,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             for (int m = 0; m < 20; m++)
             {
                 CloudTable tableRef = tableClient.GetTableReference(prefixTablesPrefix + m.ToString());
-                tableRef.CreateIfNotExistsAsync().AsTask().Wait();
+                tableRef.CreateIfNotExistsAsync().Wait();
                 createdTables.Add(tableRef);
             }
         }
@@ -107,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 try
                 {
-                    t.DeleteIfExistsAsync().AsTask().Wait();
+                    t.DeleteIfExistsAsync().Wait();
                 }
                 catch (Exception)
                 {

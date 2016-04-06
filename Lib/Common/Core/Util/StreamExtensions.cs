@@ -269,65 +269,75 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 streamCopyState.Md5HashRef = new MD5Wrapper();
             }
 
-            if (executionState.OperationExpiryTime.HasValue)
+            CancellationTokenSource cts = null;
+
+            try
             {
-                // Setup token for timeout
-                CancellationTokenSource cts = new CancellationTokenSource(executionState.RemainingTimeout);
-                CancellationToken tokenWithTimeout = cts.Token;
-
-                // Hookup user's token
-                token.Register(() => cts.Cancel());
-
-                // Switch tokens
-                token = tokenWithTimeout;
-            }
-
-            byte[] buffer = new byte[GetBufferSize(stream)];
-            long? bytesRemaining = copyLength;
-            int readCount;
-            do
-            {
-                // Determine how many bytes to read this time so that no more than count bytes are read
-                int bytesToRead = bytesRemaining.HasValue && bytesRemaining < buffer.Length ? (int)bytesRemaining : buffer.Length;
-
-                if (bytesToRead == 0)
+                if (executionState.OperationExpiryTime.HasValue)
                 {
-                    break;
-                }
-                
-                readCount = await stream.ReadAsync(buffer, 0, bytesToRead, token);
+                    // Setup token for timeout
+                    cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    cts.CancelAfter(executionState.RemainingTimeout);
 
-                if (bytesRemaining.HasValue)
-                {
-                    bytesRemaining -= readCount;
+                    // Switch tokens
+                    token = cts.Token;
                 }
 
-                if (readCount > 0)
+                byte[] buffer = new byte[GetBufferSize(stream)];
+                long? bytesRemaining = copyLength;
+                int readCount;
+                do
                 {
-                    await toStream.WriteAsync(buffer, 0, readCount, token);
+                    // Determine how many bytes to read this time so that no more than count bytes are read
+                    int bytesToRead = bytesRemaining.HasValue && bytesRemaining < buffer.Length ? (int)bytesRemaining : buffer.Length;
 
-                    // Update the StreamDescriptor after the bytes are successfully committed to the output stream
-                    if (streamCopyState != null)
+                    if (bytesToRead == 0)
                     {
-                        streamCopyState.Length += readCount;
+                        break;
+                    }
 
-                        if (maxLength.HasValue && streamCopyState.Length > maxLength.Value)
-                        {
-                            throw new InvalidOperationException(SR.StreamLengthError);
-                        }
+                    readCount = await stream.ReadAsync(buffer, 0, bytesToRead, token);
 
-                        if (streamCopyState.Md5HashRef != null)
+                    if (bytesRemaining.HasValue)
+                    {
+                        bytesRemaining -= readCount;
+                    }
+
+                    if (readCount > 0)
+                    {
+                        await toStream.WriteAsync(buffer, 0, readCount, token);
+
+                        // Update the StreamDescriptor after the bytes are successfully committed to the output stream
+                        if (streamCopyState != null)
                         {
-                            streamCopyState.Md5HashRef.UpdateHash(buffer, 0, readCount);
+                            streamCopyState.Length += readCount;
+
+                            if (maxLength.HasValue && streamCopyState.Length > maxLength.Value)
+                            {
+                                throw new InvalidOperationException(SR.StreamLengthError);
+                            }
+
+                            if (streamCopyState.Md5HashRef != null)
+                            {
+                                streamCopyState.Md5HashRef.UpdateHash(buffer, 0, readCount);
+                            }
                         }
                     }
                 }
-            }
-            while (readCount > 0);
+                while (readCount > 0);
 
-            if (bytesRemaining.HasValue && bytesRemaining != 0)
+                if (bytesRemaining.HasValue && bytesRemaining != 0)
+                {
+                    throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
+                }
+            }
+            finally
             {
-                throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
+                if (cts != null)
+                {
+                    cts.Dispose();
+                    cts = null;
+                }
             }
 
             // Streams opened with AsStreamForWrite extension need to be flushed

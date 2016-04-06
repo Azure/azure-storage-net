@@ -25,8 +25,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Collections.Generic;
     using System.Net;
-#if ASPNET_K || PORTABLE
     using System.Threading;
+#if ASPNET_K || PORTABLE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -38,11 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     public sealed partial class TableBatchOperation : IList<TableOperation>
     {
-#if ASPNET_K || PORTABLE
         internal Task<IList<TableResult>> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        internal IAsyncOperation<IList<TableResult>> ExecuteAsync(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
-#endif
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, client);
             operationContext = operationContext ?? new OperationContext();
@@ -53,21 +49,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new InvalidOperationException(SR.EmptyBatchOperation);
             }
 
+            if (this.operations.Count > 100)
+            {
+                throw new InvalidOperationException(SR.BatchExceededMaximumNumberOfOperations);
+            }
+
             RESTCommand<IList<TableResult>> cmdToExecute = BatchImpl(this, client, tableName, modifiedOptions);
 
-#if ASPNET_K || PORTABLE
             return Task.Run(async () => await Executor.ExecuteAsync(
                                                             cmdToExecute,
                                                             modifiedOptions.RetryPolicy,
                                                             operationContext,
                                                             cancellationToken), cancellationToken);
-#else
-            return AsyncInfo.Run(async (cancellationToken) => await Executor.ExecuteAsync(
-                                                                       cmdToExecute,
-                                                                       modifiedOptions.RetryPolicy,
-                                                                       operationContext,
-                                                                       cancellationToken));
-#endif
         }
 
         private static RESTCommand<IList<TableResult>> BatchImpl(TableBatchOperation batch, CloudTableClient client, string tableName, TableRequestOptions requestOptions)
@@ -79,27 +72,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             batchCmd.CommandLocationMode = batch.ContainsWrites ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
             batchCmd.RetrieveResponseStream = true;
-            batchCmd.Handler = client.AuthenticationHandler;
-            batchCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             batchCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            batchCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableBatchOperation(cmd, uri, builder, serverTimeout, tableName, batch, client, cnt, ctx, requestOptions.PayloadFormat.Value);
+            batchCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableBatchOperation(cmd, uri, builder, serverTimeout, tableName, batch, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             batchCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp.StatusCode, results, cmd, ex);
             batchCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableBatchOperationPostProcess(results, batch, cmd, resp, ctx, requestOptions, client.AccountName);
             batchCmd.RecoveryAction = (cmd, ex, ctx) => results.Clear();
 
             return batchCmd;
-        }
-
-        /// <summary>
-        /// Adds a table operation that retrieves an entity with the specified partition key and row key to the batch operation.  The entity will be deserialized into the specified class type which extends <see cref="ITableEntity"/>.
-        /// </summary>
-        /// <typeparam name="TElement">The class of type for the entity to retrieve.</typeparam>
-        /// <param name="batch">The input <see cref="TableBatchOperation"/>, which acts as the <c>this</c> instance for the extension method.</param>
-        /// <param name="partitionKey">A string containing the partition key of the entity to be retrieved.</param>
-        /// <param name="rowkey">A string containing the row key of the entity to be retrieved.</param>
-        public void Retrieve<TElement>(string partitionKey, string rowkey) where TElement : ITableEntity
-        {
-            Retrieve<TElement>(partitionKey, rowkey, selectedColumns: null);
         }
 
         /// <summary>
@@ -117,19 +96,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // Add the table operation.
             this.Add(new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey, SelectColumns = selectedColumns, RetrieveResolver = (pk, rk, ts, prop, etag) => EntityUtilities.ResolveEntityByType<TElement>(pk, rk, ts, prop, etag) });
-        }
-
-        /// <summary>
-        /// Adds a table operation that retrieves an entity with the specified partition key and row key to the batch operation.
-        /// </summary>
-        /// <typeparam name="TResult">The return type which the specified <see cref="EntityResolver{T}"/> will resolve the given entity to.</typeparam>
-        /// <param name="batch">The input <see cref="TableBatchOperation"/>, which acts as the <c>this</c> instance for the extension method.</param>
-        /// <param name="partitionKey">A string containing the partition key of the entity to be retrieved.</param>
-        /// <param name="rowkey">A string containing the row key of the entity to be retrieved.</param>
-        /// <param name="resolver">The <see cref="EntityResolver{R}"/> implementation to project the entity to retrieve as a particular type in the result.</param>
-        public void Retrieve<TResult>(string partitionKey, string rowkey, EntityResolver<TResult> resolver)
-        {
-            Retrieve<TResult>(partitionKey, rowkey, resolver, selectedColumns: null);
         }
 
         /// <summary>

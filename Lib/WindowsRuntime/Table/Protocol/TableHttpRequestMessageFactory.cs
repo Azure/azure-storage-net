@@ -17,6 +17,9 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Net.Http;
@@ -29,9 +32,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <param name="uri">The absolute URI to the table.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Create(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Create(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.Create(uri, timeout, null /* builder */, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.Create(uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -41,9 +44,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <param name="uri">The absolute URI to the table.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Delete(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Delete(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, null /* builder */, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
             return request;
         }
  
@@ -53,9 +56,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <param name="uri">The absolute URI to the table.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns><returns>A web request to use to perform the operation.</returns></returns>
-        public static HttpRequestMessage GetAcl(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetAcl(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.GetAcl(uri, timeout, null /* builder */, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.GetAcl(uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -65,9 +68,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <param name="uri">The absolute URI to the table.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns><returns>A web request to use to perform the operation.</returns></returns>
-        public static HttpRequestMessage SetAcl(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage SetAcl(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.SetAcl(uri, timeout, null /* builder */, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.SetAcl(uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
             return request;
         }      
 
@@ -76,10 +79,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <returns>A HttpRequestMessage to get the service properties.</returns>
-        public static HttpRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext)
+        /// <returns>A StorageRequestMessage to get the service properties.</returns>
+        public static StorageRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.GetServiceProperties(uri, timeout, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.GetServiceProperties(uri, timeout, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -89,9 +92,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to set the service properties.</returns>
-        internal static HttpRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.SetServiceProperties(uri, timeout, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.SetServiceProperties(uri, timeout, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -100,10 +103,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <returns>A HttpRequestMessage to get the service stats.</returns>
-        public static HttpRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext)
+        /// <returns>A StorageRequestMessage to get the service stats.</returns>
+        public static StorageRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return HttpRequestMessageFactory.GetServiceStats(uri, timeout, operationContext);
+            return HttpRequestMessageFactory.GetServiceStats(uri, timeout, operationContext, canonicalizer, credentials);
         }
     }
 }

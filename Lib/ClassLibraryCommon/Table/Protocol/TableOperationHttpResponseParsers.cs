@@ -205,6 +205,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         }
 
                         cmd.CurrentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
+                        if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
+                        {
+                            string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
+                            cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n", StringComparison.Ordinal));
+                        }
+                        else
+                        {
+                            cmd.CurrentResult.HttpStatusMessage = mimePartResponseMessage.StatusCode.ToString(CultureInfo.InvariantCulture);
+                        }
 
                         throw new StorageException(
                             cmd.CurrentResult,
@@ -224,6 +233,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         }
 
                         cmd.CurrentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
+                        if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
+                        {
+                            string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
+                            cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n", StringComparison.Ordinal));
+                        }
+                        else
+                        {
+                            cmd.CurrentResult.HttpStatusMessage = mimePartResponseMessage.StatusCode.ToString(CultureInfo.InvariantCulture);
+                        }
 
                         string indexString = Convert.ToString(index, CultureInfo.InvariantCulture);
 

@@ -53,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void TestInitialize()
         {
             this.testContainer = GetRandomContainerReference();
-            this.testContainer.CreateIfNotExistsAsync().AsTask().Wait();
+            this.testContainer.CreateIfNotExistsAsync().Wait();
 
             if (TestBase.BlobBufferManager != null)
             {
@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #if ASPNET_K
             this.testContainer.DeleteIfExistsAsync().Wait();
 #else
-            this.testContainer.DeleteIfExistsAsync().AsTask().Wait();
+            this.testContainer.DeleteIfExistsAsync().Wait();
 #endif
             if (TestBase.BlobBufferManager != null)
             {
@@ -88,16 +88,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
             using (MemoryStream wholeBlob = new MemoryStream(buffer))
             {
-                await blob.UploadFromStreamAsync(wholeBlob.AsInputStream());
+                await blob.UploadFromStreamAsync(wholeBlob);
 
                 byte[] testBuffer = new byte[1024];
                 MemoryStream blobStream = new MemoryStream(testBuffer);
 
                 Exception ex = await TestHelper.ExpectedExceptionAsync<Exception>(
-                    async () => await blob.DownloadRangeToStreamAsync(blobStream.AsOutputStream(), 0, 0),
+                    async () => await blob.DownloadRangeToStreamAsync(blobStream, 0, 0),
                     "Requesting 0 bytes when downloading range should not work");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
-                await blob.DownloadRangeToStreamAsync(blobStream.AsOutputStream(), 0, 1024);
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
+                await blob.DownloadRangeToStreamAsync(blobStream, 0, 1024);
 
                 Assert.AreEqual(blobStream.Position, 1024);
                 TestHelper.AssertStreamsAreEqualAtIndex(blobStream, wholeBlob, 0, 0, 1024);
@@ -106,10 +106,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 MemoryStream blobStream2 = new MemoryStream(testBuffer);
 
                 ex = await TestHelper.ExpectedExceptionAsync<Exception>(
-                    async () => await blob2.DownloadRangeToStreamAsync(blobStream.AsOutputStream(), 1024, 0),
+                    async () => await blob2.DownloadRangeToStreamAsync(blobStream, 1024, 0),
                     "Requesting 0 bytes when downloading range should not work");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
-                await blob2.DownloadRangeToStreamAsync(blobStream2.AsOutputStream(), 1024, 1024);
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
+                await blob2.DownloadRangeToStreamAsync(blobStream2, 1024, 1024);
 
                 TestHelper.AssertStreamsAreEqualAtIndex(blobStream2, wholeBlob, 0, 1024, 1024);
 
@@ -130,10 +130,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
             using (MemoryStream srcStream = new MemoryStream(buffer))
             {
-                await blob.UploadFromStreamAsync(srcStream.AsInputStream());
+                await blob.UploadFromStreamAsync(srcStream);
                 byte[] testBuffer = new byte[2048];
                 MemoryStream dstStream = new MemoryStream(testBuffer);
-                await blob.DownloadRangeToStreamAsync(dstStream.AsOutputStream(), null, null);
+                await blob.DownloadRangeToStreamAsync(dstStream, null, null);
                 TestHelper.AssertStreamsAreEqual(srcStream, dstStream);
             }
         }
@@ -155,14 +155,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             OperationContext context = new OperationContext();
             using (MemoryStream srcStream = new MemoryStream(buffer))
             {
-                await blob.UploadFromStreamAsync(srcStream.AsInputStream(), null, options, context);
+                await blob.UploadFromStreamAsync(srcStream, null, options, context);
                 await blob.FetchAttributesAsync();
                 string md5 = blob.Properties.ContentMD5;
                 blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 await blob.SetPropertiesAsync(null, options, context);
                 byte[] testBuffer = new byte[2048];
                 MemoryStream dstStream = new MemoryStream(testBuffer);
-                await TestHelper.ExpectedExceptionAsync(async () => await blob.DownloadRangeToStreamAsync(dstStream.AsOutputStream(), null, null, null, options, context),
+                await TestHelper.ExpectedExceptionAsync(async () => await blob.DownloadRangeToStreamAsync(dstStream, null, null, null, options, context),
                     context,
                     "Try to Download a stream with a corrupted md5 and DisableMD5Validation set to false",
                     HttpStatusCode.OK);
@@ -171,7 +171,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blob.SetPropertiesAsync(null, options, context);
                 byte[] testBuffer2 = new byte[2048];
                 MemoryStream dstStream2 = new MemoryStream(testBuffer2);
-                await blob.DownloadRangeToStreamAsync(dstStream2.AsOutputStream(), null, null, null, options, context);
+                await blob.DownloadRangeToStreamAsync(dstStream2, null, null, null, options, context);
             }
         }
 
@@ -238,10 +238,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await file.WriteAsync(buffer, 0, buffer.Length);
                 }
 
-                await blob.UploadFromFileAsync(inputFileName, FileMode.Open);
+                await blob.UploadFromFileAsync(inputFileName);
 
                 OperationContext context = new OperationContext();
-                await blob.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context);
+                await blob.UploadFromFileAsync(inputFileName, null, null, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 context = new OperationContext();
@@ -458,7 +458,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
-                await blob.UploadFromStreamAsync(originalBlob.AsInputStream());
+                await blob.UploadFromStreamAsync(originalBlob);
             }
 
             if (!isOverload)
@@ -661,7 +661,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (MemoryStream originalBlob = new MemoryStream(buffer))
             {
-                await blob.UploadFromStreamAsync(originalBlob.AsInputStream());
+                await blob.UploadFromStreamAsync(originalBlob);
             }
 
             if (!isOverload)
@@ -698,7 +698,150 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-#region Negative tests
+#if ASPNET_K
+        [TestMethod]
+        [Description("Upload from file to a block blob with file cleanup for failure cases")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobUploadDownloadFileWithFailures()
+        {
+            CloudBlockBlob blob = this.testContainer.GetBlockBlobReference("blob1");
+            CloudBlockBlob nullBlob = this.testContainer.GetBlockBlobReference("null");
+            await this.DoUploadDownloadFileAsync(blob, 0);
+            await this.DoUploadDownloadFileAsync(blob, 4096);
+            await this.DoUploadDownloadFileAsync(blob, 4097);
+
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async () => await blob.UploadFromFileAsync("non_existentCloudBlockBlobUploadDownloadFileWithFailures.file"),
+                "UploadFromFileAsync requires an existing file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudBlockBlobUploadDownloadFileWithFailures.file", FileMode.Create),
+                "DownloadToFileAsync should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudBlockBlobUploadDownloadFileWithFailures.file"));
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudBlockBlobUploadDownloadFileWithFailures.file", FileMode.CreateNew),
+                "DownloadToFileAsync should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudBlockBlobUploadDownloadFileWithFailures.file"));
+
+            byte[] buffer = GetRandomBuffer(100);
+            using (FileStream file = new FileStream("garbageCloudBlockBlobUploadDownloadFileWithFailures.file", FileMode.Create, FileAccess.Write))
+            {
+                await file.WriteAsync(buffer, 0, buffer.Length);
+            }
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudBlockBlobUploadDownloadFileWithFailures.file", FileMode.CreateNew),
+                "DownloadToFileAsync should leave an empty file behind after failing, depending on the mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudBlockBlobUploadDownloadFileWithFailures.file"));
+            System.IO.File.Delete("garbageCloudBlockBlobUploadDownloadFileWithFailures.file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudBlockBlobUploadDownloadFileWithFailures.file", FileMode.Append),
+                "DownloadToFileAsync should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudBlockBlobUploadDownloadFileWithFailures.file"));
+            System.IO.File.Delete("garbageCloudBlockBlobUploadDownloadFileWithFailures.file");
+        }
+
+        [TestMethod]
+        [Description("Upload from file to a page blob with file cleanup for failure cases")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudPageBlobUploadDownloadFileWithFailures()
+        {
+            CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
+            CloudPageBlob nullBlob = this.testContainer.GetPageBlobReference("null");
+            await this.DoUploadDownloadFileAsync(blob, 0);
+            await this.DoUploadDownloadFileAsync(blob, 4096);
+
+            await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                async () => await this.DoUploadDownloadFileAsync(blob, 4097),
+                "Page blobs must be 512-byte aligned");
+
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async () => await blob.UploadFromFileAsync("non_existentCloudPageBlobUploadDownloadFileWithFailures.file"),
+                "UploadFromFileAsync requires an existing file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudPageBlobUploadDownloadFileWithFailures.file", FileMode.Create),
+                "DownloadToFileAsync should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudPageBlobUploadDownloadFileWithFailures.file"));
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudPageBlobUploadDownloadFileWithFailures.file", FileMode.CreateNew),
+                "DownloadToFileAsync should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudPageBlobUploadDownloadFileWithFailures.file"));
+
+            byte[] buffer = GetRandomBuffer(100);
+            using (FileStream file = new FileStream("garbageCloudPageBlobUploadDownloadFileWithFailures.file", FileMode.Create, FileAccess.Write))
+            {
+                await file.WriteAsync(buffer, 0, buffer.Length);
+            }
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudPageBlobUploadDownloadFileWithFailures.file", FileMode.CreateNew),
+                "DownloadToFileAsync should leave an empty file behind after failing, depending on the mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudPageBlobUploadDownloadFileWithFailures.file"));
+            System.IO.File.Delete("garbageCloudPageBlobUploadDownloadFileWithFailures.file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudPageBlobUploadDownloadFileWithFailures.file", FileMode.OpenOrCreate),
+                "DownloadToFileAsync should leave an empty file behind after failing, depending on file mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudPageBlobUploadDownloadFileWithFailures.file"));
+            System.IO.File.Delete("garbageCloudPageBlobUploadDownloadFileWithFailures.file");
+        }
+
+        [TestMethod]
+        [Description("Upload from file to an append blob with file cleanup for failure cases")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobUploadDownloadFileWithFailures()
+        {
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            CloudAppendBlob nullBlob = this.testContainer.GetAppendBlobReference("null");
+            await this.DoUploadDownloadFileAsync(blob, 0);
+            await this.DoUploadDownloadFileAsync(blob, 4096);
+            await this.DoUploadDownloadFileAsync(blob, 4097);
+
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async () => await blob.UploadFromFileAsync("non_existentCloudAppendBlobUploadDownloadFileWithFailures.file"),
+                "UploadFromFileAsync requires an existing file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudAppendBlobUploadDownloadFileWithFailures.file", FileMode.Create),
+                "DownloadToFileAsync should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudAppendBlobUploadDownloadFileWithFailures.file"));
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudAppendBlobUploadDownloadFileWithFailures.file", FileMode.CreateNew),
+                "DownloadToFileAsync should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudAppendBlobUploadDownloadFileWithFailures.file"));
+
+            byte[] buffer = GetRandomBuffer(100);
+            using (FileStream file = new FileStream("garbageCloudAppendBlobUploadDownloadFileWithFailures.file", FileMode.Create, FileAccess.Write))
+            {
+                await file.WriteAsync(buffer, 0, buffer.Length);
+            }
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudAppendBlobUploadDownloadFileWithFailures.file", FileMode.CreateNew),
+                "DownloadToFileAsync should leave an empty file behind after failing, depending on the mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudAppendBlobUploadDownloadFileWithFailures.file"));
+            System.IO.File.Delete("garbageCloudAppendBlobUploadDownloadFileWithFailures.file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullBlob.DownloadToFileAsync("garbageCloudAppendBlobUploadDownloadFileWithFailures.file", FileMode.Append),
+                "DownloadToFileAsync should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudAppendBlobUploadDownloadFileWithFailures.file"));
+            System.IO.File.Delete("garbageCloudAppendBlobUploadDownloadFileWithFailures.file");
+        }
+#endif
+
+        #region Negative tests
         [TestMethod]
         [Description("Single put blob and get blob")]
         [TestCategory(ComponentCategory.Blob)]
@@ -733,19 +876,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             using (MemoryStream stream = new MemoryStream(buffer))
             {
 
-                await blob.UploadFromStreamAsync(stream.AsInputStream());
+                await blob.UploadFromStreamAsync(stream);
 
                 OperationContext context = new OperationContext();
                 await TestHelper.ExpectedExceptionAsync(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, 0, 1024, 1, null, null, context), context, "Try invalid length", HttpStatusCode.RequestedRangeNotSatisfiable);
-                WrappedStorageException ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await blob.DownloadToByteArrayAsync(resultBuffer, 1024), "Provide invalid offset");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(NotSupportedException));
-                ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, 1023, 0, 2), "Should fail when offset + length required is greater than size of the buffer");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(NotSupportedException));
-                ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, 0, 0, -10), "Fail when a negative length is specified");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
+                StorageException ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await blob.DownloadToByteArrayAsync(resultBuffer, 1024), "Provide invalid offset");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(NotSupportedException));
+                ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, 1023, 0, 2), "Should fail when offset + length required is greater than size of the buffer");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(NotSupportedException));
+                ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, 0, 0, -10), "Fail when a negative length is specified");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, -10, 0, 20), "Fail if a negative offset is provided");
-                ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, 0, -10, 20), "Fail if a negative blob offset is provided");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
+                ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await blob.DownloadRangeToByteArrayAsync(resultBuffer, 0, -10, 20), "Fail if a negative blob offset is provided");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
             }
         }
 #endregion

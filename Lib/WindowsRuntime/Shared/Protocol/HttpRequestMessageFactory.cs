@@ -17,7 +17,9 @@
 
 namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
@@ -32,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpRequestMessage CreateRequestMessage(HttpMethod method, Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage CreateRequestMessage(HttpMethod method, Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (builder == null)
             {
@@ -52,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             Uri uriRequest = builder.AddToUri(uri);
 
-            HttpRequestMessage msg = new HttpRequestMessage(method, uriRequest);
+            StorageRequestMessage msg = new StorageRequestMessage(method, uriRequest, canonicalizer, credentials, credentials.AccountName);
             msg.Content = content;
 
             return msg;
@@ -65,9 +67,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpRequestMessage Create(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage Create(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -78,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="builder">An optional query builder to use.</param>
         /// <returns><returns>A web request to use to perform the operation.</returns></returns>
-        internal static HttpRequestMessage GetAcl(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage GetAcl(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (builder == null)
             {
@@ -87,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "acl");
 
-            HttpRequestMessage request = CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
 #if WINDOWS_PHONE
             // Windows phone adds */* as the Accept type when we don't set one explicitly.
@@ -103,7 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="builder">An optional query builder to use.</param>
         /// <returns><returns>A web request to use to perform the operation.</returns></returns>
-        internal static HttpRequestMessage SetAcl(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage SetAcl(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (builder == null)
             {
@@ -112,7 +114,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "acl");
 
-            HttpRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
 #if WINDOWS_PHONE
             // Windows phone adds */* as the Accept type when we don't set one explicitly.
@@ -128,9 +130,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpRequestMessage GetProperties(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage GetProperties(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = CreateRequestMessage(HttpMethod.Head, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Head, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -141,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpRequestMessage GetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage GetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (builder == null)
             {
@@ -150,7 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "metadata");
 
-            HttpRequestMessage request = CreateRequestMessage(HttpMethod.Head, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Head, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -161,7 +163,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpRequestMessage SetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage SetMetadata(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (builder == null)
             {
@@ -170,7 +172,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "metadata");
 
-            HttpRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -179,7 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="metadata">The metadata.</param>
-        internal static void AddMetadata(HttpRequestMessage request, IDictionary<string, string> metadata)
+        internal static void AddMetadata(StorageRequestMessage request, IDictionary<string, string> metadata)
         {
             if (metadata != null)
             {
@@ -196,7 +198,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="request">The request.</param>
         /// <param name="name">The metadata name.</param>
         /// <param name="value">The metadata value.</param>
-        internal static void AddMetadata(HttpRequestMessage request, string name, string value)
+        internal static void AddMetadata(StorageRequestMessage request, string name, string value)
         {
             CommonUtility.AssertNotNull("value", value);
             if (string.IsNullOrWhiteSpace(value))
@@ -214,9 +216,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="timeout">The timeout.</param>
         /// <param name="builder">The builder.</param>
         /// <returns>A web request for performing the operation.</returns>
-        internal static HttpRequestMessage Delete(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage Delete(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = CreateRequestMessage(HttpMethod.Delete, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Delete, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -226,12 +228,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to get the service properties.</returns>
-        internal static HttpRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext)
+        internal static StorageRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = GetServiceUriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "properties");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, null /* content */, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, null /* content */, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -241,12 +243,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to set the service properties.</returns>
-        internal static HttpRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = GetServiceUriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "properties");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 
@@ -256,12 +258,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to get the service stats.</returns>
-        internal static HttpRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext)
+        internal static StorageRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = GetServiceUriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "stats");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, null /* content */, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, null /* content */, operationContext, canonicalizer, credentials);
             return request;
         }
 

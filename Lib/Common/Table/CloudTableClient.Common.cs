@@ -18,7 +18,6 @@
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
@@ -29,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     /// <remarks>The CloudTableClient object encapsulates the base URI for the Table service. If the service client will be used for authenticated access, 
     /// it also encapsulates the credentials for accessing the storage account.</remarks>    
-    public sealed partial class CloudTableClient
+    public partial class CloudTableClient
     {
         private AuthenticationScheme authenticationScheme;
 
@@ -52,24 +51,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Table service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudTableClient"/> object.</returns>
-        public static CloudTableClient Create(StorageUri storageUri, StorageCredentials credentials)
-        {
-            return new CloudTableClient(storageUri, credentials);
-        }
-
-        internal CloudTableClient(StorageUri storageUri, StorageCredentials credentials)
-#else
         public CloudTableClient(StorageUri storageUri, StorageCredentials credentials)
-#endif
         {
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
-            this.DefaultRequestOptions = new TableRequestOptions();
-            this.DefaultRequestOptions.RetryPolicy = new ExponentialRetry();
-            this.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryOnly;
-            this.DefaultRequestOptions.PayloadFormat = TablePayloadFormat.Json;
+            this.DefaultRequestOptions =
+                new TableRequestOptions(TableRequestOptions.BaseDefaultRequestOptions) 
+                { 
+                    RetryPolicy = new ExponentialRetry()
+                };
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
 
@@ -117,97 +107,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public TableRequestOptions DefaultRequestOptions { get; set; }
 
         /// <summary>
-        /// Gets or sets the default retry policy for requests made via the Table service client.
-        /// </summary>
-        /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
-        [Obsolete("Use DefaultRequestOptions.RetryPolicy.")]
-        public IRetryPolicy RetryPolicy
-        {
-            get
-            {
-                return this.DefaultRequestOptions.RetryPolicy;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.RetryPolicy = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the default location mode for requests made via the Table service client.
-        /// </summary>
-        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
-        [Obsolete("Use DefaultRequestOptions.LocationMode.")]
-        public LocationMode? LocationMode
-        {
-            get
-            {
-                return this.DefaultRequestOptions.LocationMode;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.LocationMode = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the default server timeout for requests made via the Table service client.
-        /// </summary>
-        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval.</value>
-        [Obsolete("Use DefaultRequestOptions.ServerTimeout.")]
-        public TimeSpan? ServerTimeout
-        {
-            get
-            {
-                return this.DefaultRequestOptions.ServerTimeout;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.ServerTimeout = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the maximum execution time across all potential retries.
-        /// </summary>
-        /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
-        [Obsolete("Use DefaultRequestOptions.MaximumExecutionTime.")]
-        public TimeSpan? MaximumExecutionTime
-        {
-            get
-            {
-                return this.DefaultRequestOptions.MaximumExecutionTime;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.MaximumExecutionTime = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets and sets the table payload format for requests against any table accessed with this <see cref="CloudTableClient"/> object.
-        /// </summary>
-        /// <value>A <see cref="TablePayloadFormat"/> enumeration value.</value>
-        /// <remarks>By default, this property is set to <see cref="TablePayloadFormat.Json"/>.</remarks>
-        [Obsolete("Use DefaultRequestOptions.PayloadFormat.")]
-        public TablePayloadFormat? PayloadFormat
-        {
-            get
-            {
-                return this.DefaultRequestOptions.PayloadFormat;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.PayloadFormat = value;
-            }
-        }
-
-        /// <summary>
         /// Gets a value indicating whether the service client is used with Path style or Host style.
         /// </summary>
         /// <value>Is <c>true</c> if use path style URIs; otherwise, <c>false</c>.</value>
@@ -241,7 +140,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return new CloudTable(tableName, this);
         }
 
-        private ICanonicalizer GetCanonicalizer()
+        internal ICanonicalizer GetCanonicalizer()
         {
             if (this.AuthenticationScheme == AuthenticationScheme.SharedKeyLite)
             {

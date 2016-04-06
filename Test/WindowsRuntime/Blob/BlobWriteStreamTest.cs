@@ -130,7 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -282,7 +282,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -385,7 +385,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -488,7 +488,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -523,7 +523,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     };
                     using (var writeStream = await blob.OpenWriteAsync(null, options, null))
                     {
-                        Stream blobStream = writeStream.AsStreamForWrite();
+                        Stream blobStream = writeStream;
 
                         for (int i = 0; i < 3; i++)
                         {
@@ -555,7 +555,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -575,7 +575,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 using (var writeStream = await blob.OpenWriteAsync())
                 {
-                    Stream blobStream = writeStream.AsStreamForWrite();
+                    Stream blobStream = writeStream;
 
                     TestHelper.ExpectedException<NotSupportedException>(
                         () => blobStream.Seek(1, SeekOrigin.Begin),
@@ -584,7 +584,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -597,7 +597,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task BlockBlobWriteStreamFlushTestAsync()
         {
             byte[] buffer = GetRandomBuffer(512 * 1024);
-
+          
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
@@ -612,7 +612,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            await blobStream.WriteAsync(buffer.AsBuffer());
+                            await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                         }
 
@@ -626,7 +626,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);
 
-                        await blobStream.WriteAsync(buffer.AsBuffer());
+                        await blobStream.WriteAsync(buffer, 0, buffer.Length);
                         await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);
@@ -640,14 +640,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
-                        await blob.DownloadToStreamAsync(downloadedBlob.AsOutputStream());
+                        await blob.DownloadToStreamAsync(downloadedBlob);
                         TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
                     }
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -685,7 +685,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (var writeStream = await blob.OpenWriteAsync(buffer.Length * 3, null, options, null))
                     {
-                        Stream blobStream = writeStream.AsStreamForWrite();
+                        Stream blobStream = writeStream;
 
                         for (int i = 0; i < 3; i++)
                         {
@@ -720,7 +720,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (var writeStream = await blob.OpenWriteAsync(null))
                     {
-                        Stream blobStream = writeStream.AsStreamForWrite();
+                        Stream blobStream = writeStream;
                         blobStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
                         wholeBlob.Seek(buffer.Length / 2, SeekOrigin.Begin);
 
@@ -747,7 +747,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -772,7 +772,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     using (var writeStream = await blob.OpenWriteAsync(buffer.Length))
                     {
-                        Stream blobStream = writeStream.AsStreamForWrite();
+                        Stream blobStream = writeStream;
                         TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                             () => blobStream.Seek(1, SeekOrigin.Begin),
                             "Page blob stream should not allow unaligned seeks");
@@ -802,7 +802,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -831,7 +831,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            await blobStream.WriteAsync(buffer.AsBuffer());
+                            await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                         }
 
@@ -850,7 +850,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
 
-                        await blobStream.WriteAsync(buffer.AsBuffer());
+                        await blobStream.WriteAsync(buffer, 0, buffer.Length);
                         await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
@@ -871,7 +871,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -907,7 +907,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (var writeStream = await blob.OpenWriteAsync(true, null, options, null))
                     {
-                        Stream blobStream = writeStream.AsStreamForWrite();
+                        Stream blobStream = writeStream;
 
                         for (int i = 0; i < 3; i++)
                         {
@@ -943,7 +943,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -963,7 +963,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
                 using (var writeStream = await blob.OpenWriteAsync(true))
                 {
-                    Stream blobStream = writeStream.AsStreamForWrite();
+                    Stream blobStream = writeStream;
 
                     TestHelper.ExpectedException<NotSupportedException>(
                         () => blobStream.Seek(1, SeekOrigin.Begin),
@@ -972,7 +972,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1001,7 +1001,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            await blobStream.WriteAsync(buffer.AsBuffer());
+                            await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                         }
 
@@ -1020,7 +1020,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
 
-                        await blobStream.WriteAsync(buffer.AsBuffer());
+                        await blobStream.WriteAsync(buffer, 0, buffer.Length);
                         await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
@@ -1041,7 +1041,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1070,7 +1070,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         using (var writeStream = await blob.OpenWriteAsync(true, accessCondition, null, context))
                         {
-                            Stream blobStream = writeStream.AsStreamForWrite();
+                            Stream blobStream = writeStream;
 
                             for (int i = 0; i < 3; i++)
                             {
@@ -1090,7 +1090,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }

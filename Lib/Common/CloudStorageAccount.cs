@@ -638,8 +638,10 @@ namespace Microsoft.WindowsAzure.Storage
                 throw new InvalidOperationException(errorMessage);
             }
 
-            string signature = SharedAccessSignatureHelper.GetHash(policy, this.Credentials.AccountName, Constants.HeaderConstants.TargetStorageVersion, this.Credentials.Key.KeyValue);
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, this.Credentials.Key.KeyName, Constants.HeaderConstants.TargetStorageVersion);
+            StorageAccountKey accountKey = this.Credentials.Key;
+
+            string signature = SharedAccessSignatureHelper.GetHash(policy, this.Credentials.AccountName, Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion);
             return builder.ToString();
         }
 #endif

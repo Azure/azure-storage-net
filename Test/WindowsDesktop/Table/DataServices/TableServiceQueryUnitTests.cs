@@ -26,7 +26,6 @@ using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 {
-#pragma warning disable 0618
     /// <summary>
     /// Summary description for TableServiceQueryUnitTests
     /// </summary>
@@ -142,7 +141,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableServiceQueryExecuteBasic()
         {
-            DoTableServiceQueryExecuteBasic(TablePayloadFormat.AtomPub);
             DoTableServiceQueryExecuteBasic(TablePayloadFormat.Json);
         }
 
@@ -168,7 +166,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableServiceQueryExecuteWithTake()
         {
-            DoTableServiceQueryExecuteWithTake(TablePayloadFormat.AtomPub);
             DoTableServiceQueryExecuteWithTake(TablePayloadFormat.Json);
         }
 
@@ -235,7 +232,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableServiceQueryExecuteSegmentedBasicSync()
         {
-            DoTableServiceQueryExecuteSegmentedBasicSync(TablePayloadFormat.AtomPub);
             DoTableServiceQueryExecuteSegmentedBasicSync(TablePayloadFormat.Json);
         }
 
@@ -277,7 +273,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableServiceQueryExecuteSegmentedWithTake()
         {
-            DoTableServiceQueryExecuteSegmentedWithTake(TablePayloadFormat.AtomPub);
             DoTableServiceQueryExecuteSegmentedWithTake(TablePayloadFormat.Json);
         }
 
@@ -421,7 +416,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableServiceQueryProjection()
         {
-            DoTableServiceQueryProjection(TablePayloadFormat.AtomPub);
             DoTableServiceQueryProjection(TablePayloadFormat.Json);
         }
 
@@ -462,7 +456,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableServiceQueryProjectionWithUpdate()
         {
-            DoTableServiceQueryProjectionWithUpdate(TablePayloadFormat.AtomPub);
             DoTableServiceQueryProjectionWithUpdate(TablePayloadFormat.Json);
         }
 
@@ -509,5 +502,4 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 
         #endregion
     }
-#pragma warning restore 0618
 }

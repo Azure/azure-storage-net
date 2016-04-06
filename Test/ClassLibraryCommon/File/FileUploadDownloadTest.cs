@@ -194,18 +194,29 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.DoUploadDownloadFile(file, 4096, false);
 
             TestHelper.ExpectedException<IOException>(
-                () => file.UploadFromFile("non_existent.file", FileMode.Open),
+                () => file.UploadFromFile("non_existent.file"),
                 "UploadFromFile requires an existing file");
 
             TestHelper.ExpectedException<StorageException>(
                 () => nullFile.DownloadToFile("garbage.file", FileMode.Create),
-                "DownloadToFile should not leave an empty file behind after failing.");
+                "DownloadToFile should leave an unchanged file behind after failing.");
             Assert.IsFalse(File.Exists("garbage.file"));
 
             TestHelper.ExpectedException<StorageException>(
                 () => nullFile.DownloadToFile("garbage.file", FileMode.CreateNew),
-                "DownloadToFile should not leave an empty file behind after failing.");
+                "DownloadToFile should leave an unchanged file behind after failing.");
             Assert.IsFalse(File.Exists("garbage.file"));
+
+            byte[] buffer = GetRandomBuffer(100);
+            using (FileStream systemFile = new FileStream("garbage.file", FileMode.Create, FileAccess.Write))
+            {
+                systemFile.WriteAsync(buffer, 0, buffer.Length);
+            }
+            TestHelper.ExpectedException<IOException>(
+                () => nullFile.DownloadToFile("garbage.file", FileMode.CreateNew),
+                "DownloadToFileAsync should leave an unchanged file behind after failing, depending on the mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbage.file"));
+            System.IO.File.Delete("garbage.file");
 
             TestHelper.ExpectedException<StorageException>(
                  () => nullFile.DownloadToFile("garbage.file", FileMode.Append),
@@ -228,7 +239,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.DoUploadDownloadFile(file, 4096, true);
 
             TestHelper.ExpectedException<IOException>(
-                () => file.BeginUploadFromFile("non_existent.file", FileMode.Open, null, null),
+                () => file.BeginUploadFromFile("non_existent.file", null, null),
                 "UploadFromFile requires an existing file");
 
             IAsyncResult result;
@@ -282,20 +293,37 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.DoUploadDownloadFileTask(file, 4096);
 
             TestHelper.ExpectedException<IOException>(
-                () => file.UploadFromFileAsync("non_existent.file", FileMode.Open),
+                () => file.UploadFromFileAsync("non_existent.file"),
                 "UploadFromFile requires an existing file");
 
             AggregateException e = TestHelper.ExpectedException<AggregateException>(
                 () => nullFile.DownloadToFileAsync("garbage.file", FileMode.Create).Wait(),
-                "DownloadToFile should not leave an empty file behind after failing.");
+                "DownloadToFile should leave an unchanged file behind after failing.");
             Assert.IsTrue(e.InnerException is StorageException);
             Assert.IsFalse(File.Exists("garbage.file"));
 
             e = TestHelper.ExpectedException<AggregateException>(
                 () => nullFile.DownloadToFileAsync("garbage.file", FileMode.CreateNew).Wait(),
-                "DownloadToFile should not leave an empty file behind after failing.");
+                "DownloadToFile should leave an unchanged file behind after failing.");
             Assert.IsTrue(e.InnerException is StorageException);
             Assert.IsFalse(File.Exists("garbage.file"));
+
+            byte[] buffer = GetRandomBuffer(100);
+            using (FileStream systemFile = new FileStream("garbage.file", FileMode.Create, FileAccess.Write))
+            {
+                systemFile.WriteAsync(buffer, 0, buffer.Length);
+            }
+            try
+            {
+                nullFile.DownloadToFileAsync("garbage.file", FileMode.CreateNew).Wait();
+                Assert.Fail("DownloadToFileAsync should leave an unchanged file behind after failing, depending on the mode.");
+            }
+            catch (System.IO.IOException)
+            {
+                // Success if test reaches here meaning the expected exception was thrown.
+                Assert.IsTrue(System.IO.File.Exists("garbage.file"));
+                System.IO.File.Delete("garbage.file");
+            }
 
             e = TestHelper.ExpectedException<AggregateException>(
                 () => nullFile.DownloadToFileAsync("garbage.file", FileMode.Append).Wait(),
@@ -318,10 +346,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                     fileStream.Write(buffer, 0, buffer.Length);
                 }
 
-                file.UploadFromFileAsync(inputFileName, FileMode.Open).Wait();
+                file.UploadFromFileAsync(inputFileName).Wait();
 
                 OperationContext context = new OperationContext();
-                file.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context).Wait();
+                file.UploadFromFileAsync(inputFileName, null, null, context).Wait();
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 TestHelper.ExpectedException<IOException>(
@@ -394,14 +422,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                     IAsyncResult result;
                     using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                     {
-                        result = file.BeginUploadFromFile(inputFileName, FileMode.Open,
+                        result = file.BeginUploadFromFile(inputFileName,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
                         file.EndUploadFromFile(result);
 
                         OperationContext context = new OperationContext();
-                        result = file.BeginUploadFromFile(inputFileName, FileMode.Open, null, null, context,
+                        result = file.BeginUploadFromFile(inputFileName, null, null, context,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
@@ -452,10 +480,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
                 else
                 {
-                    file.UploadFromFile(inputFileName, FileMode.Open);
+                    file.UploadFromFile(inputFileName);
 
                     OperationContext context = new OperationContext();
-                    file.UploadFromFile(inputFileName, FileMode.Open, null, null, context);
+                    file.UploadFromFile(inputFileName, null, null, context);
                     Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                     TestHelper.ExpectedException<IOException>(

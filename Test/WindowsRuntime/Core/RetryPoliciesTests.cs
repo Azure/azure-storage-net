@@ -45,11 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference("test" + DateTime.UtcNow.Ticks.ToString());
             CancellationTokenSource token = new CancellationTokenSource();
-#if ASPNET_K
             Task task = container.FetchAttributesAsync(null, options, context, token.Token);
-#else
-            Task task = container.FetchAttributesAsync(null, options, context).AsTask(token.Token);
-#endif
 
             await responseTask.Task;
             await Task.Delay(10 * 1000);

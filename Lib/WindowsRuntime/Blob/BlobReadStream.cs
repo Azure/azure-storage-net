@@ -134,7 +134,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 this.internalBuffer.SetLength(0);
                 await this.blob.DownloadRangeToStreamAsync(
-                    this.internalBuffer.AsOutputStream(),
+                    this.internalBuffer,
                     this.currentOffset,
                     this.GetReadSize(),
                     this.accessCondition,

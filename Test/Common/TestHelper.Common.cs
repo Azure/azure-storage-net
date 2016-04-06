@@ -43,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <typeparam name="T"></typeparam>
         /// <param name="operation"></param>
         /// <param name="operationDescription"></param>
-        internal static T ExpectedException<T>(Action operation, string operationDescription)
+        internal static T ExpectedException<T>(Action operation, string operationDescription, string expectedMessage = null)
             where T : Exception
         {
             try
@@ -52,6 +52,13 @@ namespace Microsoft.WindowsAzure.Storage
             }
             catch (T e)
             {
+                if (!string.IsNullOrEmpty(expectedMessage))
+                {
+                    if (!expectedMessage.Equals(e.Message, StringComparison.Ordinal))
+                    {
+                        Assert.Fail("Incorrect message in exception.  Expected: {0}, actual: {1}", expectedMessage, e.Message);
+                    }
+                }
                 return e;
             }
 #if ASPNET_K
@@ -237,7 +244,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Validates if this test supports the currnet target tenant. 
+        /// Validates if this test supports the current target tenant. 
         /// Skips the current test if the target tenant is not supported. 
         /// </summary>
         public static void ValidateIfTestSupportTargetTenant(TenantType supportedTenantTypes)
@@ -332,20 +339,26 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
 
-        internal static void ValidateResponse(OperationContext opContext, int expectedAttempts, int expectedStatusCode, string[] allowedErrorCodes, string errorMessageBeginsWith)
+        internal static void ValidateResponse(OperationContext opContext, int expectedAttempts, int expectedStatusCode, string[] allowedErrorCodes, string errorMessageBeginsWith, string expectedStatusMessageBeginsWith = null)
         {
-            ValidateResponse(opContext, expectedAttempts, expectedStatusCode, allowedErrorCodes, new string[] { errorMessageBeginsWith });
+            ValidateResponse(opContext, expectedAttempts, expectedStatusCode, allowedErrorCodes, new string[] { errorMessageBeginsWith }, expectedStatusMessageBeginsWith);
         }
 
-        internal static void ValidateResponse(OperationContext opContext, int expectedAttempts, int expectedStatusCode, string[] allowedErrorCodes, string[] errorMessageBeginsWith)
+        internal static void ValidateResponse(OperationContext opContext, int expectedAttempts, int expectedStatusCode, string[] allowedErrorCodes, string[] errorMessageBeginsWith, string expectedStatusMessageBeginsWith = null)
         {
-            ValidateResponse(opContext, expectedAttempts, expectedStatusCode, allowedErrorCodes, errorMessageBeginsWith, true);
+            ValidateResponse(opContext, expectedAttempts, expectedStatusCode, allowedErrorCodes, errorMessageBeginsWith, true, expectedStatusMessageBeginsWith);
         }
 
-        internal static void ValidateResponse(OperationContext opContext, int expectedAttempts, int expectedStatusCode, string[] allowedErrorCodes, string[] errorMessageBeginsWith, bool stripIndex)
+        internal static void ValidateResponse(OperationContext opContext, int expectedAttempts, int expectedStatusCode, string[] allowedErrorCodes, string[] errorMessageBeginsWith, bool stripIndex, string expectedStatusMessageBeginsWith = null)
         {
             TestHelper.AssertNAttempts(opContext, 1);
             Assert.AreEqual(opContext.LastResult.HttpStatusCode, expectedStatusCode);
+
+            if (!string.IsNullOrEmpty(expectedStatusMessageBeginsWith))
+            {
+                Assert.IsTrue(opContext.LastResult.HttpStatusMessage.ToString().Contains(expectedStatusMessageBeginsWith));
+            }
+
             Assert.IsTrue(allowedErrorCodes.Contains(opContext.LastResult.ExtendedErrorInformation.ErrorCode), "Unexpected Error Code, received " + opContext.LastResult.ExtendedErrorInformation.ErrorCode);
 
             if (errorMessageBeginsWith != null)

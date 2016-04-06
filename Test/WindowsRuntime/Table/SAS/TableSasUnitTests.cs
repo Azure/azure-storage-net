@@ -167,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -212,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -285,7 +285,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -471,7 +471,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -499,7 +499,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             Action<BaseEntity, OperationContext> queryDelegate = (tableEntity, ctx) =>
             {
-                Task<TableResult> retrieveTask = testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Retrieve<BaseEntity>(tableEntity.PartitionKey, tableEntity.RowKey), null, ctx).AsTask();
+                Task<TableResult> retrieveTask = testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Retrieve<BaseEntity>(tableEntity.PartitionKey, tableEntity.RowKey), null, ctx);
                 retrieveTask.Wait();
 
                 if (expectSuccess)
@@ -553,7 +553,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // Merge entity
                 tableEntity.A = "10";
                 tableEntity.ETag = "*";
-                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Merge(tableEntity), null, ctx).AsTask().Wait();
+                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Merge(tableEntity), null, ctx).Wait();
             };
 
             bool expectSuccess = (accessPermissions & SharedAccessTablePermissions.Update) != 0;
@@ -597,7 +597,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // replace entity
                 tableEntity.A = "20";
                 tableEntity.ETag = "*";
-                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Replace(tableEntity), null, ctx).AsTask().Wait();
+                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Replace(tableEntity), null, ctx).Wait();
             };
 
             bool expectSuccess = (accessPermissions & SharedAccessTablePermissions.Update) != 0;
@@ -640,7 +640,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // insert entity
                 tableEntity.A = "10";
-                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Insert(tableEntity), null, ctx).AsTask().Wait();
+                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Insert(tableEntity), null, ctx).Wait();
             };
 
             bool expectSuccess = (accessPermissions & SharedAccessTablePermissions.Add) != 0;
@@ -684,7 +684,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // delete entity
                 tableEntity.A = "10";
                 tableEntity.ETag = "*";
-                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Delete(tableEntity), null, ctx).AsTask().Wait();
+                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.Delete(tableEntity), null, ctx).Wait();
             };
 
             bool expectSuccess = (accessPermissions & SharedAccessTablePermissions.Delete) != 0;
@@ -727,7 +727,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // insert or merge entity
                 tableEntity.A = "10";
-                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.InsertOrMerge(tableEntity), null, ctx).AsTask().Wait();
+                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.InsertOrMerge(tableEntity), null, ctx).Wait();
             };
 
             SharedAccessTablePermissions upsertPermissions = (SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Add);
@@ -771,7 +771,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 // insert or replace entity
                 tableEntity.A = "10";
-                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.InsertOrReplace(tableEntity), null, ctx).AsTask().Wait();
+                testClient.GetTableReference(tableName).ExecuteAsync(TableOperation.InsertOrReplace(tableEntity), null, ctx).Wait();
             };
 
             SharedAccessTablePermissions upsertPermissions = (SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Add);
@@ -999,7 +999,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CloudTableClient sasClient = new CloudTableClient(tableClient.BaseUri, new StorageCredentials(sasString));
 
                 // Construct a valid set of service properties to upload.
-                ServiceProperties properties = new ServiceProperties();
+                ServiceProperties properties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties());
                 properties.Logging.Version = "1.0";
                 properties.HourMetrics.Version = "1.0";
                 properties.Logging.RetentionDays = 9;
@@ -1009,25 +1009,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // Test invalid client operations
                 // BUGBUG: ListTables hides the exception. We should fix this
                 // TestHelpers.ExpectedException(() => sasClient.ListTablesSegmented(), "List tables with SAS", HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasClient.GetServicePropertiesAsync().AsTask().Wait(), "Get service properties with SAS", (int)HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasClient.SetServicePropertiesAsync(properties).AsTask().Wait(), "Set service properties with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasClient.GetServicePropertiesAsync().Wait(), "Get service properties with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasClient.SetServicePropertiesAsync(properties).Wait(), "Set service properties with SAS", (int)HttpStatusCode.NotFound);
 
                 CloudTable sasTable = sasClient.GetTableReference(table.Name);
 
                 // Verify that creation fails with SAS
-                TestHelper.ExpectedException((ctx) => sasTable.CreateAsync(null, ctx).AsTask().Wait(), "Create a table with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasTable.CreateAsync(null, ctx).Wait(), "Create a table with SAS", (int)HttpStatusCode.NotFound);
 
                 // Create the table.
                 await table.CreateAsync();
 
                 // Test invalid table operations
-                TestHelper.ExpectedException((ctx) => sasTable.DeleteAsync(null, ctx).AsTask().Wait(), "Delete a table with SAS", (int)HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasTable.GetPermissionsAsync(null, ctx).AsTask().Wait(), "Get ACL with SAS", (int)HttpStatusCode.NotFound);
-                TestHelper.ExpectedException((ctx) => sasTable.SetPermissionsAsync(new TablePermissions(), null, ctx).AsTask().Wait(), "Set ACL with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasTable.DeleteAsync(null, ctx).Wait(), "Delete a table with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasTable.GetPermissionsAsync(null, ctx).Wait(), "Get ACL with SAS", (int)HttpStatusCode.NotFound);
+                TestHelper.ExpectedException((ctx) => sasTable.SetPermissionsAsync(new TablePermissions(), null, ctx).Wait(), "Set ACL with SAS", (int)HttpStatusCode.NotFound);
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1088,7 +1088,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
         #endregion
@@ -1134,7 +1134,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
         #endregion

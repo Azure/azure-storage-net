@@ -78,7 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         public static void MyClassInitialize(TestContext testContext)
         {
             client = GenerateCloudQueueClient();
-            startProperties = client.GetServicePropertiesAsync().AsTask().Result;
+            startProperties = client.GetServicePropertiesAsync().Result;
         }
 
         // Use ClassCleanup to run code after all tests in a class have run
@@ -88,7 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #if ASPNET_K
             client.SetServicePropertiesAsync(startProperties).Wait();
 #else
-            client.SetServicePropertiesAsync(startProperties).AsTask().Wait();
+            client.SetServicePropertiesAsync(startProperties).Wait();
 #endif
         }
 
@@ -670,7 +670,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
         private static ServiceProperties DefaultServiceProperties()
         {
-            ServiceProperties props = new ServiceProperties();
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;

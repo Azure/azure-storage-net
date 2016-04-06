@@ -342,6 +342,11 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
                 return null;
             }
 
+            if ((protocols.Value != SharedAccessProtocol.HttpsOnly) && (protocols.Value != SharedAccessProtocol.HttpsOrHttp))
+            {
+                throw new ArgumentException(String.Format(CultureInfo.InvariantCulture, SR.InvalidProtocolsInSAS, protocols.Value));
+            }
+
             return protocols.Value == SharedAccessProtocol.HttpsOnly ? "https" : "https,http";
         }
 #endif 

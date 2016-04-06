@@ -52,13 +52,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         public void TestInitialize()
         {
             this.testShare = GetRandomShareReference();
-            this.testShare.CreateIfNotExistsAsync().AsTask().Wait();
+            this.testShare.CreateIfNotExistsAsync().Wait();
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
-            this.testShare.DeleteIfExistsAsync().AsTask().Wait();
+            this.testShare.DeleteIfExistsAsync().Wait();
         }
 
         [TestMethod]
@@ -78,25 +78,25 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream wholeFile = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(wholeFile.AsInputStream());
+                    await file.UploadFromStreamAsync(wholeFile);
 
                     byte[] testBuffer = new byte[1024];
                     MemoryStream fileStream = new MemoryStream(testBuffer);
                     Exception ex = await TestHelper.ExpectedExceptionAsync<Exception>(
-                        async () => await file.DownloadRangeToStreamAsync(fileStream.AsOutputStream(), 0, 0),
+                        async () => await file.DownloadRangeToStreamAsync(fileStream, 0, 0),
                         "Requesting 0 bytes when downloading range should not work");
-                    Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
-                    await file.DownloadRangeToStreamAsync(fileStream.AsOutputStream(), 0, 1024);
+                    Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
+                    await file.DownloadRangeToStreamAsync(fileStream, 0, 1024);
                     Assert.AreEqual(fileStream.Position, 1024);
                     TestHelper.AssertStreamsAreEqualAtIndex(fileStream, wholeFile, 0, 0, 1024);
 
                     CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
                     MemoryStream fileStream2 = new MemoryStream(testBuffer);
                     ex = await TestHelper.ExpectedExceptionAsync<Exception>(
-                        async () => await file2.DownloadRangeToStreamAsync(fileStream.AsOutputStream(), 1024, 0),
+                        async () => await file2.DownloadRangeToStreamAsync(fileStream, 1024, 0),
                         "Requesting 0 bytes when downloading range should not work");
-                    Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
-                    await file2.DownloadRangeToStreamAsync(fileStream2.AsOutputStream(), 1024, 1024);
+                    Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
+                    await file2.DownloadRangeToStreamAsync(fileStream2, 1024, 1024);
                     TestHelper.AssertStreamsAreEqualAtIndex(fileStream2, wholeFile, 0, 1024, 1024);
 
                     AssertAreEqual(file, file2);
@@ -104,7 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -125,16 +125,16 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(srcStream.AsInputStream());
+                    await file.UploadFromStreamAsync(srcStream);
                     byte[] testBuffer = new byte[2048];
                     MemoryStream dstStream = new MemoryStream(testBuffer);
-                    await file.DownloadRangeToStreamAsync(dstStream.AsOutputStream(), null, null);
+                    await file.DownloadRangeToStreamAsync(dstStream, null, null);
                     TestHelper.AssertStreamsAreEqual(srcStream, dstStream);
                 }
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -159,14 +159,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                 OperationContext context = new OperationContext();
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(srcStream.AsInputStream(), null, options, context);
+                    await file.UploadFromStreamAsync(srcStream, null, options, context);
                     await file.FetchAttributesAsync();
                     string md5 = file.Properties.ContentMD5;
                     file.Properties.ContentMD5 = "MDAwMDAwMDA=";
                     await file.SetPropertiesAsync(null, options, context);
                     byte[] testBuffer = new byte[2048];
                     MemoryStream dstStream = new MemoryStream(testBuffer);
-                    await TestHelper.ExpectedExceptionAsync(async () => await file.DownloadRangeToStreamAsync(dstStream.AsOutputStream(), null, null, null, options, context),
+                    await TestHelper.ExpectedExceptionAsync(async () => await file.DownloadRangeToStreamAsync(dstStream, null, null, null, options, context),
                         context,
                         "Try to Download a stream with a corrupted md5 and DisableMD5Validation set to false",
                         HttpStatusCode.OK);
@@ -175,12 +175,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await file.SetPropertiesAsync(null, options, context);
                     byte[] testBuffer2 = new byte[2048];
                     MemoryStream dstStream2 = new MemoryStream(testBuffer2);
-                    await file.DownloadRangeToStreamAsync(dstStream2.AsOutputStream(), null, null, null, options, context);
+                    await file.DownloadRangeToStreamAsync(dstStream2, null, null, null, options, context);
                 }
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -215,10 +215,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await localFile.WriteAsync(buffer, 0, buffer.Length);
                 }
 
-                await file.UploadFromFileAsync(inputFileName, FileMode.Open);
+                await file.UploadFromFileAsync(inputFileName);
 
                 OperationContext context = new OperationContext();
-                await file.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context);
+                await file.UploadFromFileAsync(inputFileName, null, null, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 context = new OperationContext();
@@ -344,12 +344,12 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 if (!isOverload)
                 {
-                    await file.UploadFromStreamAsync(originalFile.AsInputStream());
+                    await file.UploadFromStreamAsync(originalFile);
                     downloadLength = await file.DownloadToByteArrayAsync(resultBuffer, bufferOffset);
                 }
                 else
                 {
-                    await file.UploadFromStreamAsync(originalFile.AsInputStream());
+                    await file.UploadFromStreamAsync(originalFile);
                     OperationContext context = new OperationContext();
                     downloadLength = await file.DownloadToByteArrayAsync(resultBuffer, bufferOffset, null, null, context);
                 }
@@ -447,12 +447,12 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 if (!isOverload)
                 {
-                    await file.UploadFromStreamAsync(originalFile.AsInputStream());
+                    await file.UploadFromStreamAsync(originalFile);
                     downloadLength = await file.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, fileOffset, length);
                 }
                 else
                 {
-                    await file.UploadFromStreamAsync(originalFile.AsInputStream());
+                    await file.UploadFromStreamAsync(originalFile);
                     OperationContext context = new OperationContext();
                     downloadLength = await file.DownloadRangeToByteArrayAsync(resultBuffer, bufferOffset, fileOffset, length, null, null, context);
                 }
@@ -482,7 +482,54 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
-#region Negative tests
+#if ASPNET_K
+        [TestMethod]
+        [Description("Upload from file to a file with file cleanup for failure cases")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileUploadDownloadFileAsyncWithFailures()
+        {
+            CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
+            CloudFile nullFile = this.testShare.GetRootDirectoryReference().GetFileReference("null");
+            await this.DoUploadDownloadFileAsync(file, 0);
+            await this.DoUploadDownloadFileAsync(file, 4096);
+
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async ()  => await file.UploadFromFileAsync("non_existentCloudFileUploadDownloadFileAsyncWithFailures.file"),
+                "UploadFromFile requires an existing file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullFile.DownloadToFileAsync("garbageCloudFileUploadDownloadFileAsyncWithFailures.file", FileMode.Create),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudFileUploadDownloadFileAsyncWithFailures.file"));
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                async () => await nullFile.DownloadToFileAsync("garbageCloudFileUploadDownloadFileAsyncWithFailures.file", FileMode.CreateNew),
+                "DownloadToFile should not leave an empty file behind after failing.");
+            Assert.IsFalse(System.IO.File.Exists("garbageCloudFileUploadDownloadFileAsyncWithFailures.file"));
+
+            byte[] buffer = GetRandomBuffer(100);
+            using (FileStream systemFile = new FileStream("garbageCloudFileUploadDownloadFileAsyncWithFailures.file", FileMode.Create, FileAccess.Write))
+            {
+                systemFile.Write(buffer, 0, buffer.Length);
+            }
+            await TestHelper.ExpectedExceptionAsync<IOException>(
+                async () => await nullFile.DownloadToFileAsync("garbageCloudFileUploadDownloadFileAsyncWithFailures.file", FileMode.CreateNew),
+                "DownloadToFileAsync should leave an empty file behind after failing, depending on the mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudFileUploadDownloadFileAsyncWithFailures.file"));
+            System.IO.File.Delete("garbageCloudFileUploadDownloadFileAsyncWithFailures.file");
+
+            await TestHelper.ExpectedExceptionAsync<StorageException>(
+                 async () => await nullFile.DownloadToFileAsync("garbageCloudFileUploadDownloadFileAsyncWithFailures.file", FileMode.Append),
+                "DownloadToFile should leave an empty file behind after failing depending on file mode.");
+            Assert.IsTrue(System.IO.File.Exists("garbageCloudFileUploadDownloadFileAsyncWithFailures.file"));
+            System.IO.File.Delete("garbageCloudFileUploadDownloadFileAsyncWithFailures.file");
+        }
+#endif
+
+        #region Negative tests
         [TestMethod]
         // [Description("Single put file and get file")]
         [TestCategory(ComponentCategory.File)]
@@ -504,19 +551,19 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             using (MemoryStream stream = new MemoryStream(buffer))
             {
-                await file.UploadFromStreamAsync(stream.AsInputStream());
+                await file.UploadFromStreamAsync(stream);
 
                 OperationContext context = new OperationContext();
                 await TestHelper.ExpectedExceptionAsync(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, 0, 1024, 1, null, null, context), context, "Try invalid length", HttpStatusCode.RequestedRangeNotSatisfiable);
-                WrappedStorageException ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await file.DownloadToByteArrayAsync(resultBuffer, 1024), "Provide invalid offset");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(NotSupportedException));
-                ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, 1023, 0, 2), "Should fail when offset + length required is greater than size of the buffer");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(NotSupportedException));
-                ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, 0, 0, -10), "Fail when a negative length is specified");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
+                StorageException ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await file.DownloadToByteArrayAsync(resultBuffer, 1024), "Provide invalid offset");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(NotSupportedException));
+                ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, 1023, 0, 2), "Should fail when offset + length required is greater than size of the buffer");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(NotSupportedException));
+                ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, 0, 0, -10), "Fail when a negative length is specified");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, -10, 0, 20), "Fail if a negative offset is provided");
-                ex = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, 0, -10, 20), "Fail if a negative file offset is provided");
-                Assert.IsInstanceOfType(ex.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
+                ex = await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await file.DownloadRangeToByteArrayAsync(resultBuffer, 0, -10, 20), "Fail if a negative file offset is provided");
+                Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
             }
         }
 #endregion
