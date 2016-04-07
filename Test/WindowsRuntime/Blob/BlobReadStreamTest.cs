@@ -371,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             byte[] testBuffer = new byte[readSize];
 #if ASPNET_K
-            int actualReadSize = await fileStream.ReadAsync(testBuffer, 0, (int) readSize);
+            int actualReadSize = await blobStream.ReadAsync(testBuffer, 0, (int) readSize);
             Assert.AreEqual(expectedReadCount, actualReadSize);
 #else
             IBuffer testBufferAsIBuffer = testBuffer.AsBuffer();
