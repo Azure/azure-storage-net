@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------------------------
-// <copyright file="WrappedStorageExceptionTests.cs" company="Microsoft">
+// <copyright file="AccountSasTests.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,18 +55,19 @@ namespace Microsoft.WindowsAzure.Storage
         {
             // Single-threaded, takes 10 minutes to run
             // Parallelized, 1 minute.
-            Task[] tasks = new Task[256 * 4]; //each permission (0x100) times four services.
             for (int i = 0; i < 0x100; i++)
             {
+                Task[] tasks = new Task[4]; //each permission (0x100) times four services.
                 SharedAccessAccountPermissions permissions = (SharedAccessAccountPermissions)i;
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.Permissions = permissions;
-                tasks[i] = this.RunPermissionsTestBlobs(policy);
-                tasks[256 + i] = this.RunPermissionsTestTables(policy);
-                tasks[512 + i] = this.RunPermissionsTestQueues(policy);
-                tasks[768 + i] = this.RunPermissionsTestFiles(policy);
+                tasks[0] = this.RunPermissionsTestBlobs(policy);
+                tasks[1] = this.RunPermissionsTestTables(policy);
+                tasks[2] = this.RunPermissionsTestQueues(policy);
+                tasks[3] = this.RunPermissionsTestFiles(policy);
+                Task.WaitAll(tasks);
             }
-            Task.WaitAll(tasks);
+            
         }
 
         [TestMethod]
@@ -347,78 +348,6 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
 
-        [TestMethod]
-        [Description("Test account SAS all parameters blob")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task AccountSASSample()
-        {
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
-            string containerName = "c" + Guid.NewGuid().ToString("N");
-            CloudBlobContainer container = blobClient.GetContainerReference(containerName);
-            try
-            {
-                await container.CreateAsync();
-                string blobName = "blob";
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
-                byte[] data = new byte[] { 0x1, 0x2, 0x3, 0x4 };
-                await blockBlob.UploadFromByteArrayAsync(data, 0, 4);
-
-                SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
-                HostName invalidIP = new HostName("255.255.255.255");
-                policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
-
-                CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, blobClient.StorageUri, null, null, null);
-                CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
-                CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
-                CloudBlockBlob blockblobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
-
-                byte[] target = new byte[4];
-                OperationContext opContext = new OperationContext();
-                HostName actualIP = null;
-
-                bool exceptionThrown = false;
-                try
-                {
-                    await blockblobWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, null, opContext);
-                }
-                catch (WrappedStorageException e)
-                {
-                    exceptionThrown = true;
-                    XDocument xdocument = XDocument.Parse(e.Message);
-                    string ipString = xdocument.Descendants("SourceIP").First().Value;
-                    actualIP = new HostName(ipString);
-                    Assert.IsNotNull(actualIP);
-                }
-
-                Assert.IsTrue(exceptionThrown);
-
-                policy.IPAddressOrRange = new IPAddressOrRange(actualIP.ToString());
-                accountSASToken = account.GetSharedAccessSignature(policy);
-                accountSAS = new StorageCredentials(accountSASToken);
-                accountWithSAS = CloudStorageAccount.Create(accountSAS, blobClient.StorageUri, null, null, null);
-                blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
-                containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
-                blockblobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
-
-                await blockblobWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, null, null);
-                for (int i = 0; i < 4; i++)
-                {
-                    Assert.AreEqual(data[i], target[i]);
-                }
-                Assert.IsTrue(blockblobWithSAS.StorageUri.PrimaryUri.Equals(blockBlob.Uri));
-            }
-            finally
-            {
-                container.DeleteIfExistsAsync().AsTask().Wait();
-            }
-        }
-
         public async Task RunPermissionsTestBlobs(SharedAccessAccountPolicy policy)
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -450,7 +379,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await containerWithSAS.CreateAsync(), "Create a container should fail with SAS without Create or Write and Container-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await containerWithSAS.CreateAsync(), "Create a container should fail with SAS without Create or Write and Container-level permissions.");
                     await container.CreateAsync();
                 }
 
@@ -464,7 +393,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => { ContainerResultSegment segment = await blobClientWithSAS.ListContainersSegmentedAsync(container.Name, null); segment.Results.First(); }, "List containers should fail with SAS without List and Service-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => { ContainerResultSegment segment = await blobClientWithSAS.ListContainersSegmentedAsync(container.Name, null); segment.Results.First(); }, "List containers should fail with SAS without List and Service-level permissions.");
                 }
 
                 string blobName = "blob";
@@ -477,7 +406,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await appendBlobWithSAS.CreateOrReplaceAsync(), "Creating an append blob should fail with SAS without Create or Write and Object-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await appendBlobWithSAS.CreateOrReplaceAsync(), "Creating an append blob should fail with SAS without Create or Write and Object-level perms.");
                     await appendBlob.CreateOrReplaceAsync();
                 }
 
@@ -487,7 +416,7 @@ namespace Microsoft.WindowsAzure.Storage
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Add) == SharedAccessAccountPermissions.Add) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    using (IInputStream stream = new MemoryStream(Encoding.UTF8.GetBytes(blobText)).AsInputStream())
+                    using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(blobText)))
                     {
                         await appendBlobWithSAS.AppendBlockAsync(stream);
                     }
@@ -496,9 +425,9 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     using (MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(blobText)))
                     {
-                        await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await appendBlobWithSAS.AppendBlockAsync(memStream.AsInputStream()), "Append a block to an append blob should fail with SAS without Add or Write and Object-level perms.");
+                        await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await appendBlobWithSAS.AppendBlockAsync(memStream), "Append a block to an append blob should fail with SAS without Add or Write and Object-level perms.");
                         memStream.Seek(0, SeekOrigin.Begin);
-                        await appendBlob.AppendBlockAsync(memStream.AsInputStream());
+                        await appendBlob.AppendBlockAsync(memStream);
                     }
                 }
 
@@ -511,7 +440,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await appendBlobWithSAS.DownloadTextAsync(), "Reading a blob's contents with SAS without Read and Object-level permissions should fail.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await appendBlobWithSAS.DownloadTextAsync(), "Reading a blob's contents with SAS without Read and Object-level permissions should fail.");
                 }
 
                 if (((policy.Permissions & SharedAccessAccountPermissions.Delete) == SharedAccessAccountPermissions.Delete) &&
@@ -521,7 +450,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await appendBlobWithSAS.DeleteAsync(), "Deleting a blob with SAS without Delete and Object-level perms should fail.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await appendBlobWithSAS.DeleteAsync(), "Deleting a blob with SAS without Delete and Object-level perms should fail.");
                     await appendBlob.DeleteAsync();
                 }
 
@@ -529,7 +458,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                blobClient.GetContainerReference(containerName).DeleteIfExistsAsync().AsTask().Wait();
+                blobClient.GetContainerReference(containerName).DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -568,8 +497,8 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
-                        async () => await tableWithSAS.CreateAsync().AsTask(), 
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(
+                        async () => await tableWithSAS.CreateAsync(), 
                         "Creating a table with SAS should fail without Add and Container-level permissions.");
                     await table.CreateAsync();
                 }
@@ -582,10 +511,10 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => (await tableClientWithSAS.ListTablesSegmentedAsync(tableName, null)).Results.First(), "Listing tables with SAS should fail without Read and Container-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => (await tableClientWithSAS.ListTablesSegmentedAsync(tableName, null)).Results.First(), "Listing tables with SAS should fail without Read and Container-level permissions.");
                 }
 
-                ServiceProperties properties = new ServiceProperties();
+                ServiceProperties properties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
                 properties.Logging = initialProperties.Logging;
                 properties.HourMetrics = initialProperties.HourMetrics;
                 properties.MinuteMetrics = initialProperties.MinuteMetrics;
@@ -603,7 +532,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await tableClientWithSAS.SetServicePropertiesAsync(properties), "Setting table service properites should fail with SAS without Write and Service-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableClientWithSAS.SetServicePropertiesAsync(properties), "Setting table service properites should fail with SAS without Write and Service-level permissions.");
                     await tableClient.SetServicePropertiesAsync(properties);
                 }
                 Assert.AreEqual(sampleOriginText, rule.AllowedOrigins.First());
@@ -626,7 +555,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Insert(entity1)), "Inserting an entity should fail without Add and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Insert(entity1)), "Inserting an entity should fail without Add and Object-level permissions.");
                     await table.ExecuteAsync(TableOperation.Insert(entity1));
                 }
                 TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity1.PartitionKey, entity1.RowKey));
@@ -646,7 +575,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Merge(entity1changed)), "Merging an entity should fail without Update and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Merge(entity1changed)), "Merging an entity should fail without Update and Object-level permissions.");
                     await table.ExecuteAsync(TableOperation.Merge(entity1changed));
                 }
 
@@ -668,7 +597,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2)), "Inserting or merging an entity should fail without Add and Update and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2)), "Inserting or merging an entity should fail without Add and Update and Object-level permissions.");
                     await table.ExecuteAsync(TableOperation.InsertOrMerge(entity2));
                 }
                 query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity2.PartitionKey, entity2.RowKey));
@@ -687,7 +616,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2changed)), "Inserting or merging an entity should fail without Add and Update and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2changed)), "Inserting or merging an entity should fail without Add and Update and Object-level permissions.");
                     await table.ExecuteAsync(TableOperation.InsertOrMerge(entity2changed));
                 }
                 entity2changed.ETag = "*";
@@ -704,7 +633,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => (await tableWithSAS.ExecuteQuerySegmentedAsync(query, null)).ToList(), "Querying tables should fail with SAS without Read and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => (await tableWithSAS.ExecuteQuerySegmentedAsync(query, null)).ToList(), "Querying tables should fail with SAS without Read and Object-level permissions.");
                 }
 
                 if (((policy.Permissions & SharedAccessAccountPermissions.Delete) == SharedAccessAccountPermissions.Delete) &&
@@ -714,7 +643,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Delete(entity1)), "Deleting an entity should fail with SAS without Delete and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Delete(entity1)), "Deleting an entity should fail with SAS without Delete and Object-level permissions.");
                     await table.ExecuteAsync(TableOperation.Delete(entity1));
                 }
 
@@ -723,10 +652,10 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                tableClient.GetTableReference(tableName).DeleteIfExistsAsync().AsTask().Wait();
+                tableClient.GetTableReference(tableName).DeleteIfExistsAsync().Wait();
                 if (initialProperties != null)
                 {
-                    tableClient.SetServicePropertiesAsync(initialProperties).AsTask().Wait();
+                    tableClient.SetServicePropertiesAsync(initialProperties).Wait();
                 }
             }
         }
@@ -765,7 +694,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await queueWithSAS.CreateAsync(), "Creating a queue with SAS should fail without Add and Container-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await queueWithSAS.CreateAsync(), "Creating a queue with SAS should fail without Add and Container-level permissions.");
                     await queue.CreateAsync();
                 }
                 Assert.IsTrue(await queue.ExistsAsync());
@@ -777,7 +706,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => (await queueClientWithSAS.ListQueuesSegmentedAsync(queueName, null)).Results.First(), "Listing queues with SAS should fail without Read and Service-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => (await queueClientWithSAS.ListQueuesSegmentedAsync(queueName, null)).Results.First(), "Listing queues with SAS should fail without Read and Service-level permissions.");
                 }
 
                 queueWithSAS.Metadata["metadatakey"] = "metadatavalue";
@@ -790,7 +719,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await queueWithSAS.SetMetadataAsync(), "Setting a queue's metadata with SAS should fail without Write and Container-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await queueWithSAS.SetMetadataAsync(), "Setting a queue's metadata with SAS should fail without Write and Container-level permissions.");
                 }
 
                 string messageText = "messageText";
@@ -802,7 +731,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await queueWithSAS.AddMessageAsync(message), "Adding a queue message should fail with SAS without Add and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await queueWithSAS.AddMessageAsync(message), "Adding a queue message should fail with SAS without Add and Object-level permissions.");
                     await queue.AddMessageAsync(message);
                 }
                 Assert.AreEqual(messageText, ((await queue.PeekMessageAsync()).AsString));
@@ -814,7 +743,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await queueWithSAS.PeekMessageAsync(), "Peeking a queue message should fail with SAS without Read and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await queueWithSAS.PeekMessageAsync(), "Peeking a queue message should fail with SAS without Read and Object-level permissions.");
                 }
 
                 CloudQueueMessage messageResult = null;
@@ -825,7 +754,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await queueWithSAS.GetMessageAsync(), "Getting a message should fail with SAS without Process and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await queueWithSAS.GetMessageAsync(), "Getting a message should fail with SAS without Process and Object-level permissions.");
                     messageResult = await queue.GetMessageAsync();
                 }
                 Assert.AreEqual(messageText, messageResult.AsString);
@@ -839,7 +768,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await queueWithSAS.UpdateMessageAsync(messageResult, TimeSpan.Zero, MessageUpdateFields.Content | MessageUpdateFields.Visibility), "Updating a message should fail with SAS without Update and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await queueWithSAS.UpdateMessageAsync(messageResult, TimeSpan.Zero, MessageUpdateFields.Content | MessageUpdateFields.Visibility), "Updating a message should fail with SAS without Update and Object-level permissions.");
                     await queue.UpdateMessageAsync(messageResult, TimeSpan.Zero, MessageUpdateFields.Content | MessageUpdateFields.Visibility);
                 }
                 messageResult = await queue.PeekMessageAsync();
@@ -852,12 +781,12 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await queueWithSAS.ClearAsync(), "Clearing messages should fail with SAS without delete and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await queueWithSAS.ClearAsync(), "Clearing messages should fail with SAS without delete and Object-level permissions.");
                 }
             }
             finally
             {
-                queueClient.GetQueueReference(queueName).DeleteIfExistsAsync().AsTask().Wait();
+                queueClient.GetQueueReference(queueName).DeleteIfExistsAsync().Wait();
             }
         }
         public async Task RunPermissionsTestFiles(SharedAccessAccountPolicy policy)
@@ -893,7 +822,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await shareWithSAS.CreateAsync(), "Creating a share with SAS should fail without Create or Write and Container-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await shareWithSAS.CreateAsync(), "Creating a share with SAS should fail without Create or Write and Container-level perms.");
                     await share.CreateAsync();
                 }
                 Assert.IsTrue(await share.ExistsAsync());
@@ -905,7 +834,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => (await fileClientWithSAS.ListSharesSegmentedAsync(shareName, null)).Results.First(), "Listing shared with SAS should fail without List and Service-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => (await fileClientWithSAS.ListSharesSegmentedAsync(shareName, null)).Results.First(), "Listing shared with SAS should fail without List and Service-level perms.");
                 }
 
                 string filename = "fileName";
@@ -920,7 +849,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await fileWithSAS.CreateAsync(content.Length), "Creating a file with SAS should fail without Create or Write and Object-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await fileWithSAS.CreateAsync(content.Length), "Creating a file with SAS should fail without Create or Write and Object-level perms.");
                     await file.CreateAsync(content.Length);
                 }
                 Assert.IsTrue(await file.ExistsAsync());
@@ -930,13 +859,13 @@ namespace Microsoft.WindowsAzure.Storage
                     if (((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write) &&
                         ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                     {
-                        await fileWithSAS.WriteRangeAsync(stream.AsInputStream(), 0, null);
+                        await fileWithSAS.WriteRangeAsync(stream, 0, null);
                     }
                     else
                     {
-                        await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await fileWithSAS.WriteRangeAsync(stream.AsInputStream(), 0, null), "Writing a range to a file with SAS should fail without Write and Object-level perms.");
+                        await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await fileWithSAS.WriteRangeAsync(stream, 0, null), "Writing a range to a file with SAS should fail without Write and Object-level perms.");
                         stream.Seek(0, SeekOrigin.Begin);
-                        await file.WriteRangeAsync(stream.AsInputStream(), 0, null);
+                        await file.WriteRangeAsync(stream, 0, null);
                     }
                 }
 
@@ -959,7 +888,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await fileWithSAS.DownloadRangeToByteArrayAsync(result, 0, 0, content.Length), "Reading a file with SAS should fail without Read and Object-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await fileWithSAS.DownloadRangeToByteArrayAsync(result, 0, 0, content.Length), "Reading a file with SAS should fail without Read and Object-level perms.");
                 }
 
                 if (((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write) &&
@@ -969,7 +898,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await fileWithSAS.CreateAsync(2), "Overwriting a file with SAS should fail without Write and Object-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await fileWithSAS.CreateAsync(2), "Overwriting a file with SAS should fail without Write and Object-level perms.");
                     await file.CreateAsync(2);
                 }
 
@@ -987,7 +916,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 else
                 {
-                    await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(async () => await fileWithSAS.DeleteAsync(), "Deleting a file with SAS should fail without Delete and Object-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await fileWithSAS.DeleteAsync(), "Deleting a file with SAS should fail without Delete and Object-level perms.");
                     await file.DeleteAsync();
                 }
 
@@ -995,7 +924,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                fileClient.GetShareReference(shareName).DeleteIfExistsAsync().AsTask().Wait();
+                fileClient.GetShareReference(shareName).DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1031,7 +960,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                blobClient.GetContainerReference(containerName).DeleteIfExistsAsync().AsTask().Wait();
+                blobClient.GetContainerReference(containerName).DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1075,7 +1004,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                tableClient.GetTableReference(tableName).DeleteIfExistsAsync().AsTask().Wait();
+                tableClient.GetTableReference(tableName).DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1108,7 +1037,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                queueClient.GetQueueReference(queueName).DeleteIfExistsAsync().AsTask().Wait();
+                queueClient.GetQueueReference(queueName).DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1138,7 +1067,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudFile fileWithSAS = shareWithSAS.GetRootDirectoryReference().GetFileReference(fileName);
                 byte[] content = new byte[] { 0x1, 0x2, 0x3, 0x4 };
                 await file.CreateAsync(content.Length);
-                using (IInputStream stream = new MemoryStream(content).AsInputStream())
+                using (MemoryStream stream = new MemoryStream(content))
                 {
                     await file.WriteRangeAsync(stream, 0, null);
                 }
@@ -1152,7 +1081,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                fileClient.GetShareReference(shareName).DeleteIfExistsAsync().AsTask().Wait();
+                fileClient.GetShareReference(shareName).DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1188,10 +1117,9 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     await blockblobWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
                 }
-                catch (WrappedStorageException e)
+                catch (StorageException e)
                 {
-                    XDocument xdocument = XDocument.Parse(e.Message);
-                    actualIP = xdocument.Descendants("SourceIP").First().Value;
+                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
                     exceptionThrown = true;
                     Assert.IsNotNull(actualIP);
                 }
@@ -1201,7 +1129,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1233,10 +1161,9 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     await queueWithSAS.GetMessageAsync();
                 }
-                catch (WrappedStorageException e)
+                catch (StorageException e)
                 {
-                    XDocument xdocument = XDocument.Parse(e.Message);
-                    actualIP = xdocument.Descendants("SourceIP").First().Value;
+                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
                     exceptionThrown = true;
                     Assert.IsNotNull(actualIP);
                 }
@@ -1246,7 +1173,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                queue.DeleteIfExistsAsync().AsTask().Wait();
+                queue.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1290,12 +1217,9 @@ namespace Microsoft.WindowsAzure.Storage
                     TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity1.PartitionKey, entity1.RowKey));
                     (await tableWithSAS.ExecuteQuerySegmentedAsync(query, null)).First();
                 }
-                catch (WrappedStorageException e)
+                catch (StorageException e)
                 {
-                    XDocument xdocument = XDocument.Parse(e.Message);
-                    System.Diagnostics.Debug.WriteLine(xdocument.ToString());
-                    string message = xdocument.Descendants("HttpStatusMessage").First().Value;
-                    string[] parts = message.Split(' ');
+                    string[] parts = e.RequestInformation.HttpStatusMessage.Split(' ');
                     actualIP = parts[parts.Length - 1].Trim('.');
                     exceptionThrown = true;
                     Assert.IsNotNull(actualIP);
@@ -1306,7 +1230,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1344,10 +1268,9 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     await fileWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
                 }
-                catch (WrappedStorageException e)
+                catch (StorageException e)
                 {
-                    XDocument xdocument = XDocument.Parse(e.Message);
-                    actualIP = xdocument.Descendants("SourceIP").First().Value;
+                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
                     exceptionThrown = true;
                     Assert.IsNotNull(actualIP);
                 }
@@ -1357,7 +1280,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait(); 
+                share.DeleteIfExistsAsync().Wait(); 
             }
         }
 
@@ -1396,11 +1319,10 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     await blockblobWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, null, opContext);
                 }
-                catch (WrappedStorageException e)
+                catch (StorageException e)
                 {
                     exceptionThrown = true;
-                    XDocument xdocument = XDocument.Parse(e.Message);
-                    actualIP = xdocument.Descendants("SourceIP").First().Value;
+                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
                     Assert.IsNotNull(actualIP);
                 }
 
@@ -1409,7 +1331,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
                
         }

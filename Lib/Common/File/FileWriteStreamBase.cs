@@ -25,11 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
     internal abstract class FileWriteStreamBase :
-#if WINDOWS_RT
-        Stream
-#else
         CloudFileStream
-#endif
     {
         protected CloudFile file;
         protected long fileSize;

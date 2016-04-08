@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -136,7 +136,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -171,48 +171,48 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blob.SetSequenceNumberAsync(SequenceNumberAction.Increment, null);
                 Assert.AreEqual(8, blob.Properties.PageBlobSequenceNumber);
 
-                WrappedStorageException e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+                StorageException e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                     async () => await blob.SetSequenceNumberAsync(SequenceNumberAction.Update, null),
                     "SetSequenceNumber with Update should require a value");
-                Assert.IsInstanceOfType(e.InnerException.InnerException, typeof(ArgumentNullException));
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentNullException));
 
-                e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+                e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                     async () => await blob.SetSequenceNumberAsync(SequenceNumberAction.Update, -1),
                     "Negative sequence numbers are not supported");
-                Assert.IsInstanceOfType(e.InnerException.InnerException, typeof(ArgumentOutOfRangeException));
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentOutOfRangeException));
 
-                e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+                e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                     async () => await blob.SetSequenceNumberAsync(SequenceNumberAction.Max, null),
                     "SetSequenceNumber with Max should require a value");
-                Assert.IsInstanceOfType(e.InnerException.InnerException, typeof(ArgumentNullException));
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentNullException));
 
-                e = await TestHelper.ExpectedExceptionAsync<WrappedStorageException>(
+                e = await TestHelper.ExpectedExceptionAsync<StorageException>(
                     async () => await blob.SetSequenceNumberAsync(SequenceNumberAction.Increment, 1),
                     "SetSequenceNumber with Increment should require null value");
-                Assert.IsInstanceOfType(e.InnerException.InnerException, typeof(ArgumentException));
+                Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.WritePagesAsync(stream.AsInputStream(), 0, null, AccessCondition.GenerateIfSequenceNumberEqualCondition(8), null, null);
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberEqualCondition(8), null, null);
                     await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberEqualCondition(8), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.WritePagesAsync(stream.AsInputStream(), 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(8), null, null);
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(8), null, null);
                     await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(8), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.WritePagesAsync(stream.AsInputStream(), 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(9), null, null);
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(9), null, null);
                     await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(9), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.WritePagesAsync(stream.AsInputStream(), 0, null, AccessCondition.GenerateIfSequenceNumberLessThanCondition(9), null, null);
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanCondition(9), null, null);
                     await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanCondition(9), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
                     OperationContext context = new OperationContext();
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => await blob.WritePagesAsync(stream.AsInputStream(), 0, null, AccessCondition.GenerateIfSequenceNumberEqualCondition(9), null, context),
+                        async () => await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberEqualCondition(9), null, context),
                         context,
                         "Sequence number condition should cause Put Page to fail",
                         HttpStatusCode.PreconditionFailed,
@@ -226,7 +226,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     stream.Seek(0, SeekOrigin.Begin);
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => await blob.WritePagesAsync(stream.AsInputStream(), 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(7), null, context),
+                        async () => await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(7), null, context),
                         context,
                         "Sequence number condition should cause Put Page to fail",
                         HttpStatusCode.PreconditionFailed,
@@ -240,7 +240,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     stream.Seek(0, SeekOrigin.Begin);
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => await blob.WritePagesAsync(stream.AsInputStream(), 0, null, AccessCondition.GenerateIfSequenceNumberLessThanCondition(8), null, context),
+                        async () => await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanCondition(8), null, context),
                         context,
                         "Sequence number condition should cause Put Page to fail",
                         HttpStatusCode.PreconditionFailed,
@@ -253,18 +253,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         "SequenceNumberConditionNotMet");
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.UploadFromStreamAsync(stream.AsInputStream(), AccessCondition.GenerateIfSequenceNumberEqualCondition(9), null, null);
+                    await blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberEqualCondition(9), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.UploadFromStreamAsync(stream.AsInputStream(), AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(7), null, null);
+                    await blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(7), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    await blob.UploadFromStreamAsync(stream.AsInputStream(), AccessCondition.GenerateIfSequenceNumberLessThanCondition(8), null, null);
+                    await blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberLessThanCondition(8), null, null);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -289,7 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -322,7 +322,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -371,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -428,7 +428,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         DisableContentMD5Validation = true,
                     };
 
-                    await blob3.DownloadToStreamAsync(stream.AsOutputStream(), null, options, null);
+                    await blob3.DownloadToStreamAsync(stream, null, options, null);
                 }
                 AssertAreEqual(blob2.Properties, blob3.Properties);
 
@@ -438,7 +438,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -462,13 +462,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 OperationContext operationContext = new OperationContext();
 
                 Assert.ThrowsException<AggregateException>(
-                    () => blob2.FetchAttributesAsync(null, null, operationContext).AsTask().Wait(),
+                    () => blob2.FetchAttributesAsync(null, null, operationContext).Wait(),
                     "Fetching attributes of a page blob using a block blob reference should fail");
                 Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(InvalidOperationException));
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -496,7 +496,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -524,19 +524,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.Metadata["key1"] = null;
 
                 Assert.ThrowsException<AggregateException>(
-                    () => blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
+                    () => blob.SetMetadataAsync(null, null, operationContext).Wait(),
                     "Metadata keys should have a non-null value");
                 Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "";
                 Assert.ThrowsException<AggregateException>(
-                    () => blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
+                    () => blob.SetMetadataAsync(null, null, operationContext).Wait(),
                     "Metadata keys should have a non-empty value");
                 Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = " ";
                 Assert.ThrowsException<AggregateException>(
-                    () => blob.SetMetadataAsync(null, null, operationContext).AsTask().Wait(),
+                    () => blob.SetMetadataAsync(null, null, operationContext).Wait(),
                     "Metadata keys should have a non-whitespace only value");
                 Assert.IsInstanceOfType(operationContext.LastResult.Exception.InnerException, typeof(ArgumentException));
 
@@ -560,7 +560,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -583,12 +583,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
                 {
-                    await blob.WritePagesAsync(memoryStream.AsInputStream(), 512, null);
+                    await blob.WritePagesAsync(memoryStream, 512, null);
                 }
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
                 {
-                    await blob.WritePagesAsync(memoryStream.AsInputStream(), 3 * 1024, null);
+                    await blob.WritePagesAsync(memoryStream, 3 * 1024, null);
                 }
 
                 await blob.ClearPagesAsync(1024, 1024);
@@ -631,7 +631,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -664,12 +664,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await blob.WritePagesAsync(memoryStream.AsInputStream(), 0, null),
+                        async () => await blob.WritePagesAsync(memoryStream, 0, null),
                         "Zero-length WritePages should fail");
 
                     memoryStream.SetLength(4 * 1024 * 1024 + 1);
                     await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await blob.WritePagesAsync(memoryStream.AsInputStream(), 0, null),
+                        async () => await blob.WritePagesAsync(memoryStream, 0, null),
                         ">4MB WritePages should fail");
                 }
 
@@ -679,40 +679,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         OperationContext opContext = new OperationContext();
                         await TestHelper.ExpectedExceptionAsync(
-                            async () => await blob.WritePagesAsync(memoryStream.AsInputStream(), 512, null, null, null, opContext),
+                            async () => await blob.WritePagesAsync(memoryStream, 512, null, null, null, opContext),
                             opContext,
                             "Writing out-of-range pages should fail",
                             HttpStatusCode.RequestedRangeNotSatisfiable,
                             "InvalidPageRange");
 
                         memoryStream.Seek(0, SeekOrigin.Begin);
-                        await blob.WritePagesAsync(memoryStream.AsInputStream(), 0, contentMD5);
+                        await blob.WritePagesAsync(memoryStream, 0, contentMD5);
                         resultingData.Write(buffer, 0, buffer.Length);
 
                         int offset = buffer.Length - 1024;
                         memoryStream.Seek(offset, SeekOrigin.Begin);
                         await TestHelper.ExpectedExceptionAsync(
-                            async () => await blob.WritePagesAsync(memoryStream.AsInputStream(), 0, contentMD5, null, null, opContext),
+                            async () => await blob.WritePagesAsync(memoryStream, 0, contentMD5, null, null, opContext),
                             opContext,
                             "Invalid MD5 should fail with mismatch",
                             HttpStatusCode.BadRequest,
                             "Md5Mismatch");
 
                         memoryStream.Seek(offset, SeekOrigin.Begin);
-                        await blob.WritePagesAsync(memoryStream.AsInputStream(), 0, null);
+                        await blob.WritePagesAsync(memoryStream, 0, null);
                         resultingData.Seek(0, SeekOrigin.Begin);
                         resultingData.Write(buffer, offset, buffer.Length - offset);
 
                         offset = buffer.Length - 2048;
                         memoryStream.Seek(offset, SeekOrigin.Begin);
-                        await blob.WritePagesAsync(memoryStream.AsInputStream(), 1024, null);
+                        await blob.WritePagesAsync(memoryStream, 1024, null);
                         resultingData.Seek(1024, SeekOrigin.Begin);
                         resultingData.Write(buffer, offset, buffer.Length - offset);
                     }
 
                     using (MemoryStream blobData = new MemoryStream())
                     {
-                        await blob.DownloadToStreamAsync(blobData.AsOutputStream());
+                        await blob.DownloadToStreamAsync(blobData);
                         Assert.AreEqual(resultingData.Length, blobData.Length);
                         Assert.IsTrue(blobData.ToArray().SequenceEqual(resultingData.ToArray()));
                     }
@@ -720,7 +720,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -764,7 +764,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -785,7 +785,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -815,7 +815,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -841,7 +841,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().AsTask().Wait();
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -878,11 +878,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     };
                     if (copyLength.HasValue)
                     {
-                        await blob.UploadFromStreamAsync(sourceStream.AsInputStream(), copyLength.Value, accessCondition, options, operationContext);
+                        await blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, operationContext);
                     }
                     else
                     {
-                        await blob.UploadFromStreamAsync(sourceStream.AsInputStream(), accessCondition, options, operationContext); 
+                        await blob.UploadFromStreamAsync(sourceStream, accessCondition, options, operationContext); 
                     }
                 }
 
@@ -921,7 +921,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                await blob.UploadFromStreamAsync(originalData.AsInputStream());
+                await blob.UploadFromStreamAsync(originalData);
 
                 Assert.IsFalse(blob.IsSnapshot);
                 Assert.IsNull(blob.SnapshotTime, "Root blob has SnapshotTime set");
@@ -961,7 +961,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     async () => await snapshot1.OpenWriteAsync(1024),
                     "Trying to write to a blob snapshot should fail");
 
-                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()).AsStreamForRead())
+                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()))
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
@@ -969,7 +969,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 await blob.CreateAsync(1024);
 
-                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()).AsStreamForRead())
+                using (Stream snapshotStream = (await snapshot1.OpenReadAsync()))
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
@@ -985,7 +985,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1029,7 +1029,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1143,7 +1143,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1168,7 +1168,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     stream.SetLength(512);
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => await blob.WritePagesAsync(stream.AsInputStream(), 0, null, null, null, operationContext),
+                        async () => await blob.WritePagesAsync(stream, 0, null, null, null, operationContext),
                         operationContext,
                         "Page operations should fail on block blobs",
                         HttpStatusCode.Conflict,
@@ -1191,7 +1191,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1228,7 +1228,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     stream.SetLength(511);
                     await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await blob.WritePagesAsync(stream.AsInputStream(), 0, null, null, null, operationContext),
+                        async () => await blob.WritePagesAsync(stream, 0, null, null, null, operationContext),
                         "Page operations that are not 512-byte aligned should fail");
                 }
 
@@ -1236,19 +1236,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     stream.SetLength(513);
                     await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await blob.WritePagesAsync(stream.AsInputStream(), 0, null, null, null, operationContext),
+                        async () => await blob.WritePagesAsync(stream, 0, null, null, null, operationContext),
                         "Page operations that are not 512-byte aligned should fail");
                 }
 
                 using (MemoryStream stream = new MemoryStream())
                 {
                     stream.SetLength(512);
-                    await blob.WritePagesAsync(stream.AsInputStream(), 0, null);
+                    await blob.WritePagesAsync(stream, 0, null);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1272,7 +1272,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream stream = new MemoryStream())
                 {
-                    await blob.UploadFromStreamAsync(stream.AsInputStream());
+                    await blob.UploadFromStreamAsync(stream);
                 }
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentNullException>(
@@ -1281,13 +1281,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream stream = new MemoryStream())
                 {
-                    await blob.DownloadToStreamAsync(stream.AsOutputStream());
+                    await blob.DownloadToStreamAsync(stream);
                     Assert.AreEqual(0, stream.Length);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }

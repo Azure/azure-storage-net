@@ -22,7 +22,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#pragma warning disable 0618
     /// <summary>
     /// Summary description for CloudTableCRUDUnitTaskTests
     /// </summary>
@@ -91,7 +90,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoCloudTableCreateAsync(TablePayloadFormat.Json);
             await DoCloudTableCreateAsync(TablePayloadFormat.JsonNoMetadata);
             await DoCloudTableCreateAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoCloudTableCreateAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoCloudTableCreateAsync(TablePayloadFormat format)
@@ -124,7 +122,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoCloudTableCreateAlreadyExistsAsync(TablePayloadFormat.Json);
             await DoCloudTableCreateAlreadyExistsAsync(TablePayloadFormat.JsonNoMetadata);
             await DoCloudTableCreateAlreadyExistsAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoCloudTableCreateAlreadyExistsAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoCloudTableCreateAlreadyExistsAsync(TablePayloadFormat format)
@@ -171,7 +168,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoCloudTableCreateIfNotExistsAsync(TablePayloadFormat.Json);
             await DoCloudTableCreateIfNotExistsAsync(TablePayloadFormat.JsonNoMetadata);
             await DoCloudTableCreateIfNotExistsAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoCloudTableCreateIfNotExistsAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoCloudTableCreateIfNotExistsAsync(TablePayloadFormat format)
@@ -208,7 +204,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoCloudTableDeleteAsync(TablePayloadFormat.Json);
             await DoCloudTableDeleteAsync(TablePayloadFormat.JsonNoMetadata);
             await DoCloudTableDeleteAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoCloudTableDeleteAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoCloudTableDeleteAsync(TablePayloadFormat format)
@@ -243,7 +238,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoCloudTableDeleteWhenNotExistAsync(TablePayloadFormat.Json);
             await DoCloudTableDeleteWhenNotExistAsync(TablePayloadFormat.JsonNoMetadata);
             await DoCloudTableDeleteWhenNotExistAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoCloudTableDeleteWhenNotExistAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoCloudTableDeleteWhenNotExistAsync(TablePayloadFormat format)
@@ -288,7 +282,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoCloudTableDeleteIfExistsAsync(TablePayloadFormat.Json);
             await DoCloudTableDeleteIfExistsAsync(TablePayloadFormat.JsonNoMetadata);
             await DoCloudTableDeleteIfExistsAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoCloudTableDeleteIfExistsAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoCloudTableDeleteIfExistsAsync(TablePayloadFormat format)
@@ -327,7 +320,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoCloudTableExistsAsync(TablePayloadFormat.Json);
             await DoCloudTableExistsAsync(TablePayloadFormat.JsonNoMetadata);
             await DoCloudTableExistsAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoCloudTableExistsAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoCloudTableExistsAsync(TablePayloadFormat format)
@@ -352,5 +344,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
-#pragma warning restore 0618
 }

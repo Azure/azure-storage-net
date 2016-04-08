@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents an append blob, a type of blob where blocks of data are always committed to the end of the blob.
     /// </summary>
-    public sealed partial class CloudAppendBlob : CloudBlob, ICloudBlob
+    public partial class CloudAppendBlob : CloudBlob, ICloudBlob
     {
         /// <summary>
         /// Default is 4 MB.
@@ -68,19 +68,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudAppendBlob"/> object.</returns>
-        public static new CloudAppendBlob Create(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
-        {
-            return new CloudAppendBlob(blobAbsoluteUri, snapshotTime, credentials);
-        }
-
-        internal CloudAppendBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials) 
-            : base(blobAbsoluteUri, snapshotTime, credentials)
-#else
         public CloudAppendBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials) 
             : base(blobAbsoluteUri, snapshotTime, credentials)
-#endif
         {
             this.Properties.BlobType = BlobType.AppendBlob;
         }

@@ -23,7 +23,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#pragma warning disable 0618
     [TestClass]
     public class CloudTableClientTaskTest : TableTestBase
     {
@@ -140,7 +139,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoListTablesSegmentedBasicAsync(TablePayloadFormat.Json);
             await DoListTablesSegmentedBasicAsync(TablePayloadFormat.JsonNoMetadata);
             await DoListTablesSegmentedBasicAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoListTablesSegmentedBasicAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoListTablesSegmentedBasicAsync(TablePayloadFormat format)
@@ -196,7 +194,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoListTablesSegmentedWithPrefixAsync(TablePayloadFormat.Json);
             await DoListTablesSegmentedWithPrefixAsync(TablePayloadFormat.JsonNoMetadata);
             await DoListTablesSegmentedWithPrefixAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoListTablesSegmentedWithPrefixAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoListTablesSegmentedWithPrefixAsync(TablePayloadFormat format)
@@ -225,5 +222,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
     }
-#pragma warning restore 0618
 }

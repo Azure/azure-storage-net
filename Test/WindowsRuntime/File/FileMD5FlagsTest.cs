@@ -55,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file4");
                 using (Stream stream = new MemoryStream())
                 {
-                    await file.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await file.UploadFromStreamAsync(stream, null, optionsWithMD5, null);
                 }
                 await file.FetchAttributesAsync();
                 Assert.IsNotNull(file.Properties.ContentMD5);
@@ -63,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 file = share.GetRootDirectoryReference().GetFileReference("file5");
                 using (Stream stream = new MemoryStream())
                 {
-                    await file.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithNoMD5, null);
+                    await file.UploadFromStreamAsync(stream, null, optionsWithNoMD5, null);
                 }
                 await file.FetchAttributesAsync();
                 Assert.IsNull(file.Properties.ContentMD5);
@@ -71,14 +71,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                 file = share.GetRootDirectoryReference().GetFileReference("file6");
                 using (Stream stream = new MemoryStream())
                 {
-                    await file.UploadFromStreamAsync(stream.AsInputStream());
+                    await file.UploadFromStreamAsync(stream);
                 }
                 await file.FetchAttributesAsync();
                 Assert.IsNull(file.Properties.ContentMD5);
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -113,17 +113,17 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file2");
                 using (Stream stream = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await file.UploadFromStreamAsync(stream, null, optionsWithMD5, null);
                 }
 
                 using (Stream stream = new MemoryStream())
                 {
-                    await file.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, null);
-                    await file.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
+                    await file.DownloadToStreamAsync(stream, null, optionsWithMD5, null);
+                    await file.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
                     using (var fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
                     {
-                        Stream fileStreamForRead = fileStream.AsStreamForRead();
+                        Stream fileStreamForRead = fileStream;
                         int read;
                         do
                         {
@@ -134,7 +134,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                     using (var fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
-                        Stream fileStreamForRead = fileStream.AsStreamForRead();
+                        Stream fileStreamForRead = fileStream;
                         int read;
                         do
                         {
@@ -148,15 +148,15 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                     OperationContext opContext = new OperationContext();
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => await file.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, opContext),
+                        async () => await file.DownloadToStreamAsync(stream, null, optionsWithMD5, opContext),
                         opContext,
                         "Downloading a file with invalid MD5 should fail",
                         HttpStatusCode.OK);
-                    await file.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
+                    await file.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
                     using (var fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
                     {
-                        Stream fileStreamForRead = fileStream.AsStreamForRead();
+                        Stream fileStreamForRead = fileStream;
                         TestHelper.ExpectedException<IOException>(
                             () =>
                             {
@@ -172,7 +172,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                     using (var fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
-                        Stream fileStreamForRead = fileStream.AsStreamForRead();
+                        Stream fileStreamForRead = fileStream;
                         int read;
                         do
                         {
@@ -184,7 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
     }

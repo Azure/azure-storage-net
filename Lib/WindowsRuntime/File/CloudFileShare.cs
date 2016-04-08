@@ -27,26 +27,21 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Collections.Generic;
     using System.Net;
     using System.Net.Http;
-#if ASPNET_K
     using System.Threading;
     using System.Threading.Tasks;
+#if ASPNET_K
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
-    using System.Threading.Tasks;
     using Windows.Foundation;
 #endif
 
-    public sealed partial class CloudFileShare
+    public partial class CloudFileShare
     {
         /// <summary>
         /// Creates the share.
         /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task CreateAsync()
-#else
-        public IAsyncAction CreateAsync()
-#endif
+        public virtual Task CreateAsync()
         {
             return this.CreateAsync(null, null);
         }
@@ -57,24 +52,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task CreateAsync(FileRequestOptions options, OperationContext operationContext)
+        public virtual Task CreateAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.CreateAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction CreateAsync(FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                this.CreateShareImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy, 
-                operationContext, 
-                token));
-        }
-#endif
 
-#if ASPNET_K
         /// <summary>
         /// Creates the share.
         /// </summary>
@@ -82,7 +64,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         [DoesServiceRequest]
-        public Task CreateAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task CreateAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
@@ -91,18 +73,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Creates the share if it does not already exist.
         /// </summary>
         /// <returns><c>true</c> if the share did not already exist and was created; otherwise, <c>false</c>.</returns>
+        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<bool> CreateIfNotExistsAsync()
-#else
-        public IAsyncOperation<bool> CreateIfNotExistsAsync()
-#endif
+        public virtual Task<bool> CreateIfNotExistsAsync()
         {
             return this.CreateIfNotExistsAsync(null, null);
         }
@@ -113,9 +91,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the share did not already exist and was created; otherwise <c>false</c>.</returns>
+        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
+        public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.CreateIfNotExistsAsync(options, operationContext, CancellationToken.None);
         }
@@ -127,24 +105,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the share did not already exist and was created; otherwise <c>false</c>.</returns>
+        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
         [DoesServiceRequest]
-        public Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        public IAsyncOperation<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-#if ASPNET_K
             return Task.Run(async () =>
             {
                 bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
-#else
-            return AsyncInfo.Run(async (token) =>
-            {
-                bool exists = await this.ExistsAsync(modifiedOptions, operationContext).AsTask(token); 
-#endif
 
                 if (exists)
                     {
@@ -153,11 +123,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                     try
                 {
-#if ASPNET_K
                     await this.CreateAsync(modifiedOptions, operationContext, cancellationToken);
-#else
-                    await this.CreateAsync(modifiedOptions, operationContext).AsTask(token);
-#endif
                     return true;
                     }
                     catch (Exception)
@@ -180,22 +146,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                             throw;
                         }
                     }
-#if ASPNET_K
             }, cancellationToken);
-#else
-            });
-#endif
         }
 
-            /// <summary>
-            /// Deletes the share.
-            /// </summary>
-            [DoesServiceRequest]
-#if ASPNET_K
-        public Task DeleteAsync()
-#else
-        public IAsyncAction DeleteAsync()
-#endif
+        /// <summary>
+        /// Deletes the share.
+        /// </summary>
+        [DoesServiceRequest]
+        public virtual Task DeleteAsync()
         {
             return this.DeleteAsync(null, null, null);
         }
@@ -207,24 +165,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                this.DeleteShareImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K
         /// <summary>
         /// Deletes the share.
         /// </summary>
@@ -233,7 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         [DoesServiceRequest]
-        public Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
@@ -242,18 +187,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Deletes the share if it already exists.
         /// </summary>
         /// <returns><c>true</c> if the share already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<bool> DeleteIfExistsAsync()
-#else
-        public IAsyncOperation<bool> DeleteIfExistsAsync()
-#endif
+        public virtual Task<bool> DeleteIfExistsAsync()
         {
             return this.DeleteIfExistsAsync(null, null, null);
         }
@@ -266,8 +206,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the share already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.DeleteIfExistsAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
@@ -280,23 +219,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the share already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-        public Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        public IAsyncOperation<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-#if ASPNET_K
             return Task.Run(async () =>
             {
                 bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
-#else
-            return AsyncInfo.Run(async (token) =>
-            {
-                bool exists = await this.ExistsAsync(modifiedOptions, operationContext).AsTask(token);
-#endif
 
                 if (!exists)
                 {
@@ -305,11 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 try
                 {
-#if ASPNET_K
                     await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);
-#else
-                    await this.DeleteAsync(accessCondition, modifiedOptions, operationContext).AsTask(token);
-#endif
                     return true;
                 }
                 catch (Exception)
@@ -332,11 +258,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         throw;
                     }
                 }
-#if ASPNET_K
             }, cancellationToken);
-#else
-            });
-#endif
         }
 
         /// <summary>
@@ -344,11 +266,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns><c>true</c> if the share exists.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<bool> ExistsAsync()
-#else
-        public IAsyncOperation<bool> ExistsAsync()
-#endif
+        public virtual Task<bool> ExistsAsync()
         {
             return this.ExistsAsync(null, null);
         }
@@ -360,24 +278,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the share exists.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext)
+        public virtual Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.ExistsAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsync(
-                this.ExistsImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy, 
-                operationContext, 
-                token));
-        }
-#endif
 
-#if ASPNET_K
 
         /// <summary>
         /// Checks existence of the share.
@@ -387,7 +292,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the share exists.</returns>
         [DoesServiceRequest]
-        public Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync(
@@ -396,17 +301,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Retrieves the share's attributes.
         /// </summary>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task FetchAttributesAsync()
-#else
-        public IAsyncAction FetchAttributesAsync()
-#endif
+        public virtual Task FetchAttributesAsync()
         {
             return this.FetchAttributesAsync(null, null, null);
         }
@@ -417,26 +318,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An object that represents the access conditions for the share. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.FetchAttributesAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
 
-#else
-        public IAsyncAction FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                this.FetchAttributesImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy, 
-                operationContext, 
-                token));
-        }
-#endif
-
-#if ASPNET_K
         /// <summary>
         /// Retrieves the share's attributes.
         /// </summary>
@@ -444,8 +332,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
@@ -454,20 +343,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Sets permissions for the share.
         /// </summary>
         /// <param name="permissions">The permissions to apply to the share.</param>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-#if ASPNET_K
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        public Task SetPermissionsAsync(FileSharePermissions permissions)
-#else
-        public IAsyncAction SetPermissionsAsync(FileSharePermissions permissions)
-#endif
+        [DoesServiceRequest]
+        public virtual Task SetPermissionsAsync(FileSharePermissions permissions)
         {
             return this.SetPermissionsAsync(permissions, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -479,27 +362,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-#if ASPNET_K
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        public Task SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        [DoesServiceRequest]
+        public virtual Task SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SetPermissionsAsync(permissions, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                this.SetPermissionsImpl(permissions, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K
         /// <summary>
         /// Sets permissions for the share.
         /// </summary>
@@ -510,7 +379,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
@@ -519,59 +388,39 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Updates the share's properties.
         /// </summary>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-#if ASPNET_K
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        public Task SetPropertiesAsync()
-#else
-        public IAsyncAction SetPropertiesAsync()
-#endif
+        [DoesServiceRequest]
+        public virtual Task SetPropertiesAsync()
         {
             return this.SetPropertiesAsync(null /* accessCondition */, null /* options */, null /* operationContext */);
         }
 
-
         /// <summary>
         /// Updates the share's properties.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SetPropertiesAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                this.SetPropertiesImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K
         /// <summary>
         /// Updates the share's properties.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
@@ -580,19 +429,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
-
 
         /// <summary>
         /// Gets the permissions settings for the share.
         /// </summary>
         /// <returns>The share's permissions.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<FileSharePermissions> GetPermissionsAsync()
-#else
-        public IAsyncOperation<FileSharePermissions> GetPermissionsAsync()
-#endif
+        public virtual Task<FileSharePermissions> GetPermissionsAsync()
         {
             return this.GetPermissionsAsync(null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -605,25 +448,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The share's permissions.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual Task<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.GetPermissionsAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
 
-        public IAsyncOperation<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsync(
-                this.GetPermissionsImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
-
-#if ASPNET_K
         /// <summary>
         /// Gets the permissions settings for the share.
         /// </summary>
@@ -632,7 +461,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The share's permissions.</returns>
         [DoesServiceRequest]
-        public Task<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync<FileSharePermissions>(
@@ -641,18 +470,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Gets the stats of share.
         /// </summary>
         /// <returns>The share stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<ShareStats> GetStatsAsync()
-#else
-        public IAsyncOperation<ShareStats> GetStatsAsync()
-#endif
+        public virtual Task<ShareStats> GetStatsAsync()
         {
             return this.GetStatsAsync(null /* options */, null /* operationContext */);
         }
@@ -664,27 +488,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The share stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext)
+        public virtual Task<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.GetStatsAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
 
-            return AsyncInfo.Run(
-                async (token) => await Executor.ExecuteAsync(
-                    this.GetStatsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    token));
-        }
-#endif
-
-#if ASPNET_K
         /// <summary>
         /// Gets the stats of the share.
         /// </summary>
@@ -692,7 +500,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The share stats.</returns>
         [DoesServiceRequest]
-        public Task<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync<ShareStats>(
@@ -701,17 +509,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
-            /// <summary>
-            /// Sets the share's user-defined metadata.
-            /// </summary>
+        /// <summary>
+        /// Sets the share's user-defined metadata.
+        /// </summary>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task SetMetadataAsync()
-#else
-        public IAsyncAction SetMetadataAsync()
-#endif
+        public virtual Task SetMetadataAsync()
         {
             return this.SetMetadataAsync(null, null, null);
         }
@@ -723,24 +526,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SetMetadataAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                this.SetMetadataImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy, 
-                operationContext, 
-                token));
-        }
-#endif
 
-#if ASPNET_K
         /// <summary>
         /// Sets the share's user-defined metadata.
         /// </summary>
@@ -749,7 +539,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         [DoesServiceRequest]
-        public Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
@@ -758,7 +548,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Implementation for the Create method.
@@ -770,11 +559,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => 
             {
-                HttpRequestMessage msg = ShareHttpRequestMessageFactory.Create(uri, this.Properties, serverTimeout, cnt, ctx);
+                StorageRequestMessage msg = ShareHttpRequestMessageFactory.Create(uri, this.Properties, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 ShareHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -800,9 +587,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(deleteCmd);
-            deleteCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            deleteCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.Delete(uri, serverTimeout, accessCondition, cnt, ctx);
+            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.Delete(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
             return deleteCmd;
@@ -820,9 +605,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, accessCondition, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -845,9 +628,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, null, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, null, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
@@ -879,9 +660,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.SetAcl(uri, serverTimeout, FileSharePublicAccessType.Off, accessCondition, cnt, ctx);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.SetAcl(uri, serverTimeout, FileSharePublicAccessType.Off, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -909,9 +688,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetAcl(uri, serverTimeout, accessCondition, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetAcl(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -941,10 +718,8 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<ShareStats> retCmd = new RESTCommand<ShareStats>(this.ServiceClient.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetStats(uri, serverTimeout, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetStats(uri, serverTimeout, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => ShareHttpResponseParsers.ReadShareStats(cmd.ResponseStream));
             return retCmd;
@@ -961,11 +736,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                HttpRequestMessage msg = ShareHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, accessCondition, cnt, ctx);
+                StorageRequestMessage msg = ShareHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 ShareHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -990,11 +763,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                HttpRequestMessage msg = ShareHttpRequestMessageFactory.SetProperties(uri, serverTimeout, this.Properties, accessCondition, cnt, ctx);
+                StorageRequestMessage msg = ShareHttpRequestMessageFactory.SetProperties(uri, serverTimeout, this.Properties, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 ShareHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };

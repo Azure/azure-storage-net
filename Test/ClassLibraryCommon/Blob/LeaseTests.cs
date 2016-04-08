@@ -5368,17 +5368,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             leasedContainer = this.GetContainerReference("leased-container-1"); // make sure we use a new container
             SetUnleasedState(leasedContainer);
-            leaseId = leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(15), null /* proposed lease ID */).Result;
+            leaseId = leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(15)).Result;
             this.ContainerAcquireRenewLeaseTest(leasedContainer, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(20), tolerance);
 
             leasedContainer = this.GetContainerReference("leased-container-2"); // make sure we use a new container
             SetUnleasedState(leasedContainer);
-            leaseId = leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(60), null /* proposed lease ID */).Result;
+            leaseId = leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(60)).Result;
             this.ContainerAcquireRenewLeaseTest(leasedContainer, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(70), tolerance);
 
             leasedContainer = this.GetContainerReference("leased-container-3"); // make sure we use a new container
             SetUnleasedState(leasedContainer);
-            leaseId = leasedContainer.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */).Result;
+            leaseId = leasedContainer.AcquireLeaseAsync(null /* infinite lease */).Result;
             this.ContainerAcquireRenewLeaseTest(leasedContainer, null /* infinite lease */, TimeSpan.FromSeconds(70), tolerance);
 
             leasedContainer = this.GetContainerReference("leased-container-4"); // make sure we use a new container
@@ -5927,9 +5927,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire with no proposed ID (non-idempotent)
             SetUnleasedState(leasedContainer);
-            leaseId = leasedContainer.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */).Result;
+            leaseId = leasedContainer.AcquireLeaseAsync(null /* infinite lease */).Result;
             TestHelper.ExpectedExceptionTask(
-                leasedContainer.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */),
+                leasedContainer.AcquireLeaseAsync(null /* infinite lease */),
                 "acquire a lease twice with no proposed lease ID",
                 HttpStatusCode.Conflict,
                 BlobErrorCodeStrings.LeaseAlreadyPresent);
@@ -7326,7 +7326,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.ContainerDeleteExpectLeaseFailureTask(leasedContainer, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithContainerOperation, "delete container using a lease when no lease is held");
 
             // Acquire a lease
-            string leaseId = leasedContainer.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */).Result;
+            string leaseId = leasedContainer.AcquireLeaseAsync(null /* lease duration */).Result;
 
             // Verify that deletes without a lease do not succeed.
             testAccessCondition.LeaseId = null;
@@ -7532,7 +7532,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.ContainerReadWriteExpectLeaseFailureTask(leasedContainer, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithContainerOperation, "read/write container using a lease when no lease is held");
 
             // Acquire a lease
-            string leaseId = leasedContainer.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */).Result;
+            string leaseId = leasedContainer.AcquireLeaseAsync(null /* lease duration */).Result;
 
             // Verify that reads and writes without a lease succeed.
             testAccessCondition.LeaseId = null;

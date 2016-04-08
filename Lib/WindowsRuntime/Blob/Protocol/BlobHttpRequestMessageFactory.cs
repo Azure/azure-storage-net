@@ -17,7 +17,9 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
@@ -37,12 +39,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpRequestMessage AppendBlock(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage AppendBlock(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "appendblock");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             request.ApplyAppendCondition(accessCondition);
             return request;
@@ -60,14 +62,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// for block blobs.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (blobType == BlobType.Unspecified)
             {
                 throw new InvalidOperationException(SR.UndefinedBlobType);
             }
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
 
             if (properties.CacheControl != null)
             {
@@ -144,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="count">The length of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage GetPageRanges(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetPageRanges(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (offset.HasValue)
             {
@@ -155,7 +157,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             builder.Add(Constants.QueryConstants.Component, "pagelist");
             BlobHttpRequestMessageFactory.AddSnapshot(builder, snapshot);
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            AddRange(request, offset, count);
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to return the list of page ranges that differ between a specified snapshot and this object.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the blob.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="previousSnapshotTime">A <see cref="DateTimeOffset"/> representing the snapshot timestamp to use as the starting point for the diff. If this CloudPageBlob represents a snapshot, the previousSnapshotTime parameter must be prior to the current snapshot timestamp.</param>
+        /// <param name="offset">The starting offset of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
+        /// <param name="count">The length of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage GetPageRangesDiff(Uri uri, int? timeout, DateTimeOffset? snapshot, DateTimeOffset previousSnapshotTime, long? offset, long? count, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            if (offset.HasValue)
+            {
+                CommonUtility.AssertNotNull("count", count);
+            }
+
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "pagelist");
+            BlobHttpRequestMessageFactory.AddSnapshot(builder, snapshot);
+            builder.Add("prevsnapshot", Request.ConvertDateTimeToSnapshotString(previousSnapshotTime));
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             AddRange(request, offset, count);
             request.ApplyAccessCondition(accessCondition);
             return request;
@@ -167,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="request">Request</param>
         /// <param name="offset">Starting byte of the range</param>
         /// <param name="count">Number of bytes in the range</param>
-        private static void AddRange(HttpRequestMessage request, long? offset, long? count)
+        private static void AddRange(StorageRequestMessage request, long? offset, long? count)
         {
             if (count.HasValue)
             {
@@ -197,12 +229,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpRequestMessage GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             BlobHttpRequestMessageFactory.AddSnapshot(builder, snapshot);
 
-            HttpRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -215,12 +247,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="properties">The blob's properties.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage SetProperties(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage SetProperties(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "properties");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             if (properties != null)
             {
@@ -244,12 +276,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="newBlobSize">The new blob size, if the blob is a page blob. Set this parameter to <c>null</c> to keep the existing blob size.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Resize(Uri uri, int? timeout, long newBlobSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Resize(Uri uri, int? timeout, long newBlobSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "properties");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.BlobContentLengthHeader, newBlobSize.ToString(NumberFormatInfo.InvariantInfo));
 
@@ -266,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="sequenceNumber">The sequence number. Set this parameter to <c>null</c> if this operation is an increment action.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage SetSequenceNumber(Uri uri, int? timeout, SequenceNumberAction sequenceNumberAction, long? sequenceNumber, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage SetSequenceNumber(Uri uri, int? timeout, SequenceNumberAction sequenceNumberAction, long? sequenceNumber, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             CommonUtility.AssertInBounds("sequenceNumberAction", sequenceNumberAction, SequenceNumberAction.Max, SequenceNumberAction.Increment);
             if (sequenceNumberAction == SequenceNumberAction.Increment)
@@ -285,7 +317,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "properties");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.SequenceNumberAction, sequenceNumberAction.ToString());
             if (sequenceNumberAction != SequenceNumberAction.Increment)
@@ -305,12 +337,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpRequestMessage GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             BlobHttpRequestMessageFactory.AddSnapshot(builder, snapshot);
 
-            HttpRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -322,9 +354,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpRequestMessage SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.SetMetadata(uri, timeout, null /* builder */, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.SetMetadata(uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -334,7 +366,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The web request.</param>
         /// <param name="metadata">The user-defined metadata.</param>
-        public static void AddMetadata(HttpRequestMessage request, IDictionary<string, string> metadata)
+        public static void AddMetadata(StorageRequestMessage request, IDictionary<string, string> metadata)
         {
             HttpRequestMessageFactory.AddMetadata(request, metadata);
         }
@@ -345,7 +377,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="request">The web request.</param>
         /// <param name="name">The metadata name.</param>
         /// <param name="value">The metadata value.</param>
-        public static void AddMetadata(HttpRequestMessage request, string name, string value)
+        public static void AddMetadata(StorageRequestMessage request, string name, string value)
         {
             HttpRequestMessageFactory.AddMetadata(request, name, value);
         }
@@ -359,7 +391,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="deleteSnapshotsOption">A set of options indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if ((snapshot != null) && (deleteSnapshotsOption != DeleteSnapshotsOption.None))
             {
@@ -369,7 +401,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             UriQueryBuilder builder = new UriQueryBuilder();
             BlobHttpRequestMessageFactory.AddSnapshot(builder, snapshot);
 
-            HttpRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             switch (deleteSnapshotsOption)
             {
@@ -401,12 +433,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Snapshot(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Snapshot(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "snapshot");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -425,12 +457,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// If this is null then the default time is used. This should be null for acquire, renew, change, and release operations.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "lease");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
 
             // Add lease headers
@@ -447,7 +479,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="proposedLeaseId">The proposed lease id.</param>
-        internal static void AddProposedLeaseId(HttpRequestMessage request, string proposedLeaseId)
+        internal static void AddProposedLeaseId(StorageRequestMessage request, string proposedLeaseId)
         {
             request.AddOptionalHeader(Constants.HeaderConstants.ProposedLeaseIdHeader, proposedLeaseId);
         }
@@ -457,7 +489,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="leaseDuration">The lease duration.</param>
-        internal static void AddLeaseDuration(HttpRequestMessage request, int? leaseDuration)
+        internal static void AddLeaseDuration(StorageRequestMessage request, int? leaseDuration)
         {
             request.AddOptionalHeader(Constants.HeaderConstants.LeaseDurationHeader, leaseDuration);
         }
@@ -467,7 +499,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="leaseBreakPeriod">The lease break period.</param>
-        internal static void AddLeaseBreakPeriod(HttpRequestMessage request, int? leaseBreakPeriod)
+        internal static void AddLeaseBreakPeriod(StorageRequestMessage request, int? leaseBreakPeriod)
         {
             request.AddOptionalHeader(Constants.HeaderConstants.LeaseBreakPeriodHeader, leaseBreakPeriod);
         }
@@ -477,7 +509,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="leaseAction">The lease action.</param>
-        internal static void AddLeaseAction(HttpRequestMessage request, LeaseAction leaseAction)
+        internal static void AddLeaseAction(StorageRequestMessage request, LeaseAction leaseAction)
         {
             request.Headers.Add(Constants.HeaderConstants.LeaseActionHeader, leaseAction.ToString().ToLower());
         }
@@ -490,13 +522,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="blockId">The block ID for this block.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage PutBlock(Uri uri, int? timeout, string blockId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage PutBlock(Uri uri, int? timeout, string blockId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "block");
             builder.Add("blockid", blockId);
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyLeaseId(accessCondition);
             return request;
         }
@@ -509,12 +541,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="properties">The properties to set for the blob.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpRequestMessage PutBlockList(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage PutBlockList(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {          
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "blocklist");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             if (properties != null)
             {
@@ -540,14 +572,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="typesOfBlocks">The types of blocks to include in the list: committed, uncommitted, or both.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage GetBlockList(Uri uri, int? timeout, DateTimeOffset? snapshot, BlockListingFilter typesOfBlocks, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage GetBlockList(Uri uri, int? timeout, DateTimeOffset? snapshot, BlockListingFilter typesOfBlocks, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "blocklist");
             builder.Add("blocklisttype", typesOfBlocks.ToString());
             BlobHttpRequestMessageFactory.AddSnapshot(builder, snapshot);
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -560,12 +592,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="properties">The blob's properties.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage PutPage(Uri uri, int? timeout, PageRange pageRange, PageWrite pageWrite, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage PutPage(Uri uri, int? timeout, PageRange pageRange, PageWrite pageWrite, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "page");
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.RangeHeader, pageRange.ToString());
             request.Headers.Add(Constants.HeaderConstants.PageWrite, pageWrite.ToString());
@@ -584,9 +616,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
             request.ApplyAccessCondition(destAccessCondition);
@@ -604,13 +636,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="accessCondition">The access condition to apply to the request.
         ///     Only lease conditions are supported for this operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpRequestMessage AbortCopy(Uri uri, int? timeout, string copyId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage AbortCopy(Uri uri, int? timeout, string copyId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "copy");
             builder.Add(Constants.QueryConstants.CopyId, copyId);
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.CopyActionHeader, Constants.HeaderConstants.CopyActionAbort);
             request.ApplyAccessCondition(accessCondition);
@@ -626,7 +658,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="snapshot">The snapshot version, if the blob is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             if (snapshot.HasValue)
@@ -634,7 +666,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 builder.Add("snapshot", Request.ConvertDateTimeToSnapshotString(snapshot.Value));
             }
 
-            HttpRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -649,7 +681,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="count">The number of bytes to return, or null to return all bytes through the end of the blob.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, bool rangeContentMD5, AccessCondition accessCondition, HttpContent content, OperationContext operationContext)
+        public static StorageRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, bool rangeContentMD5, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (offset.HasValue && offset.Value < 0)
             {
@@ -662,7 +694,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxBlockSize);
             }
 
-            HttpRequestMessage request = Get(uri, timeout, snapshot, accessCondition, content, operationContext);
+            StorageRequestMessage request = Get(uri, timeout, snapshot, accessCondition, content, operationContext, canonicalizer, credentials);
             AddRange(request, offset, count);
 
             if (offset.HasValue && rangeContentMD5)
@@ -678,10 +710,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <returns>A HttpRequestMessage to get the service properties.</returns>
-        public static HttpRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext)
+        /// <returns>A StorageRequestMessage to get the service properties.</returns>
+        public static StorageRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return HttpRequestMessageFactory.GetServiceProperties(uri, timeout, operationContext);
+            return HttpRequestMessageFactory.GetServiceProperties(uri, timeout, operationContext, canonicalizer, credentials);
         }
 
          /// <summary>
@@ -690,9 +722,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <returns>A web request to set the service properties.</returns>
-        internal static HttpRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext)
+        internal static StorageRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return HttpRequestMessageFactory.SetServiceProperties(uri, timeout, content, operationContext);   
+            return HttpRequestMessageFactory.SetServiceProperties(uri, timeout, content, operationContext, canonicalizer, credentials);   
         }
 
         /// <summary>
@@ -700,10 +732,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <returns>A HttpRequestMessage to get the service stats.</returns>
-        public static HttpRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext)
+        /// <returns>A StorageRequestMessage to get the service stats.</returns>
+        public static StorageRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return HttpRequestMessageFactory.GetServiceStats(uri, timeout, operationContext);
+            return HttpRequestMessageFactory.GetServiceStats(uri, timeout, operationContext, canonicalizer, credentials);
         }
     }
 }

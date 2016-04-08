@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a blob that is uploaded as a set of blocks.
     /// </summary>
-    public sealed partial class CloudBlockBlob : CloudBlob, ICloudBlob
+    public partial class CloudBlockBlob : CloudBlob, ICloudBlob
     {
         /// <summary>
         /// Default is 4 MB.
@@ -73,19 +73,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
-        public static new CloudBlockBlob Create(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
-        {
-            return new CloudBlockBlob(blobAbsoluteUri, snapshotTime, credentials);
-        }
-
-        internal CloudBlockBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials) 
-            : base(blobAbsoluteUri, snapshotTime, credentials)
-#else
         public CloudBlockBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials) 
             : base(blobAbsoluteUri, snapshotTime, credentials)
-#endif
         {
             this.Properties.BlobType = BlobType.BlockBlob;
         }

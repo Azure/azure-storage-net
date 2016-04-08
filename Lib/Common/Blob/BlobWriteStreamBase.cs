@@ -29,11 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
     internal abstract class BlobWriteStreamBase :
-#if WINDOWS_RT
-        Stream
-#else
         CloudBlobStream
-#endif
     {
         protected CloudBlockBlob blockBlob;
         protected CloudPageBlob pageBlob;

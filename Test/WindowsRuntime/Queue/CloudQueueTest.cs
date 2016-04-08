@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
-                queue.DeleteIfExistsAsync().AsTask().Wait();
+                queue.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -317,7 +317,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
-                queue.DeleteIfExistsAsync().AsTask().Wait();
+                queue.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -382,7 +382,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif
-                queue.DeleteAsync().AsTask().Wait();
+                queue.DeleteAsync().Wait();
             }
         }
     }

@@ -40,7 +40,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// Provides a client-side logical representation of the Windows Azure Table Service. This client is used to configure and execute requests against the Table Service.
     /// </summary>
     /// <remarks>The service client encapsulates the endpoint or endpoints for the Table service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>    
-    public sealed partial class CloudTableClient
+    public partial class CloudTableClient
     {
         private IAuthenticationHandler authenticationHandler;
 
@@ -110,7 +110,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of <see cref="CloudTable"/> objects that are retrieved lazily.</returns>
         [DoesServiceRequest]
-        public IEnumerable<CloudTable> ListTables(string prefix = null, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        public virtual IEnumerable<CloudTable> ListTables(string prefix = null, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -126,7 +126,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="currentToken">A <see cref="TableContinuationToken"/> returned by a previous listing operation.</param>
         /// <returns>A <see cref="TableResultSegment"/> object.</returns>
         [DoesServiceRequest]
-        public TableResultSegment ListTablesSegmented(TableContinuationToken currentToken)
+        public virtual TableResultSegment ListTablesSegmented(TableContinuationToken currentToken)
         {
             return this.ListTablesSegmented(null, currentToken);
         }
@@ -138,7 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="currentToken">A <see cref="TableContinuationToken"/> returned by a previous listing operation.</param>
         /// <returns>A <see cref="TableResultSegment"/> object.</returns>
         [DoesServiceRequest]
-        public TableResultSegment ListTablesSegmented(string prefix, TableContinuationToken currentToken)
+        public virtual TableResultSegment ListTablesSegmented(string prefix, TableContinuationToken currentToken)
         {
             return this.ListTablesSegmented(prefix, null, currentToken);
         }
@@ -154,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="TableResultSegment"/> object.</returns>
         [DoesServiceRequest]
-        public TableResultSegment ListTablesSegmented(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        public virtual TableResultSegment ListTablesSegmented(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -179,7 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginListTablesSegmented(TableContinuationToken currentToken, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginListTablesSegmented(TableContinuationToken currentToken, AsyncCallback callback, object state)
         {
             return this.BeginListTablesSegmented(null, currentToken, callback, state);
         }
@@ -193,7 +193,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginListTablesSegmented(string prefix, TableContinuationToken currentToken, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginListTablesSegmented(string prefix, TableContinuationToken currentToken, AsyncCallback callback, object state)
         {
             return this.BeginListTablesSegmented(prefix, null, currentToken, null /* RequestOptions */, null /* OperationContext */, callback, state);
         }
@@ -211,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginListTablesSegmented(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginListTablesSegmented(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -232,7 +232,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns>A <see cref="TableResultSegment"/> object.</returns>
-        public TableResultSegment EndListTablesSegmented(IAsyncResult asyncResult)
+        public virtual TableResultSegment EndListTablesSegmented(IAsyncResult asyncResult)
         {
             TableQuerySegment<DynamicTableEntity> res = Executor.EndExecuteAsync<TableQuerySegment<DynamicTableEntity>>(asyncResult);
 
@@ -251,7 +251,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="currentToken">A <see cref="TableContinuationToken"/> returned by a previous listing operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableResultSegment"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableResultSegment> ListTablesSegmentedAsync(TableContinuationToken currentToken)
+        public virtual Task<TableResultSegment> ListTablesSegmentedAsync(TableContinuationToken currentToken)
         {
             return this.ListTablesSegmentedAsync(currentToken, CancellationToken.None);
         }
@@ -263,7 +263,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableResultSegment"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableResultSegment> ListTablesSegmentedAsync(TableContinuationToken currentToken, CancellationToken cancellationToken)
+        public virtual Task<TableResultSegment> ListTablesSegmentedAsync(TableContinuationToken currentToken, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginListTablesSegmented, this.EndListTablesSegmented, currentToken, cancellationToken);
         }
@@ -275,7 +275,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="currentToken">A <see cref="TableContinuationToken"/> returned by a previous listing operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableResultSegment"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, TableContinuationToken currentToken)
+        public virtual Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, TableContinuationToken currentToken)
         {
             return this.ListTablesSegmentedAsync(prefix, currentToken, CancellationToken.None);
         }
@@ -288,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableResultSegment"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, TableContinuationToken currentToken, CancellationToken cancellationToken)
+        public virtual Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, TableContinuationToken currentToken, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginListTablesSegmented, this.EndListTablesSegmented, prefix, currentToken, cancellationToken);
         }
@@ -304,7 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableResultSegment"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ListTablesSegmentedAsync(prefix, maxResults, currentToken, requestOptions, operationContext, CancellationToken.None);
         }
@@ -321,7 +321,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableResultSegment"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginListTablesSegmented, this.EndListTablesSegmented, prefix, maxResults, currentToken, requestOptions, operationContext, cancellationToken);
         }
@@ -360,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="ServiceProperties"/> object.</returns>
         [DoesServiceRequest]
-        public ServiceProperties GetServiceProperties(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        public virtual ServiceProperties GetServiceProperties(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -375,7 +375,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginGetServiceProperties(AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginGetServiceProperties(AsyncCallback callback, object state)
         {
             return this.BeginGetServiceProperties(null /* RequestOptions */, null /* OperationContext */, callback, state);
         }
@@ -389,7 +389,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginGetServiceProperties(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginGetServiceProperties(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -401,7 +401,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="asyncResult">The result returned from a prior call to <see cref="BeginGetServiceProperties(AsyncCallback, object)"/>.</param>
         /// <returns>A <see cref="ServiceProperties"/> object.</returns>
-        public ServiceProperties EndGetServiceProperties(IAsyncResult asyncResult)
+        public virtual ServiceProperties EndGetServiceProperties(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<ServiceProperties>(asyncResult);
         }
@@ -412,7 +412,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceProperties> GetServicePropertiesAsync()
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync()
         {
             return this.GetServicePropertiesAsync(CancellationToken.None);
         }
@@ -423,7 +423,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceProperties"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceProperties> GetServicePropertiesAsync(CancellationToken cancellationToken)
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync(CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginGetServiceProperties, this.EndGetServiceProperties, cancellationToken);
         }
@@ -435,7 +435,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceProperties"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceProperties> GetServicePropertiesAsync(TableRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(requestOptions, operationContext, CancellationToken.None);
         }
@@ -448,7 +448,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceProperties"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceProperties> GetServicePropertiesAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginGetServiceProperties, this.EndGetServiceProperties, requestOptions, operationContext, cancellationToken);
         }
@@ -462,7 +462,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        public void SetServiceProperties(ServiceProperties properties, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        public virtual void SetServiceProperties(ServiceProperties properties, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -478,7 +478,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginSetServiceProperties(ServiceProperties properties, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginSetServiceProperties(ServiceProperties properties, AsyncCallback callback, object state)
         {
             return this.BeginSetServiceProperties(properties, null /* RequestOptions */, null /* OperationContext */, callback, state);
         }
@@ -493,7 +493,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginSetServiceProperties(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginSetServiceProperties(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -504,7 +504,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Ends an asynchronous operation to set the service properties of the Table service.
         /// </summary>
         /// <param name="asyncResult">The result returned from a prior call to <see cref="BeginSetServiceProperties(ServiceProperties, AsyncCallback, object)"/></param>
-        public void EndSetServiceProperties(IAsyncResult asyncResult)
+        public virtual void EndSetServiceProperties(IAsyncResult asyncResult)
         {
             Executor.EndExecuteAsync<NullType>(asyncResult);
         }
@@ -516,7 +516,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="properties">A <see cref="ServiceProperties"/> object.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task SetServicePropertiesAsync(ServiceProperties properties)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties)
         {
             return this.SetServicePropertiesAsync(properties, CancellationToken.None);
         }
@@ -528,7 +528,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task SetServicePropertiesAsync(ServiceProperties properties, CancellationToken cancellationToken)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginSetServiceProperties, this.EndSetServiceProperties, properties, cancellationToken);
         }
@@ -541,7 +541,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
         }
@@ -555,7 +555,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginSetServiceProperties, this.EndSetServiceProperties, properties, requestOptions, operationContext, cancellationToken);
         }
@@ -568,7 +568,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginGetServiceStats(AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginGetServiceStats(AsyncCallback callback, object state)
         {
             return this.BeginGetServiceStats(null /* requestOptions */, null /* operationContext */, callback, state);
         }
@@ -582,7 +582,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginGetServiceStats(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginGetServiceStats(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -599,7 +599,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns>A <see cref="ServiceStats"/> object.</returns>
-        public ServiceStats EndGetServiceStats(IAsyncResult asyncResult)
+        public virtual ServiceStats EndGetServiceStats(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<ServiceStats>(asyncResult);
         }
@@ -610,7 +610,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceStats"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceStats> GetServiceStatsAsync()
+        public virtual Task<ServiceStats> GetServiceStatsAsync()
         {
             return this.GetServiceStatsAsync(CancellationToken.None);
         }
@@ -621,7 +621,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceStats"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceStats> GetServiceStatsAsync(CancellationToken cancellationToken)
+        public virtual Task<ServiceStats> GetServiceStatsAsync(CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginGetServiceStats, this.EndGetServiceStats, cancellationToken);
         }
@@ -633,7 +633,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceStats"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceStats> GetServiceStatsAsync(TableRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task<ServiceStats> GetServiceStatsAsync(TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.GetServiceStatsAsync(requestOptions, operationContext, CancellationToken.None);
         }
@@ -646,7 +646,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ServiceStats"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<ServiceStats> GetServiceStatsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ServiceStats> GetServiceStatsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginGetServiceStats, this.EndGetServiceStats, requestOptions, operationContext, cancellationToken);
         }
@@ -660,7 +660,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="ServiceStats"/> object.</returns>
         [DoesServiceRequest]
-        public ServiceStats GetServiceStats(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        public virtual ServiceStats GetServiceStats(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();

@@ -28,16 +28,20 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
     internal class HttpRequestAdapterMessage : IODataRequestMessage, IDisposable
     {
-        public HttpRequestMessage GetPopulatedMessage()
+        public StorageRequestMessage GetPopulatedMessage()
         {
             this.msg.Content = this.content;
             this.outStr.Seek(0, SeekOrigin.Begin);
             return this.msg;
         }
 
-        // Summary:
-        //     Initializes a new instance of the System.Net.Http.HttpRequestMessage class.
-        public HttpRequestAdapterMessage(HttpRequestMessage msg, IBufferManager bufferManager, int bufferSize)
+        /// <summary>
+        /// Initializes a new instance of HttpRequestAdapterMessage.
+        /// </summary>
+        /// <param name="msg">The message to adapt.</param>
+        /// <param name="bufferManager">The <see cref="IBufferManager"/> to use to acquire and return buffers for the stream. May be <c>null</c>.</param>
+        /// <param name="bufferSize">The buffer size to use for each block. The default size is 64 KB. Note that this parameter is disregarded when an <see cref="IBufferManager"/> is specified.</param>
+        public HttpRequestAdapterMessage(StorageRequestMessage msg, IBufferManager bufferManager, int bufferSize)
         {
             this.msg = msg;
             this.outStr = new MultiBufferMemoryStream(bufferManager, bufferSize);
@@ -46,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         private StreamContent content = null;
 
-        private HttpRequestMessage msg = null;
+        private StorageRequestMessage msg = null;
 
         private MultiBufferMemoryStream outStr = null;
 

@@ -205,7 +205,7 @@ namespace Microsoft.WindowsAzure.Storage
                     TestHelper.ExpectedException<StorageException>(() => tableClientWithSAS.ListTables(tableName).First(), "Listing tables with SAS should fail without Read and Container-level permissions.");
                 }
 
-                ServiceProperties properties = new ServiceProperties();
+                ServiceProperties properties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
                 properties.Logging = initialProperties.Logging;
                 properties.HourMetrics = initialProperties.HourMetrics;
                 properties.MinuteMetrics = initialProperties.MinuteMetrics;
@@ -1262,8 +1262,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 catch (StorageException e)
                 {
-                    string[] parts = e.RequestInformation.HttpStatusMessage.Split(' ');
-                    actualIP = IPAddress.Parse(parts[parts.Length - 1].Trim('.'));
+                    actualIP = IPAddress.Parse(e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"]);
                     exceptionThrown = true;
                     Assert.IsNotNull(actualIP);
                 }
@@ -1307,8 +1306,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 catch (StorageException e)
                 {
-                    string[] parts = e.RequestInformation.HttpStatusMessage.Split(' ');
-                    actualIP = IPAddress.Parse(parts[parts.Length - 1].Trim('.'));
+                    actualIP = IPAddress.Parse(e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"]);
                     exceptionThrown = true;
                     Assert.IsNotNull(actualIP);
                 }
@@ -1415,8 +1413,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 catch (StorageException e)
                 {
-                    string[] parts = e.RequestInformation.HttpStatusMessage.Split(' ');
-                    actualIP = IPAddress.Parse(parts[parts.Length - 1].Trim('.'));
+                    actualIP = IPAddress.Parse(e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"]);
                     exceptionThrown = true;
                     Assert.IsNotNull(actualIP);
                 }

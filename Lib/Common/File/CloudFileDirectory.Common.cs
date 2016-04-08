@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// Represents a directory of files, designated by a delimiter character.
     /// </summary>
     /// <remarks>Shares, which are encapsulated as <see cref="CloudFileShare"/> objects, hold directories, and directories hold files. Directories can also contain sub-directories.</remarks>
-    public sealed partial class CloudFileDirectory : IListFileItem
+    public partial class CloudFileDirectory : IListFileItem
     {
         /// <summary>
         /// Stores the <see cref="CloudFileShare"/> that contains this directory.
@@ -66,17 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="directoryAbsoluteUri">A <see cref="System.Uri"/> object containing the absolute URI to the directory.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudFileDirectory"/> object.</returns>
-        public static CloudFileDirectory Create(StorageUri directoryAbsoluteUri, StorageCredentials credentials)
-        {
-            return new CloudFileDirectory(directoryAbsoluteUri, credentials);
-        }
-
-        internal CloudFileDirectory(StorageUri directoryAbsoluteUri, StorageCredentials credentials)
-#else
         public CloudFileDirectory(StorageUri directoryAbsoluteUri, StorageCredentials credentials)
-#endif
         {
             this.Metadata = new Dictionary<string, string>();
             this.Properties = new FileDirectoryProperties();

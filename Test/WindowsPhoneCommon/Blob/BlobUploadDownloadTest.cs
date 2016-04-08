@@ -168,9 +168,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext context = new OperationContext();
-                await blob.UploadFromFileAsync(inputFileName, FileMode.Open);
+                await blob.UploadFromFileAsync(inputFileName);
 
-                await blob.UploadFromFileAsync(inputFileName, FileMode.Open, null, null, context);
+                await blob.UploadFromFileAsync(inputFileName, null, null, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 await TestHelper.ExpectedExceptionAsync<IOException>(

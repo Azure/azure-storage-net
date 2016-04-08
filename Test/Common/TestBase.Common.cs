@@ -174,16 +174,7 @@ namespace Microsoft.WindowsAzure.Storage
         [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
         public static void SetPayloadFormatOnDataServiceContext(TableServiceContext ctx, TablePayloadFormat format, CloudTableClient tableClient)
         {
-#pragma warning disable 0618
-            if (format == TablePayloadFormat.AtomPub)
-#pragma warning restore 0618
-            {
-                ctx.Format.UseAtom();
-            }
-            else
-            {
-                ctx.Format.UseJson(new TableStorageModel(tableClient.Credentials.AccountName));
-            }
+            ctx.Format.UseJson(new TableStorageModel(tableClient.Credentials.AccountName));
         }
 #endif
 

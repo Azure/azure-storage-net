@@ -352,7 +352,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             catch (StorageException)
             {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.Conflict, new string[] { "EntityAlreadyExists" }, "The specified entity already exists");
+                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.Conflict, new string[] { "EntityAlreadyExists" }, "The specified entity already exists.", "The specified entity already exists.");
             }
         }
 
@@ -1759,9 +1759,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.Json);
             DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.JsonNoMetadata);
             DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.JsonFullMetadata);
-            #pragma warning disable 0618
-            DoTableBatchRetrieveWithResolverSync(TablePayloadFormat.AtomPub);
-            #pragma warning restore 0618
         }
 
         private void DoTableBatchRetrieveWithResolverSync(TablePayloadFormat format)
@@ -2514,42 +2511,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
-        [Description("Ensure that a batch with over 100 entities will throw")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableBatchOver100EntitiesShouldThrow()
-        {
-            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
-            {
-                DoTableBatchOver100EntitiesShouldThrow(payloadFormat);
-            }
-        }
-
-        private void DoTableBatchOver100EntitiesShouldThrow(TablePayloadFormat format)
-        {
-            tableClient.DefaultRequestOptions.PayloadFormat = format;
-            TableBatchOperation batch = new TableBatchOperation();
-            string pk = Guid.NewGuid().ToString();
-            for (int m = 0; m < 101; m++)
-            {
-                batch.Insert(GenerateRandomEntity(pk));
-            }
-
-            OperationContext opContext = new OperationContext();
-            try
-            {
-                currentTable.ExecuteBatch(batch, null, opContext);
-                Assert.Fail();
-            }
-            catch (StorageException)
-            {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "One of the request inputs is not valid.");
-            }
-        }
-
-        [TestMethod]
         [Description("Ensure that a batch with entity over 1 MB will throw")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -2860,6 +2821,32 @@ namespace Microsoft.WindowsAzure.Storage.Table
                (options, opContext) => results = currentTable.ExecuteBatch(batch, (TableRequestOptions)options, opContext));
 
             Assert.AreEqual(batch.Count, results.Count);
+        }
+
+        [TestMethod]
+        [Description("A test to peform batch insert with batch size of 101. Should fail client-side.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableBatchTooManyOperations()
+        {
+            TableBatchOperation batch = new TableBatchOperation();
+            try
+            {
+                for (int m = 0; m < 101; m++)
+                {
+                    batch.Insert(GenerateRandomEntity("testpk"), true);
+                }
+
+                currentTable.ExecuteBatch(batch);
+                
+                Assert.Fail("Batch commands with more than 101 operations should fail.");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(e.Message, SR.BatchExceededMaximumNumberOfOperations);
+            }
         }
 
         #endregion

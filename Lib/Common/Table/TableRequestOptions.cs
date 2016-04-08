@@ -37,6 +37,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private TimeSpan? maximumExecutionTime;
 
         /// <summary>
+        /// Defines the absolute default option values, should neither the user nor client specify anything.
+        /// </summary>
+        internal static TableRequestOptions BaseDefaultRequestOptions = new TableRequestOptions()
+        {
+            RetryPolicy = new NoRetry(),
+            LocationMode = RetryPolicies.LocationMode.PrimaryOnly,
+            ServerTimeout = null,
+            MaximumExecutionTime = null,
+            PayloadFormat = TablePayloadFormat.Json,
+            PropertyResolver = null,
+            ProjectSystemProperties = true,
+
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            EncryptionPolicy = null,
+            RequireEncryption = null,
+            EncryptionResolver = null
+#endif
+        };
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="TableRequestOptions"/> class.
         /// </summary>
         public TableRequestOptions()
@@ -58,6 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 this.OperationExpiryTime = other.OperationExpiryTime;
                 this.PayloadFormat = other.PayloadFormat;
                 this.PropertyResolver = other.PropertyResolver;
+                this.ProjectSystemProperties = other.ProjectSystemProperties;
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
                 this.EncryptionPolicy = other.EncryptionPolicy;
                 this.RequireEncryption = other.RequireEncryption;
@@ -70,27 +91,61 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             TableRequestOptions modifiedOptions = new TableRequestOptions(requestOptions);
             
-            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
-            modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
-                                            ?? serviceClient.DefaultRequestOptions.LocationMode)
-                                            ?? RetryPolicies.LocationMode.PrimaryOnly;
-            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
-            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
-            modifiedOptions.PayloadFormat = (
+            modifiedOptions.RetryPolicy = 
+                modifiedOptions.RetryPolicy 
+                ?? serviceClient.DefaultRequestOptions.RetryPolicy 
+                ?? BaseDefaultRequestOptions.RetryPolicy;
+
+            modifiedOptions.LocationMode = 
+                modifiedOptions.LocationMode 
+                ?? serviceClient.DefaultRequestOptions.LocationMode 
+                ?? BaseDefaultRequestOptions.LocationMode;
+
+            modifiedOptions.ServerTimeout = 
+                modifiedOptions.ServerTimeout 
+                ?? serviceClient.DefaultRequestOptions.ServerTimeout 
+                ?? BaseDefaultRequestOptions.ServerTimeout;
+
+            modifiedOptions.MaximumExecutionTime = 
+                modifiedOptions.MaximumExecutionTime 
+                ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime 
+                ?? BaseDefaultRequestOptions.MaximumExecutionTime;
+
+            modifiedOptions.PayloadFormat = 
                 modifiedOptions.PayloadFormat 
-                ?? serviceClient.DefaultRequestOptions.PayloadFormat)
-                ?? TablePayloadFormat.Json;
+                ?? serviceClient.DefaultRequestOptions.PayloadFormat 
+                ?? BaseDefaultRequestOptions.PayloadFormat;
 
             if (!modifiedOptions.OperationExpiryTime.HasValue && modifiedOptions.MaximumExecutionTime.HasValue)
             {
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
 
-            modifiedOptions.PropertyResolver = modifiedOptions.PropertyResolver ?? serviceClient.DefaultRequestOptions.PropertyResolver;
+            modifiedOptions.PropertyResolver = 
+                modifiedOptions.PropertyResolver 
+                ?? serviceClient.DefaultRequestOptions.PropertyResolver 
+                ?? BaseDefaultRequestOptions.PropertyResolver;
+
+            modifiedOptions.ProjectSystemProperties = 
+                modifiedOptions.ProjectSystemProperties 
+                ?? serviceClient.DefaultRequestOptions.ProjectSystemProperties 
+                ?? BaseDefaultRequestOptions.ProjectSystemProperties;
+
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-            modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
-            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
-            modifiedOptions.EncryptionResolver = modifiedOptions.EncryptionResolver ?? serviceClient.DefaultRequestOptions.EncryptionResolver;
+            modifiedOptions.EncryptionPolicy = 
+                modifiedOptions.EncryptionPolicy 
+                ?? serviceClient.DefaultRequestOptions.EncryptionPolicy 
+                ?? BaseDefaultRequestOptions.EncryptionPolicy;
+
+            modifiedOptions.RequireEncryption = 
+                modifiedOptions.RequireEncryption 
+                ?? serviceClient.DefaultRequestOptions.RequireEncryption 
+                ?? BaseDefaultRequestOptions.RequireEncryption;
+
+            modifiedOptions.EncryptionResolver = 
+                modifiedOptions.EncryptionResolver 
+                ?? serviceClient.DefaultRequestOptions.EncryptionResolver 
+                ?? BaseDefaultRequestOptions.EncryptionResolver;
 #endif
 
             return modifiedOptions;
@@ -179,6 +234,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
+        /// <summary>
+        /// Gets or sets the option to include system properties such as Partition Key and Row Key in queries.
+        /// </summary>
+        public bool? ProjectSystemProperties { get; set; }
+
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
         /// <summary>
         /// Gets or sets the encryption policy for the request.
@@ -247,29 +307,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        private Func<string, string, string, string, EdmType> propertyResolver = null;
-
         /// <summary>
         /// Gets or sets the delegate that is used to get the <see cref="EdmType"/> for an entity property given the partition key, row key, and the property name. 
         /// </summary>
-        public Func<string, string, string, string, EdmType> PropertyResolver
-        {
-            get { return this.propertyResolver; }
-            set { this.propertyResolver = value; }
-        }
+        public Func<string, string, string, string, EdmType> PropertyResolver { get; set; }
 
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-        private Func<string, string, string, bool> encryptionResolver = null;
-
         /// <summary>
         /// Gets or sets the delegate to get the value indicating whether or not a property should be encrypted, given the partition key, row key, 
         /// and property name. 
         /// </summary>
-        public Func<string, string, string, bool> EncryptionResolver
-        {
-            get { return this.encryptionResolver; }
-            set { this.encryptionResolver = value; }
-        }
+        public Func<string, string, string, bool> EncryptionResolver { get; set; }
 #endif
     }
 }

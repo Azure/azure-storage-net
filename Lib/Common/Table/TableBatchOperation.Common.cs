@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <a href="http://msdn.microsoft.com/en-us/library/windowsazure/dd894038.aspx">Entity Group Transaction</a>.</para><para>A batch operation may contain up to 100 individual 
     /// table operations, with the requirement that each operation entity must have same partition key. A batch with a retrieve operation cannot contain any other operations. 
     /// Note that the total payload of a batch operation is limited to 4MB.</para></remarks>
-    public sealed partial class TableBatchOperation : IList<TableOperation>
+    public partial class TableBatchOperation : IList<TableOperation>
     {
         private bool hasQuery = false;
         private string batchPartitionKey = null;
@@ -189,6 +189,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             CommonUtility.AssertNotNull("item", item);
             this.CheckSingleQueryPerBatch(item);
             this.LockToPartitionKey(item.OperationType == TableOperationType.Retrieve ? item.RetrievePartitionKey : item.Entity.PartitionKey);
+            CheckPartitionKeyRowKeyPresent(item);
 
             this.operations.Insert(index, item);
         }
@@ -235,6 +236,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             CommonUtility.AssertNotNull("item", item);
             this.CheckSingleQueryPerBatch(item);
             this.LockToPartitionKey(item.OperationType == TableOperationType.Retrieve ? item.RetrievePartitionKey : item.Entity.PartitionKey);
+            CheckPartitionKeyRowKeyPresent(item);
 
             this.operations.Add(item);
         }
@@ -361,6 +363,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 {
                     throw new ArgumentException(SR.PartitionKey);
                 }
+            }
+        }
+
+        private static void CheckPartitionKeyRowKeyPresent(TableOperation item)
+        {
+            if (item.OperationType == TableOperationType.Retrieve)
+            {
+                return;
+            }
+
+            if (item.Entity.PartitionKey == null || item.Entity.RowKey == null)
+            {
+                throw new ArgumentNullException("item", SR.BatchOperationRequiresPartitionKeyRowKey);
             }
         }
 

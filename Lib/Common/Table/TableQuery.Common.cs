@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     /// <remarks>The <see cref="TableQuery"/> class aggregates and encodes the query parameters to pass with the request when the query is executed. 
     /// To execute the query, call the <c>executeQuery</c> or <c>executeQuerySegmented</c> method of the <see cref="CloudTableClient"/> class. </remarks>
-    public sealed partial class TableQuery
+    public partial class TableQuery
     {
         #region Filter Generation
 
@@ -293,7 +293,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #region Impl
 
-        internal UriQueryBuilder GenerateQueryBuilder()
+        internal UriQueryBuilder GenerateQueryBuilder(bool? projectSystemProperties)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
 
@@ -339,22 +339,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     }
                 }
 
-                if (!foundPk)
+                if (projectSystemProperties.Value)
                 {
-                    colBuilder.Append(",");
-                    colBuilder.Append(TableConstants.PartitionKey);
-                }
+                    if (!foundPk)
+                    {
+                        colBuilder.Append(",");
+                        colBuilder.Append(TableConstants.PartitionKey);
+                    }
 
-                if (!foundRk)
-                {
-                    colBuilder.Append(",");
-                    colBuilder.Append(TableConstants.RowKey);
-                }
+                    if (!foundRk)
+                    {
+                        colBuilder.Append(",");
+                        colBuilder.Append(TableConstants.RowKey);
+                    }
 
-                if (!foundTs)
-                {
-                    colBuilder.Append(",");
-                    colBuilder.Append(TableConstants.Timestamp);
+                    if (!foundTs)
+                    {
+                        colBuilder.Append(",");
+                        colBuilder.Append(TableConstants.Timestamp);
+                    }
                 }
 
                 builder.Add(TableConstants.Select, colBuilder.ToString());

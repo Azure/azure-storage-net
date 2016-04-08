@@ -97,11 +97,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         public Stream StreamToDispose { get; set; }
         
 #if WINDOWS_RT || ASPNET_K || PORTABLE
-        public Func<RESTCommand<T>, HttpMessageHandler, bool, OperationContext, HttpClient> BuildClient;
-
         public Func<RESTCommand<T>, OperationContext, HttpContent> BuildContent;
 
-        public Func<RESTCommand<T>, Uri, UriQueryBuilder, HttpContent, int?, OperationContext, HttpRequestMessage> BuildRequest;
+        public Func<RESTCommand<T>, Uri, UriQueryBuilder, HttpContent, int?, OperationContext, StorageRequestMessage> BuildRequest;
 
         // Pre-Stream Retrival func (i.e. if 409 no stream is retrieved), in some cases this method will return directly
         public Func<RESTCommand<T>, HttpResponseMessage, Exception, OperationContext, T> PreProcessResponse;

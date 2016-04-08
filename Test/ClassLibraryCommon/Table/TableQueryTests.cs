@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
+using Microsoft.WindowsAzure.Storage.Table.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -716,25 +717,69 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
             {
-                DoTableQueryProjection(payloadFormat);
+                DoTableQueryProjection(payloadFormat, false);
+                DoTableQueryProjection(payloadFormat, true);
             }
         }
 
-        private void DoTableQueryProjection(TablePayloadFormat format)
+        private void DoTableQueryProjection(TablePayloadFormat format, bool projectSystemProperties)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
+
             TableQuery query = new TableQuery().Select(new List<string>() { "a", "c" });
 
             foreach (DynamicTableEntity ent in currentTable.ExecuteQuery(query))
             {
-                Assert.IsNotNull(ent.PartitionKey);
-                Assert.IsNotNull(ent.RowKey);
-                Assert.IsNotNull(ent.Timestamp);
-
                 Assert.AreEqual(ent.Properties["a"].StringValue, "a");
                 Assert.IsFalse(ent.Properties.ContainsKey("b"));
                 Assert.AreEqual(ent.Properties["c"].StringValue, "c");
                 Assert.IsFalse(ent.Properties.ContainsKey("d"));
+
+                if (tableClient.DefaultRequestOptions.ProjectSystemProperties.HasValue)
+                {
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.PartitionKey == default(string), "Missing expected " + TableConstants.PartitionKey);
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.RowKey == default(string), "Missing expected " + TableConstants.RowKey);
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.Timestamp == default(DateTimeOffset), "Missing expected " + TableConstants.Timestamp);
+                }
+            }
+        }
+
+        [TestMethod]
+        [Description("Basic projection test")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableQueryProjectionSpecifyingSystemProperties()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryProjectionSpecifyingSystemProperties(payloadFormat, false);
+                DoTableQueryProjectionSpecifyingSystemProperties(payloadFormat, true);
+            }
+        }
+
+        private void DoTableQueryProjectionSpecifyingSystemProperties(TablePayloadFormat format, bool projectSystemProperties)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
+
+            TableQuery query = new TableQuery().Select(new List<string>() { "a", "c", TableConstants.PartitionKey, TableConstants.Timestamp });
+
+            foreach (DynamicTableEntity ent in currentTable.ExecuteQuery(query))
+            {
+                Assert.AreEqual(ent.Properties["a"].StringValue, "a");
+                Assert.IsFalse(ent.Properties.ContainsKey("b"));
+                Assert.AreEqual(ent.Properties["c"].StringValue, "c");
+                Assert.IsFalse(ent.Properties.ContainsKey("d"));
+                Assert.AreNotEqual(default(string), ent.PartitionKey);
+                Assert.AreNotEqual(default(DateTimeOffset), ent.Timestamp);
+
+                if (tableClient.DefaultRequestOptions.ProjectSystemProperties.HasValue)
+                {
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.RowKey == default(string), "Missing expected " + TableConstants.RowKey);
+                }
             }
         }
 

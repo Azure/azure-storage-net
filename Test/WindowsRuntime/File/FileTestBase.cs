@@ -73,7 +73,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 stream.Write(textAsBytes, 0, textAsBytes.Length);
                 stream.Seek(0, SeekOrigin.Begin);
                 file.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
-                await file.UploadFromStreamAsync(stream.AsInputStream(), accessCondition, options, operationContext);
+                await file.UploadFromStreamAsync(stream, accessCondition, options, operationContext);
             }
         }
 
@@ -81,7 +81,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             using (MemoryStream stream = new MemoryStream())
             {
-                await file.DownloadToStreamAsync(stream.AsOutputStream(), accessCondition, options, operationContext);
+                await file.DownloadToStreamAsync(stream, accessCondition, options, operationContext);
                 return encoding.GetString(stream.ToArray(), 0, (int)stream.Length);
             }
         }

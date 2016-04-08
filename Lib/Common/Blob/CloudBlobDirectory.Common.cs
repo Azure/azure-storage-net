@@ -23,7 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a virtual directory of blobs on the client which emulates a hierarchical data store by using delimiter characters.
     /// </summary>
-    public sealed partial class CloudBlobDirectory : IListBlobItem
+    public partial class CloudBlobDirectory : IListBlobItem
     {
         /// <summary>
         /// Stores the parent directory.
@@ -217,17 +217,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             StorageUri subdirectoryUri = NavigationHelper.AppendPathToUri(this.StorageUri, itemName, this.ServiceClient.DefaultDelimiter);
             return new CloudBlobDirectory(subdirectoryUri, this.Prefix + itemName, this.Container);
-        }
-
-        /// <summary>
-        /// Returns a virtual subdirectory within this virtual directory.
-        /// </summary>
-        /// <param name="itemName">The name of the virtual subdirectory.</param>
-        /// <returns>A <see cref="CloudBlobDirectory"/> object representing the virtual subdirectory.</returns>
-        [Obsolete("GetSubdirectoryReference has been renamed to GetDirectoryReference.")]
-        public CloudBlobDirectory GetSubdirectoryReference(string itemName)
-        {
-            return this.GetDirectoryReference(itemName);
         }
     }
 }

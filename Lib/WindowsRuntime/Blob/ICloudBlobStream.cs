@@ -17,9 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-#if ASPNET_K || PORTABLE
     using System.IO;
     using System.Threading.Tasks;
+#if WINDOWS_RT
+    using Windows.Storage.Streams;
+#endif
 
     /// <summary>
     /// Represents a stream for writing to a blob.
@@ -31,18 +33,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public abstract Task CommitAsync();
-    }
-#else
-    using Windows.Foundation;
-    using Windows.Storage.Streams;
 
-    public interface ICloudBlobStream : IRandomAccessStream
-    {
-        /// <summary>
-        /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying blob, and commits the blob.
-        /// </summary>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        IAsyncAction CommitAsync();
     }
-#endif
 }

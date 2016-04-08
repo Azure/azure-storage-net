@@ -310,6 +310,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         }
 
         /// <summary>
+        /// Constructs a web request to return the list of page ranges that differ between a specified snapshot and this object.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="previousSnapshotTime">A <see cref="DateTimeOffset"/> representing the snapshot timestamp to use as the starting point for the diff. If this CloudPageBlob represents a snapshot, the previousSnapshotTime parameter must be prior to the current snapshot timestamp.</param>
+        /// <param name="offset">The starting offset of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
+        /// <param name="count">The length of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetPageRangesDiff(Uri uri, int? timeout, DateTimeOffset? snapshot, DateTimeOffset previousSnapshotTime, long? offset, long? count, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
+            if (offset.HasValue)
+            {
+                CommonUtility.AssertNotNull("count", count);
+            }
+
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "pagelist");
+            BlobHttpWebRequestFactory.AddSnapshot(builder, snapshot);
+            builder.Add("prevsnapshot", Request.ConvertDateTimeToSnapshotString(previousSnapshotTime));
+
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
+            AddRange(request, offset, count);
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
         /// Adds the Range Header for Blob Service Operations.
         /// </summary>
         /// <param name="request">Request</param>

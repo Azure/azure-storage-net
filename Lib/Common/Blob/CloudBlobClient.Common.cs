@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// </summary>
     /// <remarks>The service client encapsulates the endpoint or endpoints for the Blob service. If the service client will be used for authenticated access, it also encapsulates 
     /// the credentials for accessing the storage account.</remarks>
-    public sealed partial class CloudBlobClient
+    public partial class CloudBlobClient
     {
         /// <summary>
         /// Stores the default delimiter.
@@ -67,25 +67,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Blob service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
-        public static CloudBlobClient Create(StorageUri storageUri, StorageCredentials credentials)
-        {
-            return new CloudBlobClient(storageUri, credentials);
-        }
-
-        internal CloudBlobClient(StorageUri storageUri, StorageCredentials credentials)
-#else
         public CloudBlobClient(StorageUri storageUri, StorageCredentials credentials)
-#endif
         {
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
-            this.DefaultRequestOptions = new BlobRequestOptions();
-            this.DefaultRequestOptions.RetryPolicy = new ExponentialRetry();
-            this.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryOnly;
-            this.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = Constants.MaxSingleUploadBlobSize / 2;
-            this.DefaultRequestOptions.ParallelOperationThreadCount = 1;
+            this.DefaultRequestOptions = 
+                new BlobRequestOptions() 
+                { 
+                    RetryPolicy = new ExponentialRetry(),
+                    LocationMode = BlobRequestOptions.BaseDefaultRequestOptions.LocationMode,
+                    SingleBlobUploadThresholdInBytes = BlobRequestOptions.BaseDefaultRequestOptions.SingleBlobUploadThresholdInBytes,
+                    ParallelOperationThreadCount = BlobRequestOptions.BaseDefaultRequestOptions.ParallelOperationThreadCount
+                };
             this.DefaultDelimiter = NavigationHelper.Slash;
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
@@ -147,60 +140,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets or sets the default location mode for requests made via the Blob service client.
-        /// </summary>
-        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
-        [Obsolete("Use DefaultRequestOptions.LocationMode.")]
-        public LocationMode? LocationMode
-        {
-            get
-            {
-                return this.DefaultRequestOptions.LocationMode;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.LocationMode = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the default server timeout for requests made via the Blob service client.
-        /// </summary>
-        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval.</value>
-        [Obsolete("Use DefaultRequestOptions.ServerTimeout.")]
-        public TimeSpan? ServerTimeout
-        {
-            get
-            {
-                return this.DefaultRequestOptions.ServerTimeout;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.ServerTimeout = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the maximum execution time across all potential retries.
-        /// </summary>
-        /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
-        [Obsolete("Use DefaultRequestOptions.MaximumExecutionTime.")]
-        public TimeSpan? MaximumExecutionTime
-        {
-            get
-            {
-                return this.DefaultRequestOptions.MaximumExecutionTime;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.MaximumExecutionTime = value;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the default delimiter that may be used to create a virtual directory structure of blobs.
         /// </summary>
         /// <value>A string containing the default delimiter for the Blob service.</value>
@@ -221,44 +160,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }       
 
                 this.defaultDelimiter = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the maximum size of a blob in bytes that may be uploaded as a single blob. 
-        /// </summary>
-        /// <value>A long containing the maximum size of a blob, in bytes, that may be uploaded as a single blob,
-        /// ranging from between 1 and 64 MB inclusive.</value>
-        [Obsolete("Use DefaultRequestOptions.SingleBlobUploadThresholdInBytes.")]
-        public long? SingleBlobUploadThresholdInBytes
-        {
-            get
-            {
-                return this.DefaultRequestOptions.SingleBlobUploadThresholdInBytes;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the number of blocks that may be simultaneously uploaded when uploading a blob that is greater than 
-        /// the value specified by the <see cref="SingleBlobUploadThresholdInBytes"/> property in size.
-        /// </summary>
-        /// <value>An integer indicating the number of parallel operations that may proceed.</value>
-        [Obsolete("Use DefaultRequestOptions.ParallelOperationThreadCount.")]
-        public int? ParallelOperationThreadCount
-        {
-            get
-            {
-                return this.DefaultRequestOptions.ParallelOperationThreadCount;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.ParallelOperationThreadCount = value;
             }
         }
 
@@ -291,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return new CloudBlobContainer(containerName, this);
         }
 
-        private ICanonicalizer GetCanonicalizer()
+        internal ICanonicalizer GetCanonicalizer()
         {
             if (this.AuthenticationScheme == AuthenticationScheme.SharedKeyLite)
             {

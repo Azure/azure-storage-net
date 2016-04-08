@@ -23,6 +23,22 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
     public sealed class LoggingProperties
     {
         /// <summary>
+        /// Initializes a new instance of the LoggingProperties class.
+        /// </summary>
+        public LoggingProperties()
+            : this(Constants.AnalyticsConstants.LoggingVersionV1)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the LoggingProperties class.
+        /// </summary>
+        public LoggingProperties(string version)
+        {
+            this.Version = version;
+        }
+
+        /// <summary>
         /// Gets or sets the version of the analytics service.
         /// </summary>
         /// <value>A string identifying the version of the service.</value>

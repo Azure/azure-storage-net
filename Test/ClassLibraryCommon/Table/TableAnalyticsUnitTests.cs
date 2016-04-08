@@ -849,11 +849,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             client.SetServiceProperties(props);
 
-            ServiceProperties newProps = new ServiceProperties();
-
-            newProps.Logging = null;
-            newProps.HourMetrics = null;
-            newProps.MinuteMetrics = null;
+            ServiceProperties newProps = new ServiceProperties(cors: new CorsProperties());
 
             newProps.Cors.CorsRules.Add(
                 new CorsRule()
@@ -911,7 +907,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         private static ServiceProperties DefaultServiceProperties()
         {
-            ServiceProperties props = new ServiceProperties();
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;

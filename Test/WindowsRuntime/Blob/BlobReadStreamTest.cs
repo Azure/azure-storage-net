@@ -85,20 +85,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(wholeBlob.AsInputStream());
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
                     using (var blobStream = await blob.OpenReadAsync())
                     {
-                        await TestHelper.AssertStreamsAreEqualAsync(wholeBlob.AsInputStream(), blobStream);
+                        await TestHelper.AssertStreamsAreEqualAsync(wholeBlob, blobStream);
                     }
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -119,12 +119,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(wholeBlob.AsInputStream());
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    using (Stream blobStream = (await blob.OpenReadAsync()).AsStreamForRead())
+                    using (Stream blobStream = (await blob.OpenReadAsync()))
                     {
                         TestHelper.AssertStreamsAreEqual(wholeBlob, blobStream);
                     }
@@ -132,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -155,12 +155,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.AppendBlockAsync(wholeBlob.AsInputStream());
+                    await blob.AppendBlockAsync(wholeBlob);
                 }
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    using (Stream blobStream = (await blob.OpenReadAsync()).AsStreamForRead())
+                    using (Stream blobStream = (await blob.OpenReadAsync()))
                     {
                         TestHelper.AssertStreamsAreEqual(wholeBlob, blobStream);
                     }
@@ -168,7 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -191,13 +191,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(wholeBlob.AsInputStream());
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
-                    Stream blobStreamForRead = blobStream.AsStreamForRead();
+                    Stream blobStreamForRead = blobStream;
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
                     await blob.SetMetadataAsync();
                     await TestHelper.ExpectedExceptionAsync(
@@ -210,7 +210,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
-                    Stream blobStreamForRead = blobStream.AsStreamForRead();
+                    Stream blobStreamForRead = blobStream;
                     long length = blobStreamForRead.Length;
                     await blob.SetMetadataAsync();
                     await TestHelper.ExpectedExceptionAsync(
@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -254,13 +254,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(wholeBlob.AsInputStream());
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
-                    Stream blobStreamForRead = blobStream.AsStreamForRead();
+                    Stream blobStreamForRead = blobStream;
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
                     await blob.SetMetadataAsync();
                     await TestHelper.ExpectedExceptionAsync(
@@ -273,7 +273,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
-                    Stream blobStreamForRead = blobStream.AsStreamForRead();
+                    Stream blobStreamForRead = blobStream;
                     long length = blobStreamForRead.Length;
                     await blob.SetMetadataAsync();
                     await TestHelper.ExpectedExceptionAsync(
@@ -294,7 +294,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -319,13 +319,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.AppendBlockAsync(wholeBlob.AsInputStream());
+                    await blob.AppendBlockAsync(wholeBlob);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
-                    Stream blobStreamForRead = blobStream.AsStreamForRead();
+                    Stream blobStreamForRead = blobStream;
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
                     await blob.SetMetadataAsync();
                     await TestHelper.ExpectedExceptionAsync(
@@ -338,7 +338,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
-                    Stream blobStreamForRead = blobStream.AsStreamForRead();
+                    Stream blobStreamForRead = blobStream;
                     long length = blobStreamForRead.Length;
                     await blob.SetMetadataAsync();
                     await TestHelper.ExpectedExceptionAsync(
@@ -359,19 +359,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
-#if ASPNET_K
-        private static async Task<uint> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
-#else
-
+#if WINDOWS_RT
         private static async Task<uint> BlobReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
+#else
+        private static async Task<uint> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
 #endif
         {
             byte[] testBuffer = new byte[readSize];
-
 #if ASPNET_K
             int actualReadSize = await blobStream.ReadAsync(testBuffer, 0, (int) readSize);
             Assert.AreEqual(expectedReadCount, actualReadSize);
@@ -380,7 +378,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await blobStream.ReadAsync(testBufferAsIBuffer, readSize, InputStreamOptions.None);
             Assert.AreEqual(expectedReadCount, testBufferAsIBuffer.Length);
 #endif
-
             long bufferOffset = (long)offset;
             for (int i = 0; i < expectedReadCount; i++, bufferOffset++)
             {
@@ -390,11 +387,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return expectedReadCount;
         }
 
-#if ASPNET_K
-        private static async Task<int> BlobReadStreamSeekTestAsync(Stream blobStream, long streamReadSize, byte[] bufferToCompare)
-#else
-
+#if WINDOWS_RT
         private static async Task<int> BlobReadStreamSeekTestAsync(IRandomAccessStreamWithContentType blobStream, long streamReadSize, byte[] bufferToCompare)
+#else
+        private static async Task<int> BlobReadStreamSeekTestAsync(Stream blobStream, long streamReadSize, byte[] bufferToCompare)
 #endif
         {
             int attempts = 1;
@@ -471,19 +467,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.StreamMinimumReadSizeInBytes = 2 * 1024 * 1024;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(wholeBlob.AsInputStream());
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
+#if WINDOWS_RT
+                    int attempts = await BlobReadStreamSeekTestAsync(blobStream.AsRandomAccessStream(), blob.StreamMinimumReadSizeInBytes, buffer);
+#else 
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
+#endif
                     TestHelper.AssertNAttempts(opContext, attempts);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -505,19 +505,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.StreamMinimumReadSizeInBytes = 2 * 1024 * 1024;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(wholeBlob.AsInputStream());
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
+#if WINDOWS_RT
+                    int attempts = await BlobReadStreamSeekTestAsync(blobStream.AsRandomAccessStream(), blob.StreamMinimumReadSizeInBytes, buffer);
+#else 
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
+#endif
                     TestHelper.AssertNAttempts(opContext, attempts);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -541,19 +545,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.StreamMinimumReadSizeInBytes = 2 * 1024 * 1024;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    await blob.AppendBlockAsync(wholeBlob.AsInputStream());
+                    await blob.AppendBlockAsync(wholeBlob);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
+#if WINDOWS_RT
+                    int attempts = await BlobReadStreamSeekTestAsync(blobStream.AsRandomAccessStream(), blob.StreamMinimumReadSizeInBytes, buffer);
+#else 
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
+#endif
                     TestHelper.AssertNAttempts(opContext, attempts);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }

@@ -25,8 +25,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.Collections.Generic;
     using System.Net;
-#if ASPNET_K || PORTABLE
     using System.Threading;
+#if ASPNET_K || PORTABLE
+
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -49,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CommonUtility.LazyEnumerable<DynamicTableEntity>(
                 (continuationToken) =>
                 {
-                    Task<TableQuerySegment> task = Task.Run(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext).AsTask());
+                    Task<TableQuerySegment> task = Task.Run(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext));
                     task.Wait();
 
                     TableQuerySegment seg = task.Result;
@@ -61,16 +62,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return enumerable;
         }
 
-#if ASPNET_K || PORTABLE
         internal Task<TableQuerySegment> ExecuteQuerySegmentedAsync(TableContinuationToken continuationToken, CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return ExecuteQuerySegmentedAsync(continuationToken, client, tableName, requestOptions, operationContext, CancellationToken.None);
         }
 
         internal Task<TableQuerySegment> ExecuteQuerySegmentedAsync(TableContinuationToken continuationToken, CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        internal IAsyncOperation<TableQuerySegment> ExecuteQuerySegmentedAsync(TableContinuationToken continuationToken, CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)
-#endif
         {
             CommonUtility.AssertNotNullOrEmpty("tableName", tableName);
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, client);
@@ -78,24 +75,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment> cmdToExecute = QueryImpl(this, continuationToken, client, tableName, EntityUtilities.ResolveEntityByType<DynamicTableEntity>, modifiedOptions);
 
-#if ASPNET_K || PORTABLE
             return Task.Run(async () => await Executor.ExecuteAsync(
                                                             cmdToExecute,
                                                             modifiedOptions.RetryPolicy,
                                                             operationContext,
                                                             cancellationToken), cancellationToken);
-#else
-            return AsyncInfo.Run(async (cancellationToken) => await Executor.ExecuteAsync(
-                                                                                       cmdToExecute,
-                                                                                       modifiedOptions.RetryPolicy,
-                                                                                       operationContext,
-                                                                                       cancellationToken));
-#endif
         }
 
         private static RESTCommand<TableQuerySegment> QueryImpl(TableQuery query, TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<DynamicTableEntity> resolver, TableRequestOptions requestOptions)
         {
-            UriQueryBuilder builder = query.GenerateQueryBuilder();
+            UriQueryBuilder builder = query.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
 
             if (token != null)
             {
@@ -108,11 +97,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             queryCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(token);
             queryCmd.RetrieveResponseStream = true;
-            queryCmd.Handler = client.AuthenticationHandler;
-            queryCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             queryCmd.Builder = builder;
             queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
-            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value);
+            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
@@ -128,11 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return queryCmd;
         }
 
-#if ASPNET_K || PORTABLE
         internal Task<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<TResult>(TableContinuationToken continuationToken, CloudTableClient client, string tableName, EntityResolver<TResult> resolver, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        internal IAsyncOperation<TableQuerySegment<TResult>> ExecuteQuerySegmentedAsync<TResult>(TableContinuationToken continuationToken, CloudTableClient client, string tableName, EntityResolver<TResult> resolver, TableRequestOptions requestOptions, OperationContext operationContext)
-#endif
         {
             CommonUtility.AssertNotNullOrEmpty("tableName", tableName);
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, client);
@@ -140,24 +123,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment<TResult>> cmdToExecute = this.QueryImpl<TResult>(continuationToken, client, tableName, resolver, modifiedOptions);
 
-#if ASPNET_K || PORTABLE
             return Task.Run(async () => await Executor.ExecuteAsync(
                                                             cmdToExecute,
                                                             modifiedOptions.RetryPolicy,
                                                             operationContext,
                                                             cancellationToken), cancellationToken);
-#else
-            return AsyncInfo.Run(async (cancellationToken) => await Executor.ExecuteAsync(
-                                                                                       cmdToExecute,
-                                                                                       modifiedOptions.RetryPolicy,
-                                                                                       operationContext,
-                                                                                       cancellationToken));
-#endif
         }
 
         private RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<RESULT_TYPE>(TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions)
         {
-            UriQueryBuilder builder = this.GenerateQueryBuilder();
+            UriQueryBuilder builder = this.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
 
             if (token != null)
             {
@@ -170,11 +145,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             queryCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(token);
             queryCmd.RetrieveResponseStream = true;
-            queryCmd.Handler = client.AuthenticationHandler;
-            queryCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
             queryCmd.Builder = builder;
-            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value);
+            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {

@@ -67,8 +67,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object containing the entity's properties, indexed by property name.</param>
         internal DynamicTableEntity(string partitionKey, string rowKey, DateTimeOffset timestamp, string etag, IDictionary<string, EntityProperty> properties)
         {
-            CommonUtility.AssertNotNull("partitionKey", partitionKey);
-            CommonUtility.AssertNotNull("rowKey", rowKey);
             CommonUtility.AssertNotNull("properties", properties);
 
             // Store the information about this entity.  Make a copy of

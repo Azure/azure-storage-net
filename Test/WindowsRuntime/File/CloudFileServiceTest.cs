@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
         private static FileServiceProperties DefaultServiceProperties()
         {
-            FileServiceProperties props = new FileServiceProperties();
+            FileServiceProperties props = new FileServiceProperties(new MetricsProperties(), new MetricsProperties(), new CorsProperties());
 
             props.HourMetrics.MetricsLevel = MetricsLevel.None;
             props.HourMetrics.RetentionDays = null;

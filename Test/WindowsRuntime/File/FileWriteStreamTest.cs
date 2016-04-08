@@ -70,7 +70,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().AsTask().Wait();
+                share.DeleteAsync().Wait();
             }
         }
 
@@ -174,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().AsTask().Wait();
+                share.DeleteAsync().Wait();
             }
         }
         */
@@ -212,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     };
                     using (var writeStream = await file.OpenWriteAsync(buffer.Length * 3, null, options, null))
                     {
-                        Stream fileStream = writeStream.AsStreamForWrite();
+                        Stream fileStream = writeStream;
 
                         for (int i = 0; i < 3; i++)
                         {
@@ -247,7 +247,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                     using (var writeStream = await file.OpenWriteAsync(null))
                     {
-                        Stream fileStream = writeStream.AsStreamForWrite();
+                        Stream fileStream = writeStream;
                         fileStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
                         wholeFile.Seek(buffer.Length / 2, SeekOrigin.Begin);
 
@@ -274,7 +274,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().AsTask().Wait();
+                share.DeleteAsync().Wait();
             }
         }
 
@@ -299,7 +299,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     using (var writeStream = await file.OpenWriteAsync(buffer.Length))
                     {
-                        Stream fileStream = writeStream.AsStreamForWrite();
+                        Stream fileStream = writeStream;
                         await fileStream.WriteAsync(buffer, 0, buffer.Length);
                         await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                         Random random = new Random();
@@ -326,7 +326,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -355,7 +355,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            await fileStream.WriteAsync(buffer.AsBuffer());
+                            await fileStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeFile.WriteAsync(buffer, 0, buffer.Length);
                         }
 
@@ -374,7 +374,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
 
-                        await fileStream.WriteAsync(buffer.AsBuffer());
+                        await fileStream.WriteAsync(buffer, 0, buffer.Length);
                         await wholeFile.WriteAsync(buffer, 0, buffer.Length);
 
                         Assert.AreEqual(3, opContext.RequestResults.Count);
@@ -395,7 +395,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
     }

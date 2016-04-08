@@ -18,7 +18,9 @@
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
     using Microsoft.Data.OData;
+    using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
@@ -29,9 +31,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
     internal class TableOperationHttpRequestMessageFactory
     {
-        internal static HttpRequestMessage BuildRequestCore(Uri uri, UriQueryBuilder builder, HttpMethod method, int? timeout, HttpContent content, OperationContext ctx)
+        internal static StorageRequestMessage BuildRequestCore(Uri uri, UriQueryBuilder builder, HttpMethod method, int? timeout, HttpContent content, OperationContext ctx, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage msg = HttpRequestMessageFactory.CreateRequestMessage(method, uri, timeout, builder, content, ctx);
+            StorageRequestMessage msg = HttpRequestMessageFactory.CreateRequestMessage(method, uri, timeout, builder, content, ctx, canonicalizer, credentials);
 
             msg.Headers.Add("Accept-Charset", "UTF-8");
             msg.Headers.Add("MaxDataServiceVersion", "3.0;NetFx");
@@ -39,9 +41,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return msg;
         }
 
-        internal static HttpRequestMessage BuildRequestForTableQuery(Uri uri, UriQueryBuilder builder, int? timeout, HttpContent content, OperationContext ctx, TablePayloadFormat payloadFormat)
+        internal static StorageRequestMessage BuildRequestForTableQuery(Uri uri, UriQueryBuilder builder, int? timeout, HttpContent content, OperationContext ctx, TablePayloadFormat payloadFormat, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage msg = BuildRequestCore(uri, builder, HttpMethod.Get, timeout, content, ctx);
+            StorageRequestMessage msg = BuildRequestCore(uri, builder, HttpMethod.Get, timeout, content, ctx, canonicalizer, credentials);
             
             // Set Accept and Content-Type based on the payload format.
             SetAcceptHeaderForHttpWebRequest(msg, payloadFormat);
@@ -49,9 +51,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return msg;
         }
 
-        internal static HttpRequestMessage BuildRequestForTableOperation<T>(RESTCommand<T> cmd, Uri uri, UriQueryBuilder builder, int? timeout, TableOperation operation, CloudTableClient client, HttpContent content, OperationContext ctx, TablePayloadFormat payloadFormat)
+        internal static StorageRequestMessage BuildRequestForTableOperation<T>(RESTCommand<T> cmd, Uri uri, UriQueryBuilder builder, int? timeout, TableOperation operation, CloudTableClient client, HttpContent content, OperationContext ctx, TablePayloadFormat payloadFormat, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, content, ctx);
+            StorageRequestMessage msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, content, ctx, canonicalizer, credentials);
             
             // Set Accept and Content-Type based on the payload format.
             SetAcceptHeaderForHttpWebRequest(msg, payloadFormat);
@@ -59,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             if (!operation.HttpMethod.Equals("HEAD") && !operation.HttpMethod.Equals("GET"))
             {
-                SetContentTypeForHttpWebRequest(msg, payloadFormat);
+                SetContentTypeForHttpWebRequest(msg);
             }
 
             if (operation.OperationType == TableOperationType.InsertOrMerge || operation.OperationType == TableOperationType.Merge)
@@ -98,7 +100,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 HttpRequestAdapterMessage adapterMsg = new HttpRequestAdapterMessage(msg, client.BufferManager, (int)Constants.KB);
                 if (!operation.HttpMethod.Equals("HEAD") && !operation.HttpMethod.Equals("GET"))
                 {
-                    SetContentTypeForAdapterMessage(adapterMsg, payloadFormat);
+                    adapterMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
                 }
 
                 cmd.StreamToDispose = adapterMsg.GetStream();
@@ -113,9 +115,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return msg;
         }
 
-        internal static HttpRequestMessage BuildRequestForTableBatchOperation<T>(RESTCommand<T> cmd, Uri uri, UriQueryBuilder builder, int? timeout, string tableName, TableBatchOperation batch, CloudTableClient client, HttpContent content, OperationContext ctx, TablePayloadFormat payloadFormat)
+        internal static StorageRequestMessage BuildRequestForTableBatchOperation<T>(RESTCommand<T> cmd, Uri uri, UriQueryBuilder builder, int? timeout, string tableName, TableBatchOperation batch, CloudTableClient client, HttpContent content, OperationContext ctx, TablePayloadFormat payloadFormat, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            HttpRequestMessage msg = BuildRequestCore(NavigationHelper.AppendPathToSingleUri(uri, "$batch"), builder, HttpMethod.Post, timeout, content, ctx);
+            StorageRequestMessage msg = BuildRequestCore(NavigationHelper.AppendPathToSingleUri(uri, "$batch"), builder, HttpMethod.Post, timeout, content, ctx, canonicalizer, credentials);
             Logger.LogInformational(ctx, SR.PayloadFormat, payloadFormat);
 
             // create the writer, indent for readability of the examples.  
@@ -235,14 +237,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         #endregion
 
         #region Set Headers
-        #pragma warning disable 0618
-        private static void SetAcceptHeaderForHttpWebRequest(HttpRequestMessage msg, TablePayloadFormat payloadFormat)
+        private static void SetAcceptHeaderForHttpWebRequest(StorageRequestMessage msg, TablePayloadFormat payloadFormat)
         {
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                msg.Headers.Add(Constants.HeaderConstants.PayloadAcceptHeader, Constants.AtomAcceptHeaderValue);
-            }
-            else if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
+            if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
             {
                 msg.Headers.Add(Constants.HeaderConstants.PayloadAcceptHeader, Constants.JsonFullMetadataAcceptHeaderValue);
             }
@@ -256,43 +253,19 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
         }
 
-        private static void SetContentTypeForHttpWebRequest(HttpRequestMessage msg, TablePayloadFormat payloadFormat)
+        private static void SetContentTypeForHttpWebRequest(StorageRequestMessage msg)
         {
             if (msg.Content == null || msg.Content.Headers == null)
             {
                 return;
             }
 
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                msg.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(Constants.AtomContentTypeHeaderValue);
-            }
-            else
-            {
-                msg.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(Constants.JsonContentTypeHeaderValue);
-            }
-        }
-
-        private static void SetContentTypeForAdapterMessage(HttpRequestAdapterMessage adapterMsg, TablePayloadFormat payloadFormat)
-        {
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                adapterMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.AtomContentTypeHeaderValue);
-            }
-            else
-            {
-                adapterMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
-            }
+            msg.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(Constants.JsonContentTypeHeaderValue);
         }
 
         private static void SetAcceptAndContentTypeForODataBatchMessage(ODataBatchOperationRequestMessage mimePartMsg, TablePayloadFormat payloadFormat)
         {
-            if (payloadFormat == TablePayloadFormat.AtomPub)
-            {
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadAcceptHeader, Constants.AtomAcceptHeaderValue);
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.AtomContentTypeHeaderValue);
-            }
-            else if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
+            if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
             {
                 mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadAcceptHeader, Constants.JsonFullMetadataAcceptHeaderValue);
                 mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
@@ -308,7 +281,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
             }
         }
-        #pragma warning restore 0618
         #endregion
     }
 }

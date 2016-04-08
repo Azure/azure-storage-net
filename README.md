@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (6.2.0)
+# Microsoft Azure Storage SDK for .NET (7.0.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -50,15 +50,14 @@ For the best development experience, developers should use the official Microsof
 
 ## Use with the Azure Storage Emulator
 
-- The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests. 
-- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.2. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+- The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.3. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-This version of the Storage Client Library ships with the storage version 2015-02-21. This storage version provides a preview of the Microsoft Azure File Service. For more details,
-please see the [Introducing Microsoft Azure File Service blog on MSDN] (http://blogs.msdn.com/b/windowsazurestorage/archive/2014/05/11/introducing-microsoft-azure-file-service.aspx).
+This version of the Storage Client Library ships with the storage version 2015-07-08.
 
 ### Via Git
 

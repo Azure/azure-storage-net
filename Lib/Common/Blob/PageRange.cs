@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a range of pages in a page blob.
     /// </summary>
-    public sealed class PageRange
+    public class PageRange
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="PageRange"/> class.

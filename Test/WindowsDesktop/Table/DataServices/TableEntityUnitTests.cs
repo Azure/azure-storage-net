@@ -26,7 +26,6 @@ using Microsoft.WindowsAzure.Storage.Table.DataServices.Entities;
 
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 {
-#pragma warning disable 0618
     [TestClass]
     [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
     public class TableEntityUnitTests : TableTestBase
@@ -98,7 +97,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityInsert()
         {
-            DoSingleEntityInsert(TablePayloadFormat.AtomPub);
             DoSingleEntityInsert(TablePayloadFormat.Json);
         }
 
@@ -159,7 +157,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityInsertConflict()
         {
-            DoSingleEntityInsertConflict(TablePayloadFormat.AtomPub);
             DoSingleEntityInsertConflict(TablePayloadFormat.Json);
         }
 
@@ -204,7 +201,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityInsertOrMerge()
         {
-            DoSingleEntityInsertOrMerge(TablePayloadFormat.AtomPub);
             DoSingleEntityInsertOrMerge(TablePayloadFormat.Json);
         }
 
@@ -275,7 +271,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityInsertOrReplace()
         {
-            DoSingleEntityInsertOrReplace(TablePayloadFormat.AtomPub);
             DoSingleEntityInsertOrReplace(TablePayloadFormat.Json);
         }
 
@@ -555,7 +550,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityDelete()
         {
-            DoSingleEntityDelete(TablePayloadFormat.AtomPub);
             DoSingleEntityDelete(TablePayloadFormat.Json);
         }
 
@@ -603,7 +597,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityInsertDeleteFail()
         {
-            DoSingleEntityInsertDeleteFail(TablePayloadFormat.AtomPub);
             DoSingleEntityInsertDeleteFail(TablePayloadFormat.Json);
         }
 
@@ -680,7 +673,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityMerge()
         {
-            DoSingleEntityMerge(TablePayloadFormat.AtomPub);
             DoSingleEntityMerge(TablePayloadFormat.Json);
         }
 
@@ -729,7 +721,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityMergeFail()
         {
-            DoSingleEntityMergeFail(TablePayloadFormat.AtomPub);
             DoSingleEntityMergeFail(TablePayloadFormat.Json);
         }
 
@@ -799,7 +790,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityReplace()
         {
-            DoSingleEntityReplace(TablePayloadFormat.AtomPub);
             DoSingleEntityReplace(TablePayloadFormat.Json);
         }
 
@@ -848,7 +838,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityReplaceFail()
         {
-            DoSingleEntityReplaceFail(TablePayloadFormat.AtomPub);
             DoSingleEntityReplaceFail(TablePayloadFormat.Json);
         }
 
@@ -919,7 +908,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void BatchInsert()
         {
-            DoBatchInsert(TablePayloadFormat.AtomPub);
             DoBatchInsert(TablePayloadFormat.Json);
         }
 
@@ -1062,7 +1050,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void SingleEntityInsertEntityOver1MB()
         {
-            DoSingleEntityInsertEntityOver1MB(TablePayloadFormat.AtomPub);
             DoSingleEntityInsertEntityOver1MB(TablePayloadFormat.Json);
         }
 
@@ -1090,5 +1077,4 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         }
         #endregion
     }
-#pragma warning restore 0618
 }

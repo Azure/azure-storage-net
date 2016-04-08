@@ -29,8 +29,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K || PORTABLE
     using System.Threading;
+#if ASPNET_K || PORTABLE
+
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -40,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// Provides a client-side logical representation of the Windows Azure Queue Service. This client is used to configure and execute requests against the Queue Service.
     /// </summary>
     /// <remarks>The service client encapsulates the base URI for the Queue service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>
-    public sealed partial class CloudQueueClient
+    public partial class CloudQueueClient
     {
         /// <summary>
         /// Gets or sets the authentication scheme to use to sign HTTP requests.
@@ -59,44 +60,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Gets the authentication handler used to sign requests.
-        /// </summary>
-        /// <value>Authentication handler.</value>
-        internal HttpClientHandler AuthenticationHandler
-        {
-           get
-            {
-                HttpClientHandler authenticationHandler;
-                if (this.Credentials.IsSharedKey)
-                {
-#if PORTABLE
-                    throw new NotSupportedException(SR.PortableDoesNotSupportSharedKey);
-#else
-                    authenticationHandler = new SharedKeyAuthenticationHttpHandler(
-                        this.GetCanonicalizer(),
-                        this.Credentials,
-                        this.Credentials.AccountName);
-#endif
-                }
-                else
-                {
-                    authenticationHandler = new NoOpAuthenticationHttpHandler();
-                }
-
-                return authenticationHandler;
-            }
-        }
-
-        /// <summary>
         /// Returns a result segment containing a collection of queues.
         /// </summary>
         /// <param name="currentToken">A <see cref="QueueContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K || PORTABLE 
-        public Task<QueueResultSegment> ListQueuesSegmentedAsync(QueueContinuationToken currentToken)
-#else
-        public IAsyncOperation<QueueResultSegment> ListQueuesSegmentedAsync(QueueContinuationToken currentToken)
-#endif
+        [DoesServiceRequest]
+        public virtual Task<QueueResultSegment> ListQueuesSegmentedAsync(QueueContinuationToken currentToken)
         {
             return this.ListQueuesSegmentedAsync(null, QueueListingDetails.None, null, currentToken, null, null);
         }
@@ -107,11 +76,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="prefix">The queue name prefix.</param>
         /// <param name="currentToken">A <see cref="QueueContinuationToken"/> token returned by a previous listing operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K || PORTABLE 
-        public Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueContinuationToken currentToken)
-#else
-        public IAsyncOperation<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueContinuationToken currentToken)
-#endif
+        [DoesServiceRequest]
+        public virtual Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueContinuationToken currentToken)
         {
             return this.ListQueuesSegmentedAsync(prefix, QueueListingDetails.None, null, currentToken, null, null);
         }
@@ -128,31 +94,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment of queues.</returns>
-#if ASPNET_K || PORTABLE 
-        public Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext)
+        [DoesServiceRequest]
+        public virtual Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext)
         {
             return this.ListQueuesSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext)
-        {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
-            operationContext = operationContext ?? new OperationContext();
 
-            return AsyncInfo.Run(async (token) =>
-            {
-                ResultSegment<CloudQueue> resultSegment = await Executor.ExecuteAsync(
-                    this.ListQueuesImpl(prefix, maxResults, detailsIncluded, modifiedOptions, currentToken),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    token);
-
-                return new QueueResultSegment(resultSegment.Results, (QueueContinuationToken)resultSegment.ContinuationToken);
-            });
-        }
-#endif
-
-#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Returns a result segment containing a collection of queues
         /// whose names begin with the specified prefix.
@@ -166,7 +113,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment of queues.</returns>
-        public Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        [DoesServiceRequest]
+        public virtual Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
@@ -182,7 +130,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 return new QueueResultSegment(resultSegment.Results, (QueueContinuationToken)resultSegment.ContinuationToken);
             }, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Core implementation for the ListQueues method.
@@ -205,9 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.Handler = this.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
@@ -244,11 +189,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE 
-        public Task<ServiceProperties> GetServicePropertiesAsync()
-#else
-        public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync()
-#endif
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync()
         {
             return this.GetServicePropertiesAsync(null, null);
         }
@@ -260,26 +201,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE 
-        public Task<ServiceProperties> GetServicePropertiesAsync(QueueRequestOptions options, OperationContext operationContext)
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync(QueueRequestOptions options, OperationContext operationContext)
-        {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
-            operationContext = operationContext ?? new OperationContext();
 
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsync(
-              this.GetServicePropertiesImpl(modifiedOptions),
-              modifiedOptions.RetryPolicy,
-              operationContext,
-              token));
-        }
-#endif
-
-#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -288,7 +214,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-        public Task<ServiceProperties> GetServicePropertiesAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
@@ -299,16 +225,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
               operationContext,
               cancellationToken), cancellationToken);
         }
-#endif
 
         private RESTCommand<ServiceProperties> GetServicePropertiesImpl(QueueRequestOptions requestOptions)
         {
             RESTCommand<ServiceProperties> retCmd = new RESTCommand<ServiceProperties>(this.Credentials, this.StorageUri);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -327,11 +250,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="properties">The queue service properties.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE 
-        public Task SetServicePropertiesAsync(ServiceProperties properties)
-#else
-        public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties)
-#endif
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties)
         {
             return this.SetServicePropertiesAsync(properties, null, null);
         }
@@ -344,25 +263,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE 
-        public Task SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions requestOptions, OperationContext operationContext)
-        {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(requestOptions, this);
-            operationContext = operationContext ?? new OperationContext();
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                 this.SetServicePropertiesImpl(properties, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -372,7 +277,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-        public Task SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -382,7 +287,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         private RESTCommand<NullType> SetServicePropertiesImpl(ServiceProperties properties, QueueRequestOptions requestOptions)
         {
@@ -398,11 +302,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             retCmd.StreamToDispose = memoryStream;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
@@ -415,12 +317,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <returns>The queue service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE 
-        public Task<ServiceStats> GetServiceStatsAsync()
-#else
-        public IAsyncOperation<ServiceStats> GetServiceStatsAsync()
-#endif
-        {
+        public virtual Task<ServiceStats> GetServiceStatsAsync()
+{
             return this.GetServiceStatsAsync(null /* options */, null /* operationContext */);
         }
 
@@ -431,27 +329,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The queue service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE 
-        public Task<ServiceStats> GetServiceStatsAsync(QueueRequestOptions options, OperationContext operationContext)
+        public virtual Task<ServiceStats> GetServiceStatsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
             return this.GetServiceStatsAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ServiceStats> GetServiceStatsAsync(QueueRequestOptions options, OperationContext operationContext)
-        {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
-            operationContext = operationContext ?? new OperationContext();
 
-            return AsyncInfo.Run(
-                async (token) => await Executor.ExecuteAsync(
-                    this.GetServiceStatsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    token));
-        }
-#endif
-
-#if ASPNET_K || PORTABLE 
         /// <summary>
         /// Gets the stats of the queue service.
         /// </summary>
@@ -460,7 +342,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The queue service stats.</returns>
         [DoesServiceRequest]
-        public Task<ServiceStats> GetServiceStatsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ServiceStats> GetServiceStatsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
@@ -472,17 +354,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     operationContext,
                     cancellationToken), cancellationToken);
         }
-#endif
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(QueueRequestOptions requestOptions)
         {
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => QueueHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;

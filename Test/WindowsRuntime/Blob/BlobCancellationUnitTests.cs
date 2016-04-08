@@ -85,21 +85,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 using (MemoryStream originalBlob = new MemoryStream(buffer))
                 {
-                    await blob.UploadFromStreamAsync(originalBlob.AsInputStream());
+                    await blob.UploadFromStreamAsync(originalBlob);
 
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
                         OperationContext operationContext = new OperationContext();
-#if ASPNET_K
                         var tokenSource = new CancellationTokenSource();
                         Task action = blob.DownloadToStreamAsync(downloadedBlob, null, null, operationContext, tokenSource.Token);
                         await Task.Delay(100);
                         tokenSource.Cancel();
-#else
-                        IAsyncAction action = blob.DownloadToStreamAsync(downloadedBlob.AsOutputStream(), null, null, operationContext);
-                        await Task.Delay(100);
-                        action.Cancel();
-#endif
                         try
                         {
                             await action;
@@ -116,7 +110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -140,16 +134,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (ManualResetEvent waitHandle = new ManualResetEvent(false))
                     {
                         OperationContext operationContext = new OperationContext();
-#if ASPNET_K
                         var tokenSource = new CancellationTokenSource();
                         Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, null, null, operationContext, tokenSource.Token);
                         await Task.Delay(1000); //we need a bit longer time in order to put the cancel output exception to operationContext.LastResult
                         tokenSource.Cancel();
-#else
-                        IAsyncAction action = blob.UploadFromStreamAsync(originalBlob.AsInputStream(), null, null, operationContext);
-                        await Task.Delay(100);
-                        action.Cancel();
-#endif
                         try
                         {
                             await action;
@@ -166,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }
