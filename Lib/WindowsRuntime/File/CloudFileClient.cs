@@ -29,14 +29,14 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K
     using System.Threading;
+#if ASPNET_K
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
 
-    public sealed partial class CloudFileClient
+    public partial class CloudFileClient
     {
         /// <summary>
         /// Gets or sets the authentication scheme to use to sign HTTP requests.
@@ -55,41 +55,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
-        /// Gets the authentication handler used to sign requests.
-        /// </summary>
-        /// <value>Authentication handler.</value>
-        internal HttpClientHandler AuthenticationHandler
-        {
-            get
-            {
-                HttpClientHandler authenticationHandler;
-                if (this.Credentials.IsSharedKey)
-                {
-                    authenticationHandler = new SharedKeyAuthenticationHttpHandler(
-                        this.GetCanonicalizer(),
-                        this.Credentials,
-                        this.Credentials.AccountName);
-                }
-                else
-                {
-                    authenticationHandler = new NoOpAuthenticationHttpHandler();
-                }
-
-                return authenticationHandler;
-            }
-        }
-
-        /// <summary>
         /// Returns a result segment containing a collection of shares.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken)
-#else
-        public IAsyncOperation<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken)
-#endif
+        public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken)
         {
             return this.ListSharesSegmentedAsync(null, ShareListingDetails.None, null, currentToken, null, null);
         }
@@ -101,11 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken)
-#else
-        public IAsyncOperation<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken)
-#endif
+        public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken)
         {
             return this.ListSharesSegmentedAsync(prefix, ShareListingDetails.None, null, currentToken, null, null);
         }
@@ -121,29 +88,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
+        public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
             return this.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
-        {
-            return AsyncInfo.Run(async (token) =>
-            {
-                FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
-                ResultSegment<CloudFileShare> resultSegment = await Executor.ExecuteAsync(
-                    this.ListSharesImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
-                    modifiedOptions.RetryPolicy, 
-                    operationContext, 
-                    token);
 
-                return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
-            });
-        }
-#endif
-
-#if ASPNET_K
         /// <summary>
         /// Returns a result segment containing a collection of shares
         /// whose names begin with the specified prefix.
@@ -156,7 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-        public Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return Task.Run(async () =>
             {
@@ -170,17 +119,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
             }, cancellationToken);
         }
-#endif
+
         /// <summary>
         /// Gets the properties of the File service.
         /// </summary>
         /// <returns>The File service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<FileServiceProperties> GetServicePropertiesAsync()
-#else
-        public IAsyncOperation<FileServiceProperties> GetServicePropertiesAsync()
-#endif
+        public virtual Task<FileServiceProperties> GetServicePropertiesAsync()
         {
             return this.GetServicePropertiesAsync(null /* options */, null /* operationContext */);
         }
@@ -192,27 +137,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The File service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext)
+        public virtual Task<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
-            operationContext = operationContext ?? new OperationContext();
 
-            return AsyncInfo.Run(
-                async (token) => await Executor.ExecuteAsync(
-                    this.GetServicePropertiesImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    token));
-        }
-#endif
-
-#if ASPNET_K
         /// <summary>
         /// Gets the properties of the File service.
         /// </summary>
@@ -221,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The File service properties.</returns>
         [DoesServiceRequest]
-        public Task<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
@@ -233,8 +162,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                     operationContext,
                     cancellationToken), cancellationToken);
         }
-#endif
-
 
         /// <summary>
         /// Sets the properties of the File service.
@@ -242,11 +169,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="properties">The File service properties.</param>
         /// <returns>The properties of the File service.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task SetServicePropertiesAsync(FileServiceProperties properties)
-#else
-        public IAsyncAction SetServicePropertiesAsync(FileServiceProperties properties)
-#endif
+        public virtual Task SetServicePropertiesAsync(FileServiceProperties properties)
         {
             return this.SetServicePropertiesAsync(properties, null /* options */, null /* operationContext */);
         }
@@ -259,25 +182,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The properties of the File service.</returns>
         [DoesServiceRequest]
-#if ASPNET_K
-        public Task SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext)
-        {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
-            operationContext = operationContext ?? new OperationContext();
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                 this.SetServicePropertiesImpl(properties, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K
         /// <summary>
         /// Gets the properties of the File service.
         /// </summary>
@@ -287,7 +196,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The properties of the File service.</returns>
         [DoesServiceRequest]
-        public Task SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
@@ -297,7 +206,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Core implementation for the ListShares method.
@@ -320,9 +228,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.Handler = this.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
@@ -355,10 +261,8 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<FileServiceProperties> retCmd = new RESTCommand<FileServiceProperties>(this.Credentials, this.StorageUri);
 
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -386,12 +290,10 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             retCmd.StreamToDispose = memoryStream;
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);

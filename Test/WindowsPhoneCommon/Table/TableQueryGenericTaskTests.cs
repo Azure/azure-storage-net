@@ -25,7 +25,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#pragma warning disable 0618
     [TestClass]
     public class TableQueryGenericTaskTests : TableTestBase
     {
@@ -114,7 +113,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableGenericQueryBasicAsync(TablePayloadFormat.Json);
             await DoTableGenericQueryBasicAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableGenericQueryBasicAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableGenericQueryBasicAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableGenericQueryBasicAsync(TablePayloadFormat format)
@@ -143,7 +141,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableGenericQueryWithContinuationAsync(TablePayloadFormat.Json);
             await DoTableGenericQueryWithContinuationAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableGenericQueryWithContinuationAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableGenericQueryWithContinuationAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableGenericQueryWithContinuationAsync(TablePayloadFormat format)
@@ -188,7 +185,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableGenericQueryWithFilter(TablePayloadFormat.Json);
             DoTableGenericQueryWithFilter(TablePayloadFormat.JsonNoMetadata);
             DoTableGenericQueryWithFilter(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryWithFilter(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableGenericQueryWithFilter(TablePayloadFormat format)
@@ -221,7 +217,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableGenericQueryProjection(TablePayloadFormat.Json);
             DoTableGenericQueryProjection(TablePayloadFormat.JsonNoMetadata);
             DoTableGenericQueryProjection(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryProjection(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableGenericQueryProjection(TablePayloadFormat format)
@@ -255,7 +250,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableGenericWithResolver(TablePayloadFormat.Json);
             DoTableGenericWithResolver(TablePayloadFormat.JsonNoMetadata);
             DoTableGenericWithResolver(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericWithResolver(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableGenericWithResolver(TablePayloadFormat format)
@@ -301,7 +295,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableQueryResolverWithDynamic(TablePayloadFormat.Json);
             DoTableQueryResolverWithDynamic(TablePayloadFormat.JsonNoMetadata);
             DoTableQueryResolverWithDynamic(TablePayloadFormat.JsonFullMetadata);
-            DoTableQueryResolverWithDynamic(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableQueryResolverWithDynamic(TablePayloadFormat format)
@@ -344,7 +337,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat.Json);
             await DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat format)
@@ -485,7 +477,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableGenericQueryWithInvalidTakeCount(TablePayloadFormat.Json);
             DoTableGenericQueryWithInvalidTakeCount(TablePayloadFormat.JsonNoMetadata);
             DoTableGenericQueryWithInvalidTakeCount(TablePayloadFormat.JsonFullMetadata);
-            DoTableGenericQueryWithInvalidTakeCount(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableGenericQueryWithInvalidTakeCount(TablePayloadFormat format)
@@ -531,7 +522,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.Json);
             await DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.JsonNoMetadata);
             await DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.JsonFullMetadata);
-            await DoTableGenericQueryWithInvalidQuery(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableGenericQueryWithInvalidQuery(TablePayloadFormat format)
@@ -622,5 +612,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
-#pragma warning restore 0618
 }

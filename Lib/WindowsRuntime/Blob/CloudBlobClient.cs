@@ -36,13 +36,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
     using Windows.Foundation.Metadata;
+    using System.Threading;
 #endif
 
     /// <summary>
     /// Provides a client-side logical representation of the Windows Azure Blob Service. This client is used to configure and execute requests against the Blob Service. 
     /// </summary>
     /// <remarks>The service client encapsulates the base URI for the Blob service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>
-    public sealed partial class CloudBlobClient
+    public partial class CloudBlobClient
     {
         /// <summary>
         /// Gets or sets the authentication scheme to use to sign HTTP requests.
@@ -61,45 +62,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Gets the authentication handler used to sign requests.
-        /// </summary>
-        /// <value>Authentication handler.</value>
-        internal HttpClientHandler AuthenticationHandler
-        {
-            get
-            {
-                HttpClientHandler authenticationHandler;
-                if (this.Credentials.IsSharedKey)
-                {
-#if PORTABLE
-                    throw new NotSupportedException(SR.PortableDoesNotSupportSharedKey);
-#else
-                    authenticationHandler = new SharedKeyAuthenticationHttpHandler(
-                        this.GetCanonicalizer(),
-                        this.Credentials,
-                        this.Credentials.AccountName);
-#endif
-                }
-                else
-                {
-                    authenticationHandler = new NoOpAuthenticationHttpHandler();
-                }
-
-                return authenticationHandler;
-            }
-        }
-
-        /// <summary>
         /// Returns a result segment containing a collection of containers.
         /// </summary>
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ContainerResultSegment> ListContainersSegmentedAsync(BlobContinuationToken currentToken)
-#else
-        public IAsyncOperation<ContainerResultSegment> ListContainersSegmentedAsync(BlobContinuationToken currentToken)
-#endif
+        public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(BlobContinuationToken currentToken)
         {
             return this.ListContainersSegmentedAsync(null /* prefix */, ContainerListingDetails.None, null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
         }
@@ -110,11 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, BlobContinuationToken currentToken)
-#else
-        public IAsyncOperation<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, BlobContinuationToken currentToken)
-#endif
+        public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, BlobContinuationToken currentToken)
         {
             return this.ListContainersSegmentedAsync(prefix, ContainerListingDetails.None, null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
         }
@@ -132,29 +96,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.ListContainersSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return AsyncInfo.Run(async (token) =>
-            {
-                BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-                ResultSegment<CloudBlobContainer> resultSegment = await Executor.ExecuteAsync(
-                    this.ListContainersImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    token);
 
-                return new ContainerResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
-            });
-        }
-#endif
-
-#if ASPNET_K  || PORTABLE
         /// <summary>
         /// Returns a result segment containing a collection of containers
         /// whose names begin with the specified prefix.
@@ -169,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-        public Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return Task.Run(async () =>
             {
@@ -183,7 +129,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return new ContainerResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
             }, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Returns a result segment containing a collection of blob items 
@@ -193,17 +138,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="currentToken">The continuation token.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, BlobContinuationToken currentToken)
+        public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, BlobContinuationToken currentToken)
         {
             return this.ListBlobsSegmentedAsync(prefix, false, BlobListingDetails.None, null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
         }
-#else
-        public IAsyncOperation<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, BlobContinuationToken currentToken)
-        {
-            return this.ListBlobsSegmentedAsync(prefix, false, BlobListingDetails.None, null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
-        }
-#endif
 
         /// <summary>
         /// Returns a result segment containing a collection of blob items 
@@ -219,11 +157,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
-#else
-        public IAsyncOperation<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext)
         {
             string containerName;
             string listingPrefix;
@@ -233,18 +167,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return container.ListBlobsSegmentedAsync(listingPrefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext);
         }
 
-    /// <summary>
-    /// Gets a reference to a blob from the service.
-    /// </summary>
-    /// <param name="blobUri">The URI of the blob.</param>
-    /// <returns>A reference to the blob.</returns>
-    [DoesServiceRequest]
-
-#if ASPNET_K || PORTABLE 
-        public Task<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri)
-#else
-        public IAsyncOperation<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri)
-#endif
+        /// <summary>
+        /// Gets a reference to a blob from the service.
+        /// </summary>
+        /// <param name="blobUri">The URI of the blob.</param>
+        /// <returns>A reference to the blob.</returns>
+        [DoesServiceRequest]
+        public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri)
         {
             return this.GetBlobReferenceFromServerAsync(blobUri, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -258,12 +187,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A reference to the blob.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#else
-        [DefaultOverload]
-        public IAsyncOperation<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("blobUri", blobUri);
             return this.GetBlobReferenceFromServerAsync(new StorageUri(blobUri), accessCondition, options, operationContext);
@@ -278,26 +202,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A reference to the blob.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ICloudBlob> GetBlobReferenceFromServerAsync(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetBlobReferenceFromServerAsync(blobUri, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ICloudBlob> GetBlobReferenceFromServerAsync(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            CommonUtility.AssertNotNull("blobUri", blobUri);
 
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsync(
-                this.GetBlobReferenceImpl(blobUri, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
-
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets a reference to a blob from the service.
         /// </summary>
@@ -308,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A reference to the blob.</returns>
         [DoesServiceRequest]
-        public Task<ICloudBlob> GetBlobReferenceFromServerAsync(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("blobUri", blobUri);
 
@@ -319,7 +228,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
+
         /// <summary>
         /// Core implementation for the ListContainers method.
         /// </summary>
@@ -342,9 +251,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.Handler = this.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ContainerHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ContainerHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
@@ -392,9 +299,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.Handler = client.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, parsedSnapshot, accessCondition, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, parsedSnapshot, accessCondition, cnt, ctx, client.GetCanonicalizer(), client.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -445,9 +350,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.Handler = client.AuthenticationHandler;
-            getCmd.BuildClient = HttpClientFactory.BuildHttpClient;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, parsedSnapshot, accessCondition, cnt, ctx);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, parsedSnapshot, accessCondition, cnt, ctx, client.GetCanonicalizer(), client.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -485,11 +388,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ServiceProperties> GetServicePropertiesAsync()
-#else
-        public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync()
-#endif
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync()
         {
             return this.GetServicePropertiesAsync(null /* options */, null /* operationContext */);
         }
@@ -501,27 +400,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ServiceProperties> GetServicePropertiesAsync(BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync(BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetServicePropertiesAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ServiceProperties> GetServicePropertiesAsync(BlobRequestOptions options, OperationContext operationContext)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-            operationContext = operationContext ?? new OperationContext();
 
-            return AsyncInfo.Run(
-                async (token) => await Executor.ExecuteAsync(
-                    this.GetServicePropertiesImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    token));
-        }
-#endif
-
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -530,7 +413,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The blob service properties.</returns>
         [DoesServiceRequest]
-        public Task<ServiceProperties> GetServicePropertiesAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ServiceProperties> GetServicePropertiesAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
             operationContext = operationContext ?? new OperationContext();
@@ -542,17 +425,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     operationContext,
                     cancellationToken), cancellationToken);
         }
-#endif
 
         private RESTCommand<ServiceProperties> GetServicePropertiesImpl(BlobRequestOptions requestOptions)
         {
             RESTCommand<ServiceProperties> retCmd = new RESTCommand<ServiceProperties>(this.Credentials, this.StorageUri);
 
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -572,11 +452,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="properties">The blob service properties.</param>
         /// <returns>The properties of the blob service.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task SetServicePropertiesAsync(ServiceProperties properties)
-#else
-        public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties)
-#endif
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties)
         {
             return this.SetServicePropertiesAsync(properties, null /* options */, null /* operationContext */);
         }
@@ -589,25 +465,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The properties of the blob service.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task SetServicePropertiesAsync(ServiceProperties properties, BlobRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties, BlobRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.SetServicePropertiesAsync(properties, requestOptions, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncAction SetServicePropertiesAsync(ServiceProperties properties, BlobRequestOptions requestOptions, OperationContext operationContext)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this);
-            operationContext = operationContext ?? new OperationContext();
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                 this.SetServicePropertiesImpl(properties, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets the properties of the blob service.
         /// </summary>
@@ -617,7 +479,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The properties of the blob service.</returns>
         [DoesServiceRequest]
-        public Task SetServicePropertiesAsync(ServiceProperties properties, BlobRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetServicePropertiesAsync(ServiceProperties properties, BlobRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this);
             operationContext = operationContext ?? new OperationContext();
@@ -627,7 +489,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         private RESTCommand<NullType> SetServicePropertiesImpl(ServiceProperties properties, BlobRequestOptions requestOptions)
         {
@@ -643,12 +504,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             retCmd.StreamToDispose = memoryStream;
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
@@ -661,11 +520,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <returns>The blob service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ServiceStats> GetServiceStatsAsync()
-#else
-        public IAsyncOperation<ServiceStats> GetServiceStatsAsync()
-#endif
+        public virtual Task<ServiceStats> GetServiceStatsAsync()
         {
             return this.GetServiceStatsAsync(null /* options */, null /* operationContext */);
         }
@@ -677,27 +532,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The blob service stats.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<ServiceStats> GetServiceStatsAsync(BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<ServiceStats> GetServiceStatsAsync(BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetServiceStatsAsync(options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<ServiceStats> GetServiceStatsAsync(BlobRequestOptions options, OperationContext operationContext)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-            operationContext = operationContext ?? new OperationContext();
 
-            return AsyncInfo.Run(
-                async (token) => await Executor.ExecuteAsync(
-                    this.GetServiceStatsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    token));
-        }
-#endif
-
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Gets service stats for the Blob service.
         /// </summary>
@@ -706,7 +545,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The blob service stats.</returns>
         [DoesServiceRequest]
-        public Task<ServiceStats> GetServiceStatsAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<ServiceStats> GetServiceStatsAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
             operationContext = operationContext ?? new OperationContext();
@@ -718,17 +557,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     operationContext,
                     cancellationToken), cancellationToken);
         }
-#endif
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(BlobRequestOptions requestOptions)
         {
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.Handler = this.AuthenticationHandler;
-            retCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;

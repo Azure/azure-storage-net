@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage.Table.Protocol;
 
 #if ASPNET_K
 using System.Globalization;
@@ -89,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             tableClient = GenerateCloudTableClient();
             currentTable = tableClient.GetTableReference(GenerateRandomTableName());
-            currentTable.CreateIfNotExistsAsync().AsTask().Wait();
+            currentTable.CreateIfNotExistsAsync().Wait();
 
             for (int i = 0; i < 15; i++)
             {
@@ -102,7 +103,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     batch.Insert(ent);
                 }
 
-                currentTable.ExecuteBatchAsync(batch).AsTask().Wait();
+                currentTable.ExecuteBatchAsync(batch).Wait();
             }
         }
         //
@@ -110,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [ClassCleanup()]
         public static void MyClassCleanup()
         {
-            currentTable.DeleteIfExistsAsync().AsTask().Wait();
+            currentTable.DeleteIfExistsAsync().Wait();
         }
 
         //
@@ -255,25 +256,69 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
             {
-                DoTableQueryProjectionAsync(payloadFormat);
+                DoTableQueryProjectionAsync(payloadFormat, false);
+                DoTableQueryProjectionAsync(payloadFormat, true);
             }
         }
 
-        private void DoTableQueryProjectionAsync(TablePayloadFormat format)
+        private void DoTableQueryProjectionAsync(TablePayloadFormat format, bool projectSystemProperties)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
+
             TableQuery query = new TableQuery().Select(new List<string>() { "a", "c" });
 
             foreach (DynamicTableEntity ent in ExecuteQuery(currentTable, query))
             {
-                Assert.IsNotNull(ent.PartitionKey);
-                Assert.IsNotNull(ent.RowKey);
-                Assert.IsNotNull(ent.Timestamp);
-
                 Assert.AreEqual(ent.Properties["a"].StringValue, "a");
                 Assert.IsFalse(ent.Properties.ContainsKey("b"));
                 Assert.AreEqual(ent.Properties["c"].StringValue, "c");
                 Assert.IsFalse(ent.Properties.ContainsKey("d"));
+
+                if (tableClient.DefaultRequestOptions.ProjectSystemProperties.HasValue)
+                {
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.PartitionKey == default(string), "Missing expected " + TableConstants.PartitionKey);
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.RowKey == default(string), "Missing expected " + TableConstants.RowKey);
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.Timestamp == default(DateTimeOffset), "Missing expected " + TableConstants.Timestamp);
+                }
+            }
+        }
+
+        [TestMethod]
+        [Description("Basic projection test")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableQueryProjectionAsyncSpecifyingSystemProperties()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableQueryProjectionAsyncSpecifyingSystemProperties(payloadFormat, false);
+                DoTableQueryProjectionAsyncSpecifyingSystemProperties(payloadFormat, true);
+            }
+        }
+
+        private void DoTableQueryProjectionAsyncSpecifyingSystemProperties(TablePayloadFormat format, bool projectSystemProperties)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+            tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
+
+            TableQuery query = new TableQuery().Select(new List<string>() { "a", "c", TableConstants.PartitionKey, TableConstants.Timestamp });
+
+            foreach (DynamicTableEntity ent in ExecuteQuery(currentTable, query))
+            {
+                Assert.AreEqual(ent.Properties["a"].StringValue, "a");
+                Assert.IsFalse(ent.Properties.ContainsKey("b"));
+                Assert.AreEqual(ent.Properties["c"].StringValue, "c");
+                Assert.IsFalse(ent.Properties.ContainsKey("d"));
+                Assert.AreNotEqual(default(string), ent.PartitionKey);
+                Assert.AreNotEqual(default(DateTimeOffset), ent.Timestamp);
+
+                if (tableClient.DefaultRequestOptions.ProjectSystemProperties.HasValue)
+                {
+                    Assert.AreNotEqual(tableClient.DefaultRequestOptions.ProjectSystemProperties.Value, ent.RowKey == default(string), "Missing expected " + TableConstants.RowKey);
+                }
             }
         }
 
@@ -408,7 +453,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -555,7 +600,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -686,7 +731,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             while (currSeg == null || currSeg.ContinuationToken != null)
             {
-                Task<TableQuerySegment> task = Task.Run(() => table.ExecuteQuerySegmentedAsync(query, currSeg != null ? currSeg.ContinuationToken : null).AsTask());
+                Task<TableQuerySegment> task = Task.Run(() => table.ExecuteQuerySegmentedAsync(query, currSeg != null ? currSeg.ContinuationToken : null));
                 task.Wait();
                 currSeg = task.Result;
                 retList.AddRange(currSeg.Results);

@@ -223,11 +223,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying blob, and commits the blob.
         /// </summary>
         /// <returns>A task that represents the asynchronous commit operation.</returns>
-#if ASPNET_K || PORTABLE
         public override async Task CommitAsync()
-#else
-        public async Task CommitAsync()
-#endif
         {
             await this.FlushAsync();
             this.committed = true;
@@ -329,7 +325,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphore.WaitAsync();
-            Task putBlockTask = this.blockBlob.PutBlockAsync(blockId, blockData.AsInputStream(), blockMD5, this.accessCondition, this.options, this.operationContext).AsTask().ContinueWith(task =>
+            Task putBlockTask = this.blockBlob.PutBlockAsync(blockId, blockData, blockMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(task =>
             {
                 if (task.Exception != null)
                 {
@@ -352,7 +348,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphore.WaitAsync();
-            Task writePagesTask = this.pageBlob.WritePagesAsync(pageData.AsInputStream(), offset, contentMD5, this.accessCondition, this.options, this.operationContext).AsTask().ContinueWith(task =>
+            Task writePagesTask = this.pageBlob.WritePagesAsync(pageData, offset, contentMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(task =>
             {
                 if (task.Exception != null)
                 {
@@ -381,7 +377,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.accessCondition.IfAppendPositionEqual = offset;
 
             int previousResultsCount = this.operationContext.RequestResults.Count;
-            Task writeBlockTask = this.appendBlob.AppendBlockAsync(blockData.AsInputStream(), blockMD5, this.accessCondition, this.options, this.operationContext).AsTask().ContinueWith(task =>
+            Task writeBlockTask = this.appendBlob.AppendBlockAsync(blockData, blockMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(task =>
             {
                 if (task.Exception != null)
                 {

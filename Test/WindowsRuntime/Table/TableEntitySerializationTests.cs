@@ -88,7 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
             currentTable = tableClient.GetTableReference(GenerateRandomTableName());
-            currentTable.CreateIfNotExistsAsync().AsTask().Wait();
+            currentTable.CreateIfNotExistsAsync().Wait();
 
             if (TestBase.TableBufferManager != null)
             {
@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCleanup()]
         public void MyTestCleanup()
         {
-            currentTable.DeleteIfExistsAsync().AsTask().Wait();
+            currentTable.DeleteIfExistsAsync().Wait();
 
             if (TestBase.TableBufferManager != null)
             {

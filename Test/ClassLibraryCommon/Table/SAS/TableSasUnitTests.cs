@@ -30,7 +30,6 @@ using System.Xml.Linq;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#pragma warning disable 0618
     [TestClass]
     public class TableSasUnitTests : TableTestBase
     {
@@ -1020,7 +1019,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CloudTableClient sasClient = new CloudTableClient(tableClient.BaseUri, new StorageCredentials(sasString));
 
                 // Construct a valid set of service properties to upload.
-                ServiceProperties properties = new ServiceProperties();
+                ServiceProperties properties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties());
                 properties.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
                 properties.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
                 properties.Logging.RetentionDays = 9;
@@ -1487,5 +1486,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
-#pragma warning restore 0618
 }

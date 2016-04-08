@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection, specialized for type <c>TElement</c>, of the results of executing the query.</returns>       
         [DoesServiceRequest]
-        public IEnumerable<TElement> Execute(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        public virtual IEnumerable<TElement> Execute(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             if (this.queryProvider == null)
             {
@@ -123,7 +123,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginExecuteSegmented(TableContinuationToken currentToken, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginExecuteSegmented(TableContinuationToken currentToken, AsyncCallback callback, object state)
         {
             return this.BeginExecuteSegmented(currentToken, null /* RequestOptions */, null /* OperationContext */, callback, state);
         }
@@ -138,7 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginExecuteSegmented(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginExecuteSegmented(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             if (this.queryProvider == null)
             {
@@ -180,7 +180,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
         /// <returns>A <see cref="TableQuerySegment{TElement}"/> object of type <typeparamref name="TElement"/>.</returns>
-        public TableQuerySegment<TElement> EndExecuteSegmented(IAsyncResult asyncResult)
+        public virtual TableQuerySegment<TElement> EndExecuteSegmented(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<TableQuerySegment<TElement>>(asyncResult);
         }
@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>
         /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken)
+        public virtual Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken)
         {
             return this.ExecuteSegmentedAsync(currentToken, CancellationToken.None);
         }
@@ -203,7 +203,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="currentToken">A continuation token returned by a previous listing operation, can be null.</param>/// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, CancellationToken cancellationToken)
+        public virtual Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginExecuteSegmented, this.EndExecuteSegmented, currentToken, cancellationToken);
         }
@@ -216,7 +216,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteSegmentedAsync(currentToken, requestOptions, operationContext, CancellationToken.None);
         }
@@ -230,7 +230,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> of type <see cref="TableQuerySegment{TElement}"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<TableQuerySegment<TElement>> ExecuteSegmentedAsync(TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginExecuteSegmented, this.EndExecuteSegmented, currentToken, requestOptions, operationContext, cancellationToken);
         }
@@ -245,7 +245,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="TableQuerySegment{TElement}"/>, specialized for type <c>TElement</c>, containing the results of executing the query.</returns>
         [DoesServiceRequest]
-        public TableQuerySegment<TElement> ExecuteSegmented(TableContinuationToken continuationToken, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        public virtual TableQuerySegment<TElement> ExecuteSegmented(TableContinuationToken continuationToken, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             if (this.queryProvider == null)
             {
@@ -275,7 +275,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Returns an enumerator that iterates through the <see cref="TableQuery{TElement}"/>.
         /// </summary>
         /// <returns>An <see cref="IEnumerator{TElement}"/> for the <see cref="TableQuery{TElement}"/>.</returns>
-        public IEnumerator<TElement> GetEnumerator()
+        public virtual IEnumerator<TElement> GetEnumerator()
         {
             if (this.Expression == null)
             {
@@ -544,7 +544,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 query.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails);
             }
 
-            UriQueryBuilder builder = query.GenerateQueryBuilder();
+            UriQueryBuilder builder = query.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
 
             if (token != null)
             {

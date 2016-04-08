@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a Windows Azure page blob.
     /// </summary>
-    public sealed partial class CloudPageBlob : CloudBlob, ICloudBlob
+    public partial class CloudPageBlob : CloudBlob, ICloudBlob
     {
         /// <summary>
         /// Default is 4 MB.
@@ -73,19 +73,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAbsoluteUri">The absolute URI to the blob. The service assumes this is the URI for the blob in the primary location.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
-        public static new CloudPageBlob Create(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
-        {
-            return new CloudPageBlob(blobAbsoluteUri, snapshotTime, credentials);
-        }
-
-        internal CloudPageBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials) 
-            : base(blobAbsoluteUri, snapshotTime, credentials)
-#else
         public CloudPageBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials) 
             : base(blobAbsoluteUri, snapshotTime, credentials)
-#endif
         {
             this.Properties.BlobType = BlobType.PageBlob;
         }

@@ -27,7 +27,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#pragma warning disable 0618
     [TestClass]
     public class TableBatchOperationTaskTest : TableTestBase
     {
@@ -102,7 +101,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchInsertAsync(TablePayloadFormat.Json);
             await DoTableBatchInsertAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchInsertAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchInsertAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchInsertAsync(TablePayloadFormat format)
@@ -152,7 +150,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchInsertFailAsync(TablePayloadFormat.Json);
             await DoTableBatchInsertFailAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchInsertFailAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchInsertFailAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchInsertFailAsync(TablePayloadFormat format)
@@ -195,7 +192,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchInsertOrMergeAsync(TablePayloadFormat.Json);
             await DoTableBatchInsertOrMergeAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchInsertOrMergeAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchInsertOrMergeAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchInsertOrMergeAsync(TablePayloadFormat format)
@@ -249,7 +245,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchInsertOrReplaceAsync(TablePayloadFormat.Json);
             await DoTableBatchInsertOrReplaceAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchInsertOrReplaceAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchInsertOrReplaceAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchInsertOrReplaceAsync(TablePayloadFormat format)
@@ -299,7 +294,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchDeleteAsync(TablePayloadFormat.Json);
             await DoTableBatchDeleteAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchDeleteAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchDeleteAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchDeleteAsync(TablePayloadFormat format)
@@ -346,7 +340,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchDeleteFailAsync(TablePayloadFormat.Json);
             await DoTableBatchDeleteFailAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchDeleteFailAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchDeleteFailAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchDeleteFailAsync(TablePayloadFormat format)
@@ -399,7 +392,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchMergeAsync(TablePayloadFormat.Json);
             await DoTableBatchMergeAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchMergeAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchMergeAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchMergeAsync(TablePayloadFormat format)
@@ -440,7 +432,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchMergeFailAsync(TablePayloadFormat.Json);
             await DoTableBatchMergeFailAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchMergeFailAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchMergeFailAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchMergeFailAsync(TablePayloadFormat format)
@@ -520,7 +511,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchReplaceAsync(TablePayloadFormat.Json);
             await DoTableBatchReplaceAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchReplaceAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchReplaceAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchReplaceAsync(TablePayloadFormat format)
@@ -560,7 +550,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchReplaceFailAsync(TablePayloadFormat.Json);
             await DoTableBatchReplaceFailAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchReplaceFailAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchReplaceFailAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchReplaceFailAsync(TablePayloadFormat format)
@@ -637,7 +626,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchAllSupportedOperationsAsync(TablePayloadFormat.Json);
             await DoTableBatchAllSupportedOperationsAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchAllSupportedOperationsAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchAllSupportedOperationsAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchAllSupportedOperationsAsync(TablePayloadFormat format)
@@ -719,7 +707,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchRetrieveAsync(TablePayloadFormat.Json);
             await DoTableBatchRetrieveAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchRetrieveAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchRetrieveAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchRetrieveAsync(TablePayloadFormat format)
@@ -797,7 +784,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat.Json);
             await DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchRetrieveWithResolverAsync(TablePayloadFormat format)
@@ -849,7 +835,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchOperationsWithEmptyKeysAsync(TablePayloadFormat.Json);
             await DoTableBatchOperationsWithEmptyKeysAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchOperationsWithEmptyKeysAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchOperationsWithEmptyKeysAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchOperationsWithEmptyKeysAsync(TablePayloadFormat format)
@@ -956,7 +941,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.Json);
             await InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.JsonNoMetadata);
             await InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.JsonFullMetadata);
-            await InsertAndDeleteBatchWithNEntities(1, TablePayloadFormat.AtomPub);
         }
 
         [TestMethod]
@@ -970,7 +954,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.Json);
             await InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.JsonNoMetadata);
             await InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.JsonFullMetadata);
-            await InsertAndDeleteBatchWithNEntities(10, TablePayloadFormat.AtomPub);
         }
 
 
@@ -985,7 +968,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.Json);
             await InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.JsonNoMetadata);
             await InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.JsonFullMetadata);
-            await InsertAndDeleteBatchWithNEntities(99, TablePayloadFormat.AtomPub);
         }
 
         [TestMethod]
@@ -999,7 +981,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.Json);
             await InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.JsonNoMetadata);
             await InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.JsonFullMetadata);
-            await InsertAndDeleteBatchWithNEntities(100, TablePayloadFormat.AtomPub);
         }
 
         private async Task InsertAndDeleteBatchWithNEntities(int n, TablePayloadFormat format)
@@ -1044,7 +1025,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.Json);
             await InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.JsonNoMetadata);
             await InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.JsonFullMetadata);
-            await InsertOrMergeBatchWithNEntities(1, TablePayloadFormat.AtomPub);
         }
 
         [TestMethod]
@@ -1058,7 +1038,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.Json);
             await InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.JsonNoMetadata);
             await InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.JsonFullMetadata);
-            await InsertOrMergeBatchWithNEntities(10, TablePayloadFormat.AtomPub);
         }
 
 
@@ -1073,7 +1052,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.Json);
             await InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.JsonNoMetadata);
             await InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.JsonFullMetadata);
-            await InsertOrMergeBatchWithNEntities(99, TablePayloadFormat.AtomPub);
         }
 
         [TestMethod]
@@ -1087,7 +1065,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.Json);
             await InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.JsonNoMetadata);
             await InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.JsonFullMetadata);
-            await InsertOrMergeBatchWithNEntities(100, TablePayloadFormat.AtomPub);
         }
 
         private async Task InsertOrMergeBatchWithNEntities(int n, TablePayloadFormat format)
@@ -1289,7 +1266,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(TablePayloadFormat.Json);
             await DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchWithMultipleOperationsOnSameEntityShouldFailAsync(TablePayloadFormat format)
@@ -1332,7 +1308,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat.Json);
             await DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchOver100EntitiesShouldThrowAsync(TablePayloadFormat format)
@@ -1369,7 +1344,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchEntityOver1MBShouldThrowAsync(TablePayloadFormat.Json);
             await DoTableBatchEntityOver1MBShouldThrowAsync(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchEntityOver1MBShouldThrowAsync(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchEntityOver1MBShouldThrowAsync(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchEntityOver1MBShouldThrowAsync(TablePayloadFormat format)
@@ -1585,7 +1559,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.Json);
             await DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.JsonNoMetadata);
             await DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.JsonFullMetadata);
-            await DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat.AtomPub);
         }
 
         private async Task DoTableBatchWithPropertyOver255CharsShouldThrow(TablePayloadFormat format)
@@ -1633,5 +1606,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
     }
-#pragma warning restore 0618
 }

@@ -17,33 +17,32 @@
 
 namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
 
     internal static class HttpClientFactory
     {
-        public static HttpClient BuildHttpClient<T>(RESTCommand<T> cmd, HttpMessageHandler handler, bool useVersionHeader, OperationContext operationContext)
+        private static Lazy<HttpClient> instance = new Lazy<HttpClient>(
+                    () =>
+                    {
+                        HttpClient newClient = new HttpClient(StorageAuthenticationHttpHandler.Instance, false);
+
+                        newClient.DefaultRequestHeaders.ExpectContinue = false;
+                        newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
+                        newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
+                        newClient.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
+
+                        return newClient;
+                    });
+
+        public static HttpClient Instance
         {
-            HttpClient client = handler != null ? new HttpClient(handler, false) : new HttpClient();
-            client.DefaultRequestHeaders.ExpectContinue = false;
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
-
-            if (useVersionHeader)
+            get
             {
-                client.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
+                return instance.Value;
             }
-
-            if (operationContext != null && operationContext.UserHeaders != null)
-            {
-                foreach (string key in operationContext.UserHeaders.Keys)
-                {
-                    client.DefaultRequestHeaders.Add(key, operationContext.UserHeaders[key]);
-                }
-            }
-
-            return client;
         }
     }
 }

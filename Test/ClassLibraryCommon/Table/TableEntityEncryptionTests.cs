@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-#pragma warning disable 0618
     using Microsoft.Azure.KeyVault;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Core;
@@ -77,7 +76,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoInsertDynamicTableEntityEncryptionSync(TablePayloadFormat.Json);
             DoInsertDynamicTableEntityEncryptionSync(TablePayloadFormat.JsonNoMetadata);
             DoInsertDynamicTableEntityEncryptionSync(TablePayloadFormat.JsonFullMetadata);
-            DoInsertDynamicTableEntityEncryptionSync(TablePayloadFormat.AtomPub);
         }
 
         private void DoInsertDynamicTableEntityEncryptionSync(TablePayloadFormat format)
@@ -158,7 +156,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoInsertPOCOEntityEncryptionWithResolver(TablePayloadFormat.Json);
             DoInsertPOCOEntityEncryptionWithResolver(TablePayloadFormat.JsonNoMetadata);
             DoInsertPOCOEntityEncryptionWithResolver(TablePayloadFormat.JsonFullMetadata);
-            DoInsertPOCOEntityEncryptionWithResolver(TablePayloadFormat.AtomPub);
         }
 
         private void DoInsertPOCOEntityEncryptionWithResolver(TablePayloadFormat format)
@@ -218,7 +215,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoInsertPOCOEntityEncryptionWithAttributes(TablePayloadFormat.Json);
             DoInsertPOCOEntityEncryptionWithAttributes(TablePayloadFormat.JsonNoMetadata);
             DoInsertPOCOEntityEncryptionWithAttributes(TablePayloadFormat.JsonFullMetadata);
-            DoInsertPOCOEntityEncryptionWithAttributes(TablePayloadFormat.AtomPub);
         }
 
         private void DoInsertPOCOEntityEncryptionWithAttributes(TablePayloadFormat format)
@@ -265,7 +261,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoInsertPOCOEntityEncryptionWithAttributesAndResolver(TablePayloadFormat.Json);
             DoInsertPOCOEntityEncryptionWithAttributesAndResolver(TablePayloadFormat.JsonNoMetadata);
             DoInsertPOCOEntityEncryptionWithAttributesAndResolver(TablePayloadFormat.JsonFullMetadata);
-            DoInsertPOCOEntityEncryptionWithAttributesAndResolver(TablePayloadFormat.AtomPub);
         }
 
         private void DoInsertPOCOEntityEncryptionWithAttributesAndResolver(TablePayloadFormat format)
@@ -395,7 +390,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableQueryPOCOProjectionEncryption(TablePayloadFormat.Json, aesKey);
             DoTableQueryPOCOProjectionEncryption(TablePayloadFormat.JsonNoMetadata, aesKey);
             DoTableQueryPOCOProjectionEncryption(TablePayloadFormat.JsonFullMetadata, aesKey);
-            DoTableQueryPOCOProjectionEncryption(TablePayloadFormat.AtomPub, aesKey);
         }
 
         private void DoTableQueryPOCOProjectionEncryption(TablePayloadFormat format, SymmetricKey aesKey)
@@ -508,7 +502,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableQueryDTEProjectionEncryption(TablePayloadFormat.Json, aesKey);
             DoTableQueryDTEProjectionEncryption(TablePayloadFormat.JsonNoMetadata, aesKey);
             DoTableQueryDTEProjectionEncryption(TablePayloadFormat.JsonFullMetadata, aesKey);
-            DoTableQueryDTEProjectionEncryption(TablePayloadFormat.AtomPub, aesKey);
         }
 
         private void DoTableQueryDTEProjectionEncryption(TablePayloadFormat format, SymmetricKey aesKey)
@@ -544,7 +537,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableOperationReplaceEncryption(TablePayloadFormat.Json);
             DoTableOperationReplaceEncryption(TablePayloadFormat.JsonNoMetadata);
             DoTableOperationReplaceEncryption(TablePayloadFormat.JsonFullMetadata);
-            DoTableOperationReplaceEncryption(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableOperationReplaceEncryption(TablePayloadFormat format)
@@ -667,7 +659,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableBatchInsertOrReplaceEncryption(TablePayloadFormat.Json);
             DoTableBatchInsertOrReplaceEncryption(TablePayloadFormat.JsonNoMetadata);
             DoTableBatchInsertOrReplaceEncryption(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchInsertOrReplaceEncryption(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableBatchInsertOrReplaceEncryption(TablePayloadFormat format)
@@ -737,7 +728,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableBatchRetrieveEncryptedEntitySync(TablePayloadFormat.Json);
             DoTableBatchRetrieveEncryptedEntitySync(TablePayloadFormat.JsonNoMetadata);
             DoTableBatchRetrieveEncryptedEntitySync(TablePayloadFormat.JsonFullMetadata);
-            DoTableBatchRetrieveEncryptedEntitySync(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableBatchRetrieveEncryptedEntitySync(TablePayloadFormat format)
@@ -813,7 +803,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableOperationValidateEncryption(TablePayloadFormat.Json);
             DoTableOperationValidateEncryption(TablePayloadFormat.JsonNoMetadata);
             DoTableOperationValidateEncryption(TablePayloadFormat.JsonFullMetadata);
-            DoTableOperationValidateEncryption(TablePayloadFormat.AtomPub);
         }
 
         private void DoTableOperationValidateEncryption(TablePayloadFormat format)
@@ -1260,5 +1249,4 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return ent;
         }
     }
-#pragma warning restore 0618
 }

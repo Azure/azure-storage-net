@@ -196,7 +196,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-                table.DeleteIfExistsAsync().AsTask().Wait();
+                table.DeleteIfExistsAsync().Wait();
             }
         }
 

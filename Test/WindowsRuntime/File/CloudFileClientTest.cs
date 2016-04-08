@@ -256,12 +256,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     try
                     {
-                        await file.UploadFromStreamAsync(ms.AsInputStream());
+                        await file.UploadFromStreamAsync(ms);
                         Assert.Fail();
                     }
                     catch (AggregateException ex)
                     {
-                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.InnerException.Message).ExceptionInfo.Message);
+                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).ExceptionInfo.Message);
                     }
                     catch (TaskCanceledException)
                     {
@@ -271,7 +271,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             finally
             {
                 fileClient.DefaultRequestOptions.MaximumExecutionTime = null;
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -298,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 using (var fileStream = await file.OpenWriteAsync(8 * 1024 * 1024))
                 {
-                    Stream fos = fileStream.AsStreamForWrite();
+                    Stream fos = fileStream;
 
                     DateTime start = DateTime.Now;
                     for (int i = 0; i < 7; i++)
@@ -320,7 +320,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 using (var fileStream = await file.OpenReadAsync())
                 {
-                    Stream fis = fileStream.AsStreamForRead();
+                    Stream fis = fileStream;
 
                     DateTime start = DateTime.Now;
                     int total = 0;
@@ -349,7 +349,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             finally
             {
                 fileClient.DefaultRequestOptions.MaximumExecutionTime = null;
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 

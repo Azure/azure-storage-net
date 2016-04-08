@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -227,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -318,7 +318,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
     }

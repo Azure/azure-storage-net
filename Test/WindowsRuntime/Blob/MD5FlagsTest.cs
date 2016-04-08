@@ -55,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    await blob1.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await blob1.UploadFromStreamAsync(stream, null, optionsWithMD5, null);
                 }
                 await blob1.FetchAttributesAsync();
                 Assert.IsNotNull(blob1.Properties.ContentMD5);
@@ -63,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob1 = container.GetBlockBlobReference("blob2");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    await blob1.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithNoMD5, null);
+                    await blob1.UploadFromStreamAsync(stream, null, optionsWithNoMD5, null);
                 }
                 await blob1.FetchAttributesAsync();
                 Assert.IsNull(blob1.Properties.ContentMD5);
@@ -71,7 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob1 = container.GetBlockBlobReference("blob3");
                 using (Stream stream = new NonSeekableMemoryStream())
                 {
-                    await blob1.UploadFromStreamAsync(stream.AsInputStream());
+                    await blob1.UploadFromStreamAsync(stream);
                 }
                 await blob1.FetchAttributesAsync();
                 Assert.IsNotNull(blob1.Properties.ContentMD5);
@@ -80,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob2 = container.GetPageBlobReference("blob4");
                 using (Stream stream = new MemoryStream())
                 {
-                    await blob2.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await blob2.UploadFromStreamAsync(stream, null, optionsWithMD5, null);
                 }
                 await blob2.FetchAttributesAsync();
                 Assert.IsNotNull(blob2.Properties.ContentMD5);
@@ -88,7 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob2 = container.GetPageBlobReference("blob5");
                 using (Stream stream = new MemoryStream())
                 {
-                    await blob2.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithNoMD5, null);
+                    await blob2.UploadFromStreamAsync(stream, null, optionsWithNoMD5, null);
                 }
                 await blob2.FetchAttributesAsync();
                 Assert.IsNull(blob2.Properties.ContentMD5);
@@ -96,14 +96,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob2 = container.GetPageBlobReference("blob6");
                 using (Stream stream = new MemoryStream())
                 {
-                    await blob2.UploadFromStreamAsync(stream.AsInputStream());
+                    await blob2.UploadFromStreamAsync(stream);
                 }
                 await blob2.FetchAttributesAsync();
                 Assert.IsNull(blob2.Properties.ContentMD5);
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -138,17 +138,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 using (Stream stream = new NonSeekableMemoryStream(buffer))
                 {
-                    await blockBlob.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await blockBlob.UploadFromStreamAsync(stream, null, optionsWithMD5, null);
                 }
 
                 using (Stream stream = new MemoryStream())
                 {
-                    await blockBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, null);
-                    await blockBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
+                    await blockBlob.DownloadToStreamAsync(stream, null, optionsWithMD5, null);
+                    await blockBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
                     using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         int read;
                         do
                         {
@@ -159,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         int read;
                         do
                         {
@@ -173,15 +173,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     OperationContext opContext = new OperationContext();
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => await blockBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, opContext),
+                        async () => await blockBlob.DownloadToStreamAsync(stream, null, optionsWithMD5, opContext),
                         opContext,
                         "Downloading a blob with invalid MD5 should fail",
                         HttpStatusCode.OK);
-                    await blockBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
+                    await blockBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
                     using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         TestHelper.ExpectedException<IOException>(
                             () =>
                             {
@@ -197,7 +197,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         int read;
                         do
                         {
@@ -210,17 +210,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
                 using (Stream stream = new MemoryStream(buffer))
                 {
-                    await pageBlob.UploadFromStreamAsync(stream.AsInputStream(), null, optionsWithMD5, null);
+                    await pageBlob.UploadFromStreamAsync(stream, null, optionsWithMD5, null);
                 }
 
                 using (Stream stream = new MemoryStream())
                 {
-                    await pageBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, null);
-                    await pageBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
+                    await pageBlob.DownloadToStreamAsync(stream, null, optionsWithMD5, null);
+                    await pageBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
                     using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         int read;
                         do
                         {
@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         int read;
                         do
                         {
@@ -245,16 +245,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     OperationContext opContext = new OperationContext();
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => await pageBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithMD5, opContext),
+                        async () => await pageBlob.DownloadToStreamAsync(stream, null, optionsWithMD5, opContext),
                         opContext,
                         "Downloading a blob with invalid MD5 should fail",
                         HttpStatusCode.OK);
-                    await pageBlob.DownloadToStreamAsync(stream.AsOutputStream(), null, optionsWithNoMD5, null);
+                    await pageBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
                     using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
 
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         TestHelper.ExpectedException<IOException>(
                             () =>
                             {
@@ -270,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
-                        Stream blobStreamForRead = blobStream.AsStreamForRead();
+                        Stream blobStreamForRead = blobStream;
                         int read;
                         do
                         {
@@ -282,7 +282,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().AsTask().Wait();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
     }

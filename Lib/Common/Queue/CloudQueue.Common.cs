@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// This class represents a queue in the Windows Azure Queue service.
     /// </summary>
     [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix", Justification = "Reviewed.")]
-    public sealed partial class CloudQueue
+    public partial class CloudQueue
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudQueue"/> class.
@@ -58,17 +58,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="queueAddress">A <see cref="StorageUri"/> containing the absolute URI to the queue at both the primary and secondary locations.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
         /// <returns>A <see cref="CloudQueue"/> object.</returns>
-        public static CloudQueue Create(StorageUri queueAddress, StorageCredentials credentials)
-        {
-            return new CloudQueue(queueAddress, credentials);
-        }
-
-        internal CloudQueue(StorageUri queueAddress, StorageCredentials credentials)
-#else
         public CloudQueue(StorageUri queueAddress, StorageCredentials credentials)
-#endif
         {
             this.ParseQueryAndVerify(queueAddress, credentials);
             this.Metadata = new Dictionary<string, string>();

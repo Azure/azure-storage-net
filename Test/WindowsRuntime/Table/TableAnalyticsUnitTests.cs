@@ -79,14 +79,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public static void MyClassInitialize(TestContext testContext)
         {
             client = GenerateCloudTableClient();
-            startProperties = client.GetServicePropertiesAsync().AsTask().Result;
+            startProperties = client.GetServicePropertiesAsync().Result;
         }
 
         // Use ClassCleanup to run code after all tests in a class have run
         [ClassCleanup()]
         public static void MyClassCleanup()
         {
-            client.SetServicePropertiesAsync(startProperties).AsTask().Wait();
+            client.SetServicePropertiesAsync(startProperties).Wait();
         }
 
         //
@@ -667,7 +667,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static ServiceProperties DefaultServiceProperties()
         {
-            ServiceProperties props = new ServiceProperties();
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;

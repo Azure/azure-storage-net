@@ -48,13 +48,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream wholeFile = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(wholeFile.AsInputStream());
+                    await file.UploadFromStreamAsync(wholeFile);
                 }
 
                 using (MemoryStream wholeFile = new MemoryStream(buffer))
                 {
                     var readStream = await file.OpenReadAsync();
-                    using (Stream fileStream = readStream.AsStreamForRead())
+                    using (Stream fileStream = readStream)
                     {
                         TestHelper.AssertStreamsAreEqual(wholeFile, fileStream);
                     }
@@ -62,7 +62,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -85,13 +85,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 file.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeFile = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(wholeFile.AsInputStream());
+                    await file.UploadFromStreamAsync(wholeFile);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
-                    Stream fileStreamForRead = fileStream.AsStreamForRead();
+                    Stream fileStreamForRead = fileStream;
                     await fileStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
                     await file.SetMetadataAsync();
                     await ExpectedExceptionAsync(
@@ -104,7 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 opContext = new OperationContext();
                 using (var fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
-                    Stream fileStreamForRead = fileStream.AsStreamForRead();
+                    Stream fileStreamForRead = fileStream;
                     long length = fileStreamForRead.Length;
                     await file.SetMetadataAsync();
                     await ExpectedExceptionAsync(
@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -170,16 +170,17 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.Fail("No exception received while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
 
-#if ASPNET_K
-        private static async Task<uint> FileReadStreamSeekAndCompareAsync(Stream fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
-#else
+#if WINDOWS_RT
         private static async Task<uint> FileReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
+#else
+        private static async Task<uint> FileReadStreamSeekAndCompareAsync(Stream fileStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
 #endif
         {
+
             byte[] testBuffer = new byte[readSize];
 
 #if ASPNET_K
-            int actualReadSize = await fileStream.ReadAsync(testBuffer, 0, (int)readSize);
+            int actualReadSize = await fileStream.ReadAsync(testBuffer, 0, (int) readSize);
             Assert.AreEqual(expectedReadCount, actualReadSize);
 #else
             IBuffer testBufferAsIBuffer = testBuffer.AsBuffer();
@@ -196,10 +197,10 @@ namespace Microsoft.WindowsAzure.Storage.File
             return expectedReadCount;
         }
 
-#if ASPNET_K
-        private static async Task<int> FileReadStreamSeekTestAsync(Stream fileStream, long streamReadSize, byte[] bufferToCompare)
-#else
+#if WINDOWS_RT
         private static async Task<int> FileReadStreamSeekTestAsync(IRandomAccessStreamWithContentType fileStream, long streamReadSize, byte[] bufferToCompare)
+#else
+        private static async Task<int> FileReadStreamSeekTestAsync(Stream fileStream, long streamReadSize, byte[] bufferToCompare)
 #endif
         {
             int attempts = 1;
@@ -234,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.AreEqual(position, fileStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             fileStream.Seek(position);
-#if ASPNET_K
+#if ASPNET_K        
             //don't know why adding these two line will pass, but this this the same as the desktop test
             Assert.AreEqual(position, fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 512);
@@ -276,19 +277,23 @@ namespace Microsoft.WindowsAzure.Storage.File
                 file.StreamMinimumReadSizeInBytes = 2 * 1024 * 1024;
                 using (MemoryStream wholeFile = new MemoryStream(buffer))
                 {
-                    await file.UploadFromStreamAsync(wholeFile.AsInputStream());
+                    await file.UploadFromStreamAsync(wholeFile);
                 }
 
                 OperationContext opContext = new OperationContext();
                 using (var fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
+#if ASPNET_K
                     int attempts = await FileReadStreamSeekTestAsync(fileStream, file.StreamMinimumReadSizeInBytes, buffer);
+#else
+                    int attempts = await FileReadStreamSeekTestAsync(fileStream.AsRandomAccessStream(), file.StreamMinimumReadSizeInBytes, buffer);
+#endif
                     TestHelper.AssertNAttempts(opContext, attempts);
                 }
             }
             finally
             {
-                share.DeleteIfExistsAsync().AsTask().Wait();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
     }

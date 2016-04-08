@@ -35,6 +35,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         private TimeSpan? maximumExecutionTime;
 
         /// <summary>
+        /// Defines the absolute default option values, should neither the user nor client specify anything.
+        /// </summary>
+        internal static QueueRequestOptions BaseDefaultRequestOptions = new QueueRequestOptions()
+        {
+            RetryPolicy = new NoRetry(),
+#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+            EncryptionPolicy = null,
+            RequireEncryption = null,
+#endif
+            LocationMode = RetryPolicies.LocationMode.PrimaryOnly,
+            ServerTimeout = null,
+            MaximumExecutionTime = null
+        };
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="QueueRequestOptions"/> class.
         /// </summary>
         public QueueRequestOptions()
@@ -65,17 +80,38 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         internal static QueueRequestOptions ApplyDefaults(QueueRequestOptions options, CloudQueueClient serviceClient)
         {
             QueueRequestOptions modifiedOptions = new QueueRequestOptions(options);
-            
-            modifiedOptions.RetryPolicy = modifiedOptions.RetryPolicy ?? serviceClient.DefaultRequestOptions.RetryPolicy;
+
+            modifiedOptions.RetryPolicy = 
+                modifiedOptions.RetryPolicy 
+                ?? serviceClient.DefaultRequestOptions.RetryPolicy 
+                ?? BaseDefaultRequestOptions.RetryPolicy;
+
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)
-            modifiedOptions.EncryptionPolicy = modifiedOptions.EncryptionPolicy ?? serviceClient.DefaultRequestOptions.EncryptionPolicy;
-            modifiedOptions.RequireEncryption = modifiedOptions.RequireEncryption ?? serviceClient.DefaultRequestOptions.RequireEncryption;
+            modifiedOptions.EncryptionPolicy = 
+                modifiedOptions.EncryptionPolicy 
+                ?? serviceClient.DefaultRequestOptions.EncryptionPolicy 
+                ?? BaseDefaultRequestOptions.EncryptionPolicy;
+
+            modifiedOptions.RequireEncryption = 
+                modifiedOptions.RequireEncryption 
+                ?? serviceClient.DefaultRequestOptions.RequireEncryption 
+                ?? BaseDefaultRequestOptions.RequireEncryption;
 #endif
-            modifiedOptions.LocationMode = (modifiedOptions.LocationMode 
-                                            ?? serviceClient.DefaultRequestOptions.LocationMode)
-                                            ?? RetryPolicies.LocationMode.PrimaryOnly;
-            modifiedOptions.ServerTimeout = modifiedOptions.ServerTimeout ?? serviceClient.DefaultRequestOptions.ServerTimeout;
-            modifiedOptions.MaximumExecutionTime = modifiedOptions.MaximumExecutionTime ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime;
+
+            modifiedOptions.LocationMode = 
+                modifiedOptions.LocationMode 
+                ?? serviceClient.DefaultRequestOptions.LocationMode 
+                ?? BaseDefaultRequestOptions.LocationMode;
+
+            modifiedOptions.ServerTimeout = 
+                modifiedOptions.ServerTimeout 
+                ?? serviceClient.DefaultRequestOptions.ServerTimeout 
+                ?? BaseDefaultRequestOptions.ServerTimeout;
+
+            modifiedOptions.MaximumExecutionTime = 
+                modifiedOptions.MaximumExecutionTime 
+                ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime 
+                ?? BaseDefaultRequestOptions.MaximumExecutionTime;
             
             if (!modifiedOptions.OperationExpiryTime.HasValue && modifiedOptions.MaximumExecutionTime.HasValue)
             {

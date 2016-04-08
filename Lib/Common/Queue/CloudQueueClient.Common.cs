@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     /// Provides a client-side logical representation of the Windows Azure Queue service. This client is used to configure and execute requests against the Queue service.
     /// </summary>
     /// <remarks>The service client encapsulates the endpoint or endpoints for the Queue service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>
-    public sealed partial class CloudQueueClient
+    public partial class CloudQueueClient
     {
         private AuthenticationScheme authenticationScheme;
 
@@ -48,23 +48,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Queue service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudQueueClient"/> object.</returns>
-        public static CloudQueueClient Create(StorageUri storageUri, StorageCredentials credentials)
-        {
-            return new CloudQueueClient(storageUri, credentials);
-        }
-
-        internal CloudQueueClient(StorageUri storageUri, StorageCredentials credentials)
-#else
         public CloudQueueClient(StorageUri storageUri, StorageCredentials credentials)
-#endif
         {
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
-            this.DefaultRequestOptions = new QueueRequestOptions();
-            this.DefaultRequestOptions.RetryPolicy = new ExponentialRetry();
-            this.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryOnly;
+            this.DefaultRequestOptions =
+                new QueueRequestOptions(QueueRequestOptions.BaseDefaultRequestOptions) 
+                { 
+                    RetryPolicy = new ExponentialRetry()
+                };
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
         }
@@ -107,78 +99,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         public QueueRequestOptions DefaultRequestOptions { get; set; }
 
         /// <summary>
-        /// Gets or sets the default retry policy for requests made via the Queue service client.
-        /// </summary>
-        /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
-        [Obsolete("Use DefaultRequestOptions.RetryPolicy.")]
-        public IRetryPolicy RetryPolicy
-        {
-            get
-            {
-                return this.DefaultRequestOptions.RetryPolicy;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.RetryPolicy = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the default location mode for requests made via the Queue service client.
-        /// </summary>
-        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
-        [Obsolete("Use DefaultRequestOptions.LocationMode.")]
-        public LocationMode? LocationMode
-        {
-            get
-            {
-                return this.DefaultRequestOptions.LocationMode;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.LocationMode = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the default server timeout for requests made via the Queue service client.
-        /// </summary>
-        /// <value>A <see cref="TimeSpan"/> containing the server timeout interval.</value>
-        [Obsolete("Use DefaultRequestOptions.ServerTimeout.")]
-        public TimeSpan? ServerTimeout
-        {
-            get
-            {
-                return this.DefaultRequestOptions.ServerTimeout;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.ServerTimeout = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the maximum execution time across all potential retries.
-        /// </summary>
-        /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
-        [Obsolete("Use DefaultRequestOptions.MaximumExecutionTime.")]
-        public TimeSpan? MaximumExecutionTime
-        {
-            get
-            {
-                return this.DefaultRequestOptions.MaximumExecutionTime;
-            }
-
-            set
-            {
-                this.DefaultRequestOptions.MaximumExecutionTime = value;
-            }
-        }
-
-        /// <summary>
         /// Gets a value indicating whether the service client is used with Path style or Host style.
         /// </summary>
         /// <value>Is <c>true</c> if use path style URIs; otherwise, <c>false</c>.</value>
@@ -195,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             return new CloudQueue(queueName, this);
         }
 
-        private ICanonicalizer GetCanonicalizer()
+        internal ICanonicalizer GetCanonicalizer()
         {
             if (this.AuthenticationScheme == AuthenticationScheme.SharedKeyLite)
             {

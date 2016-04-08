@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// This class implements IRandomAccessStream and acts like a proxy between
     /// the caller and the actual Stream implementation.
     /// </summary>
-    internal class BlobWriteStreamHelper : ICloudBlobStream
+    internal class BlobWriteStreamHelper
     {
         private BlobWriteStream originalStream;
         private IOutputStream originalStreamAsOutputStream;

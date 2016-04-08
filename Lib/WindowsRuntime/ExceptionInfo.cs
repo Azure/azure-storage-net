@@ -33,12 +33,6 @@ namespace Microsoft.WindowsAzure.Storage
         public string Type { get; internal set; }
 
         /// <summary>
-        /// Gets HRESULT, a coded numerical value that is assigned to a specific exception.
-        /// </summary>
-        /// <value>The HRESULT value.</value>
-        public int HResult { get; internal set; }
-
-        /// <summary>
         /// Gets a message that describes the current exception.
         /// </summary>
         /// <value>The error message that explains the reason for the exception, or an empty string("").</value>
@@ -76,9 +70,6 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
             this.Message = ex.Message;
             this.StackTrace = ex.StackTrace;
-#if WINDOWS_RT || ASPNET_K || PORTABLE
-            this.HResult = ex.HResult;
-#endif
 
             this.Source = ex.Source;
             if (ex.InnerException != null)
@@ -108,9 +99,6 @@ namespace Microsoft.WindowsAzure.Storage
         {
             writer.WriteStartElement("ExceptionInfo");
             writer.WriteElementString("Type", this.Type);
-#if WINDOWS_RT || ASPNET_K || PORTABLE
-            writer.WriteElementString("HResult", Convert.ToString(this.HResult));
-#endif
             writer.WriteElementString("Message", this.Message);
             writer.WriteElementString("Source", this.Source);
             writer.WriteElementString("StackTrace", this.StackTrace);
@@ -130,10 +118,6 @@ namespace Microsoft.WindowsAzure.Storage
         {
             reader.ReadStartElement("ExceptionInfo");
             this.Type = CommonUtility.ReadElementAsString("Type", reader);
-
-#if WINDOWS_RT || ASPNET_K || PORTABLE
-            this.HResult = int.Parse(CommonUtility.ReadElementAsString("HResult", reader));
-#endif
             this.Message = CommonUtility.ReadElementAsString("Message", reader);
             this.Source = CommonUtility.ReadElementAsString("Source", reader);
             this.StackTrace = CommonUtility.ReadElementAsString("StackTrace", reader);

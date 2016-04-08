@@ -28,11 +28,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Net;
     using System.Net.Http;
     using System.Text;
-
-#if ASPNET_K || PORTABLE
     using System.Threading;
     using System.Threading.Tasks;
-#else
+
+#if WINDOWS_RT
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
     using Windows.Storage.Streams;
@@ -42,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents an append blob, a type of blob where blocks of data are always committed to the end of the blob.
     /// </summary>
-    public sealed partial class CloudAppendBlob : CloudBlob, ICloudBlob
+    public partial class CloudAppendBlob : CloudBlob, ICloudBlob
     {
         /// <summary>
         /// Opens a stream for writing to the blob.
@@ -50,11 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="createNew">Use <c>true</c> to create a new append blob or overwrite an existing one, <c>false</c> to append to an existing blob.</param>
         /// <returns>A stream to be used for writing to the blob.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<CloudBlobStream> OpenWriteAsync(bool createNew)
-#else
-        public IAsyncOperation<ICloudBlobStream> OpenWriteAsync(bool createNew)
-#endif
+        public virtual Task<CloudBlobStream> OpenWriteAsync(bool createNew)
         {
             return this.OpenWriteAsync(createNew, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -70,8 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// <returns>A stream to be used for writing to the blob.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<CloudBlobStream> OpenWriteAsync(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<CloudBlobStream> OpenWriteAsync(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.OpenWriteAsync(createNew, accessCondition, options, operationContext, CancellationToken.None);
         }
@@ -86,10 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A stream to be used for writing to the blob.</returns>
         [DoesServiceRequest]
-        public Task<CloudBlobStream> OpenWriteAsync(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        public IAsyncOperation<ICloudBlobStream> OpenWriteAsync(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task<CloudBlobStream> OpenWriteAsync(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient, false);
@@ -98,29 +89,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new ArgumentException(SR.MD5NotPossible);
             }
 
-#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
-#else
-            return AsyncInfo.Run(async (token) =>
-#endif
             {
                 if (createNew)
                 {
-#if ASPNET_K || PORTABLE
                     await this.CreateOrReplaceAsync(accessCondition, options, operationContext, cancellationToken);
-#else
-                    await this.CreateOrReplaceAsync(accessCondition, options, operationContext).AsTask(token);
-#endif
                 }
                 else
                 {
                     // Although we don't need any properties from the service, we should make this call in order to honor the user specified conditional headers
                     // while opening an existing stream and to get the append position for an existing blob if user didn't specify one.
-#if ASPNET_K || PORTABLE
                     await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken);
-#else
-                    await this.FetchAttributesAsync(accessCondition, options, operationContext).AsTask(token);
-#endif
                 }
 
                 if (accessCondition != null)
@@ -128,41 +107,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     accessCondition = new AccessCondition() { LeaseId = accessCondition.LeaseId, IfAppendPositionEqual = accessCondition.IfAppendPositionEqual, IfMaxSizeLessThanOrEqual = accessCondition.IfMaxSizeLessThanOrEqual };
                 }
 
-#if ASPNET_K || PORTABLE
                 CloudBlobStream stream = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
-#else
-                ICloudBlobStream stream = new BlobWriteStreamHelper(this, accessCondition, modifiedOptions, operationContext);
-#endif
                 return stream;
-#if ASPNET_K || PORTABLE
             }, cancellationToken);
-#else
-            });
-#endif
         }
 
         /// <summary>
         /// Uploads a stream to an append blob. If the blob already exists, it will be overwritten. Recommended only for single-writer scenarios.
         /// </summary>
         /// <param name="source">The stream providing the blob content.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromStreamAsync(Stream source)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromStreamAsync(IInputStream)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadFromStreamAsync(IInputStream source)
-#endif
+        public virtual Task UploadFromStreamAsync(Stream source)
         {
             return this.UploadFromStreamAsyncHelper(source, null /* length */, true /* createNew */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -172,7 +132,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source">The stream providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
@@ -180,17 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromStreamAsync(Stream, long)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromStreamAsync(Stream source, long length)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromStreamAsync(IInputStream, long)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadFromStreamAsync(IInputStream source, long length)
-#endif
+        public virtual Task UploadFromStreamAsync(Stream source, long length)
         {
             return this.UploadFromStreamAsyncHelper(source, length, true /* createNew */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -202,7 +151,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
@@ -210,17 +158,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromStreamAsync(Stream, AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromStreamAsync(IInputStream, AccessCondition, BlobRequestOptions, OperationContext)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadFromStreamAsync(IInputStream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.UploadFromStreamAsyncHelper(source, null /* length */, true /* createNew */, accessCondition, options, operationContext);
         }
@@ -233,7 +171,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
@@ -241,22 +178,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromStreamAsync(Stream, long, AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromStreamAsync(IInputStream, long, AccessCondition, BlobRequestOptions, OperationContext)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadFromStreamAsync(IInputStream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.UploadFromStreamAsyncHelper(source, length, true /* createNew */, accessCondition, options, operationContext);
         }
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Uploads a stream to an append blob. If the blob already exists, it will be overwritten. Recommended only for single-writer scenarios.
         /// </summary>
@@ -272,7 +198,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromStream(Stream, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.UploadFromStreamAsyncHelper(source, null /* length */, true /* createNew */, accessCondition, options, operationContext, cancellationToken);
         }
@@ -293,32 +219,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromStream(Stream, long, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.UploadFromStreamAsyncHelper(source, length, true /* createNew */, accessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Appends a stream to an append blob. Recommended only for single-writer scenarios.
         /// </summary>
         /// <param name="source">The stream providing the blob content.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.                
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromStreamAsync(Stream source)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction AppendFromStreamAsync(IInputStream source)
-#endif
+        public virtual Task AppendFromStreamAsync(Stream source)
         {
             return this.UploadFromStreamAsyncHelper(source, null /* length */, false /* createNew */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -328,18 +244,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source">The stream providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromStreamAsync(Stream source, long length)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public IAsyncAction AppendFromStreamAsync(IInputStream source, long length)
-#endif
+        public virtual Task AppendFromStreamAsync(Stream source, long length)
         {
             return this.UploadFromStreamAsyncHelper(source, length, false /* createNew */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -351,23 +261,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction AppendFromStreamAsync(IInputStream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task AppendFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.UploadFromStreamAsyncHelper(source, null /* length */, false /* createNew */, accessCondition, options, operationContext);
         }
@@ -380,28 +280,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction AppendFromStreamAsync(IInputStream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task AppendFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.UploadFromStreamAsyncHelper(source, length, false /* createNew */, accessCondition, options, operationContext);
         }
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Appends a stream to an append blob. Recommended only for single-writer scenarios.
         /// </summary>
@@ -416,7 +305,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task AppendFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.UploadFromStreamAsyncHelper(source, null /* length */, false /* createNew */, accessCondition, options, operationContext, cancellationToken);
         }
@@ -436,11 +325,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task AppendFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.UploadFromStreamAsyncHelper(source, length, false /* createNew */, accessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Uploads a stream to an append blob. Recommended only for single-writer scenarios.
@@ -451,7 +339,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
@@ -472,20 +359,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        internal IAsyncAction UploadFromStreamAsyncHelper(IInputStream source, long? length, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
         {
             CommonUtility.AssertNotNull("source", source);
 
-            Stream sourceAsStream = source.AsStreamForRead();
             if (length.HasValue)
             {
                 CommonUtility.AssertInBounds("length", length.Value, 1);
 
-                if (sourceAsStream.CanSeek && length > sourceAsStream.Length - sourceAsStream.Position)
+                if (source.CanSeek && length > source.Length - source.Position)
                 {
                     throw new ArgumentOutOfRangeException("length", SR.StreamLengthShortError);
                 }
@@ -496,29 +377,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
             {
                 using (CloudBlobStream blobStream = await this.OpenWriteAsync(createNew, accessCondition, options, operationContext, cancellationToken))
                 {
                     // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                     // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-                    await sourceAsStream.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+                    await source.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
                     await blobStream.CommitAsync();
                 }
             }, cancellationToken);
-#else
-            return AsyncInfo.Run(async (token) =>
-            {
-                using (ICloudBlobStream blobStream = await this.OpenWriteAsync(createNew, accessCondition, options, operationContext).AsTask(token))
-                {
-                    // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
-                    // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-                    await sourceAsStream.WriteToAsync(blobStream.AsStreamForWrite(0), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, token);
-                    await blobStream.CommitAsync().AsTask(token);
-                }
-            });
-#endif
         }
 
 #if !PORTABLE
@@ -527,26 +395,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
 #if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string, FileMode)"/>.
+        /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromFileAsync(string path, FileMode mode)
+        public virtual Task UploadFromFileAsync(string path)
         {
-            return this.UploadFromFileAsync(path, mode, null /* accessCondition */, null /* options */, null /* operationContext */);
+            return this.UploadFromFileAsync(path, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
 #else
         /// <param name="source">The file providing the blob content.</param>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
+        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
         /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(StorageFile)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public IAsyncAction UploadFromFileAsync(StorageFile source)
+        public virtual Task UploadFromFileAsync(StorageFile source)
         {
             return this.UploadFromFileAsync(source, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -555,50 +422,71 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Uploads a file to an append blob. If the blob already exists, it will be overwritten.
         /// </summary>
+#if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string, FileMode, AccessCondition, BlobRequestOptions, OperationContext)"/>.
+        /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string, AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.UploadFromFileAsync(path, mode, accessCondition, options, operationContext, CancellationToken.None);
+            return this.UploadFromFileAsync(path, accessCondition, options, operationContext, CancellationToken.None);
         }
 #else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
+        /// <param name="source">The file providing the blob content.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(StorageFile, AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public IAsyncAction UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            CommonUtility.AssertNotNull("source", source);
-
-            return AsyncInfo.Run(async (token) =>
-            {
-                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(token))
-                {
-                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext).AsTask(token);
-                }
-            });
+            return this.UploadFromFileAsync(source, accessCondition, options, operationContext, CancellationToken.None);
         }
 #endif
 
-#if ASPNET_K
+
         /// <summary>
         /// Uploads a file to an append blob. If the blob already exists, it will be overwritten.
         /// </summary>
+#if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <remarks>
+        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
+        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
+        /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            CommonUtility.AssertNotNull("path", path);
+
+            return Task.Run(async () =>
+            {
+                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
+                }
+            }, cancellationToken);
+        }
+#else 
+        /// <param name="source">The file providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -611,17 +499,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string, FileMode, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            CommonUtility.AssertNotNull("path", path);
+            CommonUtility.AssertNotNull("source", source);
 
             return Task.Run(async () =>
             {
-                using (Stream stream = new FileStream(path, mode, FileAccess.Read))
+                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken))
                 {
-                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
+                    await this.UploadFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken);
                 }
-            }, cancellationToken);
+            });
         }
 #endif
 
@@ -630,18 +518,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
 #if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task AppendFromFileAsync(string path, FileMode mode)
+        public virtual Task AppendFromFileAsync(string path)
         {
-            return this.AppendFromFileAsync(path, mode, null /* accessCondition */, null /* options */, null /* operationContext */);
+            return this.AppendFromFileAsync(path, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
 #else
         /// <param name="source">The file providing the blob content.</param>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
+        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public IAsyncAction AppendFromFileAsync(StorageFile source)
+        public virtual Task AppendFromFileAsync(StorageFile source)
         {
             return this.AppendFromFileAsync(source, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -650,47 +537,42 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Appends a file to an append blob. Recommended only for single-writer scenarios.
         /// </summary>
+#if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task AppendFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.AppendFromFileAsync(path, mode, accessCondition, options, operationContext, CancellationToken.None);
+            return this.AppendFromFileAsync(path, accessCondition, options, operationContext, CancellationToken.None);
         }
 #else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
+        /// <param name="source">The file providing the blob content.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public IAsyncAction AppendFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task AppendFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            CommonUtility.AssertNotNull("source", source);
-
-            return AsyncInfo.Run(async (token) =>
-            {
-                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(token))
-                {
-                    await this.AppendFromStreamAsync(stream, accessCondition, options, operationContext).AsTask(token);
-                }
-            });
+            return this.AppendFromFileAsync(source, accessCondition, options, operationContext, CancellationToken.None);
         }
+
 #endif
 
-#if ASPNET_K
         /// <summary>
         /// Appends a file to an append blob. Recommended only for single-writer scenarios.
         /// </summary>
+#if ASPNET_K
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -700,17 +582,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task AppendFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("path", path);
 
             return Task.Run(async () =>
             {
-                using (Stream stream = new FileStream(path, mode, FileAccess.Read))
+                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
                     await this.AppendFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
                 }
             }, cancellationToken);
+        }
+#else 
+        /// <param name="source">The file providing the blob content.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <remarks>
+        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task AppendFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+
+            CommonUtility.AssertNotNull("source", source);
+
+            return Task.Run(async () =>
+            {
+                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken))
+                {
+                    await this.AppendFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken);
+                }
+            });
         }
 #endif
 #endif
@@ -721,23 +627,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
         /// <param name="count">The number of bytes to be written to the blob.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
         /// To append data to an append blob that already exists, see <see cref="AppendFromByteArrayAsync(byte[], int, int)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromByteArrayAsync(byte[], int, int)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadFromByteArrayAsync([ReadOnlyArray] byte[] buffer, int index, int count)
-#endif
+        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count)
         {
             return this.UploadFromByteArrayAsync(buffer, index, count, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -751,7 +647,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
@@ -759,28 +654,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromByteArrayAsync(byte[], int, int, AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="AppendFromByteArrayAsync(byte[], int, int, AccessCondition, BlobRequestOptions, OperationContext)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadFromByteArrayAsync([ReadOnlyArray] byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            CommonUtility.AssertNotNull("buffer", buffer);
 
-            SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
-            return this.UploadFromStreamAsync(stream.AsInputStream(), accessCondition, options, operationContext);
-        }
-#endif
-
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Uploads the contents of a byte array to an append blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -798,14 +676,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromByteArrayAsync(byte[], int, int, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("buffer", buffer);
 
             SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
             return this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Appends the contents of a byte array to an append blob. Recommended only for single-writer scenarios.
@@ -813,15 +690,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="buffer">An array of bytes.</param>
         /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
         /// <param name="count">The number of bytes to be written to the blob.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task AppendFromByteArrayAsync(byte[] buffer, int index, int count)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public IAsyncAction AppendFromByteArrayAsync([ReadOnlyArray] byte[] buffer, int index, int count)
-#endif
+        public virtual Task AppendFromByteArrayAsync(byte[] buffer, int index, int count)
         {
             return this.AppendFromByteArrayAsync(buffer, index, count, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -835,32 +706,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task AppendFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.AppendFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction AppendFromByteArrayAsync([ReadOnlyArray] byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            CommonUtility.AssertNotNull("buffer", buffer);
 
-            SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
-            return this.AppendFromStreamAsync(stream.AsInputStream(), accessCondition, options, operationContext);
-        }
-#endif
-
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Appends the contents of a byte array to an append blob. Recommended only for single-writer scenarios.
         /// </summary>
@@ -876,36 +731,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task AppendFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("buffer", buffer);
 
             SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
             return this.AppendFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Uploads a string of text to an append blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
         /// To append data to an append blob that already exists, see <see cref="AppendTextAsync(string)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadTextAsync(string content)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
-        /// To append data to an append blob that already exists, see <see cref="AppendTextAsync(string)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadTextAsync(string content)
-#endif
+        public virtual Task UploadTextAsync(string content)
         {
             return this.UploadTextAsync(content, null /* encoding */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -918,7 +762,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
@@ -926,28 +769,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendTextAsync(string, Encoding, AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task UploadTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.UploadTextAsync(content, encoding, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="AppendTextAsync(string, Encoding, AccessCondition, BlobRequestOptions, OperationContext)"/>.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction UploadTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            CommonUtility.AssertNotNull("content", content);
 
-            byte[] contentAsBytes = (encoding ?? Encoding.UTF8).GetBytes(content);
-            return this.UploadFromByteArrayAsync(contentAsBytes, 0, contentAsBytes.Length, accessCondition, options, operationContext);
-        }
-#endif
-
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Uploads a string of text to an append blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -964,14 +790,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendTextAsync(string, Encoding, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public Task UploadTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task UploadTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("content", content);
 
             byte[] contentAsBytes = (encoding ?? Encoding.UTF8).GetBytes(content);
             return this.UploadFromByteArrayAsync(contentAsBytes, 0, contentAsBytes.Length, accessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Appends a string of text to an append blob.
@@ -980,15 +805,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
         /// </remarks>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task AppendTextAsync(string content)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public IAsyncAction AppendTextAsync(string content)
-#endif
+        public virtual Task AppendTextAsync(string content)
         {
             return this.AppendTextAsync(content, null /* encoding */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -1001,32 +820,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         /// <remarks>
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task AppendTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.AppendTextAsync(content, encoding, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        /// <remarks>
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// </remarks>
-        [DoesServiceRequest]
-        public IAsyncAction AppendTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            CommonUtility.AssertNotNull("content", content);
 
-            byte[] contentAsBytes = (encoding ?? Encoding.UTF8).GetBytes(content);
-            return this.AppendFromByteArrayAsync(contentAsBytes, 0, contentAsBytes.Length, accessCondition, options, operationContext);
-        }
-#endif
-
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Appends a string of text to an append blob. 
         /// </summary>
@@ -1042,29 +845,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public Task AppendTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task AppendTextAsync(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("content", content);
 
             byte[] contentAsBytes = (encoding ?? Encoding.UTF8).GetBytes(content);
             return this.AppendFromByteArrayAsync(contentAsBytes, 0, contentAsBytes.Length, accessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Creates an empty append blob. If the blob already exists, this operation will overwrite it. To throw an exception instead of overwriting the blob, 
         /// use <see cref="CreateOrReplaceAsync(AccessCondition, BlobRequestOptions, OperationContext)"/>.
         /// </summary>
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task CreateOrReplaceAsync()
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public IAsyncAction CreateOrReplaceAsync()
-#endif
+        public virtual Task CreateOrReplaceAsync()
         {
             return this.CreateOrReplaceAsync(null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -1076,28 +871,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task CreateOrReplaceAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task CreateOrReplaceAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.CreateOrReplaceAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>        
-        [DoesServiceRequest]
-        public IAsyncAction CreateOrReplaceAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsyncNullReturn(
-                this.CreateImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Creates an empty append blob. If the blob already exists, this operation will overwrite it. To throw an exception instead of overwriting the blob,
         /// pass in an <see cref="AccessCondition"/> object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
@@ -1108,7 +888,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task CreateOrReplaceAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task CreateOrReplaceAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
@@ -1117,21 +897,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Commits a new block of data to the end of the blob.
         /// </summary>
         /// <param name="blockData">A stream that provides the data for the block.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task<long> AppendBlockAsync(Stream blockData)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public IAsyncOperation<long> AppendBlockAsync(IInputStream blockData)
-#endif
+        public virtual Task<long> AppendBlockAsync(Stream blockData)
         {
             return this.AppendBlockAsync(blockData, null /* contentMD5 */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -1142,15 +915,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blockData">A stream that provides the data for the block.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
         /// on the blob. May be <c>null</c> or an empty string.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task<long> AppendBlockAsync(Stream blockData, string contentMD5)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public IAsyncOperation<long> AppendBlockAsync(IInputStream blockData, string contentMD5)
-#endif
+        public virtual Task<long> AppendBlockAsync(Stream blockData, string contentMD5)
         {
             return this.AppendBlockAsync(blockData, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -1164,9 +931,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K || PORTABLE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        public Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accesscondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accesscondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.AppendBlockAsync(blockData, contentMD5, accesscondition, options, operationContext, CancellationToken.None);
         }
@@ -1183,25 +949,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#else
-        /// <returns>An <see cref="IAsyncAction"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public IAsyncOperation<long> AppendBlockAsync(IInputStream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-#endif
+        public virtual Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
             bool requiresContentMD5 = string.IsNullOrEmpty(contentMD5) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-#if ASPNET_K || PORTABLE
             return Task.Run(async () =>
-#else
-           return AsyncInfo.Run(async (cancellationToken) =>
-#endif
             {
-                Stream blockDataAsStream = blockData.AsStreamForRead();
+                Stream blockDataAsStream = blockData;
                 Stream seekableStream = blockDataAsStream;
                 bool seekableStreamCreated = false;
 
@@ -1245,22 +1002,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         seekableStream.Dispose();
                     }
                 }
-#if ASPNET_K || PORTABLE
             }, cancellationToken);
-#else
-        });
-#endif
         }
 
         /// <summary>
         /// Downloads the blob's contents as a string.
         /// </summary>
         /// <returns>The contents of the blob, as a string.</returns>
-#if ASPNET_K || PORTABLE
-        public Task<string> DownloadTextAsync()
-#else
-        public IAsyncOperation<string> DownloadTextAsync()
-#endif
+        [DoesServiceRequest]
+        public virtual Task<string> DownloadTextAsync()
         {
             return this.DownloadTextAsync(null /* encoding */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -1273,27 +1023,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The contents of the blob, as a string.</returns>
-#if ASPNET_K || PORTABLE
-        public Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        [DoesServiceRequest]
+        public virtual Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.DownloadTextAsync(encoding, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return AsyncInfo.Run(async (token) =>
-            {
-                using (SyncMemoryStream stream = new SyncMemoryStream())
-                {
-                    await this.DownloadToStreamAsync(stream.AsOutputStream(), accessCondition, options, operationContext).AsTask(token);
-                    byte[] streamAsBytes = stream.ToArray();
-                    return (encoding ?? Encoding.UTF8).GetString(streamAsBytes, 0, streamAsBytes.Length);
-                }
-            });
-        }
-#endif
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Downloads the blob's contents as a string.
         /// </summary>
@@ -1303,7 +1038,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The contents of the blob, as a string.</returns>
-        public Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        [DoesServiceRequest]
+        public virtual Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return Task.Run(async () =>
             {
@@ -1315,7 +1051,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Begins an operation to start copying an existing block blob's contents, properties, and metadata to a new blob.
@@ -1327,11 +1062,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<string> StartCopyAsync(CloudAppendBlob source)
-#else
-        public IAsyncOperation<string> StartCopyAsync(CloudAppendBlob source)
-#endif
+        public virtual Task<string> StartCopyAsync(CloudAppendBlob source)
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
         }
@@ -1350,19 +1081,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<string> StartCopyAsync(CloudAppendBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<string> StartCopyAsync(CloudAppendBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<string> StartCopyAsync(CloudAppendBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
-        }
-#endif
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Begins an operation to start copying another append blob's contents, properties, and metadata to a new blob.
         /// </summary>
@@ -1378,22 +1101,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        public Task<string> StartCopyAsync(CloudAppendBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<string> StartCopyAsync(CloudAppendBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Creates a snapshot of the blob.
         /// </summary>
         /// <returns>A blob snapshot.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<CloudAppendBlob> CreateSnapshotAsync()
-#else
-        public IAsyncOperation<CloudAppendBlob> CreateSnapshotAsync()
-#endif
+        public virtual Task<CloudAppendBlob> CreateSnapshotAsync()
         {
             return this.CreateSnapshotAsync(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -1407,25 +1125,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A blob snapshot.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
-        public Task<CloudAppendBlob> CreateSnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<CloudAppendBlob> CreateSnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return CreateSnapshotAsync(metadata, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<CloudAppendBlob> CreateSnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsync(
-                this.CreateSnapshotImpl(metadata, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if ASPNET_K || PORTABLE
         /// <summary>
         /// Creates a snapshot of the blob.
         /// </summary>
@@ -1436,7 +1140,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A blob snapshot.</returns>
         [DoesServiceRequest]
-        public Task<CloudAppendBlob> CreateSnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<CloudAppendBlob> CreateSnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
@@ -1446,7 +1150,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
     /// <summary>
     /// Implements the Create method.
@@ -1459,11 +1162,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                HttpRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.AppendBlob, 0, accessCondition, cnt, ctx);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.AppendBlob, 0, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -1494,10 +1195,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<long> putCmd = new RESTCommand<long>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(source, offset, length, contentMD5, cmd, ctx);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AppendBlock(uri, serverTimeout, accessCondition, cnt, ctx);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AppendBlock(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 long appendOffset = -1;
@@ -1527,11 +1226,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<CloudAppendBlob> putCmd = new RESTCommand<CloudAppendBlob>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.Handler = this.ServiceClient.AuthenticationHandler;
-            putCmd.BuildClient = HttpClientFactory.BuildHttpClient;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                HttpRequestMessage msg = BlobHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 if (metadata != null)
                 {
                     BlobHttpRequestMessageFactory.AddMetadata(msg, metadata);

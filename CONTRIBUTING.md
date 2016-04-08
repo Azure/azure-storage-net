@@ -3,7 +3,7 @@ If you intend to contribute to the project, please make sure you've followed the
 The Azure Storage development team uses Visual Studio so instructions will be tailored to that preference. However, any preferred IDE or other toolset should be usable.
 
 ### Install
-* .Net 4.5.1
+* .Net 4.0
 * Visual Studio 2013. If you want to work with the CoreCLR SDK, you will need Visual Studio 2015. Note not all of the non-CoreCLR SDKs work in VS 2015, so you may need to develop with both 2013 and 2015 if you take a dependency on multiple runtimes.
 * [StyleCop](http://stylecop.codeplex.com/) checks your code’s style – spacing, comments, etc. You can run this from the Tools menu in Visual Studio or by right clicking the project/folder you’d like to run it on.
 * Clone the source code from GitHub.

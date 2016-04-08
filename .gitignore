@@ -118,6 +118,9 @@ Test/Common/TestConfigurations.xml
 # Test Results
 TestResults/
 
+# Test Config
+Test/Common/TestConfigurations.xml
+
 # Mac development
 .DS_Store
 

@@ -394,15 +394,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             await SetAvailableStateAsync(leasedBlob);
-            leaseId = await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(15), null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(15));
             await this.BlobAcquireRenewLeaseTestAsync(leasedBlob, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(20), tolerance);
 
             await SetAvailableStateAsync(leasedBlob);
-            leaseId = await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(60), null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(60));
             await this.BlobAcquireRenewLeaseTestAsync(leasedBlob, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(70), tolerance);
 
             await SetAvailableStateAsync(leasedBlob);
-            leaseId = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */);
             await this.BlobAcquireRenewLeaseTestAsync(leasedBlob, null /* infinite lease */, TimeSpan.FromSeconds(70), tolerance);
 
             await SetReleasedStateAsync(leasedBlob, null /* infinite lease */);
@@ -548,7 +548,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 "acquire a lease with 0 duration");
 
             await TestHelper.ExpectedExceptionAsync<ArgumentException>(
-                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(-1), null /* proposed lease ID */),
+                async () => await leasedBlob.AcquireLeaseAsync(TimeSpan.FromSeconds(-1)),
                 "acquire a lease with -1 duration");
 
             await TestHelper.ExpectedExceptionAsync(
@@ -695,7 +695,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire with no proposed ID (non-idempotent)
             await SetAvailableStateAsync(leasedBlob);
-            leaseId = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */);
             await TestHelper.ExpectedExceptionAsync(
                 async () => await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, operationContext),
                 operationContext,
@@ -1394,7 +1394,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await PageBlobWriteExpectLeaseFailureAsync(leasedBlob, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithBlobOperation, "write page blob with a lease when no lease is held");
 
             // Acquire a lease
-            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that writes without a lease do not succeed.
             testAccessCondition.LeaseId = null;
@@ -1510,7 +1510,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await PageBlobReadExpectLeaseFailureAsync(leasedBlob, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithBlobOperation, "read page blob with a lease when no lease is held");
 
             // Acquire a lease
-            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that reads without a lease succeed.
             testAccessCondition.LeaseId = null;
@@ -1590,7 +1590,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire a lease
             testAccessCondition.LeaseId = null;
-            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that writes without a lease do not succeed.
             testAccessCondition.LeaseId = null;
@@ -1731,7 +1731,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire a lease
             testAccessCondition.LeaseId = null;
-            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that reads without a lease still succeed.
             testAccessCondition.LeaseId = null;
@@ -1782,7 +1782,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire a lease
             testAccessCondition.LeaseId = null;
-            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */);
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that reads without a lease still succeed.
             testAccessCondition.LeaseId = null;
@@ -1888,7 +1888,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Check lease status after (infinite) acquire after break
             await SetTimeBrokenStateAsync(leasedBlob);
-            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /*proposed lease ID */);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */);
             await this.CheckLeaseStatusAsync(leasedBlob, LeaseStatus.Locked, LeaseState.Leased, LeaseDuration.Infinite, "after second acquire lease");
 
             // Check lease status after instant break with infinite lease
@@ -1946,17 +1946,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             leasedContainer = this.GetContainerReference("leased-container-1"); // make sure we use a new container
             await SetUnleasedStateAsync(leasedContainer);
-            leaseId = await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(15), null /* proposed lease ID */);
+            leaseId = await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(15));
             await this.ContainerAcquireRenewLeaseTestAsync(leasedContainer, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(20), tolerance);
 
             leasedContainer = this.GetContainerReference("leased-container-2"); // make sure we use a new container
             await SetUnleasedStateAsync(leasedContainer);
-            leaseId = await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(60), null /* proposed lease ID */);
+            leaseId = await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(60));
             await this.ContainerAcquireRenewLeaseTestAsync(leasedContainer, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(70), tolerance);
 
             leasedContainer = this.GetContainerReference("leased-container-3"); // make sure we use a new container
             await SetUnleasedStateAsync(leasedContainer);
-            leaseId = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */);
+            leaseId = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */);
             await this.ContainerAcquireRenewLeaseTestAsync(leasedContainer, null /* infinite lease */, TimeSpan.FromSeconds(70), tolerance);
 
             leasedContainer = this.GetContainerReference("leased-container-4"); // make sure we use a new container
@@ -2097,11 +2097,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await leasedContainer.CreateAsync();
 
             await TestHelper.ExpectedExceptionAsync<ArgumentException>(
-                async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.Zero, null /* proposed lease ID */),
+                async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.Zero),
                 "acquire a lease with 0 duration");
 
             await TestHelper.ExpectedExceptionAsync<ArgumentException>(
-                async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(-1), null /* proposed lease ID */),
+                async () => await leasedContainer.AcquireLeaseAsync(TimeSpan.FromSeconds(-1)),
                 "acquire a lease with -1 duration");
 
             await TestHelper.ExpectedExceptionAsync(
@@ -2250,7 +2250,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Acquire with no proposed ID (non-idempotent)
             await SetUnleasedStateAsync(leasedContainer);
-            leaseId = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */);
+            leaseId = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */);
             await TestHelper.ExpectedExceptionAsync(
                 async () => await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, operationContext),
                 operationContext,
@@ -2704,7 +2704,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await this.ContainerDeleteExpectLeaseFailureAsync(leasedContainer, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithContainerOperation, "delete container using a lease when no lease is held");
 
             // Acquire a lease
-            string leaseId = await leasedContainer.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */);
+            string leaseId = await leasedContainer.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that deletes without a lease do not succeed.
             testAccessCondition.LeaseId = null;
@@ -2767,7 +2767,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await this.ContainerReadWriteExpectLeaseFailureAsync(leasedContainer, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithContainerOperation, "read/write container using a lease when no lease is held");
 
             // Acquire a lease
-            string leaseId = await leasedContainer.AcquireLeaseAsync(null /* lease duration */, null /* proposed lease ID */);
+            string leaseId = await leasedContainer.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that reads and writes without a lease succeed.
             testAccessCondition.LeaseId = null;
@@ -2896,7 +2896,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // Check lease status after (infinite) acquire after break
             await SetTimeBrokenStateAsync(leasedContainer);
-            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, null /*proposed lease ID */);
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */);
             await this.CheckLeaseStatusAsync(leasedContainer, LeaseStatus.Locked, LeaseState.Leased, LeaseDuration.Infinite, "after second acquire lease");
 
             // Check lease status after instant break with infinite lease
