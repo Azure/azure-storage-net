@@ -115,6 +115,12 @@ Packages/
 # Test Config
 Test/Common/TestConfigurations.xml
 
+# Fiddler dlls
+Test\FaultInjection\Dependencies\DotNet2\FiddlerCore.dll
+Test\FaultInjection\Dependencies\DotNet2\FiddlerCore.XML
+Test\FaultInjection\Dependencies\DotNet4\FiddlerCore.dll
+Test\FaultInjection\Dependencies\DotNet4\FiddlerCore.XML
+
 # Test Results
 TestResults/
 
