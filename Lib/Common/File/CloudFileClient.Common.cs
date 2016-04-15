@@ -113,8 +113,19 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns>A reference to a share.</returns>
         public CloudFileShare GetShareReference(string shareName)
         {
+            return this.GetShareReference(shareName, null /* snapshotTime */);
+        }
+
+        /// <summary>
+        /// Returns a reference to a <see cref="CloudFileShare"/> object with the specified name and snapshot time.
+        /// </summary>
+        /// <param name="shareName">A string containing the name of the share.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
+        /// <returns>A reference to a share.</returns>
+        public CloudFileShare GetShareReference(string shareName, DateTimeOffset? snapshotTime)
+        {
             CommonUtility.AssertNotNullOrEmpty("shareName", shareName);
-            return new CloudFileShare(shareName, this);
+            return new CloudFileShare(shareName, snapshotTime, this);
         }
 
         internal ICanonicalizer GetCanonicalizer()

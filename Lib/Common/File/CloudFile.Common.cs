@@ -212,6 +212,61 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         /// <summary>
+        /// Gets the absolute URI to the file, including query string information if the file's share is a snapshot.
+        /// </summary>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the file, including snapshot query information if the file's share is a snapshot.</value>
+        public Uri SnapshotQualifiedUri
+        {
+            get
+            {
+                if (this.Share.SnapshotTime.HasValue)
+                {
+                    UriQueryBuilder builder = new UriQueryBuilder();
+                    builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(this.Share.SnapshotTime.Value));
+                    return builder.AddToUri(this.Uri);
+                }
+                else
+                {
+                    return this.Uri;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the file's URI for both the primary and secondary locations, including query string information if the file's share is a snapshot.
+        /// </summary>
+        /// <value>An object of type <see cref="StorageUri"/> containing the file's URIs for both the primary and secondary locations, 
+        /// including snapshot query information if the file's share is a snapshot.</value>
+        public StorageUri SnapshotQualifiedStorageUri
+        {
+            get
+            {
+                if (this.Share.SnapshotTime.HasValue)
+                {
+                    UriQueryBuilder builder = new UriQueryBuilder();
+                    builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(this.Share.SnapshotTime.Value));
+                    return builder.AddToUri(this.StorageUri);
+                }
+                else
+                {
+                    return this.StorageUri;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the file's share is not a snapshot.
+        /// </summary>
+        internal void AssertNoSnapshot()
+        {
+            if (this.Share.IsSnapshot)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotModifyShareSnapshot);
+                throw new InvalidOperationException(errorMessage);
+            }
+        }
+
+        /// <summary>
         /// Gets the state of the most recent or pending copy operation.
         /// </summary>
         /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if there is no copy state for the file.</value>
@@ -368,12 +423,18 @@ namespace Microsoft.WindowsAzure.Storage.File
         private void ParseQueryAndVerify(StorageUri address, StorageCredentials credentials)
         {
             StorageCredentials parsedCredentials;
-            this.attributes.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials);
+            DateTimeOffset? parsedShareSnapshot;
+            this.attributes.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials, out parsedShareSnapshot);
 
             if (parsedCredentials != null && credentials != null)
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);
+            }
+
+            if (parsedShareSnapshot.HasValue)
+            {
+                this.Share.SnapshotTime = parsedShareSnapshot;
             }
 
             if (this.ServiceClient == null)
