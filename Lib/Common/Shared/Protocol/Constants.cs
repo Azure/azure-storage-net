@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// The maximum size of a single block.
         /// </summary>
-        public const int MaxBlockSize = (int)(4 * Constants.MB);
+        public const int MaxBlockSize = (int)(100 * Constants.MB);
 
         /// <summary>
         /// The maximum size of a range get operation that returns content MD5.
@@ -1076,11 +1076,15 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
+<<<<<<< cc2e395d8d016efa6852e7788bc009ff607b3a89
 <<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
             public const string TargetStorageVersion = "2015-12-11";
 =======
             public const string TargetStorageVersion = "2016-02-19";
 >>>>>>> Implement share snapshot
+=======
+            public const string TargetStorageVersion = "2016-05-31";
+>>>>>>> Allow larger block sizes
 
             /// <summary>
             /// Specifies the file type.
