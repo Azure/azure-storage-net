@@ -1,5 +1,9 @@
 ﻿{
+<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
     "version": "7.1.4.0",
+=======
+    "version": "7.1.50.0",
+>>>>>>> Implement share snapshot
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for CoreCLR Preview",
     "dependencies": {

@@ -55,97 +55,97 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         private static AsyncCallback CreateCallback<TResult>(TaskCompletionSource<TResult> taskCompletionSource, CancellationTokenRegistration? registration, Func<IAsyncResult, TResult> endMethod)
         {
             return ar =>
+            {
+                try
                 {
-                    try
+                    if (registration.HasValue)
                     {
-                        if (registration.HasValue)
-                        {
-                            registration.Value.Dispose();
-                        }
-
-                        TResult result = endMethod(ar);
-                        taskCompletionSource.TrySetResult(result);
+                        registration.Value.Dispose();
                     }
-                    catch (OperationCanceledException)
+
+                    TResult result = endMethod(ar);
+                    taskCompletionSource.TrySetResult(result);
+                }
+                catch (OperationCanceledException)
+                {
+                    taskCompletionSource.TrySetCanceled();
+                }
+                catch (StorageException ex)
+                {
+                    bool operationCanceled = false;
+
+                    // Iterate through all inner exceptions to find an OperationCanceledException
+                    for (Exception innerException = ex.InnerException; innerException != null; innerException = innerException.InnerException)
+                    {
+                        if (innerException is OperationCanceledException)
+                        {
+                            operationCanceled = true;
+                            break;
+                        }
+                    }
+
+                    if (operationCanceled)
                     {
                         taskCompletionSource.TrySetCanceled();
                     }
-                    catch (StorageException ex)
-                    {
-                        bool operationCanceled = false;
-
-                        // Iterate through all inner exceptions to find an OperationCanceledException
-                        for (Exception innerException = ex.InnerException; innerException != null; innerException = innerException.InnerException)
-                        {
-                            if (innerException is OperationCanceledException)
-                            {
-                                operationCanceled = true;
-                                break;
-                            }
-                        }
-
-                        if (operationCanceled)
-                        {
-                            taskCompletionSource.TrySetCanceled();
-                        }
-                        else
-                        {
-                            taskCompletionSource.TrySetException(ex);
-                        }
-                    }
-                    catch (Exception ex)
+                    else
                     {
                         taskCompletionSource.TrySetException(ex);
                     }
-                };
+                }
+                catch (Exception ex)
+                {
+                    taskCompletionSource.TrySetException(ex);
+                }
+            };
         }
 
         private static AsyncCallback CreateCallbackVoid(TaskCompletionSource<object> taskCompletionSource, CancellationTokenRegistration? registration, Action<IAsyncResult> endMethod)
         {
             return ar =>
+            {
+                try
                 {
-                    try
+                    if (registration.HasValue)
                     {
-                        if (registration.HasValue)
-                        {
-                            registration.Value.Dispose();
-                        }
-
-                        endMethod(ar);
-                        taskCompletionSource.TrySetResult(null);
+                        registration.Value.Dispose();
                     }
-                    catch (OperationCanceledException)
+
+                    endMethod(ar);
+                    taskCompletionSource.TrySetResult(null);
+                }
+                catch (OperationCanceledException)
+                {
+                    taskCompletionSource.TrySetCanceled();
+                }
+                catch (StorageException ex)
+                {
+                    bool operationCanceled = false;
+
+                    // Iterate through all inner exceptions to find an OperationCanceledException
+                    for (Exception innerException = ex.InnerException; innerException != null; innerException = innerException.InnerException)
+                    {
+                        if (innerException is OperationCanceledException)
+                        {
+                            operationCanceled = true;
+                            break;
+                        }
+                    }
+
+                    if (operationCanceled)
                     {
                         taskCompletionSource.TrySetCanceled();
                     }
-                    catch (StorageException ex)
-                    {
-                        bool operationCanceled = false;
-
-                        // Iterate through all inner exceptions to find an OperationCanceledException
-                        for (Exception innerException = ex.InnerException; innerException != null; innerException = innerException.InnerException)
-                        {
-                            if (innerException is OperationCanceledException)
-                            {
-                                operationCanceled = true;
-                                break;
-                            }
-                        }
-
-                        if (operationCanceled)
-                        {
-                            taskCompletionSource.TrySetCanceled();
-                        }
-                        else
-                        {
-                            taskCompletionSource.TrySetException(ex);
-                        }
-                    }
-                    catch (Exception ex)
+                    else
                     {
                         taskCompletionSource.TrySetException(ex);
                     }
-                };
+                }
+                catch (Exception ex)
+                {
+                    taskCompletionSource.TrySetException(ex);
+                }
+            };
         }
 
         internal static Task TaskFromVoidApm(Func<AsyncCallback, object, ICancellableAsyncResult> beginMethod, Action<IAsyncResult> endMethod, CancellationToken cancellationToken)
@@ -320,7 +320,11 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 CancellableOperationBase cancellableOperation;
                 CancellationTokenRegistration? registration = RegisterCancellationToken(cancellationToken, out cancellableOperation);
+<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
                 ICancellableAsyncResult result = beginMethod(arg1, arg2, arg3, arg4, arg5, arg6, arg7,arg8, arg9, CreateCallbackVoid(taskCompletionSource, registration, endMethod), null /* state */);
+=======
+                ICancellableAsyncResult result = beginMethod(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, CreateCallbackVoid(taskCompletionSource, registration, endMethod), null /* state */);
+>>>>>>> Implement share snapshot
                 AssignCancellableOperation(cancellableOperation, result, cancellationToken);
             }
 

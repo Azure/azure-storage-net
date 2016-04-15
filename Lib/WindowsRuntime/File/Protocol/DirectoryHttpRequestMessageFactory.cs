@@ -60,11 +60,13 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the directory.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage GetProperties(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            DirectoryHttpRequestMessageFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
 
             StorageRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, directoryBuilder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
@@ -76,11 +78,13 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the directory.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage GetMetadata(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            DirectoryHttpRequestMessageFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
 
             StorageRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, directoryBuilder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
@@ -92,11 +96,13 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the share.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="listingContext">A set of parameters for the listing operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage List(Uri uri, int? timeout, FileListingContext listingContext, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage List(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, FileListingContext listingContext, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            DirectoryHttpRequestMessageFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
             directoryBuilder.Add(Constants.QueryConstants.Component, "list");
 
             if (listingContext != null)
@@ -139,6 +145,19 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static void AddMetadata(StorageRequestMessage request, IDictionary<string, string> metadata)
         {
             HttpRequestMessageFactory.AddMetadata(request, metadata);
+        }
+
+        /// <summary>
+        /// Adds the share snapshot.
+        /// </summary>
+        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/> that contains additional parameters to add to the URI query string.</param>
+        /// <param name="snapshot">The snapshot version, if the share is a snapshot.</param>
+        private static void AddShareSnapshot(UriQueryBuilder builder, DateTimeOffset? snapshot)
+        {
+            if (snapshot.HasValue)
+            {
+                builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
+            }
         }
 
         /// <summary>

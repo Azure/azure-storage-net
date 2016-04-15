@@ -774,10 +774,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
+<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
 #if NETCORE
             public const string UserAgentProductVersion = "7.1.4";
 #else
             public const string UserAgentProductVersion = "7.1.4";
+=======
+#if ASPNET_K || PORTABLE
+            public const string UserAgentProductVersion = "7.1.50-preview";
+#else
+            public const string UserAgentProductVersion = "7.1.50";
+>>>>>>> Implement share snapshot
 #endif 
 
             /// <summary>
@@ -1069,7 +1076,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
+<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
             public const string TargetStorageVersion = "2015-12-11";
+=======
+            public const string TargetStorageVersion = "2016-02-19";
+>>>>>>> Implement share snapshot
 
             /// <summary>
             /// Specifies the file type.
@@ -1218,6 +1229,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Query component for snapshot time.
             /// </summary>
             public const string Snapshot = "snapshot";
+
+            /// <summary>
+            /// Query component for share snapshot time.
+            /// </summary>
+            public const string ShareSnapshot = "sharesnapshot";
 
             /// <summary>
             /// Query component for the signed SAS start time.

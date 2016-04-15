@@ -580,7 +580,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 ListSharesResponse listSharesResponse = new ListSharesResponse(cmd.ResponseStream);
                 List<CloudFileShare> sharesList = new List<CloudFileShare>(
-                    listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, this)));
+                    listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, item.SnapshotTime, this)));
                 FileContinuationToken continuationToken = null;
                 if (listSharesResponse.NextMarker != null)
                 {

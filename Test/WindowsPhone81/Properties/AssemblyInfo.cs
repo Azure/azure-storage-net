@@ -32,7 +32,12 @@ using System.Resources;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
+<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
 
 [assembly: AssemblyVersion("7.1.4.0")]
 [assembly: AssemblyFileVersion("7.1.4.0")]
+=======
+[assembly: AssemblyVersion("7.1.50.0")]
+[assembly: AssemblyFileVersion("7.1.50.0")]
+>>>>>>> Implement share snapshot
 [assembly: NeutralResourcesLanguageAttribute("en-US")]

@@ -1,3 +1,4 @@
+<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
 Changes in 7.1.4 :
 
 - All (CoreCLR): NetStandard target framework changed to netstandard1.3
@@ -24,6 +25,12 @@ Changes in 7.0.2-preview :
 
 - Blobs (WinRT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
 - All : CoreCLR projects were updated to use the RC2 release of .Net Core 1.0
+=======
+Changes in X.X.X :
+
+ - All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features.
+ - Blobs: Added support for server-side encryption.
+>>>>>>> Implement share snapshot
 
 Changes in 7.0.0 :
 

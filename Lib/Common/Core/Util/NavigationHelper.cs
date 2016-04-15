@@ -756,7 +756,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// </summary>
         /// <param name="address">The complete Uri.</param>
         /// <param name="parsedCredentials">The credentials to use.</param>
-        /// <returns>The file URI without credentials info</returns>
+        /// <param name="parsedShareSnapshot">The parsed share snapshot.</param>
+        /// <returns>The file URI without credentials or snapshot info</returns>
         /// <exception cref="System.ArgumentException">address</exception>
         /// <remarks>
         /// Validate that no other query parameters are passed in.
@@ -765,12 +766,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// exception will be thrown.
         /// Otherwise a new client is created based on SAS information or as anonymous credentials.
         /// </remarks>
-        internal static StorageUri ParseFileQueryAndVerify(StorageUri address, out StorageCredentials parsedCredentials)
+        internal static StorageUri ParseFileQueryAndVerify(StorageUri address, out StorageCredentials parsedCredentials, out DateTimeOffset? parsedShareSnapshot)
         {
             StorageCredentials secondaryCredentials;
+            DateTimeOffset? secondaryShareSnapshot;
             return new StorageUri(
-                ParseFileQueryAndVerify(address.PrimaryUri, out parsedCredentials),
-                ParseFileQueryAndVerify(address.SecondaryUri, out secondaryCredentials));
+                ParseFileQueryAndVerify(address.PrimaryUri, out parsedCredentials, out parsedShareSnapshot),
+                ParseFileQueryAndVerify(address.SecondaryUri, out secondaryCredentials, out secondaryShareSnapshot));
         }
 
         /// <summary>
@@ -778,7 +780,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// </summary>
         /// <param name="address">The complete Uri.</param>
         /// <param name="parsedCredentials">The credentials to use.</param>
-        /// <returns>The file URI without credentials info</returns>
+        /// <param name="parsedShareSnapshot">The parsed share snapshot.</param>
+        /// <returns>The file URI without credentials or snapshot info</returns>
         /// <exception cref="System.ArgumentException">address</exception>
         /// <remarks>
         /// Validate that no other query parameters are passed in.
@@ -787,9 +790,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// exception will be thrown.
         /// Otherwise a new client is created based on SAS information or as anonymous credentials.
         /// </remarks>
-        private static Uri ParseFileQueryAndVerify(Uri address, out StorageCredentials parsedCredentials)
+        private static Uri ParseFileQueryAndVerify(Uri address, out StorageCredentials parsedCredentials, out DateTimeOffset? parsedShareSnapshot)
         {
             parsedCredentials = null;
+            parsedShareSnapshot = null;
             if (address == null)
             {
                 return null;
@@ -802,6 +806,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
 
             IDictionary<string, string> queryParameters = HttpWebUtility.ParseQueryString(address.Query);
+
+            string snapshot;
+            if (queryParameters.TryGetValue(Constants.QueryConstants.ShareSnapshot, out snapshot))
+            {
+                if (!string.IsNullOrEmpty(snapshot))
+                {
+                    parsedShareSnapshot = ParseSnapshotTime(snapshot);
+                }
+            }
 
             parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters);
 

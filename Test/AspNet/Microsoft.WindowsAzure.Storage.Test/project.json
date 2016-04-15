@@ -1,6 +1,16 @@
 ﻿{
+<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
     "version": "7.1.4.0",
     "testRunner": "xunit",
+=======
+  "version": "7.1.50.0",
+  "dependencies": {
+    "xunit": "2.1.0-*",
+    "xunit.runner.dnx": "2.1.0-*",
+    "Microsoft.WindowsAzure.Storage": "",
+    "XUnitForMsTest": ""
+  },
+>>>>>>> Implement share snapshot
 
     "dependencies": {
         "xunit": "2.1.0",
