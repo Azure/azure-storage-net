@@ -115,13 +115,6 @@ Packages/
 # Test Config
 Test/Common/TestConfigurations.xml
 
-# Internal (perf)
-Internal/
-
-# Phone Test Runners
-Test/WindowsPhone81TestRunner/
-Test/WindowsPhoneTestRunner/
-
 # Fiddler dlls
 Test/FaultInjection/Dependencies/DotNet2/FiddlerCore.dll
 Test/FaultInjection/Dependencies/DotNet2/FiddlerCore.XML
