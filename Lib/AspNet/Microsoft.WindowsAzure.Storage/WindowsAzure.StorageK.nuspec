@@ -2,11 +2,15 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata minClientVersion="2.8.3">
     <id>WindowsAzure.Storage</id>
+<<<<<<< eed8570c40bf613981a74a0b2947a0f8bcff7d6c
 <<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
     <version>7.1.4</version>
 =======
     <version>7.1.50-preview</version>
 >>>>>>> Implement share snapshot
+=======
+    <version>7.1.91-preview</version>
+>>>>>>> Update assemblies for test
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
