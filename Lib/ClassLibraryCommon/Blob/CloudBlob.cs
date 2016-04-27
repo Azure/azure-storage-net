@@ -332,6 +332,261 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
+        /// Rotates the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual void RotateEncryptionKey(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+
+            BlobEncryptionData encryptionData = null;
+            Tuple<byte[], string> wrappedKey = this.RotateEncryptionHelper(accessCondition, modifiedOptions, CancellationToken.None, out encryptionData).Result;
+
+            // Update the encryption metadata with the newly wrapped CEK and call SetMetadata.
+            encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.Item1, wrappedKey.Item2);
+
+            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData);
+
+            if (accessCondition == null)
+            {
+                accessCondition = new AccessCondition();
+            }
+
+            accessCondition.IfMatchETag = this.Properties.ETag;
+            try
+            {
+                this.SetMetadata(accessCondition, modifiedOptions, operationContext);
+            }
+            // This bit is to improve the error handling case.
+            // If the set-metadata fails, we check if it failed with a Precondition Failure.  If so, we wrap the failure with a 
+            // new StorageException that contains a better error message.
+            // This is important because the library is internally adding an AccessCondition, which may be difficult for users to realize / debug.
+            catch (StorageException e)
+            {
+                // Check to see if our new If-Match condition failed, and if so, give a more helpful exception message.
+                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
+                {
+                    StorageException wrapperException = new StorageException(e.RequestInformation, SR.KeyRotationPreconditionFailed, e);
+                    throw wrapperException;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginRotateEncryptionKey(AsyncCallback callback, object state)
+        {
+            return this.BeginRotateEncryptionKey(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginRotateEncryptionKey(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return new CancellableAsyncResultTaskWrapper(token => RotateEncryptionKeyAsync(accessCondition, options, operationContext, token), callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to rotate the encryption key on this blob.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public virtual void EndRotateEncryptionKey(IAsyncResult asyncResult)
+        {
+            ((CancellableAsyncResultTaskWrapper)asyncResult).Wait();
+        }
+
+#if TASK
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task RotateEncryptionKeyAsync()
+        {
+            return this.RotateEncryptionKeyAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task RotateEncryptionKeyAsync(CancellationToken cancellationToken)
+        {
+            return this.RotateEncryptionKeyAsync(null /* accessCondition */, null /* options */, null /* operationContext */, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task RotateEncryptionKeyAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.RotateEncryptionKeyAsync(accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task RotateEncryptionKeyAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+
+            BlobEncryptionData encryptionData = null;
+            Task<Tuple<byte[], string>> wrappedNewKeyTask = this.RotateEncryptionHelper(accessCondition, modifiedOptions, cancellationToken, out encryptionData);
+
+            // Update the encryption metadata with the newly wrapped CEK and call SetMetadata.
+            Task setMetadataTask = wrappedNewKeyTask.Then(wrappedKey =>
+            {
+                encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.Item1, wrappedKey.Item2);
+
+                this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData);
+
+                if (accessCondition == null)
+                {
+                    accessCondition = new AccessCondition();
+                }
+
+                accessCondition.IfMatchETag = this.Properties.ETag;
+
+                return this.SetMetadataAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);
+            });
+
+            // This bit is to improve the error handling case.
+            // If the set-metadata fails, we check if it failed with a Precondition Failure.  If so, we wrap the failure with a 
+            // new StorageException that contains a better error message.
+            // This is important because the library is internally adding an AccessCondition, which may be difficult for users to realize / debug.
+            var tcs = new TaskCompletionSource<object>();
+            setMetadataTask.ContinueWith(setMetadataInternalTask =>
+            {
+                if (setMetadataInternalTask.IsFaulted)
+                {
+                    StorageException ex = setMetadataInternalTask.Exception.InnerException as StorageException;
+                    if ((ex != null ) && (ex.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed))
+                    {
+                        tcs.TrySetException(new StorageException(ex.RequestInformation, SR.KeyRotationPreconditionFailed, ex));
+                    }
+                    else
+                    {
+                        tcs.TrySetException(setMetadataInternalTask.Exception.InnerExceptions);
+                    }
+                }
+                else if (setMetadataInternalTask.IsCanceled)
+                {
+                    tcs.TrySetCanceled();
+                }
+                else
+                {
+                    tcs.TrySetResult(null);
+                }
+            }, TaskContinuationOptions.ExecuteSynchronously);
+            return tcs.Task;
+        }
+#endif
+
+#if SYNC
+        /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
         /// <param name="path">A string containing the path to the target file.</param>
@@ -3357,6 +3612,93 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             };
 
             return putCmd;
+        }
+
+        /// <summary>
+        /// Validates that the AccessCondition and the RequestOptions passed into a KeyRotation operation are correct.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="encryptionMetadataAvailable">If the encryption metadata is available on the local blob.</param>
+        private void ValidateKeyRotationArguments(AccessCondition accessCondition, BlobRequestOptions options, bool encryptionMetadataAvailable)
+        {
+            if (accessCondition != null && accessCondition.IsConditional)
+            {
+                throw new ArgumentException(SR.KeyRotationInvalidAccessCondition, "accessCondition");
+            }
+            if (options.EncryptionPolicy == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionPolicy, "options.EncryptionPolicy");
+            }
+            if (options.EncryptionPolicy.Key == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionKey, "options.EncryptionPolicy.Key");
+            }
+            if (options.EncryptionPolicy.KeyResolver == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionKeyResolver, "options.EncryptionPolicy.KeyResolver");
+            }
+            if (this.Properties.ETag == null)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoEtag);
+            }
+            if (!encryptionMetadataAvailable)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoEncryptionMetadata);
+            }
+        }
+
+        /// <summary>
+        /// Run the elements of key rotation that are common to both the sync and async cases.
+        /// Because KV only offers us async operations, our sync codepath needs to wrap the async version, and we can reuse some of the code.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.  Must have already been processed with Apply Defaults.</param>
+        /// <param name="cancellationToken">The cancellation token to use for the async requests.</param>
+        /// <param name="encryptionData">The encryption data to generate and return.</param>
+        /// <returns>The Task that generates the wrappped key.</returns>
+        private Task<Tuple<byte[], string>> RotateEncryptionHelper(AccessCondition accessCondition, BlobRequestOptions modifiedOptions, CancellationToken cancellationToken, out BlobEncryptionData encryptionData)
+        {
+            // Validate arguments:
+            String encryptionDataString;
+            bool encryptionMetadataAvailable = this.Metadata.TryGetValue(Constants.EncryptionConstants.BlobEncryptionData, out encryptionDataString);
+            this.ValidateKeyRotationArguments(accessCondition, modifiedOptions, encryptionMetadataAvailable);
+
+            // Deserialize the old encryption data and validate:
+            BlobEncryptionData blobEncryptionData = Newtonsoft.Json.JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString);
+            if (blobEncryptionData.WrappedContentKey.EncryptedKey == null)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoKeyID);
+            }
+
+            // Use the key resolver to resolve the old KEK.
+            Task<Azure.KeyVault.Core.IKey> resolveOldKeyTask = modifiedOptions.EncryptionPolicy.KeyResolver.ResolveKeyAsync(blobEncryptionData.WrappedContentKey.KeyId, cancellationToken);
+
+            // Use the old KEK to unwrap the CEK.
+            Task<byte[]> unwrappedOldKeyTask = resolveOldKeyTask.Then(oldKey =>
+            {
+                if (oldKey == null)
+                {
+                    throw new ArgumentException(SR.KeyResolverCannotResolveExistingKey);
+                }
+
+                return oldKey.UnwrapKeyAsync(blobEncryptionData.WrappedContentKey.EncryptedKey, blobEncryptionData.WrappedContentKey.Algorithm, cancellationToken);
+            });
+
+            // Use the new KEK to re-wrap the CEK.
+            Task<Tuple<byte[], string>> wrappedNewKeyTask = unwrappedOldKeyTask.Then(unwrappedOldKey =>
+            {
+                return modifiedOptions.EncryptionPolicy.Key.WrapKeyAsync(unwrappedOldKey, null /* algorithm */, cancellationToken);
+            });
+
+            encryptionData = blobEncryptionData;
+            return wrappedNewKeyTask;
         }
 
         /// <summary>

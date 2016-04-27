@@ -1033,6 +1033,443 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test rotating the encryption key on a blob - success case.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionRotateSyncSuccess()
+        {
+            RunCloudBlobEncryptionRotateSync(true);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on a blob - failure cases.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionRotateSyncFailure()
+        {
+            RunCloudBlobEncryptionRotateSync(false);
+        }
+
+        public void RunCloudBlobEncryptionRotateSync(bool success)
+        {
+            Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall = (blob, stream, size, options) =>
+            {
+                ((ICloudBlob)blob).UploadFromStream(stream, size, null, options, null);
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMaxOverload = (blob, condition, options) =>
+            {
+                blob.RotateEncryptionKey(condition, options, null);
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMinOverload = (blob, condition, options) =>
+            {
+                blob.ServiceClient.DefaultRequestOptions = options;
+                blob.RotateEncryptionKey();
+            };
+            Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall = (blob, stream, options) =>
+            {
+                blob.DownloadToStream(stream, null, options, null);
+            };
+
+            CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMaxOverload, downloadCall, success);
+            if (success)
+            {
+                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMinOverload, downloadCall, success);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on a blob - success case.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionRotateAPMSuccess()
+        {
+            RunCloudBlobEncryptionRotateAPM(true);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on a blob - failure cases.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionRotateAPMFailure()
+        {
+            RunCloudBlobEncryptionRotateAPM(false);
+        }
+
+        public void RunCloudBlobEncryptionRotateAPM(bool success)
+        {
+            Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall = (blob, stream, size, options) =>
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    ICancellableAsyncResult result = ((ICloudBlob)blob).BeginUploadFromStream(
+                                        stream, size, null, options, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    ((ICloudBlob)blob).EndUploadFromStream(result);
+                }
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMax = (blob, condition, options) =>
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    ICancellableAsyncResult result = blob.BeginRotateEncryptionKey(
+                                        condition, options, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndRotateEncryptionKey(result);
+                }
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMin = (blob, condition, options) =>
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    blob.ServiceClient.DefaultRequestOptions = options;
+                    ICancellableAsyncResult result = blob.BeginRotateEncryptionKey(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndRotateEncryptionKey(result);
+                }
+            };
+            Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall = (blob, stream, options) =>
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    ICancellableAsyncResult result = blob.BeginDownloadToStream(
+                                        stream, null, options, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndDownloadToStream(result);
+                }
+            };
+
+            CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMax, downloadCall, success);
+            if (success)
+            {
+                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin, downloadCall, success);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on a blob - success case.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionRotateAsyncSuccess()
+        {
+            RunCloudBlobEncryptionRotateAsync(true);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on a blob - failure cases.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobEncryptionRotateAsyncFailure()
+        {
+            RunCloudBlobEncryptionRotateAsync(false);
+        }
+
+        public void RunCloudBlobEncryptionRotateAsync(bool success)
+        {
+            Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall = (blob, stream, size, options) =>
+            {
+                ((ICloudBlob)blob).UploadFromStreamAsync(stream, size, null, options, null).Wait();
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMax = (blob, condition, options) =>
+            {
+                blob.RotateEncryptionKeyAsync(condition, options, null, CancellationToken.None).Wait();
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMin1 = (blob, condition, options) =>
+            {
+                blob.ServiceClient.DefaultRequestOptions = options;
+                blob.RotateEncryptionKeyAsync().Wait();
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMin2 = (blob, condition, options) =>
+            {
+                blob.ServiceClient.DefaultRequestOptions = options;
+                blob.RotateEncryptionKeyAsync(CancellationToken.None).Wait();
+            };
+            Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCallMin3 = (blob, condition, options) =>
+            {
+                blob.RotateEncryptionKeyAsync(condition, options, null).Wait();
+            };
+            Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall = (blob, stream, options) =>
+            {
+                blob.DownloadToStreamAsync(stream, null, options, null).Wait();
+            };
+
+            CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMax, downloadCall, success);
+            if (success)
+            {
+                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin1, downloadCall, success);
+                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin2, downloadCall, success);
+                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin3, downloadCall, success);
+            }
+        }
+
+        private void CloudBlobEncryptionRotateHelper(Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall, bool successCase)
+        {
+            if (successCase)
+            {
+                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.BlockBlob, false, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.PageBlob, false, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.AppendBlob, false, uploadCall, rotateCall, downloadCall);
+
+                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.BlockBlob, true, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.PageBlob, true, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.AppendBlob, true, uploadCall, rotateCall, downloadCall);
+            }
+            else
+            {
+                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.BlockBlob, false, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.PageBlob, false, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.AppendBlob, false, uploadCall, rotateCall, downloadCall);
+
+                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.BlockBlob, true, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.PageBlob, true, uploadCall, rotateCall, downloadCall);
+                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.AppendBlob, true, uploadCall, rotateCall, downloadCall);
+            }
+        }
+
+        private void DoCloudBlobEncryptionRotateSuccessCase(BlobType type, bool partial, Action<CloudBlob,MemoryStream,int,BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall)
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                int size = 5 * 1024 * 1024;
+                byte[] buffer = GetRandomBuffer(size);
+
+                if (partial)
+                {
+                    size = 2 * 1024 * 1024;
+                }
+
+                CloudBlob blob;
+                CloudBlob newBlob;
+                if (type == BlobType.BlockBlob)
+                {
+                    blob = container.GetBlockBlobReference("blockblob");
+                    newBlob = container.GetBlockBlobReference("blockblob");
+                }
+                else if (type == BlobType.PageBlob)
+                {
+                    blob = container.GetPageBlobReference("pageblob");
+                    newBlob = container.GetPageBlobReference("pageblob");
+                }
+                else
+                {
+                    blob = container.GetAppendBlobReference("appendblob");
+                    newBlob = container.GetAppendBlobReference("appendblob");
+                }
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+
+                MemoryStream stream;
+                // Upload the encrypted contents to the blob.
+                using (stream = new MemoryStream(buffer))
+                {
+                    uploadCall(blob, stream, size, uploadOptions);
+
+                    // Ensure that the user stream is open.
+                    Assert.IsTrue(stream.CanSeek);
+                }
+
+                // Create the new encryption key
+                SymmetricKey aesKey2 = new SymmetricKey("symencryptionkey2");
+                DictionaryKeyResolver resolverBothKeys = new DictionaryKeyResolver();
+                resolverBothKeys.Add(aesKey);
+                resolverBothKeys.Add(aesKey2);
+                DictionaryKeyResolver resolverSecondKeyOnly = new DictionaryKeyResolver();
+                resolverSecondKeyOnly.Add(aesKey2);
+
+                // Create a request options object that contains both the new key, and a resolver capable of resolving the old key.
+                BlobEncryptionPolicy rotatePolicy = new BlobEncryptionPolicy(aesKey2, resolverBothKeys);
+                BlobRequestOptions rotateOptions = new BlobRequestOptions() { EncryptionPolicy = rotatePolicy };
+
+                newBlob.FetchAttributes();
+                rotateCall(newBlob, null, rotateOptions);
+
+                // Download the encrypted blob.
+                // Create the decryption policy to be used for download. There is no need to specify the
+                // key when the policy is only going to be used for downloads. Resolver is sufficient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolverSecondKeyOnly);
+
+                // Set the decryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions() { EncryptionPolicy = downloadPolicy };
+
+                // Download and decrypt the encrypted contents from the blob.
+                MemoryStream outputStream = new MemoryStream();
+                downloadCall(blob, outputStream, downloadOptions);
+
+                // Ensure that the user stream is open.
+                outputStream.Seek(0, SeekOrigin.Begin);
+
+                // Compare that the decrypted contents match the input data.
+                byte[] outputArray = outputStream.ToArray();
+                TestHelper.AssertBuffersAreEqualUptoIndex(outputArray, buffer, size - 1);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        private void DoCloudBlobEncryptionRotateFailureCases(BlobType type, bool partial, Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall)
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                int size = 5 * 1024 * 1024;
+                byte[] buffer = GetRandomBuffer(size);
+
+                if (partial)
+                {
+                    size = 2 * 1024 * 1024;
+                }
+
+                CloudBlob blob;
+                CloudBlob newBlob;
+                if (type == BlobType.BlockBlob)
+                {
+                    blob = container.GetBlockBlobReference("blockblob");
+                    newBlob = container.GetBlockBlobReference("blockblob");
+                }
+                else if (type == BlobType.PageBlob)
+                {
+                    blob = container.GetPageBlobReference("pageblob");
+                    newBlob = container.GetPageBlobReference("pageblob");
+                }
+                else
+                {
+                    blob = container.GetAppendBlobReference("appendblob");
+                    newBlob = container.GetAppendBlobReference("appendblob");
+                }
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+
+                MemoryStream stream;
+                // Upload the encrypted contents to the blob.
+                using (stream = new MemoryStream(buffer))
+                {
+                    uploadCall(blob, stream, size, uploadOptions);
+
+                    // Ensure that the user stream is open.
+                    Assert.IsTrue(stream.CanSeek);
+                }
+
+                // Create the new encryption key
+                SymmetricKey aesKey2 = new SymmetricKey("symencryptionkey2");
+                DictionaryKeyResolver resolverBothKeys = new DictionaryKeyResolver();
+                resolverBothKeys.Add(aesKey);
+                resolverBothKeys.Add(aesKey2);
+                DictionaryKeyResolver resolverSecondKeyOnly = new DictionaryKeyResolver();
+                resolverSecondKeyOnly.Add(aesKey2);
+
+                // Create a request options object that contains both the new key, and a resolver capable of resolving the old key.
+                BlobEncryptionPolicy rotatePolicy = new BlobEncryptionPolicy(aesKey2, resolverBothKeys);
+                BlobRequestOptions rotateOptions = new BlobRequestOptions() { EncryptionPolicy = rotatePolicy };
+
+                // Test that key rotation will fail if we don't have the encryption metadata
+                TestHelper.ExpectedException<InvalidOperationException>(
+                    () => rotateCall(newBlob, null, rotateOptions),
+                    "Key rotation should fail if encryption metadata is not present.");
+
+                newBlob.FetchAttributes();
+
+                // Test that we fail client-side if the RequestOptions either doesn't contain the new encryption key, or doesn't 
+                // contain a resolver capable of resolving the old key
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => rotateCall(newBlob, null, new BlobRequestOptions() { EncryptionPolicy = new BlobEncryptionPolicy(null, resolverBothKeys) }),
+                    "Key rotation should fail when no new key is provided.");
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => rotateCall(newBlob, null, new BlobRequestOptions() { EncryptionPolicy = new BlobEncryptionPolicy(aesKey2, null) }),
+                    "Key rotation should fail when no resolver.");
+                TestHelper.ExpectedException<ArgumentException>(
+                    () =>
+                    {
+                        try
+                        {
+                            rotateCall(newBlob, null, new BlobRequestOptions() { EncryptionPolicy = new BlobEncryptionPolicy(aesKey2, resolverSecondKeyOnly) });
+                        }
+                        catch (AggregateException ex) // Unwrap the Aggregate exception that's thrown from the async case.
+                        {
+                            throw ex.InnerException;
+                        }
+                    },
+                    "Key rotation should fail when the resolver is incapable of resolving the original key.");
+
+                // Test that the operation fails if the ETag is incorrect
+                blob.FetchAttributes();
+                blob.Metadata[@"sample"] = @"sample";
+                blob.SetMetadata();
+                TestHelper.ExpectedException<StorageException>(
+                    () =>
+                    {
+                        try
+                        {
+                            rotateCall(newBlob, null, rotateOptions);
+                        }
+                        catch (AggregateException ex) // Unwrap the Aggregate exception that's thrown from the async case.
+                        {
+                            throw ex.InnerException;
+                        }
+                    },
+                    "Key rotation should fail if Etag is incorrect.");
+
+                // Test that the operation should fail if the user passes in an AccessCondition that's If-Match or If-Modified-Since
+                AccessCondition badCondition = AccessCondition.GenerateIfMatchCondition("anyEtag");
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => rotateCall(newBlob, badCondition, rotateOptions),
+                    "Key rotation should fail if an If-Match Access Condition is used.");
+
+                badCondition = AccessCondition.GenerateIfModifiedSinceCondition(DateTimeOffset.Now);
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => rotateCall(newBlob, badCondition, rotateOptions),
+                    "Key rotation should fail if an If-Modified-Since Access Condition is used.");
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("Update operations on blob should throw if encryption policy is set.")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.FuntionalTest)]
