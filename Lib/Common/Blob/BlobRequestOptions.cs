@@ -337,7 +337,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets the maximum size of a blob in bytes that may be uploaded as a single blob. 
         /// </summary>
         /// <value>A long indicating the maximum size of a blob, in bytes, that may be uploaded as a single blob,
-        /// ranging from between 1 and 64 MB inclusive.</value>
+        /// ranging from between 1 and 256 MB inclusive.</value>
         public long? SingleBlobUploadThresholdInBytes
         {
             get
