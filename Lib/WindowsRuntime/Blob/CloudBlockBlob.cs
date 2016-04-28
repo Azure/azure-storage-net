@@ -994,6 +994,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = length.Value;
                 return NullType.Value;
             };
@@ -1020,7 +1021,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(source, offset, length, contentMD5, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutBlock(uri, serverTimeout, blockId, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                return NullType.Value;
+            };
 
             return putCmd;
         }
@@ -1061,6 +1067,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };

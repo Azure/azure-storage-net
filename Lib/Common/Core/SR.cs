@@ -47,6 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string CannotCreateSASSignatureForGivenCred = "Cannot create Shared Access Signature as the credentials does not have account name information. Please check that the credentials used support creating Shared Access Signature.";
         public const string CannotCreateSASWithoutAccountKey = "Cannot create Shared Access Signature unless Account Key credentials are used.";
         public const string CannotModifySnapshot = "Cannot perform this operation on a blob representing a snapshot.";
+        public const string CannotModifyShareSnapshot = "Cannot perform this operation on a share representing a snapshot.";
         public const string CannotTransformNonHttpsUriWithHttpsOnlyCredentials = "Cannot transform a Uri object using a StorageCredentials object that is marked HTTPS only.";
         public const string CannotUpdateKeyWithoutAccountKeyCreds = "Cannot update key unless Account Key credentials are used.";
         public const string CannotUpdateSasWithoutSasCreds = "Cannot update Shared Access Signature unless Sas credentials are used.";

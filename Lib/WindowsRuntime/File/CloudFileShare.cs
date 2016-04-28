@@ -29,8 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
-#if ASPNET_K
-#else
+#if !ASPNET_K
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
@@ -117,36 +116,91 @@ namespace Microsoft.WindowsAzure.Storage.File
                 bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
 
                 if (exists)
-                    {
-                        return false;
-                    }
+                {
+                    return false;
+                }
 
-                    try
+                try
                 {
                     await this.CreateAsync(modifiedOptions, operationContext, cancellationToken);
                     return true;
-                    }
-                    catch (Exception)
+                }
+                catch (Exception)
+                {
+                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
                     {
-                        if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                        if ((extendedInfo == null) ||
+                            (extendedInfo.ErrorCode == FileErrorCodeStrings.ShareAlreadyExists))
                         {
-                            StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                            if ((extendedInfo == null) ||
-                                (extendedInfo.ErrorCode == FileErrorCodeStrings.ShareAlreadyExists))
-                            {
-                                return false;
-                            }
-                            else
-                            {
-                                throw;
-                            }
+                            return false;
                         }
                         else
                         {
                             throw;
                         }
                     }
+                    else
+                    {
+                        throw;
+                    }
+                }
             }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a snapshot of the share.
+        /// </summary>
+        /// <returns>A share snapshot.</returns>
+        [DoesServiceRequest]
+        public virtual Task<CloudFileShare> SnapshotAsync()
+        {
+            return this.SnapshotAsync(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Creates a snapshot of the share.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A share snapshot.</returns>
+        [DoesServiceRequest]
+        public virtual Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
+        {
+            return this.SnapshotAsync(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a snapshot of the share.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request, or <c>null</c>.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A share snapshot.</returns>
+        [DoesServiceRequest]
+        public virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.SnapshotAsync(metadata, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a snapshot of the share.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request, or <c>null</c>.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A share snapshot.</returns>
+        [DoesServiceRequest]
+        public virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Task.Run(async () => await Executor.ExecuteAsync<CloudFileShare>(
+                this.SnapshotImpl(metadata, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken), cancellationToken);
         }
 
         /// <summary>
@@ -575,7 +629,43 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             return putCmd;
         }
-                
+
+        /// <summary>
+        /// Implementation for the Snapshot method.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot, or null.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the share. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand"/> that creates the snapshot.</returns>
+        /// <remarks>If the <c>metadata</c> parameter is <c>null</c> then no metadata is associated with the request.</remarks>
+        internal RESTCommand<CloudFileShare> SnapshotImpl(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options)
+        {
+            RESTCommand<CloudFileShare> putCmd = new RESTCommand<CloudFileShare>(this.ServiceClient.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = ShareHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                if (metadata != null)
+                {
+                    FileHttpRequestMessageFactory.AddMetadata(msg, metadata);
+                }
+
+                return msg;
+            };
+
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+                DateTimeOffset snapshotTime = NavigationHelper.ParseSnapshotTime(ShareHttpResponseParsers.GetSnapshotTime(resp));
+                CloudFileShare snapshot = new CloudFileShare(this.Properties, new Dictionary<string, string>(metadata ?? this.Metadata), this.Name, snapshotTime, this.ServiceClient);
+                this.UpdateETagAndLastModified(resp);
+                return snapshot;
+            };
+
+            return putCmd;
+        }
+
         /// <summary>
         /// Implementation for the Delete method.
         /// </summary>
@@ -587,7 +677,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(deleteCmd);
-            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.Delete(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.Delete(uri, serverTimeout, this.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
             return deleteCmd;
@@ -605,7 +695,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -628,7 +718,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, null, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.SnapshotTime, null, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)

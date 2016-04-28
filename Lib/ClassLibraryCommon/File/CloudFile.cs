@@ -186,6 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual CloudFileStream OpenWrite(long? size, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient, false);
             operationContext = operationContext ?? new OperationContext();
             bool createNew = size.HasValue;
@@ -241,6 +242,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenWrite(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient, false);
             operationContext = operationContext ?? new OperationContext();
             bool createNew = size.HasValue;
@@ -1325,6 +1327,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 length = source.Length - source.Position;
             }
 
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -1430,6 +1433,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 length = source.Length - source.Position;
             }
 
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
 
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
@@ -2053,6 +2057,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void Create(long size, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
@@ -2087,6 +2092,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
@@ -2387,6 +2393,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void Delete(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.DeleteFileImpl(accessCondition, modifiedOptions),
@@ -2419,6 +2426,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.DeleteFileImpl(accessCondition, modifiedOptions),
@@ -2845,6 +2853,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void SetProperties(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -2877,6 +2886,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -2956,6 +2966,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void Resize(long size, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.ResizeImpl(size, accessCondition, modifiedOptions),
@@ -2990,6 +3001,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginResize(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.ResizeImpl(size, accessCondition, modifiedOptions),
@@ -3072,6 +3084,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void SetMetadata(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
@@ -3104,6 +3117,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
@@ -3188,6 +3202,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             CommonUtility.AssertNotNull("rangeData", rangeData);
 
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
@@ -3273,6 +3288,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             CommonUtility.AssertNotNull("rangeData", rangeData);
 
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
@@ -3466,6 +3482,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void ClearRange(long startOffset, long length, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.ClearRangeImpl(startOffset, length, accessCondition, modifiedOptions),
@@ -3502,6 +3519,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginClearRange(long startOffset, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.ClearRangeImpl(startOffset, length, accessCondition, modifiedOptions),
@@ -3596,7 +3614,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual string StartCopy(Uri source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("source", source);
-            
+
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteSync(
                 this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
@@ -3697,7 +3716,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual ICancellableAsyncResult BeginStartCopy(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             CommonUtility.AssertNotNull("source", source);
-            
+
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
@@ -4068,7 +4088,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.DestinationStream = destStream;
             getCmd.CalculateMd5ForResponseStream = !options.DisableContentMD5Validation.Value;
             getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) =>
-                FileHttpWebRequestFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value, accessCondition, useVersionHeader, ctx);
+                FileHttpWebRequestFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value, this.Share.SnapshotTime, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.RecoveryAction = (cmd, ex, ctx) =>
             {
@@ -4091,7 +4111,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, context) =>
-                    FileHttpWebRequestFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, accessCondition, useVersionHeader, context);
+                    FileHttpWebRequestFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, this.Share.SnapshotTime, accessCondition, useVersionHeader, context);
             };
 
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -4189,7 +4209,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => FileHttpWebRequestFactory.GetProperties(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => FileHttpWebRequestFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -4212,7 +4232,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => FileHttpWebRequestFactory.GetProperties(uri, serverTimeout, null /* accessCondition */, useVersionHeader, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => FileHttpWebRequestFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, null /* accessCondition */, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -4262,7 +4282,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => FileHttpWebRequestFactory.ListRanges(uri, serverTimeout, offset, length, accessCondition, useVersionHeader, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => FileHttpWebRequestFactory.ListRanges(uri, serverTimeout, offset, length, this.Share.SnapshotTime, accessCondition, useVersionHeader, ctx);
             getCmd.SetHeaders = (r, ctx) => FileHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -4526,7 +4546,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         internal static Uri SourceFileToUri(CloudFile source)
         {
             CommonUtility.AssertNotNull("source", source);
-            return source.ServiceClient.Credentials.TransformUri(source.Uri);
+            return source.ServiceClient.Credentials.TransformUri(source.SnapshotQualifiedUri);
         }
 
         /// <summary>

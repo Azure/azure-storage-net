@@ -118,6 +118,61 @@ namespace Microsoft.WindowsAzure.Storage.File
         public StorageUri StorageUri { get; private set; }
 
         /// <summary>
+        /// Gets the absolute URI to the directory, including query string information if the directory's share is a snapshot.
+        /// </summary>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the directory, including snapshot query information if the directory's share is a snapshot.</value>
+        public Uri SnapshotQualifiedUri
+        {
+            get
+            {
+                if (this.Share.SnapshotTime.HasValue)
+                {
+                    UriQueryBuilder builder = new UriQueryBuilder();
+                    builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(this.Share.SnapshotTime.Value));
+                    return builder.AddToUri(this.Uri);
+                }
+                else
+                {
+                    return this.Uri;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the directory's URI for both the primary and secondary locations, including query string information if the directory's share is a snapshot.
+        /// </summary>
+        /// <value>An object of type <see cref="StorageUri"/> containing the directory's URIs for both the primary and secondary locations, 
+        /// including snapshot query information if the directory's share is a snapshot.</value>
+        public StorageUri SnapshotQualifiedStorageUri
+        {
+            get
+            {
+                if (this.Share.SnapshotTime.HasValue)
+                {
+                    UriQueryBuilder builder = new UriQueryBuilder();
+                    builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(this.Share.SnapshotTime.Value));
+                    return builder.AddToUri(this.StorageUri);
+                }
+                else
+                {
+                    return this.StorageUri;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the directory's share is not a snapshot.
+        /// </summary>
+        internal void AssertNoSnapshot()
+        {
+            if (this.Share.IsSnapshot)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotModifyShareSnapshot);
+                throw new InvalidOperationException(errorMessage);
+            }
+        }
+
+        /// <summary>
         /// Gets a <see cref="FileDirectoryProperties"/> object that represents the directory's system properties.
         /// </summary>
         /// <value>A <see cref="FileDirectoryProperties"/> object.</value>
@@ -235,7 +290,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         private void ParseQueryAndVerify(StorageUri address, StorageCredentials credentials)
         {
             StorageCredentials parsedCredentials;
-            this.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials);
+            DateTimeOffset? parsedShareSnapshot;
+            this.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials, out parsedShareSnapshot);
+
+            if (parsedShareSnapshot.HasValue)
+            {
+                this.Share.SnapshotTime = parsedShareSnapshot;
+            }
 
             if (parsedCredentials != null && credentials != null)
             {

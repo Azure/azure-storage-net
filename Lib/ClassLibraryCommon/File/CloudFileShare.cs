@@ -45,6 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void Create(FileRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             Executor.ExecuteSync(
                 this.CreateShareImpl(modifiedOptions),
@@ -76,6 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.CreateShareImpl(modifiedOptions),
@@ -369,6 +371,124 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginCreateIfNotExists, this.EndCreateIfNotExists, options, operationContext, cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Creates a snapshot of the share.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="CloudFileShare"/> object that is a share snapshot.</returns>
+        [DoesServiceRequest]
+        public CloudFileShare Snapshot(IDictionary<string, string> metadata = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
+            this.AssertNoSnapshot();
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteSync(
+                this.SnapshotImpl(metadata, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to create a snapshot of the share.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSnapshot(AsyncCallback callback, object state)
+        {
+            return this.BeginSnapshot(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to create a snapshot of the share.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            this.AssertNoSnapshot();
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.SnapshotImpl(metadata, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to create a snapshot of the share.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="CloudFileShare"/> object that is a share snapshot.</returns>
+        public CloudFileShare EndSnapshot(IAsyncResult asyncResult)
+        {
+            return Executor.EndExecuteAsync<CloudFileShare>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to create a snapshot of the share.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<CloudFileShare> SnapshotAsync()
+        {
+            return this.SnapshotAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to create a snapshot of the share.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to create a snapshot of the share.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.SnapshotAsync(metadata, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to create a snapshot of the share.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, metadata, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -940,6 +1060,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual FileSharePermissions GetPermissions(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteSync(
                 this.GetPermissionsImpl(accessCondition, modifiedOptions),
@@ -972,6 +1093,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetPermissions(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.GetPermissionsImpl(accessCondition, modifiedOptions),
@@ -1161,6 +1283,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void SetMetadata(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
@@ -1193,6 +1316,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
@@ -1272,6 +1396,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void SetPermissions(FileSharePermissions permissions, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.SetPermissionsImpl(permissions, accessCondition, modifiedOptions),
@@ -1306,6 +1431,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetPermissions(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.SetPermissionsImpl(permissions, accessCondition, modifiedOptions),
@@ -1388,6 +1514,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual void SetProperties(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -1420,6 +1547,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -1510,7 +1638,41 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             return putCmd;
         }
-                
+
+        /// <summary>
+        /// Implementation for the Snapshot method.
+        /// </summary>
+        /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot, or <c>null</c>.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that creates the snapshot.</returns>
+        /// <remarks>If the <c>metadata</c> parameter is <c>null</c> then no metadata is associated with the request.</remarks>
+        internal RESTCommand<CloudFileShare> SnapshotImpl(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options)
+        {
+            RESTCommand<CloudFileShare> putCmd = new RESTCommand<CloudFileShare>(this.ServiceClient.Credentials, this.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.Snapshot(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            putCmd.SetHeaders = (r, ctx) =>
+            {
+                if (metadata != null)
+                {
+                    FileHttpWebRequestFactory.AddMetadata(r, metadata);
+                }
+            };
+            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+                DateTimeOffset snapshotTime = NavigationHelper.ParseSnapshotTime(ShareHttpResponseParsers.GetSnapshotTime(resp));
+                CloudFileShare snapshot = new CloudFileShare(this.Properties, new Dictionary<string, string>(metadata ?? this.Metadata), this.Name, snapshotTime, this.ServiceClient);
+                this.UpdateETagAndLastModified(resp);
+                return snapshot;
+            };
+
+            return putCmd;
+        }
+
         /// <summary>
         /// Implementation for the Delete method.
         /// </summary>
@@ -1522,7 +1684,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(deleteCmd);
-            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.Delete(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.Delete(uri, serverTimeout, this.SnapshotTime, accessCondition, useVersionHeader, ctx);
             deleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
@@ -1541,7 +1703,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.GetProperties(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.GetProperties(uri, serverTimeout, this.SnapshotTime, accessCondition, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -1565,7 +1727,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.GetProperties(uri, serverTimeout, null, useVersionHeader, ctx);
+            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.GetProperties(uri, serverTimeout, this.SnapshotTime, null, useVersionHeader, ctx);
             getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {

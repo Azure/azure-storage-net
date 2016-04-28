@@ -54,6 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.LastModified = other.LastModified;
             this.PageBlobSequenceNumber = other.PageBlobSequenceNumber;
             this.AppendBlobCommittedBlockCount = other.AppendBlobCommittedBlockCount;
+            this.IsServerEncrypted = other.IsServerEncrypted;
         }
 
         /// <summary>
@@ -157,5 +158,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <value>An integer containing the number of committed blocks.</value>
         public int? AppendBlobCommittedBlockCount { get; internal set; }
+
+        /// <summary>
+        /// Gets the blob's server-side encryption state.
+        /// </summary>
+        public bool IsServerEncrypted { get; internal set; }
     }
 }

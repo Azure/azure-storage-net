@@ -95,6 +95,18 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         }
 
         /// <summary>
+        /// Gets the snapshot timestamp from the response.
+        /// </summary>
+        /// <param name="response">The web response.</param>
+        /// <returns>The snapshot timestamp.</returns>
+        public static string GetSnapshotTime(HttpWebResponse response)
+        {
+            CommonUtility.AssertNotNull("response", response);
+
+            return response.Headers[Constants.HeaderConstants.SnapshotHeader];
+        }
+
+        /// <summary>
         /// Reads share stats from a stream.
         /// </summary>
         /// <param name="inputStream">The stream from which to read the share stats.</param>

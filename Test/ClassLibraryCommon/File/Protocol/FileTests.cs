@@ -91,7 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             OperationContext opContext = new OperationContext();
             try
             {
-                request = FileHttpWebRequestFactory.Get(uri, context.Timeout, accessCondition, true, opContext);
+                request = FileHttpWebRequestFactory.Get(uri, context.Timeout, null, accessCondition, true, opContext);
             }
             catch (InvalidOperationException)
             {
@@ -194,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 
             try
             {
-                request = FileHttpWebRequestFactory.Get(uri, context.Timeout, offset, count, false, accessCondition, true, opContext);
+                request = FileHttpWebRequestFactory.Get(uri, context.Timeout, offset, count, false, null, accessCondition, true, opContext);
             }
             catch (InvalidOperationException)
             {
@@ -271,7 +271,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             Uri uri = FileClientTests.ConstructUri(context.Address, shareName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ShareHttpWebRequestFactory.Delete(uri, context.Timeout, accessCondition, true, opContext);
+            HttpWebRequest request = ShareHttpWebRequestFactory.Delete(uri, context.Timeout, null, accessCondition, true, opContext);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
             Assert.AreEqual("DELETE", request.Method);
@@ -295,7 +295,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             Uri uri = FileClientTests.ConstructUri(context.Address, shareName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = DirectoryHttpWebRequestFactory.List(uri, context.Timeout, listingContext, true, opContext);
+            HttpWebRequest request = DirectoryHttpWebRequestFactory.List(uri, context.Timeout, listingContext, null, true, opContext);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
             Assert.AreEqual("GET", request.Method);
