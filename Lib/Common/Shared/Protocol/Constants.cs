@@ -49,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
-        public const long MaxSingleUploadBlobSize = 64 * MB;
+        public const long MaxSingleUploadBlobSize = 256 * MB;
 
         /// <summary>
         /// The maximum size of a single block.
