@@ -507,9 +507,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Adds a message to the queue.
         /// </summary>
         /// <param name="message">The message to add.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> object returned is the same as the message passed in. Both will contain the pop receipt along with the insertion/expiration time.</remarks>
         [DoesServiceRequest]
-        public virtual Task AddMessageAsync(CloudQueueMessage message)
+        public virtual Task<CloudQueueMessage> AddMessageAsync(CloudQueueMessage message)
         {
             return this.AddMessageAsync(message, null /* timeToLive */, null /* initialVisibilityDelay */, null /* options */, null /* operationContext */);
         }
@@ -523,9 +524,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> object returned is the same as the message passed in. Both will contain the pop receipt along with the insertion/expiration time.</remarks>
         [DoesServiceRequest]
-        public virtual Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext)
+        public virtual Task<CloudQueueMessage> AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext)
         {
             return this.AddMessageAsync(message, timeToLive, initialVisibilityDelay, options, operationContext, CancellationToken.None);
         }
@@ -540,14 +542,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> object of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> object returned is the same as the message passed in. Both will contain the pop receipt along with the insertion/expiration time.</remarks>
         [DoesServiceRequest]
-        public virtual Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<CloudQueueMessage> AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Task.Run(async () => await Executor.ExecuteAsync(
                 this.AddMessageImpl(message, timeToLive, initialVisibilityDelay, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
@@ -1100,8 +1103,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="initialVisibilityDelay">The length of time from now during which the message will be invisible.
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="RESTCommand"/> that sets the permissions.</returns>
-        private RESTCommand<NullType> AddMessageImpl(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options)
+        /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> object returned is the same as the message passed in. Both will contain the pop receipt along with the insertion/expiration time.</remarks>
+        private RESTCommand<CloudQueueMessage> AddMessageImpl(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options)
         {
             int? timeToLiveInSeconds = null;
             int? initialVisibilityDelayInSeconds = null;
@@ -1122,17 +1126,22 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage), memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
 
-            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
+            RESTCommand<CloudQueueMessage> putCmd = new RESTCommand<CloudQueueMessage>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(putCmd);
+            putCmd.RetrieveResponseStream = true;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+            putCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                GetMessageCountAndMetadataFromResponse(resp);
-                return NullType.Value;
+                return Task.Factory.StartNew(() =>
+                {
+                    GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
+
+                    return SelectAddMessageResponse(message, messageResponse.Messages.First());
+                });
             };
 
             return putCmd;

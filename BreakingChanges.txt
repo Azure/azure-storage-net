@@ -1,3 +1,7 @@
+Tracking Breaking Changes since 7.0
+
+- Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter, and returns this object as well. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
+
 Tracking Breaking Changes since 6.0
 
 - All: Support for 2015-07-08 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.3.
