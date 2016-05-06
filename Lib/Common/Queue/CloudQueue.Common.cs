@@ -203,24 +203,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Selects the get message response.
         /// </summary>
-        /// <param name="message">The queue message.</param>
-        /// <param name="protocolMessage">The protocol message.</param>
-        /// <returns>The parsed message.</returns>
-        /// <remarks>The <see cref="CloudQueueMessage"/> object returned is the same as the message passed in. Both will contain the pop receipt along with the insertion/expiration time.</remarks>
-        private static CloudQueueMessage SelectAddMessageResponse(CloudQueueMessage message, QueueMessage protocolMessage)
-        {
-            message.InsertionTime = protocolMessage.InsertionTime;
-            message.ExpirationTime = protocolMessage.ExpirationTime;
-            message.NextVisibleTime = protocolMessage.NextVisibleTime.Value;
-            message.PopReceipt = protocolMessage.PopReceipt;
-            message.Id = protocolMessage.Id;
-
-            return message;
-        }
-
-        /// <summary>
-        /// Selects the get message response.
-        /// </summary>
         /// <param name="protocolMessage">The protocol message.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>The parsed message.</returns>
