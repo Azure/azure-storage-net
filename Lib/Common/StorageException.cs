@@ -206,7 +206,7 @@ namespace Microsoft.WindowsAzure.Storage
                 if (response != null)
                 {
                     StorageException.PopulateRequestResult(reqResult, response);
-                    reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(response.Content.ReadAsStreamAsync().Result);
+                    reqResult.ExtendedErrorInformation = CommonUtility.RunWithoutSynchronizationContext(() => StorageExtendedErrorInformation.ReadFromStream(response.Content.ReadAsStreamAsync().Result));
                 }
             }
             catch (Exception)
