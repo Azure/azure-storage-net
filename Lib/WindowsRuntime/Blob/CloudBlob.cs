@@ -174,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToFileAsync(StorageFile target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return DownloadToFileAsync(target, accessCondition, options, operationContext);
+            return DownloadToFileAsync(target, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
