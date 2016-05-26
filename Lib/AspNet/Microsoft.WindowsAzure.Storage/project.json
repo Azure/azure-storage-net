@@ -1,91 +1,74 @@
 ﻿{
-    "version": "7.0.1.0",
+    "version": "7.0.2.0",
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for CoreCLR Preview",
     "dependencies": {
         "Microsoft.Data.OData": "5.6.4",
         "Microsoft.Data.Services.Client": "5.6.4",
         "System.Spatial": "5.6.4",
-        "Newtonsoft.Json":  "6.0.8"
+        "Newtonsoft.Json": "6.0.8"
     },
+
     "frameworks": {
-        "dotnet5.4": {
+        "netstandardapp1.5": {
             "dependencies": {
-                "System.Collections": "4.0.11-beta-*",
-                "System.Collections.Concurrent": "4.0.11-beta-*",
-                "System.Collections.Specialized": "4.0.0-beta-*",
-                "System.Diagnostics.Debug": "4.0.11-beta-*",
-                "System.Diagnostics.Tools": "4.0.1-beta-*",
-                "System.Diagnostics.TraceSource": "4.0.0-beta-*",
-                "System.Diagnostics.Tracing": "4.0.21-beta-*",
-                "System.Dynamic.Runtime": "4.0.11-beta-*",
-                "System.Globalization": "4.0.11-beta-*",
-                "System.IO": "4.0.11-beta-*",
-                "System.IO.FileSystem": "4.0.1-beta-*",
-                "System.IO.FileSystem.Primitives": "4.0.1-beta-*",
-                "System.Linq": "4.0.1-beta-*",
-                "System.Linq.Expressions": "4.0.11-beta-*",
-                "System.Linq.Queryable": "4.0.0-beta-*",
-                "System.Net.Http": "4.0.1-beta-*",
-                "System.Net.Primitives": "4.0.11-beta-*",
-                "System.Reflection": "4.1.0-beta-*",
-                "System.Reflection.Extensions": "4.0.1-beta-*",
-                "System.Reflection.TypeExtensions": "4.0.1-beta-*",
-                "System.Runtime": "4.0.20-beta-*",
-                "System.Runtime.Extensions": "4.0.11-beta-*",
-                "System.Runtime.InteropServices": "4.0.21-beta-*",
-                "System.Runtime.Serialization.Primitives": "4.0.0-beta-*",
-                "System.Runtime.Serialization.Xml": "4.0.10-beta-*",
-                "System.Security.Cryptography.Encoding": "4.0.0-beta-*",
-                "System.Security.Cryptography.Primitives": "4.0.0-beta-*",
-                "System.Security.Cryptography.Algorithms": "4.0.0-beta-*",
-                "System.Text.Encoding": "4.0.11-beta-*",
-                "System.Text.Encoding.Extensions": "4.0.11-beta-*",
-                "System.Text.RegularExpressions": "4.0.11-beta-*",
-                "System.Threading": "4.0.11-beta-*",
-                "System.Threading.Tasks": "4.0.11-beta-*",
-                "System.Threading.Thread": "4.0.0-beta-*",
-                "System.Threading.ThreadPool": "4.0.10-beta-*",
-                "System.Threading.Timer": "4.0.1-beta-*",
-                "System.Xml.ReaderWriter": "4.0.11-beta-*",
-                "System.Xml.XDocument": "4.0.11-beta-*",
-                "System.Xml.XmlSerializer": "4.0.0-beta-*"
-            }
+                "NETStandard.Library": "1.5.0-rc2-24027",
+                "System.Dynamic.Runtime": "4.0.11-rc2-24027",
+                "System.Security.Cryptography.Algorithms": "4.1.0-rc2-24027"
+            },
+            "imports": [
+                "dnxcore50",
+                "portable-net451+win8"
+            ]
+        },
+        "netcoreapp1.0": {
+            "dependencies": {
+                "Microsoft.NETCore.App": {
+                    "type": "platform",
+                    "version": "1.0.0-rc2-3002702"
+                }
+            },
+            "imports": [
+                "dnxcore50",
+                "portable-net45+win8"
+            ]
         }
+
     },
-    "compilationOptions": {
+
+    "buildOptions": {
         "define": [ "ASPNET_K" ],
         "allowUnsafe": false,
         "warningsAsErrors": true,
         "delaySign": true,
-        "keyFile":  "MSSharedLibKey.snk"
-    },
-    "compile": [
-        "**/*.cs",
-                
-        "../../Common/*.cs",
-        "../../Common/Shared/**/*.cs",
-        "../../Common/Auth/**/*.cs",
-        "../../Common/Core/**/*.cs",
-        "../../Common/RetryPolicies/**/*.cs",
-        "../../Common/Blob/**/*.cs",
-        "../../Common/File/**/*.cs",
-        "../../Common/Queue/**/*.cs",
-        "../../Common/Table/*.cs",
-        "../../Common/Table/Protocol/*.cs",
+        "keyFile": "MSSharedLibKey.snk",
+        "compile": [
+            "**/*.cs",
 
-        "../../WindowsRuntime/*.cs",
-        "../../WindowsRuntime/Auth/**/*.cs",
-        "../../WindowsRuntime/Blob/Protocol/*.cs",
-        "../../WindowsRuntime/Blob/*.cs",
-        "../../WindowsRuntime/Core/**/*.cs",
-        "../../WindowsRuntime/Shared/**/*.cs",
-        "../../WindowsRuntime/Queue/*.cs",
-        "../../WindowsRuntime/Queue/Protocol/*.cs",
-        "../../WindowsRuntime/File/*.cs",
-        "../../WindowsRuntime/File/Protocol/*.cs",
-        "../../WindowsRuntime/Table/*.cs",
-        "../../WindowsRuntime/Table/DataServices/*.cs",
-        "../../WindowsRuntime/Table/Protocol/*.cs"
-    ]
+            "../../Common/*.cs",
+            "../../Common/Shared/**/*.cs",
+            "../../Common/Auth/**/*.cs",
+            "../../Common/Core/**/*.cs",
+            "../../Common/RetryPolicies/**/*.cs",
+            "../../Common/Blob/**/*.cs",
+            "../../Common/File/**/*.cs",
+            "../../Common/Queue/**/*.cs",
+            "../../Common/Table/*.cs",
+            "../../Common/Table/Protocol/*.cs",
+
+            "../../WindowsRuntime/*.cs",
+            "../../WindowsRuntime/Auth/**/*.cs",
+            "../../WindowsRuntime/Blob/Protocol/*.cs",
+            "../../WindowsRuntime/Blob/*.cs",
+            "../../WindowsRuntime/Core/**/*.cs",
+            "../../WindowsRuntime/Shared/**/*.cs",
+            "../../WindowsRuntime/Queue/*.cs",
+            "../../WindowsRuntime/Queue/Protocol/*.cs",
+            "../../WindowsRuntime/File/*.cs",
+            "../../WindowsRuntime/File/Protocol/*.cs",
+            "../../WindowsRuntime/Table/*.cs",
+            "../../WindowsRuntime/Table/DataServices/*.cs",
+            "../../WindowsRuntime/Table/Protocol/*.cs"
+        ]
+    }
 }
