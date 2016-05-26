@@ -1,3 +1,9 @@
+Changes in 7.0.2-preview :
+
+- Blobs (WinRT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
+- All : CoreCLR projects were updated to use the RC2 release of .Net Core 1.0
+
+
 Changes in 7.0.0 :
 
 - All: Support for 2015-07-08 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.3.

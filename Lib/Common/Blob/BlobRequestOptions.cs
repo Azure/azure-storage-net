@@ -395,7 +395,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets a value to indicate that an MD5 hash will be calculated and stored when uploading a blob.
         /// </summary>
         /// <value>Use <c>true</c> to calculate and store an MD5 hash when uploading a blob; otherwise, <c>false</c>.</value>
-        /// <remarks>This property is not supported for <see cref="CloudAppendBlob"/>.</remarks>
+        /// <remarks>This property is not supported for the <see cref="CloudAppendBlob"/> Append* APIs.</remarks>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #elif PORTABLE
