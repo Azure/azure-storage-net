@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (7.0.0)
+# Microsoft Azure Storage SDK for .NET (7.0.2)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -34,7 +34,7 @@ For the best development experience, developers should use the official Microsof
 - .NET Framework 4.0: As of October 2012, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4 release and above.
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
-- CoreCLR (rc1): Storage Client Libraries for .NET are available to support CoreCLR application development. This support is currently in preview. 
+- CoreCLR (rc2): Storage Client Libraries for .NET are available to support CoreCLR application development. This support is currently in preview. 
 - Portable Class Library Profile 111: Storage Client Libraries are available to support building PCL Profile 111 applications, as well as for Xamarin application development. This support is currently in preview.
  
 ## Requirements
@@ -46,7 +46,7 @@ For the best development experience, developers should use the official Microsof
 ## Versioning Information
 
 - The Storage Client Library uses [the semantic versioning scheme.](http://semver.org/)
-- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (DNX & DNXCore, PCL/Xamarin).
+- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (.NetCore 1.0 , PCL/Xamarin).
 
 ## Use with the Azure Storage Emulator
 
