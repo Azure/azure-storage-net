@@ -1,3 +1,7 @@
+Changes in 7.0.2-preview :
+
+- Blobs (RT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
+
 Changes in 7.0.0 :
 
 - All: Support for 2015-07-08 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.3.
