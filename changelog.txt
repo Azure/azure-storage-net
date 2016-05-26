@@ -1,6 +1,8 @@
 Changes in 7.0.2-preview :
 
-- Blobs (RT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
+- Blobs (WinRT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
+- All : CoreCLR projects were updated to use the RC2 release of .Net Core 1.0
+
 
 Changes in 7.0.0 :
 
