@@ -18,7 +18,7 @@
     <summary>A client library for working with Microsoft Azure storage services including blobs, files, tables, and queues.</summary>
     <tags>Microsoft, Azure, Storage, Table, Blob, File, Queue, Scalable, windowsazureofficial</tags>
     <dependencies>
-      <group targetFramework=".NETStandardApp1.5">
+      <group targetFramework=".NETStandard1.5">
         <dependency id="NETStandard.Library" version="1.5.0-rc2-24027" />
         <dependency id="System.Dynamic.Runtime" version="4.0.11-rc2-24027" />
         <dependency id="System.Security.Cryptography.Algorithms" version="4.1.0-rc2-24027" />
