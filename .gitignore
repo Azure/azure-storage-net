@@ -149,3 +149,4 @@ Lib/AspNet/Microsoft.WindowsAzure.Storage/project.lock.json
 Test/AspNet/Microsoft.WindowsAzure.Storage.Test/project.lock.json
 Test/AspNet/XUnitForMsTest/project.lock.json
 UpgradeLog.htm
+.vs/
