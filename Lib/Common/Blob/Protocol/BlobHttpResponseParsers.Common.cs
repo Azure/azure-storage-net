@@ -152,6 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="copyProgressString">A string formatted as progressBytes/TotalBytes.</param>
         /// <param name="copyCompletionTimeString">The copy completion time, as a string, or <c>null</c>.</param>
         /// <param name="copyStatusDescription">The copy status description, if any.</param>
+        /// <param name="copyTypeString">The type of copy operation performed, if any.</param>
         /// <returns>A <see cref="CopyState"/> object populated from the given strings.</returns>
         internal static CopyState GetCopyAttributes(
             string copyStatusString,
@@ -159,7 +160,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copySourceString,
             string copyProgressString,
             string copyCompletionTimeString,
-            string copyStatusDescription)
+            string copyStatusDescription,
+            string copyTypeString)
         {
             CopyState copyAttributes = new CopyState
             {
@@ -205,6 +207,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             if (!string.IsNullOrEmpty(copyCompletionTimeString))
             {
                 copyAttributes.CompletionTime = copyCompletionTimeString.ToUTCTime();
+            }
+
+            if (!string.IsNullOrEmpty(copyTypeString) && string.Equals(copyTypeString, CopyType.Incremental.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                copyAttributes.Type = CopyType.Incremental;
+            }
+            else if (!string.IsNullOrEmpty(copyTypeString))
+            {
+                copyAttributes.Type = CopyType.Unrecognized;
+            }
+            else
+            {
+                copyAttributes.Type = CopyType.Standard;
             }
 
             return copyAttributes;

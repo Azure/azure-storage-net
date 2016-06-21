@@ -83,6 +83,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, blobUnicodeDest.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, blobUnicodeDest.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, blobUnicodeDest.CopyState.CopyId);
+                Assert.AreEqual(CopyType.Standard, blobUnicodeDest.CopyState.Type);
                 Assert.IsTrue(blobUnicodeDest.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
             }
             finally
@@ -169,6 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, destination.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, destination.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, destination.CopyState.CopyId);
+                Assert.AreEqual(CopyType.Standard, destination.CopyState.Type);
                 Assert.IsTrue(destination.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 if (!destinationIsSas)
@@ -290,6 +292,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                     Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                     Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                    Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
                     Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                     result = copy.BeginAbortCopy(copyId,
@@ -363,6 +366,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 TestHelper.ExpectedExceptionTask(
@@ -430,6 +434,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 string copyData = DownloadText(copy, Encoding.UTF8);
@@ -551,6 +556,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 TestHelper.ExpectedException(
@@ -581,6 +587,167 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
 
                 copy.Delete();
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Perform an incremental of copy a blob and then verify its contents, properties, and metadata")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobIncrementalCopyTest()
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                IncrementCopyTestImpl(i);
+            }
+        }
+
+        private void IncrementCopyTestImpl(int overload)
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudPageBlob source = container.GetPageBlobReference("source");
+
+                string data = new string('a', 512);
+                UploadText(source, data, Encoding.UTF8);
+
+                source.Metadata["Test"] = "value";
+                source.SetMetadata();
+
+                CloudPageBlob sourceSnapshot = source.CreateSnapshot();
+                System.IO.MemoryStream downloadedBlob = new System.IO.MemoryStream();
+                sourceSnapshot.DownloadToStream(downloadedBlob);
+
+                CloudPageBlob copy = container.GetPageBlobReference("copy");
+
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                };
+
+                string sasToken = sourceSnapshot.GetSharedAccessSignature(policy);
+
+                StorageCredentials blobSAS = new StorageCredentials(sasToken);
+                Uri sourceSnapshotUri = blobSAS.TransformUri(TestHelper.Defiddler(sourceSnapshot).SnapshotQualifiedUri);
+
+                StorageCredentials accountSAS = new StorageCredentials(sasToken);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, source.ServiceClient.StorageUri, null, null, null);
+                CloudPageBlob snapshotWithSas = accountWithSAS.CreateCloudBlobClient().GetBlobReferenceFromServer(sourceSnapshot.SnapshotQualifiedUri) as CloudPageBlob;
+
+                string copyId = null;
+                if (overload == 0)
+                {
+                    copyId = copy.StartIncrementalCopy(TestHelper.Defiddler(snapshotWithSas));
+                }
+                else if (overload == 1)
+                {
+                    copyId = copy.StartIncrementalCopy(sourceSnapshotUri);
+                }
+                else if (overload == 2)
+                {
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        IAsyncResult result = copy.BeginStartIncrementalCopy(TestHelper.Defiddler(snapshotWithSas), ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        copyId = copy.EndStartIncrementalCopy(result);
+                    }
+                }
+                else if (overload == 3)
+                {
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        IAsyncResult result = copy.BeginStartIncrementalCopy(TestHelper.Defiddler(snapshotWithSas), null, null, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        copyId = copy.EndStartIncrementalCopy(result);
+                    }
+                }
+                else if (overload == 4)
+                {
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        IAsyncResult result = copy.BeginStartIncrementalCopy(sourceSnapshotUri, null, null, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        copyId = copy.EndStartIncrementalCopy(result);
+                    }
+                }
+                else if (overload == 5)
+                {
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        copyId = copy.StartIncrementalCopyAsync(TestHelper.Defiddler(snapshotWithSas)).Result;
+                    }
+                }
+                else if (overload == 6)
+                {
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        copyId = copy.StartIncrementalCopyAsync(TestHelper.Defiddler(snapshotWithSas), CancellationToken.None).Result;
+                    }
+                }
+                else
+                {
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        copyId = copy.StartIncrementalCopyAsync(TestHelper.Defiddler(snapshotWithSas), null, null, null, CancellationToken.None).Result;
+                    }
+                }
+
+                Assert.AreEqual(BlobType.PageBlob, copy.BlobType);
+                WaitForCopy(copy);
+                Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
+                Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
+                Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
+                Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
+                Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                Assert.AreEqual(CopyType.Incremental, copy.CopyState.Type);
+                Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                TestHelper.ExpectedException(
+                    () => copy.AbortCopy(copyId),
+                    "Aborting a copy operation after completion should fail",
+                    HttpStatusCode.Conflict,
+                    "NoPendingCopyOperation");
+
+                source.FetchAttributes();
+                Assert.IsNotNull(copy.Properties.ETag);
+                Assert.AreNotEqual(source.Properties.ETag, copy.Properties.ETag);
+                Assert.IsTrue(copy.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                TestHelper.ExpectedException(
+                    () => DownloadText(copy, Encoding.UTF8),
+                    "The specified operation is not allowed on an incremental copy blob.",
+                    HttpStatusCode.Conflict,
+                    "OperationNotAllowedOnIncrementalCopyBlob");
+
+                copy.FetchAttributes();
+                BlobProperties prop1 = copy.Properties;
+                BlobProperties prop2 = source.Properties;
+
+                Assert.AreEqual(prop1.CacheControl, prop2.CacheControl);
+                Assert.AreEqual(prop1.ContentEncoding, prop2.ContentEncoding);
+                Assert.AreEqual(prop1.ContentDisposition, prop2.ContentDisposition);
+                Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
+                Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
+                Assert.AreEqual(prop1.ContentType, prop2.ContentType);
+
+                Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
+
+                TestHelper.ExpectedException(
+                    () => copy.Delete(),
+                    "This operation is not permitted because the blob has snapshots.",
+                    HttpStatusCode.Conflict,
+                    "SnapshotsPresent");
             }
             finally
             {
@@ -764,6 +931,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 string copyData = DownloadText(copy, Encoding.UTF8);

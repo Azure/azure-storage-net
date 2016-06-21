@@ -214,7 +214,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopySourceHeader),
                     response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyProgressHeader),
                     response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyCompletionTimeHeader),
-                    response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyDescriptionHeader));
+                    response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyDescriptionHeader),
+                    response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyTypeHeader));
             }
             else
             {
