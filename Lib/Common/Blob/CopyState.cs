@@ -93,5 +93,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             get;
             internal set;
         }
+
+        /// <summary>
+        /// Gets the type of the copy operation.
+        /// </summary>
+        /// <value>A <see cref="CopyType"/> enumeration indicating the type of copy performed.</value>
+        public CopyType Type
+        {
+            get;
+            internal set;
+        }
     }
 }

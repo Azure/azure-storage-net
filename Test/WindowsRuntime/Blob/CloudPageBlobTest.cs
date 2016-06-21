@@ -15,12 +15,14 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 #if NETCORE
@@ -1278,6 +1280,72 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.DownloadToStreamAsync(stream);
                     Assert.AreEqual(0, stream.Length);
                 }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("List blobs with an incremental copied blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task ListBlobsWithIncrementalCopiedBlobTestAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+                CloudPageBlob source = container.GetPageBlobReference("source");
+                await source.CreateAsync(1024);
+
+                CloudPageBlob sourceSnapshot = await source.CreateSnapshotAsync(null, null, null, null);
+
+                CloudPageBlob copy = container.GetPageBlobReference("copy");
+
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                };
+
+                string sasToken = sourceSnapshot.GetSharedAccessSignature(policy);
+
+                StorageCredentials blobSAS = new StorageCredentials(sasToken);
+                Uri sourceSnapshotUri = blobSAS.TransformUri(TestHelper.Defiddler(sourceSnapshot).SnapshotQualifiedUri);
+
+                StorageCredentials accountSAS = new StorageCredentials(sasToken);
+                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, source.ServiceClient.StorageUri, null, null, null);
+                CloudPageBlob snapshotWithSas = await accountWithSAS.CreateCloudBlobClient().GetBlobReferenceFromServerAsync(sourceSnapshot.SnapshotQualifiedUri) as CloudPageBlob;
+
+                string copyId = await copy.StartIncrementalCopyAsync(accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri));
+                await WaitForCopyAsync(copy);
+
+                BlobResultSegment results = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null);
+
+                List<IListBlobItem> listResults = results.Results.ToList();
+                Assert.AreEqual(listResults.Count(), 4);
+
+                bool incrementalCopyFound = false;
+                foreach (IListBlobItem blobItem in listResults)
+                {
+                    CloudPageBlob blob = blobItem as CloudPageBlob;
+
+                    if (blob.Name == "copy" && blob.IsSnapshot)
+                    {
+                        // Check that the incremental copied blob is found exactly once
+                        Assert.IsFalse(incrementalCopyFound);
+                        Assert.AreEqual(blob.CopyState.Type, CopyType.Incremental);
+                        incrementalCopyFound = true;
+                    }
+                }
+
+                Assert.IsTrue(incrementalCopyFound);
+
             }
             finally
             {

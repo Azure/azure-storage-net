@@ -2198,7 +2198,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Begins an operation to start copying another page blob's contents, properties, and metadata to this page blob.
         /// </summary>
-        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
@@ -2213,6 +2213,49 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
+
+        /// <summary>
+        /// Begins an operation to start an incremental copy of another page blob's contents, properties, and metadata to this page blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual string StartIncrementalCopy(CloudPageBlob sourceSnapshot, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            CommonUtility.AssertNotNull("sourceSnapshot", sourceSnapshot);
+            return this.StartIncrementalCopy(CloudBlob.SourceBlobToUri(sourceSnapshot), destAccessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Begins an operation to start an incremental copy of another page blob's contents, properties, and metadata to this page blob.
+        /// </summary>
+        /// <param name="sourceSnapshotUri">The <see cref="System.Uri"/> of the source blob which must be a snapshot.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual string StartIncrementalCopy(Uri sourceSnapshotUri, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            CommonUtility.AssertNotNull("sourceSnapshotUri", sourceSnapshotUri);
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteSync(
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, true /* incrementalCopy */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
 #endif
 
         /// <summary>
@@ -2226,6 +2269,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual ICancellableAsyncResult BeginStartCopy(CloudPageBlob source, AsyncCallback callback, object state)
         {
             return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start an incremental copy of another page blob's contents, properties, and metadata to this page blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginStartIncrementalCopy(CloudPageBlob sourceSnapshot, AsyncCallback callback, object state)
+        {
+            return this.BeginStartIncrementalCopy(CloudBlob.SourceBlobToUri(sourceSnapshot), null /* destAccessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -2246,6 +2302,61 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
 
+        /// <summary>
+        /// Begins an asynchronous operation to start an incremental copy of another page blob's contents, properties, and metadata to this page blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest", Justification = "Reviewed")]
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginStartIncrementalCopy(CloudPageBlob sourceSnapshot, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginStartIncrementalCopy(CloudBlob.SourceBlobToUri(sourceSnapshot), destAccessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another blob's contents, properties, and metadata to this blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The <see cref="System.Uri"/> of the source blob which must be a snapshot.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginStartIncrementalCopy(Uri sourceSnapshot, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            CommonUtility.AssertNotNull("sourceSnapshot", sourceSnapshot);
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.StartCopyImpl(this.attributes, sourceSnapshot, true /* incrementalCopy */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata to this blob.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A string containing the copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        public virtual string EndStartIncrementalCopy(IAsyncResult asyncResult)
+        {
+            return Executor.EndExecuteAsync<string>(asyncResult);
+        }
+
 #if TASK
         /// <summary>
         /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
@@ -2260,6 +2371,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
+        /// to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob source)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartIncrementalCopy, this.EndStartIncrementalCopy, source, CancellationToken.None);
+        }
+
+        /// <summary>
         /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
         /// to this page blob.
         /// </summary>
@@ -2270,6 +2393,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
+        /// to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob source, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartIncrementalCopy, this.EndStartIncrementalCopy, source, cancellationToken);
         }
 
         /// <summary>
@@ -2303,6 +2439,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
+        /// to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob source, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartIncrementalCopy, this.EndStartIncrementalCopy, source, destAccessCondition, options, operationContext, cancellationToken);
         }
 #endif
 

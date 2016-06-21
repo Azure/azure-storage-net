@@ -368,6 +368,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string CopyStatusDescriptionElement = "CopyStatusDescription";
 
         /// <summary>
+        /// XML element for copy type.
+        /// </summary>
+        public const string CopyType = "CopyType";
+
+        /// <summary>
         /// Constant signaling a page blob.
         /// </summary>
         public const string PageBlobValue = "PageBlob";
@@ -1196,6 +1201,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies the copy action.
             /// </summary>
             public const string CopyActionHeader = PrefixForStorageHeader + "copy-action";
+
+            /// <summary>
+            /// Header that specifies the copy type.
+            /// </summary>
+            public const string CopyTypeHeader = PrefixForStorageHeader + "copy-type";
 
             /// <summary>
             /// The value of the copy action header that signifies an abort operation.

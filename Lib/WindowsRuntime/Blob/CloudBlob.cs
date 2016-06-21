@@ -1036,7 +1036,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CommonUtility.AssertNotNull("source", source);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, source, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken), cancellationToken);
@@ -1485,12 +1485,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="attributes">The blob's attributes.</param>
         /// <param name="source">The URI of the source blob.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
         /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If null, no condition is used.</param>
         /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="setResult">A delegate for setting the BlobAttributes result.</param>
         /// <returns>A <see cref="RESTCommand"/> that starts to copy the blob.</returns>
-        private RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -1502,7 +1503,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, incrementalCopy, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
                 return msg;
             };

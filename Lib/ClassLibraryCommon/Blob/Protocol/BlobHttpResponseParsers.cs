@@ -228,7 +228,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     response.Headers[Constants.HeaderConstants.CopySourceHeader],
                     response.Headers[Constants.HeaderConstants.CopyProgressHeader],
                     response.Headers[Constants.HeaderConstants.CopyCompletionTimeHeader],
-                    response.Headers[Constants.HeaderConstants.CopyDescriptionHeader]);
+                    response.Headers[Constants.HeaderConstants.CopyDescriptionHeader],
+                    response.Headers[Constants.HeaderConstants.CopyTypeHeader]);
             }
             else
             {
