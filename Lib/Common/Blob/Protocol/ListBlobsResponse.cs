@@ -208,6 +208,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copyProgress = null;
             string copySource = null;
             string copyStatusDescription = null;
+            string copyType = null;
 
             this.reader.ReadStartElement();
             while (this.reader.IsStartElement())
@@ -335,6 +336,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             blob.Properties.IsServerEncrypted = BlobHttpResponseParsers.GetServerEncrypted(reader.ReadElementContentAsString());
                                             break;
 
+                                        case Constants.CopyType:
+                                            copyType = reader.ReadElementContentAsString();
+                                            break;
+
                                         default:
                                             reader.Skip();
                                             break;
@@ -377,7 +382,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     copySource,
                     copyProgress,
                     copyCompletionTime,
-                    copyStatusDescription);
+                    copyStatusDescription,
+                    copyType);
             }
 
             return new ListBlobEntry(name, blob);

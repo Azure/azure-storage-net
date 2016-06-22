@@ -613,12 +613,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the destination blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
+            UriQueryBuilder builder = null;
+            if (incrementalCopy)
+            {
+                builder = new UriQueryBuilder();
+                builder.Add(Constants.QueryConstants.Component, "incrementalcopy");
+            }
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
             request.ApplyAccessCondition(destAccessCondition);
