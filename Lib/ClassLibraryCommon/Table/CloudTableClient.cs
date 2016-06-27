@@ -718,6 +718,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(TableRequestOptions requestOptions)
         {
+            if (RetryPolicies.LocationMode.PrimaryOnly == requestOptions.LocationMode)
+            {
+                throw new InvalidOperationException(SR.GetServiceStatsInvalidOperation);
+            }  
+
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
