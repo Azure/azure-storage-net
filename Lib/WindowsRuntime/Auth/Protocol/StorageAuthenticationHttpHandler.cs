@@ -31,15 +31,15 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
     internal sealed partial class StorageAuthenticationHttpHandler : HttpClientHandler
     {
-        private static Lazy<StorageAuthenticationHttpHandler> instance =
-            new Lazy<StorageAuthenticationHttpHandler>(() => new StorageAuthenticationHttpHandler());
-
         private StorageAuthenticationHttpHandler()
         {
 #if ASPNET_K
             this.AutomaticDecompression = DecompressionMethods.None;
 #endif
         }
+
+        private static Lazy<StorageAuthenticationHttpHandler> instance =
+            new Lazy<StorageAuthenticationHttpHandler>(() => new StorageAuthenticationHttpHandler());
 
         public static StorageAuthenticationHttpHandler Instance
         {

@@ -611,6 +611,64 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("A test to validate basic file share list continuation with null target location")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileClientListSharesSegmentedWithContinuationTokenNullTarget()
+        {
+            int shareCount = 8;
+            string shareNamePrefix = GetRandomShareName();
+            List<string> shareNames = new List<string>(shareCount);
+            CloudFileClient fileClient = GenerateCloudFileClient();
+            FileContinuationToken continuationToken = null;
+
+            try
+            {
+                for (int i = 0; i < shareCount; ++i)
+                {
+                    string shareName = shareNamePrefix + i.ToString();
+                    shareNames.Add(shareName);
+                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                }
+
+                int totalCount = 0;
+                int tokenCount = 0;
+                do
+                {
+                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(shareNamePrefix, ShareListingDetails.All, 1, continuationToken, null, null).Result;
+                    tokenCount++;
+                    continuationToken = resultSegment.ContinuationToken;
+                    if (tokenCount < shareCount)
+                    {
+                        Assert.IsNotNull(continuationToken);
+                        continuationToken.TargetLocation = null;
+                    }
+
+                    foreach (CloudFileShare share in resultSegment.Results)
+                    {
+                        if (shareNames.Contains(share.Name))
+                        {
+                            ++totalCount;
+                        }
+                    }
+                }
+                while (continuationToken != null);
+
+                Assert.AreEqual(shareCount, totalCount);
+                Assert.AreEqual(shareCount, tokenCount);
+            }
+            finally
+            {
+                foreach (string shareName in shareNames)
+                {
+                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                }
+            }
+        }
+
+        [TestMethod]
         [Description("CloudFileClient ListSharesSegmentedAsync - Task")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

@@ -1,6 +1,6 @@
 Changes in 7.1.0 :
 
-- All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features.
+- All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.4.
 - Blobs: Added support for server-side encryption.
 - All: Fixed a bug with ContinuationToken where empty TargetLocation resulted in an error in deserialization.
 - Blobs/Tables/Queues: Bug fix and tests for running GetServiceStats with the incompatible PrimaryOnly location mode.

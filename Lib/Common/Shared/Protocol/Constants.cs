@@ -323,6 +323,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string LastModifiedElement = "Last-Modified";
 
         /// <summary>
+        /// XML element for the server encryption status.
+        /// </summary>
+        public const string ServerEncryptionElement = "ServerEncrypted";
+
+        /// <summary>
         /// XML element for the Url.
         /// </summary>
         public const string UrlElement = "Url";
@@ -772,9 +777,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the value to use for UserAgent header.
             /// </summary>
 #if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "7.0.2-preview";
+            public const string UserAgentProductVersion = "7.1.1-preview";
 #else
-            public const string UserAgentProductVersion = "7.0.2";
+            public const string UserAgentProductVersion = "7.1.0";
 #endif 
 
             /// <summary>
@@ -821,6 +826,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies the ETag value for the resource.
             /// </summary>
             public const string EtagHeader = "ETag";
+
+            /// <summary>
+            /// Header that specifies if a resourse is fully encrypted server-side.
+            /// </summary>
+            public const string ServerEncrypted = PrefixForStorageHeader + "server-encrypted";
+
+            /// <summary>
+            /// Header that acknowledges the data used for write operation is encrypted server-side.
+            /// </summary>
+            public const string ServerRequestEncrypted = PrefixForStorageHeader + "request-server-encrypted";
 
             /// <summary>
             /// Header for data ranges.
@@ -1056,7 +1071,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2015-07-08";
+            public const string TargetStorageVersion = "2015-12-11";
 
             /// <summary>
             /// Specifies the file type.
