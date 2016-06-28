@@ -509,6 +509,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - ASYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientGetServiceStatsInvalidLocAsync()
+        {
+            CloudBlobClient client = GenerateCloudBlobClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
         [Description("Server timeout query parameter")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]

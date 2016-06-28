@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
 
             QueueResultSegment results = await client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.All, null, null, null, null);
-            
+
             foreach (CloudQueue queue in results.Results)
             {
                 if (queueNames.Remove(queue.Name))
@@ -214,6 +214,27 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueueClient client = GenerateCloudQueueClient();
             client.DefaultRequestOptions.LocationMode = LocationMode.SecondaryOnly;
             TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
+        }
+
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - ASYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudQueueClientGetServiceStatsInvalidLocAsync()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                TestHelper.VerifyServiceStats(await client.GetServiceStatsAsync());
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
         }
 
         [TestMethod]
