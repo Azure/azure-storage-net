@@ -397,10 +397,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob.Properties.CacheControl = "no-transform";
                 blob.Properties.ContentDisposition = "attachment";
-#if !ASPNET_K
-                //setting this will cause HttpClient DownloadToStreamAsync error due to ASPNET CLR HttpClient's behavior
                 blob.Properties.ContentEncoding = "gzip";
-#endif
                 blob.Properties.ContentLanguage = "tr,en";
                 blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 blob.Properties.ContentType = "text/html";
@@ -412,10 +409,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
                 Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
-#if !ASPNET_K
-                //HttpClient will not set this property after unzip the content automatically
                 Assert.AreEqual("gzip", blob2.Properties.ContentEncoding);
-#endif
                 Assert.AreEqual("tr,en", blob2.Properties.ContentLanguage);
                 Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", blob2.Properties.ContentType);

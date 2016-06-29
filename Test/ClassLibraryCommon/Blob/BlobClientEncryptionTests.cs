@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------------------------
-// <copyright file="BlobEncryptionTests.cs" company="Microsoft">
+// <copyright file="BlobClientEncryptionTests.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
 
     [TestClass]
-    public class BlobEncryptionTests : BlobTestBase
+    public class BlobClientEncryptionTests : BlobTestBase
     {
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]

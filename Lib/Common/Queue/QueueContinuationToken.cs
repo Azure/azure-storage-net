@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                         {
                             this.TargetLocation = location;
                         }
-                        else
+                        else if (!string.IsNullOrEmpty(targetLocation)) 
                         {
                             throw new XmlException(string.Format(CultureInfo.InvariantCulture, SR.UnexpectedLocation, targetLocation));
                         }

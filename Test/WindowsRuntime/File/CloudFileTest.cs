@@ -262,9 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 await Task.Delay(1000);
 
                 file.Properties.CacheControl = "no-transform";
-#if !ASPNET_K
                 file.Properties.ContentEncoding = "gzip";
-#endif
                 file.Properties.ContentLanguage = "tr,en";
                 file.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 file.Properties.ContentType = "text/html";
@@ -275,9 +273,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
                 await file2.FetchAttributesAsync();
                 Assert.AreEqual("no-transform", file2.Properties.CacheControl);
-#if !ASPNET_K
                 Assert.AreEqual("gzip", file2.Properties.ContentEncoding);
-#endif
                 Assert.AreEqual("tr,en", file2.Properties.ContentLanguage);
                 Assert.AreEqual("MDAwMDAwMDA=", file2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", file2.Properties.ContentType);
