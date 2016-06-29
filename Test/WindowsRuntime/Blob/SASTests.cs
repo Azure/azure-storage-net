@@ -354,9 +354,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CacheControl = "no-transform",
                     ContentDisposition = "attachment",
-#if !ASPNET_K
                     ContentEncoding = "gzip",
-#endif
                     ContentLanguage = "tr,en",
                     ContentType = "text/html"
                 };
@@ -381,9 +379,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CacheControl = "no-transform",
                     ContentDisposition = "attachment",
-#if !ASPNET_K
                     ContentEncoding = "gzip",
-#endif
                     ContentLanguage = "tr,en",
                     ContentType = "text/html"
                 };

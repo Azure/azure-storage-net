@@ -1,12 +1,22 @@
+Changes in 7.1.1-preview :
+
+- All : CoreCLR projects were updated to use the RTM release of .Net Core 1.0
+
 Changes in 7.1.0 :
 
+- All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.4.
+- Blobs: Added support for server-side encryption.
 - All: Fixed a bug with ContinuationToken where empty TargetLocation resulted in an error in deserialization.
 - Blobs/Tables/Queues: Bug fix and tests for running GetServiceStats with the incompatible PrimaryOnly location mode.
+- All (WinRT): Fixed a bug where HttpClient default timeout caused unhandled TaskCancellation exceptions.
+- All (CoreCLR): Updated the default AutomaticDecompression Method on StorageAuthenticationHttpHandler from Gzip | Deflate to None.
+- Table (CoreCLR) : Fixed a bug where reading table entity properties returned only the declared properties.
+ 
 
 Changes in 7.0.2-preview :
 
 - Blobs (WinRT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
-- All: CoreCLR projects were updated to use the RC2 release of .Net Core 1.0
+- All : CoreCLR projects were updated to use the RC2 release of .Net Core 1.0
 
 Changes in 7.0.0 :
 
