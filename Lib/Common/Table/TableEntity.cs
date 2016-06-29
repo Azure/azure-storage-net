@@ -44,7 +44,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1117:ParametersMustBeOnSameLineOrSeparateLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:ParameterMustNotSpanMultipleLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1001:CommasMustBeSpacedCorrectly", Justification = "Reviewed.")]
-    public class TableEntity : ITableEntity
+    public class TableEntity : ITableEntity 
     {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         static TableEntity()
@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #elif ASPNET_K
-            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().DeclaredProperties;
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetProperties();
 
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
@@ -304,7 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #elif ASPNET_K
-            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().DeclaredProperties;
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif
@@ -317,7 +317,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
 
                 EntityProperty newProperty = EntityProperty.CreateEntityPropertyFromObject(property.GetValue(entity, null), property.PropertyType);
-
+                
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
 #if !(WINDOWS_RT || ASPNET_K || PORTABLE)

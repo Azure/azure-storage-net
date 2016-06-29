@@ -15,7 +15,7 @@ For the CoreCLR solution, you can open the project using the AspNet_k.sln soluti
 ## Tests
 
 ### Configuration
-The only step to configure testing is to add a TestConfiguration.xml to the Test/Common/ folder. You should insert your storage account information into the file using [this](Test/Common/TestConfigurationsTemplate.xml) as a template.
+The only step to configure testing is to add a TestConfigurations.xml to the Test/Common/ folder. You should insert your storage account information into the file using [this](Test/Common/TestConfigurationsTemplate.xml) as a template.
 
 ### Running
 To actually run tests, right click the individual test or test class in the Test Explorer panel.
