@@ -1203,6 +1203,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(BlobRequestOptions requestOptions)
         {
+            if (RetryPolicies.LocationMode.PrimaryOnly == requestOptions.LocationMode)
+            {
+                throw new InvalidOperationException(SR.GetServiceStatsInvalidOperation);
+            }  
+
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;

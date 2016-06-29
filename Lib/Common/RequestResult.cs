@@ -100,6 +100,11 @@ namespace Microsoft.WindowsAzure.Storage
         public StorageExtendedErrorInformation ExtendedErrorInformation { get; internal set; }
 
         /// <summary>
+        /// Gets whether or not the data for a write operation is encrypted server-side.
+        /// </summary>
+        public bool IsRequestServerEncrypted { get; internal set; }
+
+        /// <summary>
         /// Gets or sets the exception.
         /// </summary>
         /// <value>An <see cref="System.Exception"/> object.</value>
