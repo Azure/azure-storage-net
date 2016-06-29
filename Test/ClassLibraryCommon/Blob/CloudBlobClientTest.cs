@@ -1332,6 +1332,69 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("A test to validate basic blob container continuation with null target location")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientListContainerWithContinuationTokenNullTarget()
+        {
+            int containerCount = 8;
+            string containerNamePrefix = GetRandomContainerName();
+            List<string> containerNames = new List<string>(containerCount);
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            BlobRequestOptions requestOptions = new BlobRequestOptions();
+            OperationContext operationContext = new OperationContext();
+            string prefix = containerNamePrefix;
+            BlobContinuationToken continuationToken = null;
+            CancellationToken cancellationToken = CancellationToken.None;
+
+            try
+            {
+                for (int i = 0; i < containerCount; ++i)
+                {
+                    string containerName = containerNamePrefix + i.ToString();
+                    containerNames.Add(containerName);
+                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                }
+
+                int totalCount = 0;
+                int tokenCount = 0;
+                do
+                {
+                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(containerNamePrefix, ContainerListingDetails.All, 1, continuationToken, requestOptions, operationContext, cancellationToken).Result;
+                    continuationToken = resultSegment.ContinuationToken;
+                    tokenCount++;
+
+                    if (tokenCount < containerCount)
+                    {
+                        Assert.IsNotNull(continuationToken);
+                        continuationToken.TargetLocation = null;
+                    }
+
+                    foreach (CloudBlobContainer container in resultSegment.Results)
+                    {
+                        if (containerNames.Contains(container.Name))
+                        {
+                            ++totalCount;
+                        }
+                    }
+                }
+                while (continuationToken != null);
+
+                Assert.AreEqual(containerCount, totalCount);
+                Assert.AreEqual(containerCount, tokenCount);
+            }
+            finally
+            {
+                foreach (string containerName in containerNames)
+                {
+                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                }
+            }
+        }
+
+        [TestMethod]
         [Description("CloudBlobClient ListContainersSegmentedAsync - Task")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1749,6 +1812,76 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - SYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientGetServiceStatsInvalidLoc()
+        {
+            CloudBlobClient client = GenerateCloudBlobClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                client.GetServiceStats();
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - APM")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientGetServiceStatsInvalidLocAPM()
+        {
+            CloudBlobClient client = GenerateCloudBlobClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = client.BeginGetServiceStats(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                }
+
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - ASYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientGetServiceStatsInvalidLocAsync()
+        {
+            CloudBlobClient client = GenerateCloudBlobClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                client.GetServiceStatsAsync();
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
         [Description("Server timeout query parameter")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1761,13 +1894,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string timeout = null;
             OperationContext context = new OperationContext();
             context.SendingRequest += (sender, e) =>
+            {
+                IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.Request.RequestUri.Query);
+                if (!query.TryGetValue("timeout", out timeout))
                 {
-                    IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.Request.RequestUri.Query);
-                    if (!query.TryGetValue("timeout", out timeout))
-                    {
-                        timeout = null;
-                    }
-                };
+                    timeout = null;
+                }
+            };
 
             BlobRequestOptions options = new BlobRequestOptions();
             client.GetServiceProperties(null, context);
