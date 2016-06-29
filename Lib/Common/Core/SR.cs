@@ -85,6 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string FileStreamFlushPending = "File stream has a pending flush operation. Please call EndFlush first.";
         public const string FileStreamReadPending = "File stream has a pending read operation. Please call EndRead first.";
         public const string FailParseProperty = "Failed to parse property '{0}' with value '{1}' as type '{2}'";
+        public const string GetServiceStatsInvalidOperation = "GetServiceStats cannot be run with a 'PrimaryOnly' location mode.";
         public const string IncorrectNumberOfBytes = "Incorrect number of bytes received. Expected '{0}', received '{1}'";
         public const string InternalStorageError = "Unexpected internal storage client error.";
         public const string InvalidAclType = "Invalid acl public access type returned '{0}'. Expected blob or container.";

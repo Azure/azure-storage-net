@@ -488,6 +488,30 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("Verify ReadXml Deserialization on TableContinuationToken with empty TargetLocation")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableContinuationTokenVerifyEmptyTargetDeserializer()
+        {
+            TableContinuationToken tableContinuationToken = new TableContinuationToken { NextTableName = "tableName", NextPartitionKey = "partitionKey", NextRowKey = "rowKey", TargetLocation = null };
+            StringBuilder stringBuilder = new StringBuilder();
+            using (XmlWriter writer = XmlWriter.Create(stringBuilder))
+            {
+                tableContinuationToken.WriteXml(writer);
+            }
+
+            string stringToken = stringBuilder.ToString();
+            TableContinuationToken parsedToken = new TableContinuationToken();
+            parsedToken.ReadXml(XmlReader.Create(new System.IO.StringReader(stringToken)));
+            Assert.AreEqual(parsedToken.NextTableName, "tableName");
+            Assert.AreEqual(parsedToken.NextPartitionKey, "partitionKey");
+            Assert.AreEqual(parsedToken.NextRowKey, "rowKey");
+            Assert.AreEqual(parsedToken.TargetLocation, null);
+        }
+
+        [TestMethod]
         [Description("Verify GetSchema, WriteXml and ReadXml on TableContinuationToken")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1059,6 +1083,75 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - SYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableClientGetServiceStatsInvalidLoc()
+        {
+            CloudTableClient client = GenerateCloudTableClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                client.GetServiceStats();
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - APM")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableClientGetServiceStatsInvalidLocAPM()
+        {
+            CloudTableClient client = GenerateCloudTableClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = client.BeginGetServiceStats(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                }
+
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - ASYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableClientGetServiceStatsInvalidLocAsync()
+        {
+            CloudTableClient client = GenerateCloudTableClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                client.GetServiceStatsAsync();
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
 
         [TestMethod]
         [Description("Server timeout query parameter")]

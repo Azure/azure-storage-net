@@ -1,11 +1,11 @@
 ﻿{
-    "version": "7.0.2.0",
+    "version": "7.1.1.0",
     "testRunner": "xunit",
 
     "dependencies": {
         "xunit": "2.1.0",
-        "dotnet-test-xunit": "1.0.0-rc2-build10015",
-        "Microsoft.WindowsAzure.Storage": "7.0.2-*",
+        "dotnet-test-xunit": "2.2.0-preview2-build1029",
+        "Microsoft.WindowsAzure.Storage": "7.1.1.0",
         "XUnitForMsTest": "1.0.0-*"
     },
 
@@ -14,7 +14,7 @@
             "dependencies": {
                 "Microsoft.NETCore.App": {
                     "type": "platform",
-                    "version": "1.0.0-rc2-3002702"
+                    "version": "1.0.0"
                 }
             },
             "imports": [

@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #elif ASPNET_K
-            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().DeclaredProperties;
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetProperties();
 
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
@@ -304,7 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if WINDOWS_RT || PORTABLE
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
 #elif ASPNET_K
-            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().DeclaredProperties;
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif

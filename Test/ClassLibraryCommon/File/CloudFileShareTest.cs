@@ -1752,6 +1752,27 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Verify ReadXml Deserialization on FileContinuationToken with empty TargetLocation")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FileContinuationTokenVerifyEmptyTargetDeserializer()
+        {
+            FileContinuationToken fileContinuationToken = new FileContinuationToken { TargetLocation = null };
+            StringBuilder stringBuilder = new StringBuilder();
+            using (XmlWriter writer = XmlWriter.Create(stringBuilder))
+            {
+                fileContinuationToken.WriteXml(writer);
+            }
+
+            string stringToken = stringBuilder.ToString();
+            FileContinuationToken parsedToken = new FileContinuationToken();
+            parsedToken.ReadXml(XmlReader.Create(new System.IO.StringReader(stringToken)));
+            Assert.AreEqual(parsedToken.TargetLocation, null);
+        }
+
+        [TestMethod]
         [Description("Verify GetSchema, WriteXml and ReadXml on FileContinuationToken")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
