@@ -1,3 +1,7 @@
+Changes in 7.1.1-preview :
+
+- All : CoreCLR projects were updated to use the RTM release of .Net Core 1.0
+
 Changes in 7.1.0 :
 
 - All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.4.
