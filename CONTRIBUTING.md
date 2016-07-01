@@ -18,7 +18,6 @@ For the CoreCLR solution, you can open the project using the AspNet_k.sln soluti
 Add a TestConfigurations.xml to the Test/Common/ folder. You should insert your storage account information into the file using [this](Test/Common/TestConfigurationsTemplate.xml) as a template.
 You will also need to download [Fiddler 2 & 4](https://www.telerik.com/download/fiddler) to get the files needed to run tests. Fiddler dll & xml files for .Net2 & .Net4 should be placed in their respective folders (Test/FaultInjection/Dependencies/DotNet2, Test/FaultInjection/Dependencies/DotNet4).
 
-
 ### Running
 To actually run tests, right click the individual test or test class in the Test Explorer panel.
 *Note*: Running all tests will take many hours, so you should run a subset of tests that validate your change.
