@@ -58,10 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CommonUtility.LazyEnumerable<TElement>(
                 (continuationToken) =>
                 {
-                    Task<TableQuerySegment<TElement>> task = Task.Run(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext));
-                    task.Wait();
-
-                    TableQuerySegment<TElement> seg = task.Result;
+                    TableQuerySegment<TElement> seg = CommonUtility.RunWithoutSynchronizationContext(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext).Result);
 
                     return new ResultSegment<TElement>(seg.Results) { ContinuationToken = seg.ContinuationToken };
                 },
@@ -102,10 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CommonUtility.LazyEnumerable<TResult>(
                 (continuationToken) =>
                 {
-                    Task<TableQuerySegment<TResult>> task = Task.Run(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, resolver, modifiedOptions, operationContext));
-                    task.Wait();
-
-                    TableQuerySegment<TResult> seg = task.Result;
+                    TableQuerySegment<TResult> seg = CommonUtility.RunWithoutSynchronizationContext(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, resolver, modifiedOptions, operationContext).Result);
 
                     return new ResultSegment<TResult>(seg.Results) { ContinuationToken = seg.ContinuationToken };
                 },

@@ -1894,13 +1894,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string timeout = null;
             OperationContext context = new OperationContext();
             context.SendingRequest += (sender, e) =>
+            {
+                IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.Request.RequestUri.Query);
+                if (!query.TryGetValue("timeout", out timeout))
                 {
-                    IDictionary<string, string> query = HttpWebUtility.ParseQueryString(e.Request.RequestUri.Query);
-                    if (!query.TryGetValue("timeout", out timeout))
-                    {
-                        timeout = null;
-                    }
-                };
+                    timeout = null;
+                }
+            };
 
             BlobRequestOptions options = new BlobRequestOptions();
             client.GetServiceProperties(null, context);
