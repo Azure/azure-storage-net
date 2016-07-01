@@ -24,7 +24,6 @@
         }
     },
 
-
     "buildOptions": {
         "define": [ "ASPNET_K", "XUNIT" ],
         "delaySign": true,
