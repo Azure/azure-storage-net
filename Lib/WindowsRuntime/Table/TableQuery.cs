@@ -50,10 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CommonUtility.LazyEnumerable<DynamicTableEntity>(
                 (continuationToken) =>
                 {
-                    Task<TableQuerySegment> task = Task.Run(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext));
-                    task.Wait();
-
-                    TableQuerySegment seg = task.Result;
+                    TableQuerySegment seg = CommonUtility.RunWithoutSynchronizationContext(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext).Result);
 
                     return new ResultSegment<DynamicTableEntity>((List<DynamicTableEntity>)seg.Results) { ContinuationToken = seg.ContinuationToken };
                 },
