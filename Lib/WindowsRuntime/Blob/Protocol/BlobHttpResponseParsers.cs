@@ -61,6 +61,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     properties.ContentType = response.Content.Headers.ContentType.ToString();
                 }
 
+                string blobEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
+                properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+
                 // Get the content length. Prioritize range and x-ms over content length for the special cases.
                 string contentLengthHeader = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentLengthHeader);
                 if ((response.Content.Headers.ContentRange != null) &&

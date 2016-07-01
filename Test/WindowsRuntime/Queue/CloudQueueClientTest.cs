@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
 
             QueueResultSegment results = await client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.All, null, null, null, null);
-
+            
             foreach (CloudQueue queue in results.Results)
             {
                 if (queueNames.Remove(queue.Name))
