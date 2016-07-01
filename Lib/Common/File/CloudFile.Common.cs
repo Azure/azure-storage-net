@@ -432,14 +432,15 @@ namespace Microsoft.WindowsAzure.Storage.File
                 throw new ArgumentException(error);
             }
 
-            if (parsedShareSnapshot.HasValue)
-            {
-                this.Share.SnapshotTime = parsedShareSnapshot;
-            }
-
             if (this.ServiceClient == null)
             {
                 this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials ?? parsedCredentials);
+            }
+            
+            // Create ServiceClient before creating share.
+            if (parsedShareSnapshot.HasValue)
+            {
+                this.Share.SnapshotTime = parsedShareSnapshot;
             }
             
             this.Name = NavigationHelper.GetFileName(this.Uri, this.ServiceClient.UsePathStyleUris);
