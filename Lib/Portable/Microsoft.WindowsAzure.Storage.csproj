@@ -130,9 +130,6 @@
     <Compile Include="..\Common\Blob\CopyStatus.cs">
       <Link>Blob\CopyStatus.cs</Link>
     </Compile>
-    <Compile Include="..\Common\Blob\CopyType.cs">
-      <Link>Blob\CopyType.cs</Link>
-    </Compile>
     <Compile Include="..\Common\Blob\DeleteSnapshotsOption.cs">
       <Link>Blob\DeleteSnapshotsOption.cs</Link>
     </Compile>
