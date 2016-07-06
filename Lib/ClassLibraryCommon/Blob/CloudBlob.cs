@@ -3465,6 +3465,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             blobAttributes.Properties.LastModified = parsedProperties.LastModified ?? blobAttributes.Properties.LastModified;
             blobAttributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? blobAttributes.Properties.PageBlobSequenceNumber;
             blobAttributes.Properties.AppendBlobCommittedBlockCount = parsedProperties.AppendBlobCommittedBlockCount ?? blobAttributes.Properties.AppendBlobCommittedBlockCount;
+            blobAttributes.Properties.IsIncrementalCopy = parsedProperties.IsIncrementalCopy;
 
             if (updateLength)
             {

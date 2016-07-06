@@ -71,6 +71,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string blobEncryption = response.Headers[Constants.HeaderConstants.ServerEncrypted];
             properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
+            string incrementalCopy = response.Headers[Constants.HeaderConstants.IncrementalCopy];
+            properties.IsIncrementalCopy = string.Equals(incrementalCopy, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+
             // Get blob type
             string blobType = response.Headers[Constants.HeaderConstants.BlobType];
             if (!string.IsNullOrEmpty(blobType))
@@ -228,8 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     response.Headers[Constants.HeaderConstants.CopySourceHeader],
                     response.Headers[Constants.HeaderConstants.CopyProgressHeader],
                     response.Headers[Constants.HeaderConstants.CopyCompletionTimeHeader],
-                    response.Headers[Constants.HeaderConstants.CopyDescriptionHeader],
-                    response.Headers[Constants.HeaderConstants.CopyTypeHeader]);
+                    response.Headers[Constants.HeaderConstants.CopyDescriptionHeader]);
             }
             else
             {

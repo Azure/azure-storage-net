@@ -83,7 +83,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, blobUnicodeDest.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, blobUnicodeDest.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, blobUnicodeDest.CopyState.CopyId);
-                Assert.AreEqual(CopyType.Standard, blobUnicodeDest.CopyState.Type);
+                Assert.IsFalse(blobUnicodeDest.Properties.IsIncrementalCopy);
                 Assert.IsTrue(blobUnicodeDest.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
             }
             finally
@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, destination.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, destination.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, destination.CopyState.CopyId);
-                Assert.AreEqual(CopyType.Standard, destination.CopyState.Type);
+                Assert.IsFalse(destination.Properties.IsIncrementalCopy);
                 Assert.IsTrue(destination.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 if (!destinationIsSas)
@@ -292,7 +292,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                     Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                     Assert.AreEqual(copyId, copy.CopyState.CopyId);
-                    Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
+                    Assert.IsFalse(copy.Properties.IsIncrementalCopy);
                     Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                     result = copy.BeginAbortCopy(copyId,
@@ -366,7 +366,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
-                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
+                Assert.IsFalse(copy.Properties.IsIncrementalCopy);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 TestHelper.ExpectedExceptionTask(
@@ -434,7 +434,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
-                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
+                Assert.IsFalse(copy.Properties.IsIncrementalCopy);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 string copyData = DownloadText(copy, Encoding.UTF8);
@@ -556,7 +556,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
-                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
+                Assert.IsFalse(copy.Properties.IsIncrementalCopy);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 TestHelper.ExpectedException(
@@ -710,7 +710,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
-                Assert.AreEqual(CopyType.Incremental, copy.CopyState.Type);
+                Assert.IsTrue(copy.Properties.IsIncrementalCopy);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 TestHelper.ExpectedException(
@@ -931,7 +931,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
-                Assert.AreEqual(CopyType.Standard, copy.CopyState.Type);
+                Assert.IsFalse(copy.Properties.IsIncrementalCopy);
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
 
                 string copyData = DownloadText(copy, Encoding.UTF8);
