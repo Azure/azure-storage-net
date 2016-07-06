@@ -368,9 +368,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string CopyStatusDescriptionElement = "CopyStatusDescription";
 
         /// <summary>
-        /// XML element for copy type.
+        /// XML element for incremental copy.
         /// </summary>
-        public const string CopyType = "CopyType";
+        public const string IncrementalCopy = "IncrementalCopy";
 
         /// <summary>
         /// Constant signaling a page blob.
@@ -1211,6 +1211,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// The value of the copy action header that signifies an abort operation.
             /// </summary>
             public const string CopyActionAbort = "abort";
+
+            public const string IncrementalCopy = PrefixForStorageHeader + "incremental-copy";
 
             /// <summary>
             /// Header that specifies the share size, in gigabytes.

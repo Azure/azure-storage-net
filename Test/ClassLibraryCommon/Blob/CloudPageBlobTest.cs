@@ -3663,7 +3663,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         // Check that the incremental copied blob is found exactly once
                         Assert.IsFalse(incrementalCopyFound);
-                        Assert.AreEqual(blob.CopyState.Type, CopyType.Incremental);
+                        Assert.IsTrue(blob.Properties.IsIncrementalCopy);
                         incrementalCopyFound = true;
                     }
                 }
