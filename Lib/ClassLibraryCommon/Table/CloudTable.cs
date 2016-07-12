@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -889,6 +890,179 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
 
+        #region EncryptionKeyRotation
+#if SYNC
+        /// <summary>
+        /// Executes a query on a table and returns an enumerable collection of <see cref="KeyRotationEntity"/> objects.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of <see cref="KeyRotationEntity"/> objects, representing table entities returned by the query.</returns>
+        [DoesServiceRequest]
+        public virtual IEnumerable<KeyRotationEntity> ExecuteQueryForKeyRotation(TableQuery query, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            return this.ExecuteQuery(queryCopy, modifiedOptions, operationContext).Select(dte => new KeyRotationEntity(dte));
+        }
+
+        /// <summary>
+        /// Executes a segmented query on a table and returns a <see cref="TableQuerySegment{TResult}"/> containing <see cref="KeyRotationEntity"/> objects.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="TableQuerySegment{TResult}"/> object of type <see cref="KeyRotationEntity"/> containing the results of executing the query.</returns>
+        [DoesServiceRequest]
+        public virtual TableQuerySegment<KeyRotationEntity> ExecuteQueryForKeyRotationSegmented(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            TableQuerySegment<DynamicTableEntity> segmentDTEs = this.ExecuteQuerySegmented(queryCopy, token, modifiedOptions, operationContext);
+            TableQuerySegment<KeyRotationEntity> result = new TableQuerySegment<KeyRotationEntity>(segmentDTEs.Results.Select(dte => new KeyRotationEntity(dte)).ToList());
+            result.ContinuationToken = segmentDTEs.ContinuationToken;
+            return result;
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginExecuteQueryForKeyRotationSegmented(TableQuery query, TableContinuationToken token, AsyncCallback callback, object state)
+        {
+            return this.BeginExecuteQueryForKeyRotationSegmented(query, token, null /* RequestOptions */, null /* OperationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginExecuteQueryForKeyRotationSegmented(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            return this.BeginExecuteQuerySegmented(queryCopy, token, modifiedOptions, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous segmented query on a table. 
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="TableQuerySegment{TResult}"/> object of type <see cref="KeyRotationEntity"/> containing the results of executing the query.</returns>
+        public virtual TableQuerySegment<KeyRotationEntity> EndExecuteQueryForKeyRotationSegmented(IAsyncResult asyncResult)
+        {
+            TableQuerySegment<DynamicTableEntity> segmentDTEs = Executor.EndExecuteAsync<TableQuerySegment<DynamicTableEntity>>(asyncResult);
+            TableQuerySegment<KeyRotationEntity> result = new TableQuerySegment<KeyRotationEntity>(segmentDTEs.Results.Select(dte => new KeyRotationEntity(dte)).ToList());
+            result.ContinuationToken = segmentDTEs.ContinuationToken;
+            return result;
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token)
+        {
+            return this.ExecuteQueryForKeyRotationSegmentedAsync(query, token, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token, CancellationToken cancellationToken)
+        {
+            return this.ExecuteQueryForKeyRotationSegmentedAsync(query, token, null /* RequestOptions */, null /* OperationContext */, cancellationToken);
+
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext)
+        {
+            return this.ExecuteQueryForKeyRotationSegmentedAsync(query, token, requestOptions, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual async Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            TableQuerySegment<DynamicTableEntity> segmentDTEs = await this.ExecuteQuerySegmentedAsync(queryCopy, token, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+            TableQuerySegment<KeyRotationEntity> result = new TableQuerySegment<KeyRotationEntity>(segmentDTEs.Results.Select(dte => new KeyRotationEntity(dte)).ToList());
+            result.ContinuationToken = segmentDTEs.ContinuationToken;
+            return result;
+        }
+#endif
+        private TableQuery ModifyQueryForEncryptionKeyRotation(TableQuery query, TableRequestOptions requestOptions)
+        {
+            TableQuery queryCopy = query.Copy();
+            if (queryCopy.SelectColumns != null)
+            {
+                queryCopy.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails);
+            }
+
+            // If the caller specifies requireEncryption = false, we want to filter out non-encrypted columns on the service.
+            // If requireEncryption = true, we don't want to filter them out, so that we can throw if any are not encrypted.
+            if (!((requestOptions != null) && requestOptions.RequireEncryption.HasValue && requestOptions.RequireEncryption.Value))
+            {
+                string filter = TableQuery.GenerateFilterCondition(Constants.EncryptionConstants.TableEncryptionKeyDetails, QueryComparisons.NotEqual, "any");
+                if (!string.IsNullOrEmpty(queryCopy.FilterString))
+                {
+                    queryCopy.FilterString = TableQuery.CombineFilters(queryCopy.FilterString, TableOperators.And, filter);
+                }
+                else
+                {
+                    queryCopy.FilterString = filter;
+                }
+            }
+
+            return queryCopy;
+        }
+        #endregion
         #endregion
 
         #region Create

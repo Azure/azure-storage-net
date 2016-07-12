@@ -25,12 +25,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.IO;
     using System.Net;
-
+    using System.Threading;
+    using System.Threading.Tasks;    
+    
     /// <summary>
     /// Represents a single table operation.
     /// </summary>
     public partial class TableOperation
     {
+
 #if SYNC
         internal TableResult Execute(CloudTableClient client, CloudTable table, TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -71,8 +74,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 if (!this.isTableEntity && this.OperationType != TableOperationType.Insert)
                 {
-                    CommonUtility.AssertNotNull("Upserts require a valid PartitionKey", this.Entity.PartitionKey);
-                    CommonUtility.AssertNotNull("Upserts require a valid RowKey", this.Entity.RowKey);
+                    CommonUtility.AssertNotNull("Upserts require a valid PartitionKey", this.PartitionKey);
+                    CommonUtility.AssertNotNull("Upserts require a valid RowKey", this.RowKey);
                 }
 
                 return InsertImpl(this, client, table, modifiedOptions);
@@ -81,26 +84,34 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 if (!this.isTableEntity)
                 {
-                    CommonUtility.AssertNotNullOrEmpty("Delete requires a valid ETag", this.Entity.ETag);
-                    CommonUtility.AssertNotNull("Delete requires a valid PartitionKey", this.Entity.PartitionKey);
-                    CommonUtility.AssertNotNull("Delete requires a valid RowKey", this.Entity.RowKey);
+                    CommonUtility.AssertNotNullOrEmpty("Delete requires a valid ETag", this.ETag);
+                    CommonUtility.AssertNotNull("Delete requires a valid PartitionKey", this.PartitionKey);
+                    CommonUtility.AssertNotNull("Delete requires a valid RowKey", this.RowKey);
                 }
 
                 return DeleteImpl(this, client, table, modifiedOptions);
             }
             else if (this.OperationType == TableOperationType.Merge)
             {
-                CommonUtility.AssertNotNullOrEmpty("Merge requires a valid ETag", this.Entity.ETag);
-                CommonUtility.AssertNotNull("Merge requires a valid PartitionKey", this.Entity.PartitionKey);
-                CommonUtility.AssertNotNull("Merge requires a valid RowKey", this.Entity.RowKey);
+                CommonUtility.AssertNotNullOrEmpty("Merge requires a valid ETag", this.ETag);
+                CommonUtility.AssertNotNull("Merge requires a valid PartitionKey", this.PartitionKey);
+                CommonUtility.AssertNotNull("Merge requires a valid RowKey", this.RowKey);
+
+                return MergeImpl(this, client, table, modifiedOptions);
+            }
+            else if (this.OperationType == TableOperationType.RotateEncryptionKey)
+            {
+                CommonUtility.AssertNotNullOrEmpty("RotateEncryptionKey requires a valid ETag", this.ETag);
+                CommonUtility.AssertNotNull("RotateEncryptionKey requires a valid PartitionKey", this.PartitionKey);
+                CommonUtility.AssertNotNull("RotateEncryptionKey requires a valid RowKey", this.RowKey);
 
                 return MergeImpl(this, client, table, modifiedOptions);
             }
             else if (this.OperationType == TableOperationType.Replace)
             {
-                CommonUtility.AssertNotNullOrEmpty("Replace requires a valid ETag", this.Entity.ETag);
-                CommonUtility.AssertNotNull("Replace requires a valid PartitionKey", this.Entity.PartitionKey);
-                CommonUtility.AssertNotNull("Replace requires a valid RowKey", this.Entity.RowKey);
+                CommonUtility.AssertNotNullOrEmpty("Replace requires a valid ETag", this.ETag);
+                CommonUtility.AssertNotNull("Replace requires a valid PartitionKey", this.PartitionKey);
+                CommonUtility.AssertNotNull("Replace requires a valid RowKey", this.RowKey);
 
                 return ReplaceImpl(this, client, table, modifiedOptions);
             }
@@ -244,6 +255,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         return "POST";
                     case TableOperationType.Merge:
                     case TableOperationType.InsertOrMerge:
+                    case TableOperationType.RotateEncryptionKey:
                         return "POST"; // Post tunneling for merge
                     case TableOperationType.Replace:
                     case TableOperationType.InsertOrReplace:

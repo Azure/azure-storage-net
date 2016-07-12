@@ -151,13 +151,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return modifiedOptions;
         }
 
+#if !(WINDOWS_RT || NETCORE)
+        internal void ClearEncryption()
+        {
+            this.RequireEncryption = false;
+            this.EncryptionPolicy = null;
+            this.EncryptionResolver = null;
+        }
+#endif
+
         internal static TableRequestOptions ApplyDefaultsAndClearEncryption(TableRequestOptions requestOptions, CloudTableClient serviceClient)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, serviceClient);
 #if !(WINDOWS_RT || NETCORE)
-            modifiedOptions.RequireEncryption = false;
-            modifiedOptions.EncryptionPolicy = null;
-            modifiedOptions.EncryptionResolver = null;
+            modifiedOptions.ClearEncryption();
 #endif
             return modifiedOptions;
         }

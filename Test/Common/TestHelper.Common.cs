@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 return e;
             }
-#if NETCORE
+//#if NETCORE
             catch (AggregateException ex)
             {
                 ex = ex.Flatten();
@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 Assert.Fail("Invalid exception {0} for operation: {1}", ex.GetType(), operationDescription);
             }
-#endif
+//#endif
             catch (Exception ex)
             {
                 T e = ex as T; // Test framework changes the value under debugger
