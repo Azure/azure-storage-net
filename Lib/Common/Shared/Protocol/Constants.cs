@@ -1599,6 +1599,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Additional property name to store the encryption metadata.
             /// </summary>
             public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
+
+            /// <summary>
+            /// Key for the encryption agent
+            /// </summary>
+            public const string AgentMetadataKey = "EncryptionLibrary";
+
+            /// <summary>
+            /// Value for the encryption agent
+            /// </summary>
+            public const string AgentMetadataValue = ".NET " + Constants.HeaderConstants.UserAgentProductVersion;
         }
     }
 }
