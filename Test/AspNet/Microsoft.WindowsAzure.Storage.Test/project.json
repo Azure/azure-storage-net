@@ -1,11 +1,11 @@
 ﻿{
-    "version": "7.1.2.0",
+    "version": "7.1.3.0",
     "testRunner": "xunit",
 
     "dependencies": {
         "xunit": "2.1.0",
         "dotnet-test-xunit": "2.2.0-preview2-build1029",
-        "Microsoft.WindowsAzure.Storage": "7.1.2.0-*",
+        "Microsoft.WindowsAzure.Storage": "7.1.3.0-*",
         "XUnitForMsTest": "1.0.0-*"
     },
 
@@ -23,7 +23,6 @@
             ]
         }
     },
-
 
     "buildOptions": {
         "define": [ "ASPNET_K", "XUNIT" ],
@@ -46,6 +45,5 @@
             "../../WindowsRuntime/File/**/*.cs",
             "../../WindowsRuntime/Table/**/*.cs"
         ]
-
     }
 }
