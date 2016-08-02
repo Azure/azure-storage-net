@@ -427,3 +427,4 @@ Issues fixed in 2.0.1 :
   - All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
   - All: StorageErrorCodeStrings class is missing.
   - Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.
+
