@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Globalization;
 
     /// <summary>
-    /// This class represents a queue in the Windows Azure Queue service.
+    /// Represents a queue in the Microsoft Azure Queue service.
     /// </summary>
     [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix", Justification = "Reviewed.")]
     public partial class CloudQueue

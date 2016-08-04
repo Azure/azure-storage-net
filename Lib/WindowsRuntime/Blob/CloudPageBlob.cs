@@ -39,9 +39,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Windows.Storage.Streams;
 #endif
 
-    /// <summary>
-    /// Represents a Windows Azure page blob.
-    /// </summary>
     public partial class CloudPageBlob : CloudBlob, ICloudBlob
     {
         /// <summary>

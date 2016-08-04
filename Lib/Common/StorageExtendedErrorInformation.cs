@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
     /// <summary>
-    /// Represents extended error information returned by the Windows Azure storage services.
+    /// Represents extended error information returned by the Microsoft Azure storage services.
     /// </summary>
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     [Serializable]
