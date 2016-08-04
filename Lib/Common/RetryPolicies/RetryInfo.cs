@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
     using System.Globalization;
 
     /// <summary>
-    /// Specifies parameters for the next retry of a request to be made against the Windows Azure storage services,
+    /// Specifies parameters for the next retry of a request to be made against the Microsoft Azure storage services,
     /// including the target location and location mode for the next retry and the interval until the next retry.
     /// </summary>
     public sealed class RetryInfo

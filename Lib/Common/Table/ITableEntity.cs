@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// with different properties. You can also use this type to perform bulk table updates of heterogeneous entities without losing property information.</para>
     /// <para><see cref="TableEntity"/> is an implementation of <see cref="ITableEntity"/> that uses reflection-based serialization and de-serialization behavior in its <see cref="TableEntity.ReadEntity(IDictionary{string, EntityProperty}, OperationContext)"/> and <see cref="TableEntity.WriteEntity(OperationContext)"/> methods. 
     /// <see cref="TableEntity"/>-derived classes with methods that follow a convention for types and naming are serialized and deserialized automatically. <see cref="TableEntity"/>-derived classes must also provide a get-able and set-able public
-    /// property of a type that is supported by the Windows Azure Table service.</para></remarks>
+    /// property of a type that is supported by the Microsoft Azure Table service.</para></remarks>
     public interface ITableEntity
     {
         /// <summary>
@@ -49,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets or sets the entity's timestamp.
         /// </summary>
-        /// <value>The entity's timestamp. The property is populated by the Windows Azure Table Service.</value>
+        /// <value>The entity's timestamp. The property is populated by the Microsoft Azure Table Service.</value>
         DateTimeOffset Timestamp { get; set; }
 
         /// <summary>

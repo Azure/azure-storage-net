@@ -23,7 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
     /// <summary>
     /// <para>Represents a canonicalizer that converts HTTP request data into a standard form appropriate for signing.</para>
     /// <para>For detailed information on how to authenticate a request, 
-    /// see <see href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Windows Azure Storage Services</see>.</para>
+    /// see <see href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Microsoft Azure Storage Services</see>.</para>
     /// </summary>
     [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Canonicalizer", Justification = "Reviewed: Canonicalizer can be used as an identifier name.")]    
     public interface ICanonicalizer
@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// Gets the authorization scheme used for canonicalization.
         /// </summary>
         /// <value>The authorization scheme used for canonicalization.</value>
-        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Windows Azure Storage Services</seealso>
+        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Microsoft Azure Storage Services</seealso>
         string AuthorizationScheme { get; }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="request">The HTTP request that needs to be signed.</param>
         /// <param name="accountName">The name of the storage account that the HTTP request will access.</param>
         /// <returns>The canonicalized string containing the HTTP request data in a standard form appropriate for signing.</returns>
-        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Windows Azure Storage Services</seealso>
+        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Microsoft Azure Storage Services</seealso>
         string CanonicalizeHttpRequest(HttpWebRequest request, string accountName);
     }
 }
