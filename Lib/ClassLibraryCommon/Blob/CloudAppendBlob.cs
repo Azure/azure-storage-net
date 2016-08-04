@@ -34,9 +34,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading;
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents an append blob, a type of blob where blocks of data are always committed to the end of the blob.
-    /// </summary>
     public partial class CloudAppendBlob : CloudBlob, ICloudBlob
     {
 #if SYNC

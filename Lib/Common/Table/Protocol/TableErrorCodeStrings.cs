@@ -18,7 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
     /// <summary>
-    /// Provides error code strings that are specific to the Windows Azure Table service.
+    /// Provides error code strings that are specific to the Microsoft Azure Table service.
     /// </summary>    
 #if WINDOWS_RT
     internal
