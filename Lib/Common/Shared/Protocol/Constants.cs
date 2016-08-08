@@ -747,10 +747,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 UserAgentComment = "(Windows Runtime Phone)";
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
-#elif ASPNET_K
-                UserAgentComment = "(.NET Core 5.0)";
-#elif PORTABLE
-                UserAgentComment = "(Portable Class Library)";
+#elif NETCORE
+                UserAgentComment = "(.NET Core)";
 #else
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
@@ -776,7 +774,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-#if ASPNET_K || PORTABLE
+#if NETCORE
             public const string UserAgentProductVersion = "7.1.3-preview";
 #else
             public const string UserAgentProductVersion = "7.1.2";

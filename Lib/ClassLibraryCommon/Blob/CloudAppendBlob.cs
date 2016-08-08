@@ -60,13 +60,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
             ICryptoTransform transform = null;
 #endif
 
             if (createNew)
             {
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (options != null && options.EncryptionPolicy != null)
                 {
                     transform = options.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
@@ -81,7 +81,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw new ArgumentException(SR.MD5NotPossible);
                 }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (modifiedOptions.EncryptionPolicy != null)
                 {
                     throw new ArgumentException(SR.EncryptionNotSupportedForExistingBlobs);
@@ -97,7 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 accessCondition = new AccessCondition() { LeaseId = accessCondition.LeaseId, IfAppendPositionEqual = accessCondition.IfAppendPositionEqual, IfMaxSizeLessThanOrEqual = accessCondition.IfMaxSizeLessThanOrEqual };
             }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
             if (modifiedOptions.EncryptionPolicy != null)
             {
                 return new BlobEncryptedWriteStream(this, accessCondition, modifiedOptions, operationContext, transform);
@@ -154,13 +154,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             StorageAsyncResult<CloudBlobStream> storageAsyncResult = new StorageAsyncResult<CloudBlobStream>(callback, state);
             ICancellableAsyncResult result;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
             ICryptoTransform transform = null;
 #endif
 
             if (createNew)
             {
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (options != null && options.EncryptionPolicy != null)
                 {
                     transform = options.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
@@ -183,7 +183,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 accessCondition = new AccessCondition() { LeaseId = accessCondition.LeaseId, IfAppendPositionEqual = accessCondition.IfAppendPositionEqual, IfMaxSizeLessThanOrEqual = accessCondition.IfMaxSizeLessThanOrEqual };
                             }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                             if (modifiedOptions.EncryptionPolicy != null)
                             {
                                 storageAsyncResult.Result = new BlobEncryptedWriteStream(this, accessCondition, modifiedOptions, operationContext, transform);
@@ -210,7 +210,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw new ArgumentException(SR.MD5NotPossible);
                 }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (modifiedOptions.EncryptionPolicy != null)
                 {
                     throw new ArgumentException(SR.EncryptionNotSupportedForExistingBlobs);

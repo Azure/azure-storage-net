@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-#if !ASPNET_K
+#if !NETCORE
     using Windows.Storage.Streams;
 #endif
 

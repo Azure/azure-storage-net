@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 
 #else
     using System.Runtime.InteropServices.WindowsRuntime;

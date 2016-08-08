@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if !ASPNET_K
+#if !NETCORE
 namespace Microsoft.WindowsAzure.Storage.File
 {
     using System;

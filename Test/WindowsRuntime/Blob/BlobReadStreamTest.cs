@@ -21,7 +21,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if !NETCORE
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 #endif
@@ -370,7 +370,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
         {
             byte[] testBuffer = new byte[readSize];
-#if ASPNET_K
+#if NETCORE
             int actualReadSize = await blobStream.ReadAsync(testBuffer, 0, (int) readSize);
             Assert.AreEqual(expectedReadCount, actualReadSize);
 #else
@@ -425,7 +425,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Assert.AreEqual(position, blobStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             blobStream.Seek(position);
-#if ASPNET_K
+#if NETCORE
             //don't know why adding these two line will pass, but this this the same as the desktop test
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 512);

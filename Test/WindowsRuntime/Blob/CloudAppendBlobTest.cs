@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Net;
     using System.Threading.Tasks;
 
-#if ASPNET_K
+#if NETCORE
     using System.Security.Cryptography;
     using System.Text;
 #else
