@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
     using System.Security.Cryptography;
 #endif
     
@@ -56,7 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RetryPolicy = new NoRetry(),
             AbsorbConditionalErrorsOnRetry = false,
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             EncryptionPolicy = null,
             RequireEncryption = null,
 #endif
@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             ParallelOperationThreadCount = 1,
             SingleBlobUploadThresholdInBytes = Constants.MaxSingleUploadBlobSize / 2,
             
-#if (WINDOWS_PHONE && WINDOWS_DESKTOP) || PORTABLE
+#if (WINDOWS_PHONE && WINDOWS_DESKTOP)  
             DisableContentMD5Validation = true,
             StoreBlobContentMD5 = false,
             UseTransactionalMD5 = false,
@@ -94,7 +94,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 this.RetryPolicy = other.RetryPolicy;
                 this.AbsorbConditionalErrorsOnRetry = other.AbsorbConditionalErrorsOnRetry;
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
                 this.EncryptionPolicy = other.EncryptionPolicy;
                 this.RequireEncryption = other.RequireEncryption;
                 this.SkipEncryptionPolicyValidation = other.SkipEncryptionPolicyValidation;
@@ -125,7 +125,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 ?? serviceClient.DefaultRequestOptions.AbsorbConditionalErrorsOnRetry 
                 ?? BaseDefaultRequestOptions.AbsorbConditionalErrorsOnRetry;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             modifiedOptions.EncryptionPolicy = 
                 modifiedOptions.EncryptionPolicy 
                 ?? serviceClient.DefaultRequestOptions.EncryptionPolicy 
@@ -167,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 modifiedOptions.OperationExpiryTime = DateTime.Now + modifiedOptions.MaximumExecutionTime.Value;
             }
 
-#if (WINDOWS_PHONE && WINDOWS_DESKTOP) || PORTABLE
+#if (WINDOWS_PHONE && WINDOWS_DESKTOP)  
             modifiedOptions.DisableContentMD5Validation = BaseDefaultRequestOptions.DisableContentMD5Validation;
             modifiedOptions.StoreBlobContentMD5 = BaseDefaultRequestOptions.StoreBlobContentMD5;
             modifiedOptions.UseTransactionalMD5 = BaseDefaultRequestOptions.UseTransactionalMD5;
@@ -213,7 +213,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         internal void AssertNoEncryptionPolicyOrStrictMode()
         {
             // Throw if an encryption policy is set and encryption validation is on
@@ -245,7 +245,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Gets or sets the encryption policy for the request.
         /// </summary>
@@ -362,8 +362,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>Use <c>true</c> to calculate and send/validate content MD5 for transactions; otherwise, <c>false</c>.</value>       
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
-#elif PORTABLE
-        /// <remarks>This property is not supported for Portable Class Library.</remarks>
 #endif
         public bool? UseTransactionalMD5
         {
@@ -379,11 +377,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
                 }
-#elif PORTABLE
-                if (value.HasValue && value.Value)
-                {
-                    throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
-                }
 #endif
                 this.useTransactionalMD5 = value;
             }
@@ -398,8 +391,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>This property is not supported for the <see cref="CloudAppendBlob"/> Append* APIs.</remarks>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
-#elif PORTABLE
-        /// <remarks>This property is not supported for Portable Class Library.</remarks>
 #endif
         public bool? StoreBlobContentMD5
         {
@@ -415,11 +406,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
                 }
-#elif PORTABLE
-                if (value.HasValue && value.Value)
-                {
-                    throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
-                }
 #endif
                 this.storeBlobContentMD5 = value;
             }
@@ -433,8 +419,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>Use <c>true</c> to disable MD5 validation; <c>false</c> to enable MD5 validation.</value>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
-#elif PORTABLE
-        /// <remarks>This property is not supported for Portable Class Library.</remarks>
 #endif
         public bool? DisableContentMD5Validation
         {
@@ -449,11 +433,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (value.HasValue && !value.Value)
                 {
                     throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-                }
-#elif PORTABLE
-                if (value.HasValue && !value.Value)
-                {
-                    throw new NotSupportedException(SR.PortableDoesNotSupportMD5);
                 }
 #endif
                 this.disableContentMD5Validation = value;

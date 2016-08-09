@@ -168,7 +168,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return string.Format(CultureInfo.InvariantCulture, canonicalNameFormat, SR.Blob, accountName, containerName);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the container.
         /// </summary>
@@ -220,7 +219,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return builder.ToString();
         }
-#endif
 
         /// <summary>
         /// Gets a reference to a page blob in this container.

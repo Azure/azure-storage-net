@@ -20,9 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
-#if !PORTABLE
     using Microsoft.WindowsAzure.Storage.File;
-#endif
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -81,7 +79,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
 
-#if !PORTABLE
         /// <summary>
         /// Create an ExecutionState object that can be used for pre-request operations
         /// such as buffering user's data.
@@ -98,7 +95,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
-#endif
 
         /// <summary>
         /// Returns the larger of two time spans.

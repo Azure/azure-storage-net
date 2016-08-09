@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-#if WINDOWS_RT || PORTABLE || ASPNET_K
+#if WINDOWS_RT   || NETCORE
     using System.Net.Http;
 #endif
     using System.Xml;
@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="response">The web response.</param>
         /// <param name="contentType">The response Content-Type.</param>
         /// <returns>The error details.</returns>
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpResponseMessage response, string contentType)
 #else
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpWebResponse response, string contentType)

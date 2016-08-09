@@ -21,7 +21,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if !NETCORE
 using Windows.Storage;
 #endif
 
@@ -200,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
         private async Task DoUploadDownloadFileAsync(CloudFile file, int fileSize)
         {
-#if ASPNET_K
+#if NETCORE
             string inputFileName = Path.GetTempFileName();
             string outputFileName = Path.GetTempFileName();
             if (System.IO.File.Exists(outputFileName))
@@ -482,7 +482,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
-#if ASPNET_K
+#if NETCORE
         [TestMethod]
         [Description("Upload from file to a file with file cleanup for failure cases")]
         [TestCategory(ComponentCategory.File)]

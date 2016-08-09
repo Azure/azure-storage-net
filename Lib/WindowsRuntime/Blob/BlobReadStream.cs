@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-#if !(ASPNET_K || PORTABLE)
+#if !(NETCORE)
     using Windows.Storage.Streams;
 #endif
 

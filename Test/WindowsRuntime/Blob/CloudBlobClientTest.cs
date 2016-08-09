@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if NETCORE
 using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Threading;
 #else

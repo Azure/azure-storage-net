@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Net;
     using System.Net.Http;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 
 #else
     using Windows.Foundation;
