@@ -2,6 +2,7 @@ Changes in 7.1.4 :
 
 - All (CoreCLR): NetStandard target framework changed to netstandard1.3
 - All (PCL): Removed support for PCL in favor of NetStandard GA release
+- Table (CoreCLR) : Added a workaround for missing GetProperties method on TypeInfo in reflection-based Read/Write methods in TableEntity after change to netstandard11.3 TFM
 
 Changes in 7.1.3-preview :
 

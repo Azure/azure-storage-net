@@ -22,6 +22,8 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 using System;
 using System.Runtime.Serialization;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.WindowsAzure.Storage.Table.Entities
 {
@@ -413,6 +415,29 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
                 default: 
                     return EdmType.String;
             }
+        }
+    }
+
+    internal class DerivedComplexEntity : ComplexEntity
+    {
+        public DerivedComplexEntity()
+            : base()
+        {
+        }
+
+        private string stringProperty = "stringProperty";
+
+        public string StringProperty
+        {
+            get { return stringProperty; }
+            set { stringProperty = value; }
+        }
+
+        public static void AssertProperties(DerivedComplexEntity derivedComplexEntity)
+        {
+            IDictionary<string, EntityProperty> propertiesAccessor = derivedComplexEntity.WriteEntity(null);
+            Assert.IsTrue(propertiesAccessor.Any(p => p.Key == "StringProperty"));
+            Assert.IsTrue(propertiesAccessor.Any(p => p.Key == "DateTimeOffsetN"));
         }
     }
 }

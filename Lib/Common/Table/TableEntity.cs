@@ -33,6 +33,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Concurrent;
 #endif
 
+#if NETCORE
+    using Microsoft.WindowsAzure.Storage.Extensions;
+#endif
+
     /// <summary>
     /// Represents the base object type for a table entity in the Table service.
     /// </summary>
@@ -44,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1117:ParametersMustBeOnSameLineOrSeparateLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:ParameterMustNotSpanMultipleLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1001:CommasMustBeSpacedCorrectly", Justification = "Reviewed.")]
-    public class TableEntity : ITableEntity 
+    public class TableEntity : ITableEntity
     {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         static TableEntity()
@@ -144,10 +148,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Reviewed")]
         private static void ReflectionRead(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-#if WINDOWS_RT || NETCORE
+#if WINDOWS_RT
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
+#elif NETCORE
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetAllProperties();
 #else
-
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif
             foreach (PropertyInfo property in objectProperties)
@@ -299,8 +304,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             Dictionary<string, EntityProperty> retVals = new Dictionary<string, EntityProperty>();
 
-#if WINDOWS_RT || NETCORE
+#if WINDOWS_RT
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
+#elif NETCORE
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetAllProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif
@@ -313,7 +320,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
 
                 EntityProperty newProperty = EntityProperty.CreateEntityPropertyFromObject(property.GetValue(entity, null), property.PropertyType);
-                
+
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
 #if !(WINDOWS_RT || NETCORE)
@@ -333,9 +340,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return retVals;
         }
 
-#endregion
+        #endregion
 
-#region Static Helpers
+        #region Static Helpers
         /// <summary>
         /// Determines if the given property should be skipped based on its name, if it exposes a public getter and setter, and if the IgnoreAttribute is not defined.
         /// </summary>
@@ -371,7 +378,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // properties with [IgnoreAttribute]
-#if WINDOWS_RT || NETCORE
+#if WINDOWS_RT || NETCORE 
             if (property.GetCustomAttribute(typeof(IgnorePropertyAttribute)) != null)
 #else
             if (Attribute.IsDefined(property, typeof(IgnorePropertyAttribute)))
@@ -383,9 +390,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return false;
         }
-#endregion
+        #endregion
 
-#region CompiledSerialization Logic
+        #region CompiledSerialization Logic
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         private static void ReadNoOpAction(object obj, OperationContext ctx, IDictionary<string, EntityProperty> dict)
@@ -572,7 +579,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
-#if !(WINDOWS_RT || NETCORE)
+#if !(WINDOWS_RT || NETCORE )
                 if (Attribute.IsDefined(prop, typeof(EncryptPropertyAttribute)))
                 {
                     PropertyInfo property = typeof(EntityProperty).FindProperty("IsEncrypted");
@@ -760,9 +767,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return retProp;
         }
 #endif
-#endregion
+        #endregion
 
-#region PropertyResolver Cache
+        #region PropertyResolver Cache
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         private static ConcurrentDictionary<Type, Dictionary<string, EdmType>> propertyResolverCache = new ConcurrentDictionary<Type, Dictionary<string, EdmType>>();
@@ -808,6 +815,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 #endif
 
-#endregion
+        #endregion
     }
 }
