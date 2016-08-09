@@ -15,9 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+
 namespace Microsoft.WindowsAzure.Storage
 {
     using Microsoft.Data.OData;
+    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Microsoft.WindowsAzure.Storage.Table.Protocol;
@@ -129,7 +131,7 @@ namespace Microsoft.WindowsAzure.Storage
                 return null;
             }
 
-            HttpResponseAdapterMessage responseMessage = new HttpResponseAdapterMessage(response, inputStream, contentType);
+            HttpResponseAdapterMessage responseMessage = new HttpResponseAdapterMessage(response, new NonCloseableStream(inputStream), contentType);
             return ReadAndParseExtendedError(responseMessage);
         }
 
