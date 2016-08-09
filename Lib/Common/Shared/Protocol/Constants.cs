@@ -775,9 +775,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Specifies the value to use for UserAgent header.
             /// </summary>
 #if NETCORE
-            public const string UserAgentProductVersion = "7.1.3-preview";
+            public const string UserAgentProductVersion = "7.1.4";
 #else
-            public const string UserAgentProductVersion = "7.1.2";
+            public const string UserAgentProductVersion = "7.1.4";
 #endif 
 
             /// <summary>
