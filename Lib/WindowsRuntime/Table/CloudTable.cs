@@ -33,9 +33,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents a Windows Azure Table.
-    /// </summary>
     public partial class CloudTable
     {
         #region TableOperation Execute Methods

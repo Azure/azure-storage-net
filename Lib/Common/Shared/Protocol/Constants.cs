@@ -781,7 +781,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #endif 
 
             /// <summary>
-            /// Master Windows Azure Storage header prefix.
+            /// Master Microsoft Azure Storage header prefix.
             /// </summary>
             public const string PrefixForStorageHeader = "x-ms-";
 

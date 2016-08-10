@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
     /// <summary>
-    /// Represents a container in the Windows Azure Blob service.
+    /// Represents a container in the Microsoft Azure Blob service.
     /// </summary>
     /// <remarks>Containers hold directories, which are encapsulated as <see cref="CloudBlobDirectory"/> objects, and directories hold block blobs and page blobs. Directories can also contain sub-directories.</remarks>
     public partial class CloudBlobContainer

@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a Windows Azure page blob.
+    /// Represents a Microsoft Azure page blob.
     /// </summary>
     public partial class CloudPageBlob : CloudBlob, ICloudBlob
     {

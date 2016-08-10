@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a file in the Windows Azure File service.
+    /// Represents a file in the Microsoft Azure File service.
     /// </summary>
     public partial class CloudFile : IListFileItem
     {

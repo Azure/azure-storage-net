@@ -29,9 +29,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading;
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents a blob.
-    /// </summary>
     public partial class CloudBlob : IListBlobItem
     {
 #if SYNC

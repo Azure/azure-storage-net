@@ -36,9 +36,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using Windows.Foundation;
 #endif
 
-    /// <summary>
-    /// This class represents a queue in the Windows Azure Queue service.
-    /// </summary>
     public partial class CloudQueue
     {
         /// <summary>
