@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     using Microsoft.WindowsAzure.Storage.Core;

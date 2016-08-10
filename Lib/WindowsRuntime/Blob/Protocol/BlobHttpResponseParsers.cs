@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using System.Globalization;
     using System.Net.Http;
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
     public
 #else
     internal
@@ -60,6 +60,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 {
                     properties.ContentType = response.Content.Headers.ContentType.ToString();
                 }
+
+                string blobEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
+                properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
                 // Get the content length. Prioritize range and x-ms over content length for the special cases.
                 string contentLengthHeader = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentLengthHeader);

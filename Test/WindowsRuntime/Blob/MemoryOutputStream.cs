@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using System.IO;
-#if !ASPNET_K
+#if !NETCORE
 using Windows.Foundation;
 using Windows.Storage.Streams;
 #endif

@@ -68,6 +68,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             properties.ContentType = response.Headers[HttpResponseHeader.ContentType];
             properties.CacheControl = response.Headers[HttpResponseHeader.CacheControl];
 
+            string blobEncryption = response.Headers[Constants.HeaderConstants.ServerEncrypted];
+            properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+
             // Get blob type
             string blobType = response.Headers[Constants.HeaderConstants.BlobType];
             if (!string.IsNullOrEmpty(blobType))

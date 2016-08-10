@@ -23,7 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if NETCORE
 using System.Security.Cryptography;
 #else
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -638,7 +638,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudPageBlobWritePagesAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
-#if ASPNET_K
+#if NETCORE
             MD5 md5 = MD5.Create();
             string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
 #else
@@ -846,7 +846,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             string md5 = string.Empty;
             if (testMd5)
             {
-#if ASPNET_K
+#if NETCORE
                 MD5 hasher = MD5.Create();
                 md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
 #else

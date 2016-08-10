@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
     using System;
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
     using System.Globalization;
     using System.IO;
     using System.Net;
@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
     internal class Exceptions
     {
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         internal async static Task<StorageException> PopulateStorageExceptionFromHttpResponseMessage(HttpResponseMessage response, RequestResult currentResult, Func<Stream, HttpResponseMessage, string, StorageExtendedErrorInformation> parseError)
         {
             if (!response.IsSuccessStatusCode)

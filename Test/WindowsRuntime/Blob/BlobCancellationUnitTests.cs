@@ -21,7 +21,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if !NETCORE
 using Windows.Foundation;
 #endif
 

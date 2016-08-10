@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Globalization;
     using System.Net;
     using System.Text;
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
     using System.Net.Http;
 #endif
 
@@ -35,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         private const char HeaderNameValueSeparator = ':';
         private const char HeaderValueDelimiter = ',';
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         /// <summary>
         /// Gets the value of the x-ms-date or Date header.
         /// </summary>

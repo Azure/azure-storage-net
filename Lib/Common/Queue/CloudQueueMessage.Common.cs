@@ -248,7 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             string outgoingMessageString = null;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             if (options != null)
             {
                 options.AssertPolicyIfRequired();

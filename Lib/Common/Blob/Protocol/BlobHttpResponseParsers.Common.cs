@@ -209,5 +209,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             return copyAttributes;
         }
+
+        /// <summary>
+        /// Determines if a blob is listed as server-side encypted.
+        /// </summary>
+        /// <param name="encryptionHeader">String giving the status of server encryption.</param>
+        /// <returns><c>true</c> if blob encrypted or <c>false</c> if not.</returns>
+        public static bool GetServerEncrypted(string encryptionHeader)
+        {
+            return string.Equals(encryptionHeader, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

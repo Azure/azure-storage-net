@@ -124,7 +124,6 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         {
         }
 
-#if !PORTABLE
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageCredentials"/> class with the specified account name and key value.
         /// </summary>
@@ -176,7 +175,6 @@ namespace Microsoft.WindowsAzure.Storage.Auth
             this.UpdateKey(keyValue, keyName);
         }
 #endif
-#endif 
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageCredentials"/> class with the specified shared access signature token.

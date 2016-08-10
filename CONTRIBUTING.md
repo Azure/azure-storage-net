@@ -10,7 +10,7 @@ The Azure Storage development team uses Visual Studio so instructions will be ta
 
 ### Open Solution
 For non-CoreCLR solutions, you can open the project from VS using File->Open->Project/Solution and navigating to the Microsoft.WindowsAzure.Storage.sln solution file in the repo base folder.
-For the CoreCLR solution, you can open the project using the AspNet_k.sln solution in the repo base folder.
+For the CoreCLR solution, you can open the project using the NETCORE.sln solution in the repo base folder.
 
 ## Tests
 

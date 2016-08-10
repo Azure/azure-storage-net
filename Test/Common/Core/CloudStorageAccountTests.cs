@@ -86,7 +86,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             cred.UpdateKey(base64EncodedDummyKey);
             Assert.AreEqual(base64EncodedDummyKey, cred.ExportBase64EncodedKey());
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || NETCORE)
             dummyKey[0] = 3;
             base64EncodedDummyKey = Convert.ToBase64String(dummyKey);
             cred.UpdateKey(dummyKey);
@@ -183,7 +183,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             credentials2.UpdateKey(emptyKeyValueAsString, null);
             Assert.AreEqual(emptyKeyValueAsString, Convert.ToBase64String(credentials2.ExportKey()));
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || NETCORE)
             byte[] emptyKeyValueAsByteArray = new byte[0];
 
             StorageCredentials credentials3 = new StorageCredentials(accountName, keyValue);
@@ -227,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 credentials2.UpdateKey(nullKeyValueAsString, null);
             }, "Cannot update key with a null string value.");
 
-#if !(WINDOWS_RT || ASPNET_K)
+#if !(WINDOWS_RT || NETCORE)
             byte[] nullKeyValueAsByteArray = null;
 
             StorageCredentials credentials3 = new StorageCredentials(accountName, keyValue);
