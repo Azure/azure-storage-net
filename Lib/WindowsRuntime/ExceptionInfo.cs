@@ -65,9 +65,7 @@ namespace Microsoft.WindowsAzure.Storage
 
         internal ExceptionInfo(Exception ex)
         {
-#if !PORTABLE
             this.Type = ex.GetType().Name;
-#endif
             this.Message = ex.Message;
             this.StackTrace = ex.StackTrace;
 

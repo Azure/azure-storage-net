@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
             CommonUtility.AssertNotNull("uri", uri);
 
-#if WINDOWS_RT || PORTABLE || ASPNET_K
+#if WINDOWS_RT   || NETCORE
             if (this.RequireHttps && (string.CompareOrdinal(uri.Scheme, "https") != 0))
 #else
             if (this.RequireHttps && (string.CompareOrdinal(uri.Scheme, Uri.UriSchemeHttps) != 0))

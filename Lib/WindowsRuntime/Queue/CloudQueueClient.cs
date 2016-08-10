@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 
 #else
     using System.Runtime.InteropServices.WindowsRuntime;

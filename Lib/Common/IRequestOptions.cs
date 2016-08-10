@@ -50,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
         TimeSpan? MaximumExecutionTime { get; set; }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
         /// </summary>

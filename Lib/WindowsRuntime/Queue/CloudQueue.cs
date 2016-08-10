@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -274,7 +274,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }, cancellationToken);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Sets permissions for the queue.
         /// </summary>
@@ -361,7 +360,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Checks existence of the queue.
@@ -1035,8 +1033,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             return putCmd;
         }
-        
-#if !PORTABLE
+
         /// <summary>
         /// Implementation for the SetPermissions method.
         /// </summary>
@@ -1091,7 +1088,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             return getCmd;
         }
-#endif
 
         /// <summary>
         /// Implementation for the AddMessage method.

@@ -49,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             PropertyResolver = null,
             ProjectSystemProperties = true,
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             EncryptionPolicy = null,
             RequireEncryption = null,
             EncryptionResolver = null
@@ -79,7 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 this.PayloadFormat = other.PayloadFormat;
                 this.PropertyResolver = other.PropertyResolver;
                 this.ProjectSystemProperties = other.ProjectSystemProperties;
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
                 this.EncryptionPolicy = other.EncryptionPolicy;
                 this.RequireEncryption = other.RequireEncryption;
                 this.EncryptionResolver = other.EncryptionResolver;
@@ -131,7 +131,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 ?? serviceClient.DefaultRequestOptions.ProjectSystemProperties 
                 ?? BaseDefaultRequestOptions.ProjectSystemProperties;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             modifiedOptions.EncryptionPolicy = 
                 modifiedOptions.EncryptionPolicy 
                 ?? serviceClient.DefaultRequestOptions.EncryptionPolicy 
@@ -154,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         internal static TableRequestOptions ApplyDefaultsAndClearEncryption(TableRequestOptions requestOptions, CloudTableClient serviceClient)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, serviceClient);
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             modifiedOptions.RequireEncryption = false;
             modifiedOptions.EncryptionPolicy = null;
             modifiedOptions.EncryptionResolver = null;
@@ -203,7 +203,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         internal void AssertNoEncryptionPolicyOrStrictMode()
         {
             if (this.EncryptionPolicy != null)
@@ -239,7 +239,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         public bool? ProjectSystemProperties { get; set; }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Gets or sets the encryption policy for the request.
         /// </summary>
@@ -312,7 +312,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         public Func<string, string, string, string, EdmType> PropertyResolver { get; set; }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Gets or sets the delegate to get the value indicating whether or not a property should be encrypted, given the partition key, row key, 
         /// and property name. 

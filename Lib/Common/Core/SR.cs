@@ -240,11 +240,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
         public const string WindowsPhoneDoesNotSupportMD5 = "MD5 is not supported on Windows Phone";
-#elif PORTABLE
-        public const string PortableDoesNotSupportMD5 = "MD5 is not supported using the PCL.";
-        public const string PortableDoesNotSupportSharedKey = "Shared Key is not supported using the PCL. Please use a SAS token.";
 #endif
-
         // Table IQueryable Exception messages
         public const string ALinqCouldNotConvert = "Could not convert constant {0} expression to string.";
         public const string ALinqMethodNotSupported = "The method '{0}' is not supported.";

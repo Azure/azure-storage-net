@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
     using System.Threading;
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -424,7 +424,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }, cancellationToken);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Sets permissions for the container.
         /// </summary>
@@ -511,7 +510,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Checks existence of the container.
@@ -1163,7 +1161,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return putCmd;
         }
 
-#if !PORTABLE
         /// <summary>
         /// Implementation for the SetPermissions method.
         /// </summary>
@@ -1229,7 +1226,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return getCmd;
         }
-#endif
 
         /// <summary>
         /// Selects the protocol response.

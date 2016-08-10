@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-#if ASPNET_K || PORTABLE
+#if NETCORE
     using System.Net.Http;
 #endif
 
@@ -154,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         private static RequestEventArgs GenerateRequestEventArgs<T>(ExecutionState<T> executionState)
         {
             RequestEventArgs args = new RequestEventArgs(executionState.Cmd.CurrentResult);
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             args.RequestUri = executionState.Req.RequestUri;
 #else
             args.Request = executionState.Req;
@@ -197,7 +197,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         }
 #endif
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
         internal static StorageException TranslateExceptionBasedOnParseError(Exception ex, RequestResult currentResult, HttpResponseMessage response, Func<Stream, HttpResponseMessage, string, StorageExtendedErrorInformation> parseError)
         {
             if (parseError != null)

@@ -23,7 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if NETCORE
 using System.Globalization;
 #else
 using Windows.Globalization;
@@ -329,7 +329,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task QueueRegionalSASTestAsync()
         {
-#if ASPNET_K
+#if NETCORE
             //CultureInfo currentCulture = CultureInfo.CurrentCulture;
             //CultureInfo.CurrentCulture = new CultureInfo("it");
 #else
@@ -377,7 +377,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             finally
             {
-#if ASPNET_K
+#if NETCORE
                 //CultureInfo.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;

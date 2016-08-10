@@ -78,10 +78,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 
-#if !PORTABLE
         /// Uploads a file to the Microsoft Azure Blob Service. 
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(string path);
@@ -90,11 +89,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(StorageFile source);
 #endif
-
         /// <summary>
         /// Uploads a file to a blob. 
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
 #else
         /// <param name="source">The file providing the blob content.</param>
@@ -102,15 +100,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if NETCORE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 #else
         /// <returns>As <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 #endif
-#endif
-
         /// <summary>
         /// Uploads the contents of a byte array to a blob.
         /// </summary>

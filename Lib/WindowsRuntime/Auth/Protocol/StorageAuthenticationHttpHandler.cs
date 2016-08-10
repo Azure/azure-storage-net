@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
     {
         private StorageAuthenticationHttpHandler()
         {
-#if ASPNET_K
+#if NETCORE
             this.AutomaticDecompression = DecompressionMethods.None;
 #endif
         }
@@ -71,11 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
             if (request.Credentials.IsSharedKey)
             {
-#if PORTABLE
-                throw new NotSupportedException(SR.PortableDoesNotSupportSharedKey);
-#else
                 authenticationHandler = this.GetSharedKeyAuthenticationTask;
-#endif
             }
             else
             {

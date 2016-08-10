@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------------------------
-// <copyright file="HttpContentFactory.cs" company="Microsoft">
+// <copyright file="TypeInfoExtension.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,25 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.WindowsAzure.Storage.Extensions
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
     using System;
-    using System.IO;
-    using System.Net.Http;
+    using System.Collections.Generic;
+    using System.Reflection;
 
-    internal static class HttpContentFactory
+    internal static class TypeInfoExtension
     {
-        public static HttpContent BuildContentFromStream<T>(Stream stream, long offset, long? length, string md5, RESTCommand<T> cmd, OperationContext operationContext)
+        public static IEnumerable<PropertyInfo> GetAllProperties(this TypeInfo typeInfo) 
         {
-            stream.Seek(offset, SeekOrigin.Begin);
-            
-            HttpContent retContent = new RetryableStreamContent(stream);
-            retContent.Headers.ContentLength = length;
-            if (md5 != null)
+            while (typeInfo != null)
             {
-                retContent.Headers.ContentMD5 = Convert.FromBase64String(md5);
-            }
+                foreach (var t in typeInfo.DeclaredProperties)
+                {
+                    yield return t;
+                }
 
-            return retContent;
+                typeInfo = typeInfo.BaseType?.GetTypeInfo();
+            }
         }
     }
 }

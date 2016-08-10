@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K || PORTABLE
+#if NETCORE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;

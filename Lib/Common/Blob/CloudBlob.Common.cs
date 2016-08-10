@@ -357,7 +357,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the blob.
         /// </summary>
@@ -433,7 +432,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return builder.ToString();
         }
-#endif
 
         /// <summary>
         /// Gets the canonical name of the blob, formatted as blob/&lt;account-name&gt;/&lt;container-name&gt;/&lt;blob-name&gt;.

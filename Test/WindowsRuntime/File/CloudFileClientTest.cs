@@ -24,7 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if !NETCORE
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 #endif
