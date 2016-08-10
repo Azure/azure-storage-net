@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -491,7 +491,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
 
-#if !PORTABLE
         #region Permissions
         /// <summary>
         /// Sets permissions for the Table.
@@ -635,7 +634,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return getCmd;
         }
         #endregion
-#endif
 
         #region TableQuery Execute Methods
         /// <summary>

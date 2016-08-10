@@ -40,7 +40,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         internal static QueueRequestOptions BaseDefaultRequestOptions = new QueueRequestOptions()
         {
             RetryPolicy = new NoRetry(),
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             EncryptionPolicy = null,
             RequireEncryption = null,
 #endif
@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             if (other != null)
             {
                 this.RetryPolicy = other.RetryPolicy;
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
                 this.EncryptionPolicy = other.EncryptionPolicy;
                 this.RequireEncryption = other.RequireEncryption;
 #endif
@@ -86,7 +86,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 ?? serviceClient.DefaultRequestOptions.RetryPolicy 
                 ?? BaseDefaultRequestOptions.RetryPolicy;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             modifiedOptions.EncryptionPolicy = 
                 modifiedOptions.EncryptionPolicy 
                 ?? serviceClient.DefaultRequestOptions.EncryptionPolicy 
@@ -143,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         internal void AssertPolicyIfRequired()
         {
             if (this.RequireEncryption.HasValue && this.RequireEncryption.Value && this.EncryptionPolicy == null)
@@ -164,7 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <value>An object of type <see cref="IRetryPolicy"/>.</value>
         public IRetryPolicy RetryPolicy { get; set; }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Gets or sets the encryption policy for the request.
         /// </summary>

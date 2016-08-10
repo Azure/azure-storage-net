@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Text;
     using System.Threading.Tasks;
     using System.Threading;
-#if ASPNET_K
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -301,7 +301,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Uploads a file to the Azure File Service. If the file already exists on the service, it will be overwritten.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the path to the target file.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
@@ -322,7 +322,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Uploads a file to the Azure File Service. If the file already exists on the service, it will be overwritten.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the path to the target file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
@@ -369,7 +369,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if NETCORE
         /// <summary>
         /// Uploads a file to the Azure File Service. If the file already exists on the service, it will be overwritten.
         /// </summary>
@@ -529,7 +529,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Downloads the contents of a file to a file.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
@@ -551,7 +551,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Downloads the contents of a file to a file.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
@@ -600,7 +600,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-#if ASPNET_K
+#if NETCORE
         /// <summary>
         /// Downloads the contents of a file to a file.
         /// </summary>

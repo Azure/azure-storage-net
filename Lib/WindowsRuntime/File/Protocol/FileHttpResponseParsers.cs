@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
     using System.Collections.Generic;
     using System.Net.Http;
 
-#if ASPNET_K
+#if NETCORE
     public
 #else
     internal

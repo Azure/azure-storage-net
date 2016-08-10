@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (7.1.2)
+# Microsoft Azure Storage SDK for .NET (7.1.4)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -35,8 +35,7 @@ For the best development experience, developers should use the official Microsof
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
 - CoreCLR RTM: Storage Client Libraries for .NET are available to support CoreCLR application development. This support is currently in preview. 
-- Portable Class Library Profile 111: Storage Client Libraries are available to support building PCL Profile 111 applications, as well as for Xamarin application development. This support is currently in preview.
- 
+
 ## Requirements
 
 - Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://account.windowsazure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
@@ -46,7 +45,7 @@ For the best development experience, developers should use the official Microsof
 ## Versioning Information
 
 - The Storage Client Library uses [the semantic versioning scheme.](http://semver.org/)
-- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (.NetCore 1.0 , PCL/Xamarin).
+- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (.NETCORE1.0 , PCL/Xamarin).
 
 ## Use with the Azure Storage Emulator
 

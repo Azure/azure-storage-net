@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     {
         public static IEnumerable<MethodInfo> FindStaticMethods(this Type type, string name)
         {
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             return type.GetRuntimeMethods();
 #else
             // Note currently this looks for nonpublic statics and instance methods, may need to be updated in future to accomodate publics
@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public static IEnumerable<MethodInfo> FindMethods(this Type type)
         {
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             return type.GetRuntimeMethods();
 #else
             return type.GetMethods();
@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public static MethodInfo FindMethod(this Type type, string name, Type[] parameters)
         {
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             return type.GetRuntimeMethod(name, parameters);
 #else
             return type.GetMethod(name, parameters);
@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public static PropertyInfo FindProperty(this Type type, string name)
         {
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             return type.GetRuntimeProperty(name);
 #else
             // Currently this looks for instance public / non publics, may need to be updated to support wider selection
@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public static MethodInfo FindGetProp(this PropertyInfo property)
         {
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             return property.GetMethod;
 #else
             return property.GetGetMethod();
@@ -76,7 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public static MethodInfo FindSetProp(this PropertyInfo property)
         {
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             return property.SetMethod;
 #else
             return property.GetSetMethod();

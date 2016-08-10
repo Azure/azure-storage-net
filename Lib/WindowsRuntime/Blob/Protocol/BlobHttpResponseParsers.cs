@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using System.Globalization;
     using System.Net.Http;
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
     public
 #else
     internal

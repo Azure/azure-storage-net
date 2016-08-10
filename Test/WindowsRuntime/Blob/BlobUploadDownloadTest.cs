@@ -21,7 +21,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if !NETCORE
 using Windows.Storage;
 #endif
 
@@ -64,7 +64,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCleanup]
         public void TestCleanup()
         {
-#if ASPNET_K
+#if NETCORE
             this.testContainer.DeleteIfExistsAsync().Wait();
 #else
             this.testContainer.DeleteIfExistsAsync().Wait();
@@ -222,7 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private async Task DoUploadDownloadFileAsync(ICloudBlob blob, int fileSize)
         {
-#if ASPNET_K
+#if NETCORE
             string inputFileName = Path.GetTempFileName();
             string outputFileName = Path.GetTempFileName();
             if (System.IO.File.Exists(outputFileName))
@@ -698,7 +698,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-#if ASPNET_K
+#if NETCORE
         [TestMethod]
         [Description("Upload from file to a block blob with file cleanup for failure cases")]
         [TestCategory(ComponentCategory.Blob)]

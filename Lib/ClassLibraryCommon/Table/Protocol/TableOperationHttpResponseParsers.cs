@@ -526,12 +526,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 {
                     // Decrypt the metadata property value to get the names of encrypted properties.
                     EncryptionData encryptionData = null;
-                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData);
+                    bool isJavaV1 = false;
+                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData, out isJavaV1);
 
                     byte[] binaryVal = propertyDetailsProperty.BinaryValue;
-                    HashSet<string> encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+                    HashSet<string> encryptedPropertyDetailsSet;
 
-                    properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData);
+                    encryptedPropertyDetailsSet = ParseEncryptedPropertyDetailsSet(isJavaV1, binaryVal);
+
+                    properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData, isJavaV1);
                 }
                 else
                 {
@@ -543,6 +546,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
 
             return resolver(pk, rk, ts, properties, entry.ETag);
+        }
+
+        private static HashSet<string> ParseEncryptedPropertyDetailsSet(bool isJavav1, byte[] binaryVal)
+        {
+            HashSet<string> encryptedPropertyDetailsSet;
+            if (isJavav1)
+            {
+                encryptedPropertyDetailsSet = new HashSet<string>(Encoding.UTF8.GetString(binaryVal, 1, binaryVal.Length - 2).Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            }
+            else
+            {
+                encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+            }
+
+            return encryptedPropertyDetailsSet;
         }
 
         private static T ReadAndResolveWithEdmTypeResolver<T>(Dictionary<string, string> entityAttributes, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, Func<string, string, string, string, EdmType> propertyResolver, string etag, Type type, OperationContext ctx, bool disablePropertyResolverCache, TableRequestOptions options)
@@ -573,6 +591,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
 
             // Decrypt the metadata property value to get the names of encrypted properties so that they can be parsed correctly below.
+            bool isJavaV1 = false;
             if (options.EncryptionPolicy != null)
             {
                 string metadataValue = null;
@@ -586,12 +605,12 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                     entityAttributes.TryGetValue(TableConstants.PartitionKey, out pk);
                     entityAttributes.TryGetValue(TableConstants.RowKey, out rk);
-                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData);
+                    cek = options.EncryptionPolicy.DecryptMetadataAndReturnCEK(pk, rk, keyProperty, propertyDetailsProperty, out encryptionData, out isJavaV1);
 
                     properties.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails, propertyDetailsProperty);
 
                     byte[] binaryVal = propertyDetailsProperty.BinaryValue;
-                    encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+                    encryptedPropertyDetailsSet = ParseEncryptedPropertyDetailsSet(isJavaV1, binaryVal);
                 }
                 else
                 {
@@ -687,7 +706,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             // If encryption policy is set on options, try to decrypt the entity.
             if (options.EncryptionPolicy != null && encryptionData != null)
             {
-                properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData);
+                properties = options.EncryptionPolicy.DecryptEntity(properties, encryptedPropertyDetailsSet, pk, rk, cek, encryptionData, isJavaV1);
             }
 
             return resolver(pk, rk, ts, properties, etag);
