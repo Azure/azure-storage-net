@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a query against a Windows Azure table.
+    /// Represents a query against a Microsoft Azure table.
     /// </summary>
     /// <typeparam name="TElement">A class which implements <see cref="ITableEntity"/>.</typeparam>
     public partial class TableQuery<TElement> : IQueryable<TElement>

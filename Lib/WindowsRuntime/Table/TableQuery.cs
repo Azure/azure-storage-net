@@ -34,9 +34,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents a query against a specified table.
-    /// </summary>
     public sealed partial class TableQuery
     {
         #region Impl

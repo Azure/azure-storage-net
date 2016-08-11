@@ -774,14 +774,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-#if NETCORE
-            public const string UserAgentProductVersion = "7.1.3-preview";
-#else
-            public const string UserAgentProductVersion = "7.1.2";
-#endif 
+            public const string UserAgentProductVersion = "7.2.0";
 
             /// <summary>
-            /// Master Windows Azure Storage header prefix.
+            /// Master Microsoft Azure Storage header prefix.
             /// </summary>
             public const string PrefixForStorageHeader = "x-ms-";
 
@@ -1597,6 +1593,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Additional property name to store the encryption metadata.
             /// </summary>
             public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
+
+            /// <summary>
+            /// Key for the encryption agent
+            /// </summary>
+            public const string AgentMetadataKey = "EncryptionLibrary";
+
+            /// <summary>
+            /// Value for the encryption agent
+            /// </summary>
+            public const string AgentMetadataValue = ".NET " + Constants.HeaderConstants.UserAgentProductVersion;
         }
     }
 }

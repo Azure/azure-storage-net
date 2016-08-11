@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (7.1.2)
+# Microsoft Azure Storage SDK for .NET (7.2.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -34,7 +34,7 @@ For the best development experience, developers should use the official Microsof
 - .NET Framework 4.0: As of October 2012, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4 release and above.
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
-- CoreCLR RTM: Storage Client Libraries for .NET are available to support CoreCLR application development. This support is currently in preview. 
+- Netstandard1.3 (CoreCLR RTM): Storage Client Libraries for .NET are available to support CoreCLR application development.
 
 ## Requirements
 
@@ -45,7 +45,6 @@ For the best development experience, developers should use the official Microsof
 ## Versioning Information
 
 - The Storage Client Library uses [the semantic versioning scheme.](http://semver.org/)
-- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (.NETCORE1.0 , PCL/Xamarin).
 
 ## Use with the Azure Storage Emulator
 
@@ -131,7 +130,7 @@ Once installed:
 - Copy `FiddlerCore.dll` `\azure-storage-net\Test\FaultInjection\Dependencies\DotNet2`
 - Copy `FiddlerCore4.dll` to `azure-storage-net\Test\FaultInjection\Dependencies\DotNet4`
 
-Tests for the client-side encryption preview support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
+Tests for the client-side encryption support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
 
 - [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 

@@ -20,7 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
     using System.Globalization;
 
     /// <summary>
-    /// Represents the context for one or more retries of a request made against the Windows Azure storage services,
+    /// Represents the context for one or more retries of a request made against the Microsoft Azure storage services,
     /// including the number of retries made for the request, the results of the last request, and the storage location and location mode for subsequent retries.
     /// </summary>
     public sealed class RetryContext

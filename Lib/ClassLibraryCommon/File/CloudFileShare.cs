@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a share in the Windows Azure File service.
+    /// Represents a share in the Microsoft Azure File service.
     /// </summary>
     /// <remarks>Shares hold directories, which are encapsulated as <see cref="CloudFileDirectory"/> objects, and directories hold files. Directories can also contain sub-directories.</remarks>
     public partial class CloudFileShare
