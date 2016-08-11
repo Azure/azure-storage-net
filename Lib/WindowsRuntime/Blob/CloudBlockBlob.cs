@@ -42,9 +42,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Windows.Storage.Streams;
 #endif
 
-    /// <summary>
-    /// Represents a blob that is uploaded as a set of blocks.
-    /// </summary>
     public partial class CloudBlockBlob : CloudBlob, ICloudBlob
     {
         /// <summary>

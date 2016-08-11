@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Globalization;
 
     /// <summary>
-    /// Represents a blob object.
+    /// Represents an Azure blob. A blob stores text or binary data, such as documents or media files.
     /// </summary>
     public partial class CloudBlob : IListBlobItem
     {

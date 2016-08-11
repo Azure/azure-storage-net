@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
 #endif
 
     /// <summary>
-    /// Represents a set of credentials used to authenticate access to a Windows Azure storage account.
+    /// Represents a set of credentials used to authenticate access to a Microsoft Azure storage account.
     /// </summary>
     public sealed class StorageCredentials
     {

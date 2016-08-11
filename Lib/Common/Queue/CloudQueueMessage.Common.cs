@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Text;
 
     /// <summary>
-    /// Represents a message in the Windows Azure Queue service.
+    /// Represents a message in the Microsoft Azure Queue service.
     /// </summary>
     public sealed partial class CloudQueueMessage
     {

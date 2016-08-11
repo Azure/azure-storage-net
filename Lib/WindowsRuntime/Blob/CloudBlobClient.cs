@@ -39,10 +39,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading;
 #endif
 
-    /// <summary>
-    /// Provides a client-side logical representation of the Windows Azure Blob Service. This client is used to configure and execute requests against the Blob Service. 
-    /// </summary>
-    /// <remarks>The service client encapsulates the base URI for the Blob service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>
     public partial class CloudBlobClient
     {
         /// <summary>
