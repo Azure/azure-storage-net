@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Threading;
-#if ASPNET_K
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;

@@ -111,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <remarks>Set this value to '*' to blindly overwrite an entity as part of an update operation.</remarks>
         public string ETag { get; set; }
 
-#if !(WINDOWS_RT ||  ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT ||  NETCORE)
         /// <summary>
         /// Gets or sets the entity's property, given the name of the property.
         /// </summary>

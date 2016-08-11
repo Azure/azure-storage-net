@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading;
     using System.Threading.Tasks;
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -39,9 +39,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Windows.Storage.Streams;
 #endif
 
-    /// <summary>
-    /// Represents a Windows Azure page blob.
-    /// </summary>
     public partial class CloudPageBlob : CloudBlob, ICloudBlob
     {
         /// <summary>
@@ -272,11 +269,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }, cancellationToken);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
@@ -297,7 +293,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -343,8 +339,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             });
         }
 #endif
-
-#if ASPNET_K
+#if NETCORE
         /// <summary>
         /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -367,7 +362,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }, cancellationToken);
         }
-#endif
 #endif
 
         /// <summary>
@@ -612,7 +606,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="previousSnapshotTime">A <see cref="DateTimeOffset"/> representing the snapshot timestamp to use as the starting point for the diff. If this CloudPageBlob represents a snapshot, the previousSnapshotTime parameter must be prior to the current snapshot timestamp.</param>
         /// <returns>An enumerable collection of page ranges.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
+#if NETCORE
         public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
 #else
         public IAsyncOperation<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
@@ -632,7 +626,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of page ranges.</returns>
         [DoesServiceRequest]
-#if ASPNET_K || PORTABLE
+#if NETCORE
         public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetPageRangesDiffAsync(previousSnapshotTime, offset, length, accessCondition, options, operationContext, CancellationToken.None);
@@ -649,7 +643,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
         /// <summary>
         /// Gets the collection of page ranges that differ between a specified snapshot and this object.
         /// </summary>

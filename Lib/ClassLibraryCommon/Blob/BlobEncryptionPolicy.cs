@@ -241,6 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 encryptionData.WrappedContentKey = new WrappedKey(this.Key.Kid, wrappedKey.Item1, wrappedKey.Item2);
                 encryptionData.EncryptionMode = this.EncryptionMode.ToString();
                 encryptionData.KeyWrappingMetadata = new Dictionary<string, string>();
+                encryptionData.KeyWrappingMetadata[Constants.EncryptionConstants.AgentMetadataKey] = Constants.EncryptionConstants.AgentMetadataValue;
                 encryptionData.ContentEncryptionIV = aesProvider.IV;
                 metadata[Constants.EncryptionConstants.BlobEncryptionData] = JsonConvert.SerializeObject(encryptionData);
                 return aesProvider.CreateEncryptor();

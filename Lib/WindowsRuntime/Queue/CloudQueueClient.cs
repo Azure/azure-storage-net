@@ -30,17 +30,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
-
-    /// <summary>
-    /// Provides a client-side logical representation of the Windows Azure Queue Service. This client is used to configure and execute requests against the Queue Service.
-    /// </summary>
-    /// <remarks>The service client encapsulates the base URI for the Queue service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>
     public partial class CloudQueueClient
     {
         /// <summary>

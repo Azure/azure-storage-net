@@ -26,16 +26,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents a Windows Azure Table.
-    /// </summary>
     public partial class CloudTable
     {
         #region TableOperation Execute Methods
@@ -491,7 +488,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
 
-#if !PORTABLE
         #region Permissions
         /// <summary>
         /// Sets permissions for the Table.
@@ -635,7 +631,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return getCmd;
         }
         #endregion
-#endif
 
         #region TableQuery Execute Methods
         /// <summary>

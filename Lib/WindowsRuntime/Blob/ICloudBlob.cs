@@ -20,7 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-#if ASPNET_K || PORTABLE
+#if NETCORE
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
 #else
@@ -30,9 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Windows.Storage.Streams;
     using System.IO;
 #endif
-    /// <summary>
-    /// An interface required for Windows Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.
-    /// </summary>
+
     public partial interface ICloudBlob : IListBlobItem
     {
         /// <summary>
@@ -45,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         Task<Stream> OpenReadAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 
         /// <summary>
-        /// Uploads a stream to the Windows Azure Blob Service. 
+        /// Uploads a stream to the Microsoft Azure Blob Service. 
         /// </summary>
         /// <param name="source">The stream providing the blob content.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
@@ -80,10 +78,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 
-#if !PORTABLE
-        /// Uploads a file to the Windows Azure Blob Service. 
+        /// Uploads a file to the Microsoft Azure Blob Service. 
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(string path);
@@ -92,11 +89,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(StorageFile source);
 #endif
-
         /// <summary>
         /// Uploads a file to a blob. 
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
 #else
         /// <param name="source">The file providing the blob content.</param>
@@ -104,13 +100,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if NETCORE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 #else
         /// <returns>As <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
-#endif
 #endif
 
         /// <summary>
@@ -151,11 +146,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 
-#if !PORTABLE
         /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
@@ -165,11 +159,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task DownloadToFileAsync(StorageFile target);
 #endif
-
         /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
 #else
@@ -178,13 +171,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-#if ASPNET_K
+#if NETCORE
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 #else
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task DownloadToFileAsync(StorageFile target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
-#endif
 #endif
 
         /// <summary>

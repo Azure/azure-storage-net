@@ -26,17 +26,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 #else
     using Windows.Foundation;
     using System.Runtime.InteropServices.WindowsRuntime;
 #endif
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents a query against a specified table.
-    /// </summary>
-    /// <typeparam name="TElement">The entity type of the query.</typeparam>
     public partial class TableQuery<TElement> where TElement : ITableEntity, new()
     {
         /// <summary>

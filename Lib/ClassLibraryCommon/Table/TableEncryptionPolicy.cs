@@ -76,6 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             EncryptionData encryptionData = new EncryptionData();
             encryptionData.EncryptionAgent = new EncryptionAgent(Constants.EncryptionConstants.EncryptionProtocolV1, EncryptionAlgorithm.AES_CBC_256);
             encryptionData.KeyWrappingMetadata = new Dictionary<string, string>();
+            encryptionData.KeyWrappingMetadata[Constants.EncryptionConstants.AgentMetadataKey] = Constants.EncryptionConstants.AgentMetadataValue;
 
             Dictionary<string, EntityProperty> encryptedProperties = new Dictionary<string, EntityProperty>();
             HashSet<string> encryptionPropertyDetailsSet = new HashSet<string>();
@@ -168,7 +169,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return encryptedProperties;
         }
 
-        internal byte[] DecryptMetadataAndReturnCEK(string partitionKey, string rowKey, EntityProperty encryptionKeyProperty, EntityProperty propertyDetailsProperty, out EncryptionData encryptionData)
+        internal byte[] DecryptMetadataAndReturnCEK(string partitionKey, string rowKey, EntityProperty encryptionKeyProperty, EntityProperty propertyDetailsProperty, out EncryptionData encryptionData, out bool isJavaV1)
         {
             // Throw if neither the key nor the resolver are set.
             if (this.Key == null && this.KeyResolver == null)
@@ -190,6 +191,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 {
                     throw new StorageException(SR.EncryptionProtocolVersionInvalid, null) { IsRetryable = false };
                 }
+
+                isJavaV1 = (encryptionData.EncryptionAgent.Protocol == Constants.EncryptionConstants.EncryptionProtocolV1) 
+                            && ((encryptionData.KeyWrappingMetadata == null)
+                                || (encryptionData.KeyWrappingMetadata.ContainsKey(Constants.EncryptionConstants.AgentMetadataKey) 
+                                 && encryptionData.KeyWrappingMetadata[Constants.EncryptionConstants.AgentMetadataKey].Contains("Java")));
 
                 byte[] contentEncryptionKey = null;
 
@@ -228,7 +234,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     using (SHA256Managed sha256 = new SHA256Managed())
 #endif
                     {
-                        byte[] metadataIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(string.Join(partitionKey, rowKey, Constants.EncryptionConstants.TableEncryptionPropertyDetails))));
+                        // Here we are correcting for a bug in Java's v1 encryption.
+                        // Java v1 constructed the IV as PK + RK + column name.  Other libraries use RK + PK + column name.
+                        string IVString = isJavaV1 ? string.Concat(partitionKey, rowKey, Constants.EncryptionConstants.TableEncryptionPropertyDetails) : string.Concat(rowKey, partitionKey, Constants.EncryptionConstants.TableEncryptionPropertyDetails);
+                        byte[] metadataIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(IVString)));
                         Array.Resize<byte>(ref metadataIV, 16);
                         myAes.IV = metadataIV;
                         myAes.Key = contentEncryptionKey;
@@ -260,7 +269,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Return a decrypted entity. This method is used for decrypting entity properties.
         /// </summary>
-        internal Dictionary<string, EntityProperty> DecryptEntity(IDictionary<string, EntityProperty> properties, HashSet<string> encryptedPropertyDetailsSet, string partitionKey, string rowKey, byte[] contentEncryptionKey, EncryptionData encryptionData)
+        internal Dictionary<string, EntityProperty> DecryptEntity(IDictionary<string, EntityProperty> properties, HashSet<string> encryptedPropertyDetailsSet, string partitionKey, string rowKey, byte[] contentEncryptionKey, EncryptionData encryptionData, bool isJavav1)
         {
             try
             {
@@ -289,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                     }
                                     else if (encryptedPropertyDetailsSet.Contains(kvp.Key))
                                     {
-                                        byte[] columnIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(string.Join(partitionKey, rowKey, kvp.Key))));
+                                        byte[] columnIV = sha256.ComputeHash(CommonUtility.BinaryAppend(encryptionData.ContentEncryptionIV, Encoding.UTF8.GetBytes(isJavav1 ? string.Concat(partitionKey, rowKey, kvp.Key) : string.Concat(rowKey, partitionKey, kvp.Key))));
                                         Array.Resize<byte>(ref columnIV, 16);
                                         myAes.IV = columnIV;
 

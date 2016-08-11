@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
     /// Represents a canonicalizer that converts HTTP request data into a standard form appropriate for signing via 
     /// the Shared Key Lite authentication scheme for the Blob or Queue service.
     /// </summary>
-    /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Windows Azure Storage Services</seealso>
+    /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Microsoft Azure Storage Services</seealso>
     public sealed class SharedKeyLiteCanonicalizer : ICanonicalizer
     {
         private const string SharedKeyLiteAuthorizationScheme = "SharedKeyLite";
@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// Gets a static instance of the <see cref="SharedKeyLiteCanonicalizer"/> object.
         /// </summary>
         /// <value>The static instance of the class.</value>
-        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Windows Azure Storage Services</seealso>
+        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Microsoft Azure Storage Services</seealso>
         public static SharedKeyLiteCanonicalizer Instance
         {
             get
@@ -53,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// Gets the authorization scheme used for canonicalization.
         /// </summary>
         /// <value>The authorization scheme used for canonicalization.</value>
-        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Windows Azure Storage Services</seealso>
+        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Microsoft Azure Storage Services</seealso>
         public string AuthorizationScheme
         {
             get
@@ -68,7 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
         /// <param name="request">The HTTP request that needs to be signed.</param>
         /// <param name="accountName">The name of the storage account that the HTTP request will access.</param>
         /// <returns>The canonicalized string containing the HTTP request data in a standard form appropriate for signing.</returns>
-        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Windows Azure Storage Services</seealso>
+        /// <seealso href="http://msdn.microsoft.com/en-us/library/windowsazure/dd179428.aspx">Authentication for the Microsoft Azure Storage Services</seealso>
         public string CanonicalizeHttpRequest(HttpWebRequest request, string accountName)
         {
             CommonUtility.AssertNotNull("request", request);

@@ -78,6 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             EncryptionData encryptionData = new EncryptionData();
             encryptionData.EncryptionAgent = new EncryptionAgent(Constants.EncryptionConstants.EncryptionProtocolV1, EncryptionAlgorithm.AES_CBC_256);
             encryptionData.KeyWrappingMetadata = new Dictionary<string, string>();
+            encryptionData.KeyWrappingMetadata[Constants.EncryptionConstants.AgentMetadataKey] = Constants.EncryptionConstants.AgentMetadataValue;
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
             using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())

@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Text;
 
     /// <summary>
-    /// Represents a message in the Windows Azure Queue service.
+    /// Represents a message in the Microsoft Azure Queue service.
     /// </summary>
     public sealed partial class CloudQueueMessage
     {
@@ -248,7 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             string outgoingMessageString = null;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             if (options != null)
             {
                 options.AssertPolicyIfRequired();

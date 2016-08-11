@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Globalization;
     using System.IO;
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
     using System.Net.Http;
 #else
     using System.Net;
@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     // This class encapsulates a StorageCommand and stores state about its execution.
     // Note conceptually there is some overlap between ExecutionState and operationContext, however the 
     // operationContext is the user visible object and the ExecutionState is an internal object used to coordinate execution.
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
     internal class ExecutionState<T> : IDisposable
 #else
     // If we are exposing APM then derive this class from the StorageCommandAsyncResult
@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             this.OperationContext = operationContext ?? new OperationContext();
             this.InitializeLocation();
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             if (this.OperationContext.StartTime == DateTimeOffset.MinValue)
             {
                 this.OperationContext.StartTime = DateTimeOffset.Now;
@@ -82,13 +82,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             this.Req = null;
             this.resp = null;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             this.ReqTimedOut = false;
             this.CancelDelegate = null;
 #endif
         }
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         public void Dispose()
         {
             this.CheckDisposeSendStream();
@@ -175,7 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             set
             {
                 this.reqStream =
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
                     value;
 #else
                     value == null ? null : value.WrapWithByteCountingStream(this.Cmd.CurrentResult);
@@ -259,7 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             }
         }
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         internal StorageRequestMessage Req { get; set; }
 
         private HttpResponseMessage resp = null;

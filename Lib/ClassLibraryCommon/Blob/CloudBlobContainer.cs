@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a container in the Windows Azure Blob service.
+    /// Represents a container in the Microsoft Azure Blob service.
     /// </summary>
     public partial class CloudBlobContainer
     {

@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
 
     /// <summary>
-    /// Provides a client-side logical representation of the Windows Azure Table service. This client is used to configure and execute requests against the Table service.
+    /// Provides a client-side logical representation of the Microsoft Azure Table service. This client is used to configure and execute requests against the Table service.
     /// </summary>
     /// <remarks>The CloudTableClient object encapsulates the base URI for the Table service. If the service client will be used for authenticated access, 
     /// it also encapsulates the credentials for accessing the storage account.</remarks>    

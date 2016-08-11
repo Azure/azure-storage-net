@@ -128,7 +128,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 #endif
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         /// <summary>
         /// Asynchronously reads a sequence of bytes from the current stream and advances the position within the stream by the number of bytes read.
         /// </summary>
@@ -173,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             this.wrappedStream.Write(buffer, offset, count);
         }
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         /// <summary>
         /// Asynchronously writes a sequence of bytes to the current stream and advances the current position within this stream by the number of bytes written.
         /// </summary>
