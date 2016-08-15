@@ -78,6 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             EncryptionData encryptionData = new EncryptionData();
             encryptionData.EncryptionAgent = new EncryptionAgent(Constants.EncryptionConstants.EncryptionProtocolV1, EncryptionAlgorithm.AES_CBC_256);
             encryptionData.KeyWrappingMetadata = new Dictionary<string, string>();
+            encryptionData.KeyWrappingMetadata[Constants.EncryptionConstants.AgentMetadataKey] = Constants.EncryptionConstants.AgentMetadataValue;
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
             using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
@@ -88,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 encryptionData.ContentEncryptionIV = myAes.IV;
 
                 // Wrap always happens locally, irrespective of local or cloud key. So it is ok to call it synchronously.
-                Tuple<byte[], string> wrappedKey = this.Key.WrapKeyAsync(myAes.Key, null /* algorithm */, CancellationToken.None).Result;
+                Tuple<byte[], string> wrappedKey = CommonUtility.RunWithoutSynchronizationContext(() => this.Key.WrapKeyAsync(myAes.Key, null /* algorithm */, CancellationToken.None).Result);
                 encryptionData.WrappedContentKey = new WrappedKey(this.Key.Kid, wrappedKey.Item1, wrappedKey.Item2);
 
                 using (ICryptoTransform encryptor = myAes.CreateEncryptor())
@@ -149,16 +150,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     // locally. No service call is made.
                     if (this.KeyResolver != null)
                     {
-                        IKey keyEncryptionKey = this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).Result;
+                        IKey keyEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).Result);
 
                         CommonUtility.AssertNotNull("keyEncryptionKey", keyEncryptionKey);
-                        contentEncryptionKey = keyEncryptionKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
+                        contentEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => keyEncryptionKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result);
                     }
                     else
                     {
                         if (this.Key.Kid == encryptionData.WrappedContentKey.KeyId)
                         {
-                            contentEncryptionKey = this.Key.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
+                            contentEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => this.Key.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result);
                         }
                         else
                         {

@@ -32,12 +32,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
     [TestClass]
     public class TableEntityEncryptionTests : TableTestBase
     {
-#region Locals + Ctors
+        #region Locals + Ctors
         CloudTable currentTable = null;
         CloudTableClient tableClient = null;
-#endregion
+        #endregion
 
-#region Additional test attributes
+        #region Additional test attributes
         [TestInitialize()]
         public void MyTestInitialize()
         {
@@ -63,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(0, TestBase.TableBufferManager.OutstandingBufferCount);
             }
         }
-#endregion
+        #endregion
 
         [TestMethod]
         [Description("TableOperation Insert DynamicTableEntity Encryption")]
@@ -222,7 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             tableClient.DefaultRequestOptions.PayloadFormat = format;
 
             // Insert Entity
-            EncryptedBaseEntity ent = new EncryptedBaseEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() + format};
+            EncryptedBaseEntity ent = new EncryptedBaseEntity() { PartitionKey = Guid.NewGuid().ToString(), RowKey = DateTime.Now.Ticks.ToString() + format };
             ent.Populate();
 
             // Create the Key to be used for wrapping.
@@ -278,8 +278,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DictionaryKeyResolver resolver = new DictionaryKeyResolver();
             resolver.Add(aesKey);
 
-            TableRequestOptions insertOptions = new TableRequestOptions() 
-            { 
+            TableRequestOptions insertOptions = new TableRequestOptions()
+            {
                 EncryptionPolicy = new TableEncryptionPolicy(aesKey, null),
 
                 EncryptionResolver = (pk, rk, propName) =>
@@ -301,7 +301,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableOperation operation = TableOperation.Retrieve<EncryptedBaseEntity>(ent.PartitionKey, ent.RowKey);
             Assert.IsFalse(operation.IsTableEntity);
             TableResult result = currentTable.Execute(operation, null, null);
-            
+
             EncryptedBaseEntity retrievedEntity = result.Result as EncryptedBaseEntity;
             Assert.IsNotNull(retrievedEntity);
             Assert.AreEqual(ent.PartitionKey, retrievedEntity.PartitionKey);
@@ -771,7 +771,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // insert entity
             currentTable.Execute(TableOperation.Insert(sendEnt), options);
-            
+
             // Create the resolver to be used for unwrapping.
             DictionaryKeyResolver resolver = new DictionaryKeyResolver();
             resolver.Add(aesKey);
@@ -930,7 +930,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 "Encrypting null properties should fail");
             Assert.IsInstanceOfType(e.InnerException, typeof(InvalidOperationException));
         }
-#endregion
+        #endregion
 
         [TestMethod]
         [Description("TableOperation Insert/Get with RequireEncryption flag.")]
@@ -1133,7 +1133,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableOperationsIgnoreEncryption()
         {
             SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
-            TableRequestOptions options = new TableRequestOptions() { EncryptionPolicy = new TableEncryptionPolicy(aesKey, null), RequireEncryption = true};
+            TableRequestOptions options = new TableRequestOptions() { EncryptionPolicy = new TableEncryptionPolicy(aesKey, null), RequireEncryption = true };
 
             CloudTable testTable = this.tableClient.GetTableReference(GenerateRandomTableName());
 
@@ -1153,7 +1153,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // Check Get and Set Permissions
                 TablePermissions permissions = testTable.GetPermissions();
                 string policyName = "samplePolicy";
-                permissions.SharedAccessPolicies.Add(policyName, new SharedAccessTablePolicy() {Permissions = SharedAccessTablePermissions.Query, SharedAccessExpiryTime = DateTime.Now + TimeSpan.FromDays(1)});
+                permissions.SharedAccessPolicies.Add(policyName, new SharedAccessTablePolicy() { Permissions = SharedAccessTablePermissions.Query, SharedAccessExpiryTime = DateTime.Now + TimeSpan.FromDays(1) });
                 testTable.SetPermissions(permissions, options, null);
                 Assert.AreEqual(policyName, testTable.GetPermissions().SharedAccessPolicies.First().Key);
                 Assert.AreEqual(policyName, testTable.GetPermissions(options, null).SharedAccessPolicies.First().Key);
@@ -1247,6 +1247,65 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ent.PartitionKey = pk;
             ent.RowKey = Guid.NewGuid().ToString();
             return ent;
+        }
+
+        [TestMethod]
+        [Description("Test decrypting entities encoded with Java's v1 encryption algorithm")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionCrossPlatformTesting()
+        {
+            CloudTable testTable = this.tableClient.GetTableReference(GenerateRandomTableName());
+            try
+            {
+                testTable.CreateIfNotExists();
+
+                // Hard code some sample data, then see if we can decrypt it.
+                // This key is used only for test, do not use to encrypt any sensitive data.
+                SymmetricKey sampleKEK = new SymmetricKey("key1", Convert.FromBase64String(@"rFz7+tv4hRiWdWUJMFlxl1xxtU/qFUeTriGaxwEcxjU="));
+
+                // This data here was created using Fiddler to capture the .NET library uploading an encrypted entity, encrypted with the specified KEK and CEK.
+                // Note that this data is lacking the library information in the KeyWrappingMetadata.
+                DynamicTableEntity dteNetOld = new DynamicTableEntity("pk", "netUp");
+                dteNetOld.Properties["sampleProp"] = new EntityProperty(Convert.FromBase64String(@"27cLSlSFqy9C0xUCr57XAA=="));
+                dteNetOld.Properties["sampleProp2"] = new EntityProperty(Convert.FromBase64String(@"pZR6Ln/DwbwyyOCEezL/hg=="));
+                dteNetOld.Properties["sampleProp3"] = new EntityProperty(Convert.FromBase64String(@"JOix4N8eX/WuCtIvlD2QxQ=="));
+                dteNetOld.Properties["_ClientEncryptionMetadata1"] = new EntityProperty("{\"WrappedContentKey\":{\"KeyId\":\"key1\",\"EncryptedKey\":\"pwSKxpJkwCS2zCaykh0m8e4OApeLuQ4FiahZ9zdwxaLL1HsWqQ4DSw==\",\"Algorithm\":\"A256KW\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"obTAQcYeFQ3IU7Jfcema7Q==\",\"KeyWrappingMetadata\":{}}");
+                dteNetOld.Properties["_ClientEncryptionMetadata2"] = new EntityProperty(Convert.FromBase64String(@"MWA7LlvXSJnKhf8f7MVhfjWECkxrCyCXGIlYY6ucpr34IVDU7fN6IHvKxV15WiXp"));
+
+                testTable.Execute(TableOperation.Insert(dteNetOld));
+
+                // This data here was created using Fiddler to capture the Java library uploading an encrypted entity, encrypted with the specified KEK and CEK.
+                // Note that this data is lacking the KeyWrappingMetadata.  It also constructs an IV with PK + RK + column name.
+                DynamicTableEntity dteJavaOld = new DynamicTableEntity("pk", "javaUp");
+                dteJavaOld.Properties["sampleProp"] = new EntityProperty(Convert.FromBase64String(@"sa3bCvXq79ImSPveChS+cg=="));
+                dteJavaOld.Properties["sampleProp2"] = new EntityProperty(Convert.FromBase64String(@"KXjuBNn9DesCmMcdVpamJw=="));
+                dteJavaOld.Properties["sampleProp3"] = new EntityProperty(Convert.FromBase64String(@"wykVEni1rV+H6oNjoNml6A=="));
+                dteJavaOld.Properties["_ClientEncryptionMetadata1"] = new EntityProperty("{\"WrappedContentKey\":{\"KeyId\":\"key1\",\"EncryptedKey\":\"2F4rIuDmGPgEmhpvTtE7x6281BetKz80EsgRwGxTjL8rRt7Z7GrOgg==\",\"Algorithm\":\"A256KW\"},\"EncryptionAgent\":{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":\"AES_CBC_256\"},\"ContentEncryptionIV\":\"8st/uXffG+6DxBhw4D1URw==\"}");
+                dteJavaOld.Properties["_ClientEncryptionMetadata2"] = new EntityProperty(Convert.FromBase64String(@"WznUoytxkvl9KhZ4mNlqkBvRTUHN/D5IgJmNl7kQBOtFBOSgZZrTfZXKH8GjmvKA"));
+
+                testTable.Execute(TableOperation.Insert(dteJavaOld));
+
+                TableEncryptionPolicy policy = new TableEncryptionPolicy(sampleKEK, null);
+                TableRequestOptions options = new TableRequestOptions() { EncryptionPolicy = policy };
+                options.EncryptionResolver = (pk, rk, propName) => true;
+
+                foreach (DynamicTableEntity dte in testTable.ExecuteQuery(new TableQuery(), options))
+                {
+                    Assert.AreEqual(dte.Properties["sampleProp"].StringValue, "sampleValue", "String not properly decoded.");
+                    Assert.AreEqual(dte.Properties["sampleProp2"].StringValue, "sampleValue", "String not properly decoded.");
+                    Assert.AreEqual(dte.Properties["sampleProp3"].StringValue, "sampleValue", "String not properly decoded.");
+                    Assert.AreEqual(dte.Properties.Count, 3, "Incorrect number of properties returned.");
+                }
+            }
+            finally
+            {
+                testTable.DeleteIfExists();
+            }
         }
     }
 }

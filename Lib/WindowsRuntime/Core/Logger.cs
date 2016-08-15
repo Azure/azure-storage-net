@@ -19,51 +19,41 @@ namespace Microsoft.WindowsAzure.Storage.Core
 {
     internal static partial class Logger
     {
-#if !PORTABLE
         private static StorageEventSource eventSource = new StorageEventSource();
-#endif
         internal static void LogError(OperationContext operationContext, string format, params object[] args)
         {
-#if !PORTABLE
             if (Logger.eventSource.IsEnabled() &&
                 Logger.ShouldLog(LogLevel.Error, operationContext))
             {
                 Logger.eventSource.Error(Logger.FormatLine(operationContext, format, args));
             }
-#endif
         }
 
         internal static void LogWarning(OperationContext operationContext, string format, params object[] args)
         {
-#if !PORTABLE
             if (Logger.eventSource.IsEnabled() &&
                 Logger.ShouldLog(LogLevel.Warning, operationContext))
             {
                 Logger.eventSource.Warning(Logger.FormatLine(operationContext, format, args));
             }
-#endif
         }
 
         internal static void LogInformational(OperationContext operationContext, string format, params object[] args)
         {
-#if !PORTABLE
             if (Logger.eventSource.IsEnabled() &&
                 Logger.ShouldLog(LogLevel.Informational, operationContext))
             {
                 Logger.eventSource.Informational(Logger.FormatLine(operationContext, format, args));
             }
-#endif
         }
 
         internal static void LogVerbose(OperationContext operationContext, string format, params object[] args)
         {
-#if !PORTABLE
             if (Logger.eventSource.IsEnabled() &&
                 Logger.ShouldLog(LogLevel.Verbose, operationContext))
             {
                 Logger.eventSource.Verbose(Logger.FormatLine(operationContext, format, args));
             }
-#endif
         }
     }
 }

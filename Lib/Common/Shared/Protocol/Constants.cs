@@ -323,6 +323,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string LastModifiedElement = "Last-Modified";
 
         /// <summary>
+        /// XML element for the server encryption status.
+        /// </summary>
+        public const string ServerEncryptionElement = "ServerEncrypted";
+
+        /// <summary>
         /// XML element for the Url.
         /// </summary>
         public const string UrlElement = "Url";
@@ -742,10 +747,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 UserAgentComment = "(Windows Runtime Phone)";
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
-#elif ASPNET_K
-                UserAgentComment = "(.NET Core 5.0)";
-#elif PORTABLE
-                UserAgentComment = "(Portable Class Library)";
+#elif NETCORE
+                UserAgentComment = "(.NET Core)";
 #else
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
@@ -771,14 +774,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-#if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "7.0.1-preview";
-#else
-            public const string UserAgentProductVersion = "7.0.1";
-#endif 
+            public const string UserAgentProductVersion = "7.2.0";
 
             /// <summary>
-            /// Master Windows Azure Storage header prefix.
+            /// Master Microsoft Azure Storage header prefix.
             /// </summary>
             public const string PrefixForStorageHeader = "x-ms-";
 
@@ -821,6 +820,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies the ETag value for the resource.
             /// </summary>
             public const string EtagHeader = "ETag";
+
+            /// <summary>
+            /// Header that specifies if a resourse is fully encrypted server-side.
+            /// </summary>
+            public const string ServerEncrypted = PrefixForStorageHeader + "server-encrypted";
+
+            /// <summary>
+            /// Header that acknowledges the data used for write operation is encrypted server-side.
+            /// </summary>
+            public const string ServerRequestEncrypted = PrefixForStorageHeader + "request-server-encrypted";
 
             /// <summary>
             /// Header for data ranges.
@@ -1056,7 +1065,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2015-07-08";
+            public const string TargetStorageVersion = "2015-12-11";
 
             /// <summary>
             /// Specifies the file type.
@@ -1584,6 +1593,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Additional property name to store the encryption metadata.
             /// </summary>
             public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
+
+            /// <summary>
+            /// Key for the encryption agent
+            /// </summary>
+            public const string AgentMetadataKey = "EncryptionLibrary";
+
+            /// <summary>
+            /// Value for the encryption agent
+            /// </summary>
+            public const string AgentMetadataValue = ".NET " + Constants.HeaderConstants.UserAgentProductVersion;
         }
     }
 }

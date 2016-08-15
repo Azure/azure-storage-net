@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Net.Http;
     using System.Threading.Tasks;
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -127,11 +127,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.DownloadRangeToStreamAsync(target, null /* offset */, null /* length */, accessCondition, options, operationContext, cancellationToken);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
-#if ASPNET_K 
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
@@ -153,7 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
@@ -174,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToFileAsync(StorageFile target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return DownloadToFileAsync(target, accessCondition, options, operationContext);
+            return DownloadToFileAsync(target, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -200,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K
+#if NETCORE
         /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
@@ -247,7 +246,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             }, cancellationToken);
         }
-#endif
 #endif
 
         /// <summary>
@@ -1268,6 +1266,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1635,6 +1634,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("source", source);
             return source.ServiceClient.Credentials.TransformUri(source.SnapshotQualifiedUri);
+        }
+
+        /// <summary>
+        /// Parses the server request encrypted response header.
+        /// </summary>
+        /// <param name="response">Response to be parsed.</param>
+        /// <returns><c>true</c> if write content was encrypted by service or <c>false</c> if not.</returns>
+        internal static bool ParseServerRequestEncrypted(HttpResponseMessage response)
+        {
+            string requestEncrypted = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerRequestEncrypted);
+            return string.Equals(requestEncrypted, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

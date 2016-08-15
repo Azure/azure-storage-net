@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a Windows Azure page blob.
+    /// Represents a Microsoft Azure page blob.
     /// </summary>
     public partial class CloudPageBlob : CloudBlob, ICloudBlob
     {
@@ -59,7 +59,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
             bool createNew = size.HasValue;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
             ICryptoTransform transform = null;
 
             modifiedOptions.AssertPolicyIfRequired();
@@ -81,7 +81,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw new ArgumentException(SR.MD5NotPossible);
                 }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (modifiedOptions.EncryptionPolicy != null)
                 {
                     throw new ArgumentException(SR.EncryptionNotSupportedForExistingBlobs);
@@ -96,7 +96,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
             }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
             if (modifiedOptions.EncryptionPolicy != null)
             {
                 return new BlobEncryptedWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext, transform);
@@ -160,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             if (createNew)
             {
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 ICryptoTransform transform = null;
                 if (options != null && options.EncryptionPolicy != null)
                 {
@@ -189,7 +189,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
                             }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                             if (modifiedOptions.EncryptionPolicy != null)
                             {
                                 storageAsyncResult.Result = new BlobEncryptedWriteStream(this, this.Properties.Length, createNew, accessCondition, modifiedOptions, operationContext, transform);
@@ -216,7 +216,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw new ArgumentException(SR.MD5NotPossible);
                 }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (modifiedOptions.EncryptionPolicy != null)
                 {
                     throw new ArgumentException(SR.EncryptionNotSupportedForExistingBlobs);
@@ -2325,6 +2325,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = sizeInBytes;
                 return NullType.Value;
             };
@@ -2489,6 +2490,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 

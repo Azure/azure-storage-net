@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -34,9 +34,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents a query against a specified table.
-    /// </summary>
     public sealed partial class TableQuery
     {
         #region Impl
@@ -50,10 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CommonUtility.LazyEnumerable<DynamicTableEntity>(
                 (continuationToken) =>
                 {
-                    Task<TableQuerySegment> task = Task.Run(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext));
-                    task.Wait();
-
-                    TableQuerySegment seg = task.Result;
+                    TableQuerySegment seg = CommonUtility.RunWithoutSynchronizationContext(() => this.ExecuteQuerySegmentedAsync((TableContinuationToken)continuationToken, client, tableName, modifiedOptions, operationContext).Result);
 
                     return new ResultSegment<DynamicTableEntity>((List<DynamicTableEntity>)seg.Results) { ContinuationToken = seg.ContinuationToken };
                 },

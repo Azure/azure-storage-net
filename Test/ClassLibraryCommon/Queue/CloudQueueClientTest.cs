@@ -362,6 +362,27 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         [TestMethod]
+        [Description("Verify ReadXml Deserialization on QueueContinuationToken with empty TargetLocation")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void QueueContinuationTokenVerifyEmptyTargetDeserializer()
+        {
+            QueueContinuationToken queueContinuationToken = new QueueContinuationToken { TargetLocation = null };
+            StringBuilder stringBuilder = new StringBuilder();
+            using (XmlWriter writer = XmlWriter.Create(stringBuilder))
+            {
+                queueContinuationToken.WriteXml(writer);
+            }
+
+            string stringToken = stringBuilder.ToString();
+            QueueContinuationToken parsedToken = new QueueContinuationToken();
+            parsedToken.ReadXml(XmlReader.Create(new System.IO.StringReader(stringToken)));
+            Assert.AreEqual(parsedToken.TargetLocation, null);
+        }
+
+        [TestMethod]
         [Description("Verify GetSchema, WriteXml and ReadXml on QueueContinuationToken")]
         [TestCategory(ComponentCategory.Queue)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -794,6 +815,64 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         [TestMethod]
+        [Description("A test to validate basic queue continuation with null target location")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientListQueuesWithContinuationTokenNullTarget()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
+            List<string> queueNames = new List<string>();
+            int segmentCount = 8;
+            for (int i = 0; i < segmentCount; i++)
+            {
+                queueNames.Add(prefix + i);
+            }
+
+            QueueContinuationToken continuationToken = null;
+            List<CloudQueue> results = new List<CloudQueue>();
+            int tokenCount = 0;
+            foreach (string name in queueNames)
+            {
+                client.GetQueueReference(name).CreateAsync().Wait();
+            }
+
+            do
+            {
+                QueueResultSegment segment = client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.None, 1, continuationToken, null, null).Result;
+                tokenCount++;
+                continuationToken = segment.ContinuationToken;
+                if (tokenCount < segmentCount)
+                {
+                    Assert.IsNotNull(segment.ContinuationToken);
+                    continuationToken.TargetLocation = null;
+                }
+
+                results.AddRange(segment.Results);
+            }
+            while (continuationToken != null);
+
+            Assert.AreEqual<int>(results.Count, queueNames.Count);
+            Assert.AreEqual<int>(results.Count, tokenCount);
+
+            foreach (CloudQueue queue in results)
+            {
+                if (queueNames.Remove(queue.Name))
+                {
+                    queue.DeleteAsync().Wait();
+                }
+                else
+                {
+                    Assert.Fail();
+                }
+            }
+
+            Assert.AreEqual<int>(0, queueNames.Count);
+        }
+
+        [TestMethod]
         [Description("List queues")]
         [TestCategory(ComponentCategory.Queue)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -915,6 +994,75 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 #endif
 
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - SYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientGetServiceStatsInvalidLoc()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                client.GetServiceStats();
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - APM")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientGetServiceStatsInvalidLocAPM()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = client.BeginGetServiceStats(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                }
+
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
+        [Description("Testing GetServiceStats with invalid Location Mode - ASYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientGetServiceStatsInvalidLocAsync()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            client.DefaultRequestOptions.LocationMode = LocationMode.PrimaryOnly;
+            try
+            {
+                client.GetServiceStatsAsync();
+                Assert.Fail("GetServiceStats should fail and throw an InvalidOperationException.");
+            }
+            catch (Exception e)
+            {
+                Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
+            }
+        }
 
         [TestMethod]
         [Description("Server timeout query parameter")]

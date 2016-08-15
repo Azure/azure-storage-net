@@ -18,7 +18,7 @@
 namespace Microsoft.WindowsAzure.Test.Network
 {
     /// <summary>
-    /// Hholds well-known information about Windows Azure Storage.
+    /// Holds well-known information about Windows Azure Storage.
     /// </summary>
     public static class StorageConstants
     {

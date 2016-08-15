@@ -1,26 +1,33 @@
 ﻿{
-    "version" : "1.0.0.0",
+    "version": "1.0.0.0",
+
+
     "dependencies": {
-        "xunit": "2.1.0-*",
-        "xunit.runner.dnx": "2.1.0-*"
+        "xunit": "2.1.0",
+        "dotnet-test-xunit": "2.2.0-preview2-build1029"
     },
 
-    "commands": {
-        "test": "xunit.runner.dnx"
-    },
 
     "frameworks": {
-        "dnxcore50": {
+        "netcoreapp1.0": {
             "dependencies": {
-              "System.Runtime": "4.0.20-beta-*"
-            }
+                "Microsoft.NETCore.App": {
+                    "type": "platform",
+                    "version": "1.0.0"
+                }
+            },
+            "imports": [
+                "dnxcore50",
+                "portable-net45+win8"
+            ]
         }
+
     },
 
-	"compilationOptions": {
-		"define": [ "XUNIT" ],
-		"delaySign": true,
-        "keyFile":  "MSSharedLibKey.snk"
-	}
+    "buildOptions": {
+        "define": [ "XUNIT" ],
+        "delaySign": true,
+        "keyFile": "MSSharedLibKey.snk"
+    }
 
 }

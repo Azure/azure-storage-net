@@ -411,6 +411,43 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("A test to validate basic table continuation with null target location")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableGenericQueryWithContinuationTokenNullTarget()
+        {
+            TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
+            OperationContext opContext = new OperationContext();
+            TableQuerySegment<BaseEntity> seg = currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext).Result;
+            
+            int count = 0;
+            foreach (BaseEntity ent in seg)
+            {
+                Assert.IsTrue(ent.PartitionKey.StartsWith("tables_batch"));
+                ent.Validate();
+                count++;
+            }
+
+            // Second segment to validate integrity of continuation query execution and results with a null target location
+            Assert.IsNotNull(seg.ContinuationToken);
+            seg.ContinuationToken.TargetLocation = null;
+            seg = currentTable.ExecuteQuerySegmentedAsync(query, seg.ContinuationToken, null, opContext).Result;
+
+            foreach (BaseEntity ent in seg)
+            {
+                Assert.IsTrue(ent.PartitionKey.StartsWith("tables_batch"));
+                ent.Validate();
+                count++;
+            }
+
+            Assert.AreEqual(1500, count);
+            TestHelper.AssertNAttempts(opContext, 2);
+        }
+
+
+        [TestMethod]
         [Description("Test Table ExecuteQuerySegmented - Task")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]

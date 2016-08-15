@@ -10,12 +10,12 @@ The Azure Storage development team uses Visual Studio so instructions will be ta
 
 ### Open Solution
 For non-CoreCLR solutions, you can open the project from VS using File->Open->Project/Solution and navigating to the Microsoft.WindowsAzure.Storage.sln solution file in the repo base folder.
-For the CoreCLR solution, you can open the project using the AspNet_k.sln solution in the repo base folder.
+For the CoreCLR solution, you can open the project using the NETCORE.sln solution in the repo base folder.
 
 ## Tests
 
 ### Configuration
-Add a TestConfiguration.xml to the Test/Common/ folder. You should insert your storage account information into the file using [this](Test/Common/TestConfigurationsTemplate.xml) as a template.
+Add a TestConfigurations.xml to the Test/Common/ folder. You should insert your storage account information into the file using [this](Test/Common/TestConfigurationsTemplate.xml) as a template.
 You will also need to download [Fiddler 2 & 4](https://www.telerik.com/download/fiddler) to get the files needed to run tests. Fiddler dll & xml files for .Net2 & .Net4 should be placed in their respective folders (Test/FaultInjection/Dependencies/DotNet2, Test/FaultInjection/Dependencies/DotNet4).
 
 ### Running

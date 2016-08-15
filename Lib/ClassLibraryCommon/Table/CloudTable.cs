@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a Windows Azure table.
+    /// Represents a Microsoft Azure table.
     /// </summary>
     public partial class CloudTable
     {

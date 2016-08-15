@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Net;
     using System.Net.Http;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 
 #else
     using Windows.Foundation;
@@ -37,10 +37,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Provides a client-side logical representation of the Windows Azure Table Service. This client is used to configure and execute requests against the Table Service.
-    /// </summary>
-    /// <remarks>The service client encapsulates the base URI for the Table service. If the service client will be used for authenticated access, it also encapsulates the credentials for accessing the storage account.</remarks>    
     public partial class CloudTableClient
     {
         /// <summary>
@@ -371,6 +367,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(TableRequestOptions requestOptions)
         {
+            if (RetryPolicies.LocationMode.PrimaryOnly == requestOptions.LocationMode)
+            {
+                throw new InvalidOperationException(SR.GetServiceStatsInvalidOperation);
+            }  
+
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;

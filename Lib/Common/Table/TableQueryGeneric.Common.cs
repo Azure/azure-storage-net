@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Text;
 
     /// <summary>
-    /// Represents a query against a Windows Azure table.
+    /// Represents a query against a Microsoft Azure table.
     /// </summary>
     public partial class TableQuery<TElement>
     {

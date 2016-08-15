@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [ClassCleanup()]
         public static void MyClassCleanup()
         {
-#if ASPNET_K
+#if NETCORE
             client.SetServicePropertiesAsync(startProperties).Wait();
 #else
             client.SetServicePropertiesAsync(startProperties).Wait();

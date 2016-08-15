@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
     using Microsoft.WindowsAzure.Storage.Analytics;
 #endif
     using Microsoft.WindowsAzure.Storage.Auth;
@@ -25,9 +25,7 @@ namespace Microsoft.WindowsAzure.Storage
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
-#if !PORTABLE
     using Microsoft.WindowsAzure.Storage.File;
-#endif
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.Table;
     using System;
@@ -39,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     /// <summary>
-    /// Represents a Windows Azure Storage account.
+    /// Represents a Microsoft Azure Storage account.
     /// </summary>
     public sealed class CloudStorageAccount
     {
@@ -52,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Gets or sets a value indicating whether the FISMA MD5 setting will be used.
         /// </summary>
         /// <value><c>false</c> to use the FISMA MD5 setting; <c>true</c> to use the .NET default implementation.</value>
-#if WINDOWS_PHONE || PORTABLE
+#if WINDOWS_PHONE  
         internal
 #else
         public
@@ -223,12 +221,10 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         private static readonly AccountSetting SharedAccessSignatureSetting = Setting(SharedAccessSignatureSettingString);
 
-#if !PORTABLE
         /// <summary>
         /// Singleton instance for the development storage account.
         /// </summary>
         private static CloudStorageAccount devStoreAccount;
-#endif 
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudStorageAccount"/> class using the specified
@@ -337,7 +333,6 @@ namespace Microsoft.WindowsAzure.Storage
             this.DefaultEndpoints = true;
         }
 
-#if !PORTABLE
         /// <summary>
         /// Gets a <see cref="CloudStorageAccount"/> object that references the well-known development storage account.
         /// </summary>
@@ -354,7 +349,6 @@ namespace Microsoft.WindowsAzure.Storage
                 return devStoreAccount;
             }
         }
-#endif 
 
         /// <summary>
         /// Indicates whether this account is a development storage account.
@@ -578,7 +572,7 @@ namespace Microsoft.WindowsAzure.Storage
             return new CloudBlobClient(this.BlobStorageUri, this.Credentials);
         }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Creates an analytics client.
         /// </summary>
@@ -604,7 +598,6 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
-#if !PORTABLE
         /// <summary>
         /// Creates the File service client.
         /// </summary>
@@ -644,7 +637,6 @@ namespace Microsoft.WindowsAzure.Storage
             UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion);
             return builder.ToString();
         }
-#endif
 
         /// <summary>
         /// Returns a connection string for this storage account, without sensitive data.
@@ -709,7 +701,6 @@ namespace Microsoft.WindowsAzure.Storage
             return string.Join(";", listOfSettings);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a <see cref="CloudStorageAccount"/> with development storage credentials using the specified proxy Uri.
         /// </summary>
@@ -762,7 +753,6 @@ namespace Microsoft.WindowsAzure.Storage
 
             return account;
         }
-#endif
 
         /// <summary>
         /// Internal implementation of Parse/TryParse.
@@ -782,8 +772,6 @@ namespace Microsoft.WindowsAzure.Storage
 
                 return false;
             }
-
-#if !PORTABLE
             // devstore case
             if (MatchesSpecification(
                 settings,
@@ -803,7 +791,6 @@ namespace Microsoft.WindowsAzure.Storage
                 accountInformation.Settings = ValidCredentials(settings);
                 return true;
             }
-#endif
 
             // automatic case
             if (MatchesSpecification(
@@ -1165,11 +1152,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             if (accountName != null && accountKey != null && sharedAccessSignature == null)
             {
-#if PORTABLE
-                throw new NotSupportedException(SR.PortableDoesNotSupportSharedKey);
-#else
                 return new StorageCredentials(accountName, accountKey, accountKeyName);
-#endif
             }
 
             if (accountName == null && accountKey == null && accountKeyName == null && sharedAccessSignature != null)

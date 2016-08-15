@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage;
 
     /// <summary>
-    /// An interface required for Windows Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.
+    /// An interface required for Microsoft Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.
     /// </summary>
     public partial interface ICloudBlob : IListBlobItem
     {
@@ -103,7 +103,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>A <see cref="BlobType"/> enumeration value.</value>
         BlobType BlobType { get; }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the blob.
         /// </summary>
@@ -151,6 +150,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
         /// <returns>A shared access signature, as a URI query string.</returns>
         string GetSharedAccessSignature(SharedAccessBlobPolicy policy, SharedAccessBlobHeaders headers, string groupPolicyIdentifier, SharedAccessProtocol? protocols, IPAddressOrRange ipAddressOrRange);
-#endif
+
     }
 }

@@ -2511,6 +2511,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Verify ReadXml Deserialization on BlobContinuationToken with empty TargetLocation")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void BlobContinuationTokenVerifyEmptyTargetDeserializer()
+        {
+            BlobContinuationToken blobContinuationToken = new BlobContinuationToken { TargetLocation = null };
+            StringBuilder stringBuilder = new StringBuilder();
+            using (XmlWriter writer = XmlWriter.Create(stringBuilder))
+            {
+                blobContinuationToken.WriteXml(writer);
+            }
+
+            string stringToken = stringBuilder.ToString();
+            BlobContinuationToken parsedToken = new BlobContinuationToken();
+            parsedToken.ReadXml(XmlReader.Create(new System.IO.StringReader(stringToken)));
+            Assert.AreEqual(parsedToken.TargetLocation, null);
+        }
+
+        [TestMethod]
         [Description("Verify GetSchema, WriteXml and ReadXml on BlobContinuationToken")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]

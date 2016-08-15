@@ -22,7 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if NETCORE
 using System.Security.Cryptography;
 #else
 

@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
     using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
+    using System.Threading;
 
     internal static class HttpClientFactory
     {
@@ -33,6 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                         newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
                         newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
                         newClient.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
+                        newClient.Timeout = Timeout.InfiniteTimeSpan;
 
                         return newClient;
                     });

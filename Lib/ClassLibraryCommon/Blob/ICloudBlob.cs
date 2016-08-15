@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
 
     /// <summary>
-    /// An interface required for Windows Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.
+    /// An interface required for Microsoft Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.
     /// </summary>
     public partial interface ICloudBlob : IListBlobItem
     {
@@ -159,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads a stream to the Windows Azure Blob Service. 
+        /// Uploads a stream to the Microsoft Azure Blob Service. 
         /// </summary>
         /// <param name="source">The stream providing the blob content. Use a seek-able stream for optimal performance.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
@@ -168,7 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         void UploadFromStream(Stream source, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null); 
 
         /// <summary>
-        /// Uploads a stream to the Windows Azure Blob Service. 
+        /// Uploads a stream to the Microsoft Azure Blob Service. 
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
@@ -308,7 +308,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Uploads a file to the Windows Azure Blob Service. 
+        /// Uploads a file to the Microsoft Azure Blob Service. 
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
