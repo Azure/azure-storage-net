@@ -159,6 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string PreconditionFailed = "The condition specified using HTTP conditional header(s) is not met.";
         public const string PreconditionFailureIgnored = "Pre-condition failure on a retry is being ignored since the request should have succeeded in the first attempt.";
         public const string PrimaryOnlyCommand = "This operation can only be executed against the primary storage location.";
+        public const string PropertyDelimiterExistsInPropertyName = "Property delimiter: {0} exists in property name: {1}. Object Path: {2}";
         public const string PropertyResolverCacheDisabled = "Property resolver cache is disabled.";
         public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details.";
         public const string ProtocolsMustBeNullInOldVersion = "SharedAccessProtocol must be null when creating a SAS token with an older service version parameter.";
@@ -167,6 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string Queue = "queue";
         public const string QueueEndPointNotConfigured = "No queue endpoint configured.";
         public const string RangeDownloadNotPermittedOnPhone = "Windows Phone does not support downloading closed ranges from an encrypted blob. Please download the full blob or an open range (by specifying length as null)";
+        public const string RecursiveReferencedObject = "Recursive reference detected. Object Path: {0} Property Type: {1}.";
         public const string RelativeAddressNotPermitted = "Address '{0}' is a relative address. Only absolute addresses are permitted.";
         public const string ResourceConsumed = "Resource consumed";
         public const string ResourceNameEmpty = "Invalid {0} name. The {0} name may not be null, empty, or whitespace only.";
@@ -208,6 +210,9 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceMissingDictionaryEntry = "Omitting property '{0}' from de-serialization because there is no corresponding entry in the dictionary provided.";
         public const string TraceNextLocation = "The next location has been set to {0}, based on the location mode.";
         public const string TraceNonPublicGetSet = "Omitting property '{0}' from serialization/de-serialization because the property's getter/setter are not public.";
+        public const string TraceNonExistingGetter = "Omitting property: {0} from serialization/de-serialization because the property does not have a getter. Object path: {1}";
+        public const string TraceNonExistingSetter = "Omitting property: {0} from serialization/de-serialization because the property does not have a setter."
+            + " The property needs to have at least a private setter. Object Path: {1}";
         public const string TracePrepareUpload = "Preparing to write request data.";
         public const string TracePrepareUploadError = "Exception thrown while preparing to write request data: {0}.";
         public const string TracePreProcessDone = "Response headers were processed successfully, proceeding with the rest of the operation.";
@@ -221,6 +226,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceRetryDecisionTimeout = "Operation cannot be retried because the maximum execution time has been reached. Failing with {0}.";
         public const string TraceRetryDelay = "Operation will be retried after {0}ms.";
         public const string TraceRetryError = "Exception thrown while retrying operation: {0}.";
+        public const string TraceSetPropertyError = "Exception thrown while trying to set property value. Property Path: {0} Property Value: {1}. Exception Message: {2}";
         public const string TraceStartRequestAsync = "Starting asynchronous request to {0}.";
         public const string TraceStartRequestSync = "Starting synchronous request to {0}.";
         public const string TraceStringToSign = "StringToSign = {0}.";
@@ -234,6 +240,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string UnexpectedLocation = "Unexpected Location '{0}'";
         public const string UnexpectedResponseCode = "Unexpected response code, Expected:{0}, Received:{1}";
         public const string UnsupportedPropertyTypeForEncryption = "Unsupported type : {0} encountered during encryption. Only string properties can be encrypted on the client side.";
+        public const string UnsupportedPropertyTypeForEntityPropertyConversion = "Unsupported type : {0} encountered during conversion to EntityProperty. Object Path: {1}";
         public const string UpdateMessageVisibilityRequired = "Calls to UpdateMessage must include the Visibility flag.";
         public const string UsingDefaultPropertyResolver = "Using the default property resolver to deserialize the entity.";
         public const string UsingUserProvidedPropertyResolver = "Using the property resolver provided via TableRequestOptions to deserialize the entity.";
