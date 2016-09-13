@@ -291,6 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return taskCompletionSource.Task;
         }
+
         internal static Task TaskFromVoidApm<T1, T2, T3, T4, T5, T6, T7, T8>(Func<T1, T2, T3, T4, T5, T6, T7, T8, AsyncCallback, object, ICancellableAsyncResult> beginMethod, Action<IAsyncResult> endMethod, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, CancellationToken cancellationToken)
         {
             TaskCompletionSource<object> taskCompletionSource = new TaskCompletionSource<object>();
@@ -320,9 +321,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 CancellableOperationBase cancellableOperation;
                 CancellationTokenRegistration? registration = RegisterCancellationToken(cancellationToken, out cancellableOperation);
-
                 ICancellableAsyncResult result = beginMethod(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, CreateCallbackVoid(taskCompletionSource, registration, endMethod), null /* state */);
-
                 AssignCancellableOperation(cancellableOperation, result, cancellationToken);
             }
 
@@ -472,6 +471,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return taskCompletionSource.Task;
         }
+
         internal static Task<TResult> TaskFromApm<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, AsyncCallback, object, ICancellableAsyncResult> beginMethod, Func<IAsyncResult, TResult> endMethod, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, CancellationToken cancellationToken)
         {
             TaskCompletionSource<TResult> taskCompletionSource = new TaskCompletionSource<TResult>();
@@ -489,6 +489,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return taskCompletionSource.Task;
         }
+
         internal static Task<TResult> TaskFromApm<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, AsyncCallback, object, ICancellableAsyncResult> beginMethod, Func<IAsyncResult, TResult> endMethod, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, CancellationToken cancellationToken)
         {
             TaskCompletionSource<TResult> taskCompletionSource = new TaskCompletionSource<TResult>();
@@ -505,6 +506,53 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
 
             return taskCompletionSource.Task;
+        }
+
+        // Copied from https://msdn.microsoft.com/en-us/library/hh873178.aspx
+        internal static IAsyncResult AsApm<T>(this Task<T> task,
+                                    AsyncCallback callback,
+                                    object state)
+        {
+            if (task == null)
+                throw new ArgumentNullException("task");
+
+            var tcs = new TaskCompletionSource<T>(state);
+            task.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    tcs.TrySetException(t.Exception.InnerExceptions);
+                else if (t.IsCanceled)
+                    tcs.TrySetCanceled();
+                else
+                    tcs.TrySetResult(t.Result);
+
+                if (callback != null)
+                    callback(tcs.Task);
+            }, TaskScheduler.Default);
+            return tcs.Task;
+        }
+
+        internal static IAsyncResult AsApm(this Task task,
+                            AsyncCallback callback,
+                            object state)
+        {
+            if (task == null)
+                throw new ArgumentNullException("task");
+
+            var tcs = new TaskCompletionSource<object>(state);
+            task.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    tcs.TrySetException(t.Exception.InnerExceptions);
+                else if (t.IsCanceled)
+                    tcs.TrySetCanceled();
+                else
+                    tcs.TrySetResult(null);
+
+                if (callback != null)
+                    callback(tcs.Task);
+            }, TaskScheduler.Default);
+            return tcs.Task;
         }
     }
 #endif
