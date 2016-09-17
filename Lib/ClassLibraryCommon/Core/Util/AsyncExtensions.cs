@@ -320,11 +320,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 CancellableOperationBase cancellableOperation;
                 CancellationTokenRegistration? registration = RegisterCancellationToken(cancellationToken, out cancellableOperation);
-<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
-                ICancellableAsyncResult result = beginMethod(arg1, arg2, arg3, arg4, arg5, arg6, arg7,arg8, arg9, CreateCallbackVoid(taskCompletionSource, registration, endMethod), null /* state */);
-=======
+
                 ICancellableAsyncResult result = beginMethod(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, CreateCallbackVoid(taskCompletionSource, registration, endMethod), null /* state */);
->>>>>>> Implement share snapshot
+
                 AssignCancellableOperation(cancellableOperation, result, cancellationToken);
             }
 

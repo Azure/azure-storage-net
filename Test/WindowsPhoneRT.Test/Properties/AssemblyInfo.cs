@@ -24,16 +24,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-<<<<<<< eed8570c40bf613981a74a0b2947a0f8bcff7d6c
-<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
-[assembly: AssemblyVersion("7.1.4.0")]
-[assembly: AssemblyFileVersion("7.1.4.0")]
-=======
-[assembly: AssemblyVersion("7.1.50.0")]
-[assembly: AssemblyFileVersion("7.1.50.0")]
->>>>>>> Implement share snapshot
-=======
-[assembly: AssemblyVersion("7.2.50.0")]
-[assembly: AssemblyFileVersion("7.2.50.0")]
->>>>>>> Update assemblies for test
+[assembly: AssemblyVersion("8.0.0.0")]
+[assembly: AssemblyFileVersion("8.0.0.0")]
+
 [assembly: ComVisible(false)]

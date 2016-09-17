@@ -29,12 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
-<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
-#if NETCORE
-#else
-=======
-#if !ASPNET_K
->>>>>>> Implement share snapshot
+#if !NETCORE
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif

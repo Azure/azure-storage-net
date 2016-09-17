@@ -1,6 +1,9 @@
-<<<<<<< f2625b2d1fa2a04cc4d9ee372cf3b368a845be14
-<<<<<<< 734aa473512cab1e24a5689b06d661a45a14ad30
-Changes in 7.1.4 :
+Changes in 8.0.0 :
+- All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features.
+- Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter, and returns this object as well. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
+- PageBlobs: Added support for incremental copy.
+
+Changes in 7.2.0 :
 
 - All (CoreCLR): NetStandard target framework changed to netstandard1.3
 - All (PCL): Removed support for PCL in favor of NetStandard GA release
@@ -26,25 +29,7 @@ Changes in 7.0.2-preview :
 
 - Blobs (WinRT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
 - All : CoreCLR projects were updated to use the RC2 release of .Net Core 1.0
-=======
-Changes in X.X.X :
 
- - All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features.
- - Blobs: Added support for server-side encryption.
->>>>>>> Implement share snapshot
-
-=======
->>>>>>> [.Net] Incremental Copy Blob
-Changes in 8.0.0 :
-- All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features.
-- Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter, and returns this object as well. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
-- PageBlobs: Added support for incremental copy.
-
-Changes in 7.X.X :
-
- - All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features.
- - Blobs: Added support for server-side encryption.
- 
 Changes in 7.0.0 :
 
 - All: Support for 2015-07-08 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.3.
