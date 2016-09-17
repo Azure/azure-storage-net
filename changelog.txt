@@ -3,11 +3,33 @@ Changes in 8.0.0 :
 - Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter, and returns this object as well. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
 - PageBlobs: Added support for incremental copy.
 
-Changes in 7.X.X :
+Changes in 7.2.0 :
 
- - All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features.
- - Blobs: Added support for server-side encryption.
+- All (CoreCLR): NetStandard target framework changed to netstandard1.3
+- All (PCL): Removed support for PCL in favor of NetStandard GA release
+- Table (CoreCLR) : Added a workaround for missing GetProperties method on TypeInfo in reflection-based Read/Write methods in TableEntity after change to netstandard11.3 TFM
+- Table (CoreCLR) : Added logic to wrap the error stream in a noncloseable stream to prevent it from being disposed by ODataMessageReader
+
+Changes in 7.1.3-preview :
+
+- All : CoreCLR projects were updated to use the RTM release of .Net Core 1.0
+
+Changes in 7.1.2 :
+
+- All: Support for 2015-12-11 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.4.
+- Blobs: Added support for server-side encryption.
+- All: Fixed a bug with ContinuationToken where empty TargetLocation resulted in an error in deserialization.
+- Blobs/Tables/Queues: Bug fix and tests for running GetServiceStats with the incompatible PrimaryOnly location mode.
+- All (WinRT): Fixed a bug where HttpClient default timeout caused unhandled TaskCancellation exceptions.
+- All (CoreCLR): Updated the default AutomaticDecompression Method on StorageAuthenticationHttpHandler from Gzip | Deflate to None.
+- Table (CoreCLR) : Fixed a bug where reading table entity properties returned only the declared properties.
  
+
+Changes in 7.0.2-preview :
+
+- Blobs (WinRT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
+- All : CoreCLR projects were updated to use the RC2 release of .Net Core 1.0
+
 Changes in 7.0.0 :
 
 - All: Support for 2015-07-08 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.3.
@@ -417,3 +439,4 @@ Issues fixed in 2.0.1 :
   - All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
   - All: StorageErrorCodeStrings class is missing.
   - Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.
+

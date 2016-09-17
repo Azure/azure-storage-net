@@ -82,7 +82,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
             modifiedOptions.AssertPolicyIfRequired();
 
             if (modifiedOptions.EncryptionPolicy != null)

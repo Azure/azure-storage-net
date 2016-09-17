@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage
 {
     using System;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
     using System.Net;
 #endif
 
@@ -49,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <value>The request information associated with this event.</value>
         public RequestResult RequestInformation { get; internal set; }
 
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
         public Uri RequestUri { get; internal set; }
 #else
         /// <summary>

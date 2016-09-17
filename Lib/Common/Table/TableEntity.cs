@@ -33,6 +33,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Concurrent;
 #endif
 
+#if NETCORE
+    using Microsoft.WindowsAzure.Storage.Extensions;
+#endif
+
     /// <summary>
     /// Represents the base object type for a table entity in the Table service.
     /// </summary>
@@ -44,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1117:ParametersMustBeOnSameLineOrSeparateLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:ParameterMustNotSpanMultipleLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1001:CommasMustBeSpacedCorrectly", Justification = "Reviewed.")]
-    public class TableEntity : ITableEntity 
+    public class TableEntity : ITableEntity
     {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         static TableEntity()
@@ -144,8 +148,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Reviewed")]
         private static void ReflectionRead(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
+#elif NETCORE
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetAllProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif
@@ -298,8 +304,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             Dictionary<string, EntityProperty> retVals = new Dictionary<string, EntityProperty>();
 
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
+#elif NETCORE
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetAllProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif
@@ -312,10 +320,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
 
                 EntityProperty newProperty = EntityProperty.CreateEntityPropertyFromObject(property.GetValue(entity, null), property.PropertyType);
-                
+
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
                 if (Attribute.IsDefined(property, typeof(EncryptPropertyAttribute)))
                 {
                     newProperty.IsEncrypted = true;
@@ -370,7 +378,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // properties with [IgnoreAttribute]
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE 
             if (property.GetCustomAttribute(typeof(IgnorePropertyAttribute)) != null)
 #else
             if (Attribute.IsDefined(property, typeof(IgnorePropertyAttribute)))
@@ -571,7 +579,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (Attribute.IsDefined(prop, typeof(EncryptPropertyAttribute)))
                 {
                     PropertyInfo property = typeof(EntityProperty).FindProperty("IsEncrypted");

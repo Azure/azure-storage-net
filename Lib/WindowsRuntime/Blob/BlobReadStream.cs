@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-#if !(ASPNET_K || PORTABLE)
+#if !(NETCORE)
     using Windows.Storage.Streams;
 #endif
 
@@ -77,7 +77,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// currently available, or zero (0) if the end of the stream has been reached.</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return this.ReadAsync(buffer, offset, count, CancellationToken.None).Result;
+            int retVal = CommonUtility.RunWithoutSynchronizationContext(() => this.ReadAsync(buffer, offset, count, CancellationToken.None).Result);
+            return retVal;
         }
 
         /// <summary>

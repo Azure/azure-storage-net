@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-#if ASPNET_K || PORTABLE
+#if NETCORE
     using System.Threading;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -560,6 +560,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(BlobRequestOptions requestOptions)
         {
+            if (RetryPolicies.LocationMode.PrimaryOnly == requestOptions.LocationMode)
+            {
+                throw new InvalidOperationException(SR.GetServiceStatsInvalidOperation);
+            }  
+
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;

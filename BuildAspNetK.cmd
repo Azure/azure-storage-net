@@ -1,8 +1,6 @@
 pushd %~dp0
-call Tools\nuget.exe install dnx-coreclr-win-x86 -Version 1.0.0-rc1-final -Prerelease
-call Tools\nuget.exe install dnx-clr-win-x86 -Version 1.0.0-rc1-final -Prerelease
-call dnx-coreclr-win-x86.1.0.0-rc1-final\bin\dnu restore
-call dnx-clr-win-x86.1.0.0-rc1-final\bin\dnu restore
+call Tools\nuget3.4.exe install Microsoft.NETCore.Runtime.CoreCLR -Version 1.0.3
+call dotnet restore
 cd Lib\AspNet\Microsoft.WindowsAzure.Storage
-call ..\..\..\dnx-coreclr-win-x86.1.0.0-rc1-final\bin\dnu build --configuration release
+call dotnet build --configuration release
 popd

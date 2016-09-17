@@ -320,7 +320,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 CancellableOperationBase cancellableOperation;
                 CancellationTokenRegistration? registration = RegisterCancellationToken(cancellationToken, out cancellableOperation);
+
                 ICancellableAsyncResult result = beginMethod(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, CreateCallbackVoid(taskCompletionSource, registration, endMethod), null /* state */);
+
                 AssignCancellableOperation(cancellableOperation, result, cancellationToken);
             }
 

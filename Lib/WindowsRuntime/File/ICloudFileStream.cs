@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 {
     using System.IO;
     using System.Threading;
-#if !(ASPNET_K || PORTABLE)
+#if !(NETCORE)
     using Windows.Foundation;
     using Windows.Storage.Streams;
 #endif

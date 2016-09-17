@@ -72,6 +72,7 @@
     <Compile Include="Blob\BlobAnalyticsUnitTests.cs" />
     <Compile Include="Blob\BlobCancellationUnitTests.cs" />
     <Compile Include="Blob\BlobReadStreamTest.cs" />
+    <Compile Include="Blob\BlobServerEncryptionTests.cs" />
     <Compile Include="Blob\BlobStreamTests.cs" />
     <Compile Include="Blob\BlobTestBase.cs" />
     <Compile Include="Blob\BlobUploadDownloadTest.cs" />

@@ -752,10 +752,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 UserAgentComment = "(Windows Runtime Phone)";
 #elif WINDOWS_RT
                 UserAgentComment = "(Windows Runtime)";
-#elif ASPNET_K
-                UserAgentComment = "(.NET Core 5.0)";
-#elif PORTABLE
-                UserAgentComment = "(Portable Class Library)";
+#elif NETCORE
+                UserAgentComment = "(.NET Core)";
 #else
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
@@ -781,11 +779,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-#if ASPNET_K || PORTABLE
-            public const string UserAgentProductVersion = "7.1.50-preview";
-#else
-            public const string UserAgentProductVersion = "7.1.50";
-#endif 
+            public const string UserAgentProductVersion = "8.0.0";
 
             /// <summary>
             /// Master Windows Azure Storage header prefix.
@@ -1616,6 +1610,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Additional property name to store the encryption metadata.
             /// </summary>
             public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
+
+            /// <summary>
+            /// Key for the encryption agent
+            /// </summary>
+            public const string AgentMetadataKey = "EncryptionLibrary";
+
+            /// <summary>
+            /// Value for the encryption agent
+            /// </summary>
+            public const string AgentMetadataValue = ".NET " + Constants.HeaderConstants.UserAgentProductVersion;
         }
     }
 }

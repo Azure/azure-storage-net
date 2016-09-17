@@ -247,7 +247,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         {
             CloudQueueMessage message = null;
             byte[] dest = null;
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             if (options != null && options.EncryptionPolicy != null)
             {
                 // If EncryptionPolicy is set, decrypt the message and set it.
@@ -269,7 +269,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
             else
             {
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
                 if (dest != null)
                 {
                     message = new CloudQueueMessage(dest);
@@ -290,7 +290,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             return message;
         }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the queue.
         /// </summary>
@@ -356,6 +355,5 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             return builder.ToString();
         }
-#endif
     }
 }

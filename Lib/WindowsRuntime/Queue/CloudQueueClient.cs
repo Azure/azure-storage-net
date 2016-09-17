@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Threading;
-#if ASPNET_K || PORTABLE
+#if NETCORE
 
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -357,6 +357,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(QueueRequestOptions requestOptions)
         {
+            if (RetryPolicies.LocationMode.PrimaryOnly == requestOptions.LocationMode)
+            {
+                throw new InvalidOperationException(SR.GetServiceStatsInvalidOperation);
+            }  
+
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;

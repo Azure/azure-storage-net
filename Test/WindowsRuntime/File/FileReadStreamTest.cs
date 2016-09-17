@@ -21,7 +21,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-#if !ASPNET_K
+#if !NETCORE
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 #endif
@@ -143,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 await operation();
             }
-#if ASPNET_K
+#if NETCORE
             catch (Exception ex)
             {
                 Assert.AreEqual((int)expectedStatusCode, ((StorageException)ex).RequestInformation.HttpStatusCode, "Http status code is unexpected.");
@@ -179,7 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             byte[] testBuffer = new byte[readSize];
 
-#if ASPNET_K
+#if NETCORE
             int actualReadSize = await fileStream.ReadAsync(testBuffer, 0, (int) readSize);
             Assert.AreEqual(expectedReadCount, actualReadSize);
 #else
@@ -235,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.AreEqual(position, fileStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             fileStream.Seek(position);
-#if ASPNET_K        
+#if NETCORE     
             //don't know why adding these two line will pass, but this this the same as the desktop test
             Assert.AreEqual(position, fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 512);
@@ -283,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 OperationContext opContext = new OperationContext();
                 using (var fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
-#if ASPNET_K
+#if NETCORE
                     int attempts = await FileReadStreamSeekTestAsync(fileStream, file.StreamMinimumReadSizeInBytes, buffer);
 #else
                     int attempts = await FileReadStreamSeekTestAsync(fileStream.AsRandomAccessStream(), file.StreamMinimumReadSizeInBytes, buffer);

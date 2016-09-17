@@ -29,11 +29,11 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Collections.Generic;
     using System.Globalization;
     using System.Runtime.Serialization;
-#elif WINDOWS_RT || ASPNET_K || PORTABLE
+#elif WINDOWS_RT || NETCORE
     using System.Runtime.InteropServices;
 #endif
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
     using System.Net.Http;
 #endif
 
@@ -160,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage
                     return storageException;
                 }
 
-#if !(ASPNET_K || PORTABLE)
+#if !(NETCORE)
                 WebException we = ex as WebException;
                 if (we != null)
                 {
@@ -183,7 +183,7 @@ namespace Microsoft.WindowsAzure.Storage
             return new StorageException(reqResult, ex.Message, ex);
         }
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
         /// <summary>
         /// Translates the specified exception into a storage exception.
         /// </summary>
@@ -206,7 +206,7 @@ namespace Microsoft.WindowsAzure.Storage
                 if (response != null)
                 {
                     StorageException.PopulateRequestResult(reqResult, response);
-                    reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(response.Content.ReadAsStreamAsync().Result);
+                    reqResult.ExtendedErrorInformation = CommonUtility.RunWithoutSynchronizationContext(() => StorageExtendedErrorInformation.ReadFromStream(response.Content.ReadAsStreamAsync().Result));
                 }
             }
             catch (Exception)
@@ -239,7 +239,7 @@ namespace Microsoft.WindowsAzure.Storage
                     return storageException;
                 }
 
-#if !(ASPNET_K || PORTABLE)
+#if !(NETCORE)
                 WebException we = ex as WebException;
                 if (we != null)
                 {
@@ -262,7 +262,7 @@ namespace Microsoft.WindowsAzure.Storage
             return new StorageException(reqResult, ex.Message, ex);
         }
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
         /// <summary>
         /// Translates the specified exception into a storage exception.
         /// </summary>
@@ -336,7 +336,7 @@ namespace Microsoft.WindowsAzure.Storage
                 reqResult.ExtendedErrorInformation = null;
                 return new StorageException(reqResult, ex.Message, ex) { IsRetryable = false };
             }
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE
             else if (ex is OperationCanceledException)
             {
                 reqResult.HttpStatusMessage = null;
@@ -413,7 +413,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="reqResult">The request result.</param>
         /// <param name="response">The web response.</param>
-#if ASPNET_K || PORTABLE
+#if NETCORE
         private static void PopulateRequestResult(RequestResult reqResult, HttpResponseMessage response)
         {
             reqResult.HttpStatusMessage = response.StatusCode.ToString();
