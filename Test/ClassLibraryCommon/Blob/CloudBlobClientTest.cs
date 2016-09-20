@@ -732,6 +732,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("List containers with public access")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientListContainersWithPublicAccess()
+        {
+            string name = GetRandomContainerName();
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(name);
+            container.Create();
+
+            BlobContainerPublicAccessType[] accessValues = {BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob};
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                permissions.PublicAccess = access;
+                container.SetPermissions(permissions);
+                container.FetchAttributes();
+                Assert.IsTrue(container.Properties.PublicAccess == access);
+                Assert.IsTrue(container.GetPermissions().PublicAccess == access);
+                IEnumerable<CloudBlobContainer> results = blobClient.ListContainers(name, ContainerListingDetails.None, null, null);
+                Assert.IsTrue(results.Count() == 1);
+                Assert.IsTrue(results.First().Properties.PublicAccess == access);
+            }
+
+            container.Delete();
+        }
+
+        [TestMethod]
         [Description("List containers with prefix using segmented listing")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]

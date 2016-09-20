@@ -190,6 +190,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 {
                     directoryBuilder.Add("maxresults", listingContext.MaxResults.ToString());
                 }
+
+                if (listingContext.Prefix != null)
+                {
+                    directoryBuilder.Add("prefix", listingContext.Prefix);
+                }
             }
 
             HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, directoryBuilder, useVersionHeader, operationContext);

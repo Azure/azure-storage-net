@@ -174,6 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string name = null;
             IDictionary<string, string> metadata = null;
             BlobContainerProperties containerProperties = new BlobContainerProperties();
+            containerProperties.PublicAccess = BlobContainerPublicAccessType.Off;
 
             this.reader.ReadStartElement();
             while (this.reader.IsStartElement())
@@ -220,6 +221,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
                                         case Constants.LeaseDurationElement:
                                             containerProperties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(reader.ReadElementContentAsString());
+                                            break;
+
+                                        case Constants.PublicAccessElement:
+                                            containerProperties.PublicAccess = ContainerHttpResponseParsers.GetContainerAcl(reader.ReadElementContentAsString());
                                             break;
 
                                         default:

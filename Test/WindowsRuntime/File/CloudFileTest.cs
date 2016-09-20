@@ -290,7 +290,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 AssertAreEqual(file2.Properties, file3.Properties);
 
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
-                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null);
+                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null, null);
                 CloudFile file4 = (CloudFile)results.First();
                 Assert.AreEqual(file2.Properties.Length, file4.Properties.Length);
             }

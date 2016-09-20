@@ -289,6 +289,38 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("List containers with public access")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientListContainersWithPublicAccessAsync()
+        {
+            string name = GetRandomContainerName();
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(name);
+            await container.CreateAsync();
+
+            BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            BlobContinuationToken token = null;
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                permissions.PublicAccess = access;
+                await container.SetPermissionsAsync(permissions);
+                await container.FetchAttributesAsync();
+                Assert.IsTrue(container.Properties.PublicAccess == access);
+                BlobContainerPermissions containerAccess = await container.GetPermissionsAsync();
+                Assert.IsTrue(containerAccess.PublicAccess == access);
+                ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
+                Assert.IsTrue(resultSegment.Results.Count() == 1);
+                Assert.IsTrue(resultSegment.Results.First().Properties.PublicAccess == access);
+            }
+
+            await container.DeleteAsync();
+        }
+
+        [TestMethod]
         [Description("Test Create Container with Shared Key Lite")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]

@@ -296,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 List<string> fileNames = await CreateFilesAsync(share, 3);
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
 
-                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null);
+                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null, null);
                 Assert.AreEqual(fileNames.Count, results.Count());
                 foreach (IListFileItem fileItem in results)
                 {
