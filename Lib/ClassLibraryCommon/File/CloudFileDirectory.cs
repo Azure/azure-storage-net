@@ -902,9 +902,22 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual IEnumerable<IListFileItem> ListFilesAndDirectories(FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            return ListFilesAndDirectories(null /* prefix */, options, operationContext);
+        }
+
+        /// <summary>
+        /// Returns an enumerable collection of the files in the share, which are retrieved lazily.
+        /// </summary>
+        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of objects that implement <see cref="IListFileItem"/> and are retrieved lazily.</returns>
+        [DoesServiceRequest]
+        public IEnumerable<IListFileItem> ListFilesAndDirectories(string prefix, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return CommonUtility.LazyEnumerable(
-                token => this.ListFilesAndDirectoriesSegmentedCore(null /* maxResults */, (FileContinuationToken)token, modifiedOptions, operationContext),
+                token => this.ListFilesAndDirectoriesSegmentedCore(null /* maxResults */, (FileContinuationToken)token, prefix, modifiedOptions, operationContext),
                 long.MaxValue);
         }
 
@@ -917,7 +930,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual FileResultSegment ListFilesAndDirectoriesSegmented(FileContinuationToken currentToken)
         {
-            return this.ListFilesAndDirectoriesSegmented(null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
+            return this.ListFilesAndDirectoriesSegmented(null /* maxResults */, currentToken, null /* prefi x*/, null /* options */, null /* operationContext */);
         }
 
         /// <summary>
@@ -933,9 +946,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual FileResultSegment ListFilesAndDirectoriesSegmented(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            ResultSegment<IListFileItem> resultSegment = this.ListFilesAndDirectoriesSegmentedCore(maxResults, currentToken, modifiedOptions, operationContext);
-            return new FileResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
+            return this.ListFilesAndDirectoriesSegmented(maxResults, currentToken, null /* prefix */, options, operationContext);
         }
 
         /// <summary>
@@ -945,13 +956,33 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
         /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="prefix">A string containing the file or directiry name prefix.</param> 
         /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListFileItem"/>.</returns>
-        private ResultSegment<IListFileItem> ListFilesAndDirectoriesSegmentedCore(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
+        [DoesServiceRequest]
+        public FileResultSegment ListFilesAndDirectoriesSegmented(int? maxResults, FileContinuationToken currentToken, string prefix, FileRequestOptions options, OperationContext operationContext)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            ResultSegment<IListFileItem> resultSegment = this.ListFilesAndDirectoriesSegmentedCore(maxResults, currentToken, prefix, modifiedOptions, operationContext);
+            return new FileResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
+        }
+
+        /// <summary>
+        /// Returns a result segment containing a collection of file items 
+        /// in the share.
+        /// </summary>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
+        /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
+        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A result segment containing objects that implement <see cref="IListFileItem"/>.</returns>
+        private ResultSegment<IListFileItem> ListFilesAndDirectoriesSegmentedCore(int? maxResults, FileContinuationToken currentToken, string prefix, FileRequestOptions options, OperationContext operationContext)
         {
             return Executor.ExecuteSync(
-                this.ListFilesAndDirectoriesImpl(maxResults, options, currentToken),
+                this.ListFilesAndDirectoriesImpl(maxResults, options, currentToken, prefix),
                 options.RetryPolicy,
                 operationContext);
         }
@@ -968,7 +999,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginListFilesAndDirectoriesSegmented(FileContinuationToken currentToken, AsyncCallback callback, object state)
         {
-            return this.BeginListFilesAndDirectoriesSegmented(null /* maxResults */, currentToken, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginListFilesAndDirectoriesSegmented(null /* maxResults */, currentToken,  null /* prefix */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -986,9 +1017,28 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginListFilesAndDirectoriesSegmented(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginListFilesAndDirectoriesSegmented(maxResults, currentToken, null /* prefix */, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to return a result segment containing a collection of file items 
+        /// in the share.
+        /// </summary>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
+        /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
+        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public ICancellableAsyncResult BeginListFilesAndDirectoriesSegmented(int? maxResults, FileContinuationToken currentToken, string prefix, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken),
+                this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken, prefix),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -1017,7 +1067,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(FileContinuationToken currentToken)
         {
-            return this.ListFilesAndDirectoriesSegmentedAsync(currentToken, CancellationToken.None);
+            return this.ListFilesAndDirectoriesSegmentedAsync(currentToken, CancellationToken.None, null /* prefix */);
         }
 
         /// <summary>
@@ -1030,7 +1080,21 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(FileContinuationToken currentToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListFilesAndDirectoriesSegmented, this.EndListFilesAndDirectoriesSegmented, currentToken, cancellationToken);
+            return this.ListFilesAndDirectoriesSegmentedAsync(currentToken, cancellationToken, null /* prefix */);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous operation to return a result segment containing a collection of file items 
+        /// in the share.
+        /// </summary>    
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(FileContinuationToken currentToken, CancellationToken cancellationToken, string prefix)
+        {
+            return this.ListFilesAndDirectoriesSegmentedAsync(maxResults: null, currentToken: currentToken, prefix: prefix, options: null, operationContext: null, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -1046,7 +1110,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
-            return this.ListFilesAndDirectoriesSegmentedAsync(maxResults, currentToken, options, operationContext, CancellationToken.None);
+            return this.ListFilesAndDirectoriesSegmentedAsync(maxResults, currentToken, null /* prefix */,  options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -1063,7 +1127,25 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListFilesAndDirectoriesSegmented, this.EndListFilesAndDirectoriesSegmented, maxResults, currentToken, options, operationContext, cancellationToken);
+            return this.ListFilesAndDirectoriesSegmentedAsync(maxResults, currentToken, null /* prefix */, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous operation to return a result segment containing a collection of file items 
+        /// in the share.
+        /// </summary>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
+        /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        public Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(int? maxResults, FileContinuationToken currentToken, string prefix, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginListFilesAndDirectoriesSegmented, this.EndListFilesAndDirectoriesSegmented, maxResults, currentToken, prefix, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -1283,12 +1365,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// per-operation limit of 5000. If this value is <c>null</c>, the maximum possible number of results will be returned, up to 5000.</param>
         /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="currentToken">The continuation token.</param>
+        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that lists the files.</returns>
-        private RESTCommand<ResultSegment<IListFileItem>> ListFilesAndDirectoriesImpl(int? maxResults, FileRequestOptions options, FileContinuationToken currentToken)
+        private RESTCommand<ResultSegment<IListFileItem>> ListFilesAndDirectoriesImpl(int? maxResults, FileRequestOptions options, FileContinuationToken currentToken, string prefix)
         {
             FileListingContext listingContext = new FileListingContext(maxResults)
             {
-                Marker = currentToken != null ? currentToken.NextMarker : null
+                Marker = currentToken != null ? currentToken.NextMarker : null,
+                Prefix = string.IsNullOrEmpty(prefix) ? null : prefix
             };
 
             RESTCommand<ResultSegment<IListFileItem>> getCmd = new RESTCommand<ResultSegment<IListFileItem>>(this.ServiceClient.Credentials, this.StorageUri);

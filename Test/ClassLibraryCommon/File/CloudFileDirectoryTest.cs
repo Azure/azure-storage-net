@@ -614,6 +614,75 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("CloudFileDirectory listing with prefix")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryListFilesAndDirectoriesWithPrefix()
+        {
+            CloudFileClient client = GenerateCloudFileClient();
+            string name = GetRandomShareName();
+            CloudFileShare share = client.GetShareReference(name);
+
+            try
+            {
+                share.Create();
+                if (CloudFileDirectorySetup(share))
+                {
+                    CloudFileDirectory topDir1 = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1");
+                    
+                    IEnumerable<IListFileItem> res = topDir1.ListFilesAndDirectories("file");
+                    List<IListFileItem> list = res.ToList();
+                    Assert.IsTrue(list.Count == 1);
+                    IListFileItem item = list.ElementAt(0);
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/File1"));
+                    Assert.AreEqual("File1", ((CloudFile)item).Name);
+
+                    res = topDir1.ListFilesAndDirectories("mid");
+                    list = res.ToList();
+                    Assert.IsTrue(list.Count == 2);
+                    IListFileItem item1 = list.ElementAt(0);
+                    IListFileItem item2 = list.ElementAt(1);
+                    Assert.IsTrue(item1.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item1).Name);
+                    Assert.IsTrue(item2.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item2).Name);
+
+                    FileResultSegment segmentResults = topDir1.ListFilesAndDirectoriesSegmented(
+                        1 /*maxCount*/, 
+                        null /*currentToken*/, 
+                        "mid" /*prefix*/, 
+                        null /* options */, 
+                        null /* operationContext */);
+
+                    Assert.IsTrue(segmentResults.ContinuationToken.NextMarker != null);
+                    Assert.IsTrue(segmentResults.Results.Count() == 1);
+                    item = segmentResults.Results.First();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item).Name);
+
+                    segmentResults = topDir1.ListFilesAndDirectoriesSegmented(
+                        null /*maxCount*/,
+                        segmentResults.ContinuationToken, /*currentToken*/
+                        "mid" /*prefix*/,
+                        null /* options */,
+                        null /* operationContext */);
+
+                    Assert.IsTrue(segmentResults.ContinuationToken == null);
+                    Assert.IsTrue(segmentResults.Results.Count() == 1);
+                    item = segmentResults.Results.First();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item).Name);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("CloudFileDirectory listing")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

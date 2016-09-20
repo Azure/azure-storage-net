@@ -488,6 +488,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string LeaseDurationElement = "LeaseDuration";
 
         /// <summary>
+        /// XML element for the public access value.
+        /// </summary>
+        public const string PublicAccessElement = "PublicAccess";
+
+        /// <summary>
         /// XML element for snapshots.
         /// </summary>
         public const string SnapshotElement = "Snapshot";
@@ -1193,6 +1198,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// </summary>
             public const string CopyActionAbort = "abort";
 
+            /// <summary>
+            /// Headers that specifes an incremental copy.
+            /// </summary>
             public const string IncrementalCopy = PrefixForStorageHeader + "incremental-copy";
 
             /// <summary>
