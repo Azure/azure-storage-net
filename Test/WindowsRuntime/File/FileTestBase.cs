@@ -53,10 +53,10 @@ namespace Microsoft.WindowsAzure.Storage.File
 
         public static async Task<IEnumerable<IListFileItem>> ListFilesAndDirectoriesAsync(CloudFileDirectory directory, string prefix)
         {
-            return await ListFilesAndDirectoriesAsync(directory, null, prefix, null, null);
+            return await ListFilesAndDirectoriesAsync(directory, prefix, null, null, null);
         }
 
-        public static async Task<IEnumerable<IListFileItem>> ListFilesAndDirectoriesAsync(CloudFileDirectory directory, int? maxResults, string prefix, FileRequestOptions options, OperationContext operationContext)
+        public static async Task<IEnumerable<IListFileItem>> ListFilesAndDirectoriesAsync(CloudFileDirectory directory, string prefix, int? maxResults, FileRequestOptions options, OperationContext operationContext)
         {
             List<IListFileItem> results = new List<IListFileItem>();
             FileContinuationToken token = null;

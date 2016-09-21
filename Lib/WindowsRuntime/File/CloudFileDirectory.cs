@@ -372,7 +372,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
         /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
-        /// <param name="prefix">A string containing the file or directiry name prefix.</param>      
+        /// <param name="prefix">A string containing the file or directory name prefix.</param>      
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <returns>A file result segment.</returns>
@@ -406,7 +406,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
         /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
-        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
+        /// <param name="prefix">A string containing the file or directory name prefix.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -565,7 +565,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="currentToken">The continuation token.</param>
-        /// <param name="prefix">A string containing the file or directiry name prefix.</param>
+        /// <param name="prefix">A string containing the file or directory name prefix.</param>
         /// <returns>A <see cref="RESTCommand"/> that lists the files.</returns>
         private RESTCommand<ResultSegment<IListFileItem>> ListFilesAndDirectoriesImpl(int? maxResults, FileRequestOptions options, FileContinuationToken currentToken, string prefix)
         {

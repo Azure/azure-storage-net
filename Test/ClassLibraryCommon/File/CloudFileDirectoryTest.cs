@@ -650,10 +650,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Assert.AreEqual("MidDir2", ((CloudFileDirectory)item2).Name);
 
                     FileResultSegment segmentResults = topDir1.ListFilesAndDirectoriesSegmented(
-                        1 /*maxCount*/, 
-                        null /*currentToken*/, 
-                        "mid" /*prefix*/, 
-                        null /* options */, 
+                        "mid" /* prefix */,
+                        1 /* maxCount */,
+                        null /* currentToken */,
+                        null /* options */,
                         null /* operationContext */);
 
                     Assert.IsTrue(segmentResults.ContinuationToken.NextMarker != null);
@@ -663,15 +663,47 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Assert.AreEqual("MidDir1", ((CloudFileDirectory)item).Name);
 
                     segmentResults = topDir1.ListFilesAndDirectoriesSegmented(
-                        null /*maxCount*/,
-                        segmentResults.ContinuationToken, /*currentToken*/
                         "mid" /*prefix*/,
+                        null /*maxCount*/,
+                        segmentResults.ContinuationToken /*currentToken*/,
                         null /* options */,
                         null /* operationContext */);
 
                     Assert.IsTrue(segmentResults.ContinuationToken == null);
-                    Assert.IsTrue(segmentResults.Results.Count() == 1);
+                    Assert.AreEqual(1, segmentResults.Results.Count());
                     item = segmentResults.Results.First();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item).Name);
+
+                    List<IListFileItem> simpleList1 = new List<IListFileItem>();
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        FileContinuationToken token = null;
+                        do
+                        {
+                            IAsyncResult result = topDir1.BeginListFilesAndDirectoriesSegmented(
+                            "mid" /* prefix */,
+                            null /* maxCount */,
+                            segmentResults.ContinuationToken /* currentToken */,
+                            null /* options */,
+                            null /* operationContext */,
+                            ar => waitHandle.Set(),
+                                    null);
+                            waitHandle.WaitOne();
+                            FileResultSegment segment = topDir1.EndListFilesAndDirectoriesSegmented(result);
+                            simpleList1.AddRange(segment.Results);
+                            token = segment.ContinuationToken;
+                        }
+                        while (token != null);
+                    }
+
+                    Assert.IsTrue(segmentResults.ContinuationToken == null);
+                    Assert.AreEqual(2, simpleList1.Count());
+                    item = simpleList1.First();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item).Name);
+
+                    item = simpleList1.Last();
                     Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
                     Assert.AreEqual("MidDir2", ((CloudFileDirectory)item).Name);
                 }

@@ -1199,7 +1199,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string CopyActionAbort = "abort";
 
             /// <summary>
-            /// Headers that specifes an incremental copy.
+            /// Header that specifies an incremental copy.
             /// </summary>
             public const string IncrementalCopy = PrefixForStorageHeader + "incremental-copy";
 
