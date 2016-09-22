@@ -22,46 +22,30 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Threading;
-
+    using System.Threading.Tasks;
     // Class to copy streams with potentially overlapping read / writes. This uses no waithandle, extra threads, but does contain a single lock
     internal class AsyncStreamCopier<T> : IDisposable
     {
         #region Ctors + Locals
-        // Note two buffers to do overlapped read and write. Once ReadBuffer is full it will be swapped over to writeBuffer and a write issued.
-        private byte[] currentReadBuff = null;
-        private byte[] currentWriteBuff = null;
-        private volatile int lastReadCount = -1;
-        private volatile int currentWriteCount = -1;
         private StreamDescriptor streamCopyState = null;
 
-        // This keeps track of any exceptions that happens during the copy itself and is set on the executionState at the end.
-        private Exception exceptionRef = null;
-
-        // This variable keeps track of bytes that have already been read from the source stream.
-        // It should only be modified using Interlocked.Add and read with Interlocked.Read.
-        private long currentBytesReadFromSource = 0;
-
-        private long? copyLen = null;
-        private long? maximumLen = null;
+        private int buffSize;
 
         private Stream src = null;
         private Stream dest = null;
-        private Action<ExecutionState<T>> completedDel;
-
-        // these locals enforce a lock
-        private volatile IAsyncResult readRes;
-        private volatile IAsyncResult writeRes;
-        private object lockerObj = new object();
 
         // Used for cooperative cancellation
-        private volatile bool cancelRequested = false;
+        CancellationTokenSource cancellationTokenSourceAbort;
+
+        // Used for timeouts
+        CancellationTokenSource cancellationTokenSourceTimeout;
+
+        CancellationTokenSource cancellationTokenSourceCombined;
+
         private ExecutionState<T> state = null;
         private Action previousCancellationDelegate = null;
 
-        // Used to signal copy completion
-        private RegisteredWaitHandle waitHandle = null;
-        private ManualResetEvent completedEvent = new ManualResetEvent(false);
-        private int completionProcessed = 0;
+        private bool disposed = false;
 
         /// <summary>
         /// Creates and initializes a new asynchronous copy operation.
@@ -77,9 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             this.src = src;
             this.dest = dest;
             this.state = state;
-            this.currentReadBuff = new byte[buffSize];
-            this.currentWriteBuff = new byte[buffSize];
-
+            this.buffSize = buffSize;
             this.streamCopyState = streamCopyState;
 
             if (streamCopyState != null && calculateMd5 && streamCopyState.Md5HashRef == null)
@@ -93,290 +75,225 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         /// <summary>
         /// Begins a stream copy operation.
+        /// 
+        /// This method wraps the 
         /// </summary>
         /// <param name="completedDelegate">Callback delegate</param>
-        /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot be passed with a value for maxLength.</param>
-        /// <param name="maxLength">Maximum length of the source stream. Cannot be passed with a value for copyLength.</param>
+        /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot pass in both copyLength and maxLength.</param>
+        /// <param name="maxLength">Maximum length of the source stream. Cannot pass in both copyLength and maxLength.</param>
         public void StartCopyStream(Action<ExecutionState<T>> completedDelegate, long? copyLength, long? maxLength)
         {
+            Task streamCopyTask = this.StartCopyStreamAsync(copyLength, maxLength);
+            streamCopyTask.ContinueWith(completedStreamCopyTask => 
+            {
+                this.state.CancelDelegate = this.previousCancellationDelegate;
+                if (completedStreamCopyTask.IsFaulted)
+                {
+                    this.state.ExceptionRef = completedStreamCopyTask.Exception.InnerException;
+                }
+                else if (completedStreamCopyTask.IsCanceled)
+                {
+                    bool timedOut = !this.cancellationTokenSourceAbort.IsCancellationRequested;
+                    if (!timedOut)
+                    {
+                        // Free up the OS timer as soon as possible.
+                        this.cancellationTokenSourceTimeout.Dispose();
+                    }
+                    if (state != null)
+                    {
+                        if (state.Req != null)
+                        {
+                            try
+                            {
+                                state.ReqTimedOut = timedOut;
+
+                                // Note: the old logic had the following line happen on different threads for Desktop and Phone.  I don't think 
+                                // we still need to do that, but I'm not sure.
+#if WINDOWS_DESKTOP || WINDOWS_PHONE
+                                state.Req.Abort();
+#endif
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogWarning(state.OperationContext, "Aborting the request failed with exception: {0}", ex);
+                            }
+                        }
+
+                        this.state.ExceptionRef = timedOut ?
+                            Exceptions.GenerateTimeoutException(state.Cmd != null ? state.Cmd.CurrentResult : null, null) :
+                            Exceptions.GenerateCancellationException(state.Cmd != null ? state.Cmd.CurrentResult : null, null);
+                    }
+                }
+
+                try
+                {
+                    completedDelegate(this.state);
+                }
+                catch (Exception ex)
+                {
+                    this.state.ExceptionRef = ex;
+                }
+
+                this.Dispose();
+            });
+
+            return;
+        }
+
+        /// <summary>
+        /// Cleans up references. To end a copy operation, call Cancel() on the ExecutionState.
+        /// </summary>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    if (this.cancellationTokenSourceAbort != null)
+                    {
+                        this.cancellationTokenSourceAbort.Dispose();
+                    }
+
+                    if (this.cancellationTokenSourceTimeout != null)
+                    {
+                        this.cancellationTokenSourceTimeout.Dispose();
+                        this.cancellationTokenSourceCombined.Dispose();
+                    }
+
+                    this.state = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// This method performs the stream copy in an asynchronous, task-based manner.
+        /// 
+        /// To do the stream copy in a begin-with-callback style (the old style), use StartCopyStream, which wraps this method,
+        /// does appropriate cancellation/exception handling, and calls the callback.
+        ///
+        /// This method sets up cancellation, and will cancel if either the timeout on the execution state expires, or cancel() is called 
+        /// directly (on the ExecutionState).
+        /// 
+        /// This method does not set the ExceptionRef on the ExecutionState, or abort the request.
+        /// </summary>
+        /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot pass in both copyLength and maxLength.</param>
+        /// <param name="maxLength">Maximum length of the source stream. Cannot pass in both copyLength and maxLength.</param>
+        /// <returns>A Task representing the asynchronous stream copy.</returns>
+        public async Task StartCopyStreamAsync(long? copyLength, long? maxLength)
+        {
+            this.cancellationTokenSourceAbort = new CancellationTokenSource();
+
+            // Set up the cancellation tokens and the timeout
+            lock (this.state.CancellationLockerObject)
+            {
+                this.previousCancellationDelegate = this.state.CancelDelegate;
+                this.state.CancelDelegate = this.cancellationTokenSourceAbort.Cancel;
+            }
+
+            if (this.state.OperationExpiryTime.HasValue)
+            {
+                this.cancellationTokenSourceTimeout = new CancellationTokenSource(this.state.RemainingTimeout);
+                this.cancellationTokenSourceCombined = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationTokenSourceAbort.Token, this.cancellationTokenSourceTimeout.Token);
+            }
+            else
+            {
+                this.cancellationTokenSourceCombined = this.cancellationTokenSourceAbort;
+            }
+
+            await this.StartCopyStreamAsyncHelper(copyLength, maxLength, this.cancellationTokenSourceCombined.Token);
+        }
+
+        /// <summary>
+        /// This method does the actual internal logic of copying one stream to another.
+        /// </summary>
+        /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot pass in both copyLength and maxLength.</param>
+        /// <param name="maxLength">Maximum length of the source stream. Cannot pass in both copyLength and maxLength.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>A Task representing the asynchronous stream copy.</returns>
+        private async Task StartCopyStreamAsyncHelper(long? copyLength, long? maxLength, CancellationToken token)
+        {
+            // Validate arguments
             if (copyLength.HasValue && maxLength.HasValue)
             {
                 throw new ArgumentException(SR.StreamLengthMismatch);
             }
 
-            if (this.src.CanSeek && maxLength.HasValue && this.src.Length - this.src.Position > maxLength)
+            if (this.src.CanSeek && maxLength.HasValue && (this.src.Length - this.src.Position > maxLength))
             {
                 throw new InvalidOperationException(SR.StreamLengthError);
             }
 
-            if (this.src.CanSeek && copyLength.HasValue && this.src.Length - this.src.Position < copyLength)
+            if (this.src.CanSeek && copyLength.HasValue && (this.src.Length - this.src.Position < copyLength))
             {
                 throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
             }
 
-            this.copyLen = copyLength;
-            this.maximumLen = maxLength;
-            this.completedDel = completedDelegate;
+            token.ThrowIfCancellationRequested();
 
-            // If there is a max time specified start timeout timer.
-            if (this.state.OperationExpiryTime.HasValue)
+            byte[] readBuff = new byte[this.buffSize];
+            byte[] writeBuff = new byte[this.buffSize];
+            byte[] swap;
+
+            int bytesToCopy = CalculateBytesToCopy(copyLength, 0);
+            int bytesCopied = await this.src.ReadAsync(readBuff, 0, bytesToCopy, token).ConfigureAwait(false);
+
+            long totalBytes = bytesCopied;
+            CheckMaxLength(maxLength, totalBytes);
+
+            swap = readBuff;
+            readBuff = writeBuff;
+            writeBuff = swap;
+
+            while (bytesCopied > 0)
             {
-                this.waitHandle = ThreadPool.RegisterWaitForSingleObject(
-                    this.completedEvent,
-                    AsyncStreamCopier<T>.MaximumCopyTimeCallback,
-                    this,
-                    this.state.RemainingTimeout,
-                    true);
-            }
+                token.ThrowIfCancellationRequested();
 
-            lock (this.state.CancellationLockerObject)
-            {
-                this.previousCancellationDelegate = this.state.CancelDelegate;
-                this.state.CancelDelegate = this.Abort;
-            }
+                Task writeTask = this.dest.WriteAsync(writeBuff, 0, bytesCopied, token);
 
-            // Start first read
-            this.EndOpWithCatch(null);
-        }
-
-        /// <summary>
-        /// Aborts an ongoing copy operation.
-        /// </summary>
-        public void Abort()
-        {
-            this.cancelRequested = true;
-            AsyncStreamCopier<T>.ForceAbort(this, false);
-        }
-
-        /// <summary>
-        /// Cleans up references. To end a copy operation, use Abort().
-        /// </summary>
-        public void Dispose()
-        {
-            if (this.waitHandle != null)
-            {
-                this.waitHandle.Unregister(null);
-                this.waitHandle = null;
-            }
-
-            if (this.completedEvent != null)
-            {
-                this.completedEvent.Close();
-                this.completedEvent = null;
-            }
-
-            this.state = null;
-        }
-        #endregion
-
-        #region Privates
-        /// <summary>
-        /// Synchronizes Read and Write operations, and handles exceptions.
-        /// </summary>
-        /// <param name="res">Read/Write operation or <c>null</c> if first run.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool thread.")]
-        private void EndOpWithCatch(IAsyncResult res)
-        {
-            // If the last op complete synchronously then ignore this callback as its caller will process next op
-            if (res != null && res.CompletedSynchronously)
-            {
-                return;
-            }
-
-            // Begins the next operation and stores any exceptions which occur
-            lock (this.lockerObj)
-            {
-                try
+                bytesToCopy = CalculateBytesToCopy(copyLength, totalBytes);
+                Task<int> readTask;
+                if (bytesToCopy > 0)
                 {
-                    this.EndOperation(res);
-                }
-                catch (Exception ex)
-                {
-                    if (this.state.ReqTimedOut)
-                    {
-                        this.exceptionRef = Exceptions.GenerateTimeoutException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, ex);
-                    }
-                    else if (this.cancelRequested)
-                    {
-                        this.exceptionRef = Exceptions.GenerateCancellationException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, ex);
-                    }
-                    else
-                    {
-                        this.exceptionRef = ex;
-                    }
-
-                    // if there is an outstanding read/write let it signal completion since we populated the exception. 
-                    if (this.readRes == null && this.writeRes == null)
-                    {
-                        this.SignalCompletion();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Helper method for EndOpWithCatch(IAsyncResult). Begins/Ends Read and Write Stream operations.
-        /// Should only be called by EndOpWithCatch(IAsyncResult) since it assumes we are inside the lock.
-        /// </summary>
-        /// <param name="res">Read/Write operation or <c>null</c> if first run.</param>
-        private void EndOperation(IAsyncResult res)
-        {
-            // Check who made this callback
-            if (res != null)
-            {
-                // true is read, false is write              
-                if ((bool)res.AsyncState)
-                {
-                    // Read callback
-                    this.ProcessEndRead();
+                    readTask = this.src.ReadAsync(readBuff, 0, bytesToCopy, token);
                 }
                 else
                 {
-                    // Write callback
-                    this.ProcessEndWrite();
-                } 
+                    readTask = Task.FromResult<int>(0);
+                }
+
+                await writeTask.ConfigureAwait(false);
+
+                UpdateStreamCopyState(writeBuff, bytesCopied);
+
+                bytesCopied = await readTask.ConfigureAwait(false);
+                totalBytes = totalBytes + bytesCopied;
+
+                CheckMaxLength(maxLength, totalBytes);
+
+                swap = readBuff;
+                readBuff = writeBuff;
+                writeBuff = swap;
             }
 
-            // While data is remaining and there are no scheduled operations, schedule next write and read
-            while (!this.ReachedEndOfSrc() && this.readRes == null && this.writeRes == null)
+            if (copyLength.HasValue && totalBytes != copyLength.Value)
             {
-                // Check if copying should halt
-                if (!this.ShouldDispatchNextOperation())
-                {
-                    this.SignalCompletion();
-                    return;
-                }
-
-                // If read buffer contains unwritten data, swap buffers and set currentWriteCount
-                if (this.ConsumeReadBuffer() > 0)
-                {
-                    // Schedule write operation from the last read
-                    this.writeRes = this.dest.BeginWrite(this.currentWriteBuff, 0, this.currentWriteCount, this.EndOpWithCatch, false /* write */);
-                    
-                    // If this write completes synchronously, end it here to avoid stack overflow.
-                    if (this.writeRes.CompletedSynchronously)
-                    {
-                        this.ProcessEndWrite();
-                    }
-                }
-
-                // If data needs to be read.
-                int readCount = this.NextReadLength();
-                if (readCount != 0)
-                {
-                    // Schedule read operation
-                    this.readRes = this.src.BeginRead(this.currentReadBuff, 0, readCount, this.EndOpWithCatch, true /* read */);
-
-                    // If this read completes synchronously, end it here to avoid stack overflow.
-                    if (this.readRes.CompletedSynchronously)
-                    {
-                        this.ProcessEndRead();
-                    }
-                }
-                else
-                {
-                    // User requested read end here. Signal end of source.
-                    this.lastReadCount = 0;
-                }
+                throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
             }
 
-            // If nothing more needs to be read and no write operation is scheduled, we are finished.
-            if (this.ReachedEndOfSrc() && this.writeRes == null)
-            {
-                if (this.exceptionRef == null && this.copyLen.HasValue && this.NextReadLength() != 0)
-                {
-                    this.exceptionRef = new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
-                }
-
-                this.SignalCompletion();
-            }
+            FinalizeStreamCopyState();
         }
+#endregion
 
-        /// <summary>
-        /// Callback for timeout timer. Aborts the AsyncStreamCopier operation if a timeout occurs.
-        /// </summary>
-        /// <param name="copier">AsyncStreamCopier operation.</param>
-        /// <param name="timedOut">True if the timer has timed out, false otherwise.</param>
-        private static void MaximumCopyTimeCallback(object copier, bool timedOut)
+#region Privates
+        private void FinalizeStreamCopyState()
         {
-            if (timedOut)
-            {
-                AsyncStreamCopier<T> asyncCopier = (AsyncStreamCopier<T>)copier;
-                AsyncStreamCopier<T>.ForceAbort(asyncCopier, true);
-            }
-        }
-
-        /// <summary>
-        /// Aborts the AsyncStreamCopier operation.
-        /// </summary>
-        /// <param name="copier">AsyncStreamCopier operation.</param>
-        /// <param name="timedOut">True if aborted due to a time out, or false for a general cancellation.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
-        private static void ForceAbort(AsyncStreamCopier<T> copier, bool timedOut)
-        {
-            ExecutionState<T> state = copier.state;
-            if (state != null)
-            {
-                if (state.Req != null)
-                {
-                    try
-                    {
-                        state.ReqTimedOut = timedOut;
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-                        state.Req.Abort();
-#endif
-                    }
-                    catch (Exception)
-                    {
-                        // no op
-                    }
-                }
-
-                copier.exceptionRef = timedOut ?
-                    Exceptions.GenerateTimeoutException(state.Cmd != null ? state.Cmd.CurrentResult : null, null) :
-                    Exceptions.GenerateCancellationException(state.Cmd != null ? state.Cmd.CurrentResult : null, null);
-            }
-        }
-
-        /// <summary>
-        /// Terminates and cleans up the AsyncStreamCopier.
-        /// </summary>
-        private void SignalCompletion()
-        {
-            // If already completed return
-            if (Interlocked.CompareExchange(ref this.completionProcessed, 1, 0) == 0)
-            {
-                this.completedEvent.Set();
-                this.ProcessCompletion();
-            }
-        }
-
-        /// <summary>
-        /// Helper method for this.SignalCompletion()
-        /// Should only be called by this.SignalCompletion()
-        /// </summary>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
-        private void ProcessCompletion()
-        {
-            // Re hookup cancellation delegate
-            this.state.CancelDelegate = this.previousCancellationDelegate;
-
-#if WINDOWS_PHONE
-            if ((this.cancelRequested || this.state.ReqTimedOut) && this.state.Req != null)
-            {
-                this.state.Req.Abort();
-            }
-#endif
-
-            // clear references
-            this.src = null;
-            this.dest = null;
-            this.currentReadBuff = null;
-            this.currentWriteBuff = null;
-
-            if (this.exceptionRef == null &&
-                this.streamCopyState != null &&
-                this.streamCopyState.Md5HashRef != null)
+            if (this.streamCopyState != null && this.streamCopyState.Md5HashRef != null)
             {
                 try
                 {
@@ -391,147 +308,43 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     this.streamCopyState.Md5HashRef = null;
                 }
             }
-
-            // set the exceptionRef on the execution state
-            if (this.exceptionRef != null)
-            {
-                this.state.ExceptionRef = this.exceptionRef;
-            }
-
-            // invoke the caller's callback
-            Action<ExecutionState<T>> callback = this.completedDel;
-            this.completedDel = null;
-            if (callback != null)
-            {
-                try
-                {
-                    callback(this.state);
-                }
-                catch (Exception ex)
-                {
-                    this.state.ExceptionRef = ex;
-                }
-            }
-
-            // and finally clear the reference to the state
-            this.Dispose();
         }
 
-        /// <summary>
-        /// Determines whether the next operation should begin or halt due to an exception or cancellation.
-        /// </summary>
-        /// <returns>True to continue, false to halt.</returns>
-        private bool ShouldDispatchNextOperation()
+        private static void CheckMaxLength(long? maxLength, long totalBytes)
         {
-            if (this.maximumLen.HasValue && Interlocked.Read(ref this.currentBytesReadFromSource) > this.maximumLen)
+            if (maxLength.HasValue && totalBytes > maxLength.Value)
             {
-                this.exceptionRef = new InvalidOperationException(SR.StreamLengthError);
+                throw new InvalidOperationException(SR.StreamLengthError);
             }
-            else if (this.state.OperationExpiryTime.HasValue && DateTime.Now >= this.state.OperationExpiryTime.Value)
-            {
-                this.exceptionRef = Exceptions.GenerateTimeoutException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, null);
-            }
-            else if (this.state.CancelRequested)
-            {
-                this.exceptionRef = Exceptions.GenerateCancellationException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, null);
-            }
-
-            // note cancellation will new up a exception and store it, so this will be not null;
-            // continue if no exceptions so far
-            return !this.cancelRequested && this.exceptionRef == null;
         }
 
-        /// <summary>
-        /// Waits for a read operation to end and updates the AsyncStreamCopier state.
-        /// </summary>
-        private void ProcessEndRead()
+        private void UpdateStreamCopyState(byte[] writeBuff, int bytesCopied)
         {
-            IAsyncResult lastReadRes = this.readRes;
-            this.readRes = null;
-            this.lastReadCount = this.src.EndRead(lastReadRes);
-            Interlocked.Add(ref this.currentBytesReadFromSource, this.lastReadCount);
-            this.state.UpdateCompletedSynchronously(lastReadRes.CompletedSynchronously);
-        }
-
-        /// <summary>
-        /// Waits for a write operation to end and updates the AsyncStreamCopier state.
-        /// </summary>
-        private void ProcessEndWrite()
-        {
-            IAsyncResult lastWriteRes = this.writeRes;
-            this.writeRes = null;
-            this.dest.EndWrite(lastWriteRes);
-            
-            this.state.UpdateCompletedSynchronously(lastWriteRes.CompletedSynchronously);
-
             if (this.streamCopyState != null)
             {
-                this.streamCopyState.Length += this.currentWriteCount;
-
+                this.streamCopyState.Length += bytesCopied;
                 if (this.streamCopyState.Md5HashRef != null)
                 {
-                    this.streamCopyState.Md5HashRef.UpdateHash(this.currentWriteBuff, 0, this.currentWriteCount);
+                    this.streamCopyState.Md5HashRef.UpdateHash(writeBuff, 0, bytesCopied);
                 }
             }
         }
 
-        /// <summary>
-        /// If a read operation has completed with data, swaps the read/write buffers and resets their corresponding counts.
-        /// This must be called inside a lock as it could lead to undefined behavior if multiple unsynchronized callers simultaneously called in.
-        /// </summary>
-        /// <returns>Number of bytes to write, or negative if no read operation has completed.</returns>
-        private int ConsumeReadBuffer()
+        private int CalculateBytesToCopy(long? copyLength, long totalBytes)
         {
-            if (!this.ReadBufferFull())
+            int bytesToCopy = this.buffSize;
+            if (copyLength.HasValue)
             {
-                return this.lastReadCount;
+                if (totalBytes > copyLength.Value)
+                {
+                    throw new InvalidOperationException(String.Format(SR.NegativeBytesRequestedInCopy, copyLength.Value, totalBytes, this.streamCopyState.Length));
+                }
+
+                bytesToCopy = (int)Math.Min(bytesToCopy, copyLength.Value - totalBytes);
             }
 
-            this.currentWriteCount = this.lastReadCount;
-            this.lastReadCount = -1;
-
-            // The buffer swap sa ves us a memcopy of the data in readBuff.
-            byte[] tempBuff = null;
-            tempBuff = this.currentReadBuff;
-            this.currentReadBuff = this.currentWriteBuff;
-            this.currentWriteBuff = tempBuff;
-
-            return this.currentWriteCount;
+            return bytesToCopy;
         }
-
-        /// <summary>
-        /// Determines the number of bytes that should be read from the source in the next BeginRead operation.
-        /// Should only be called when no outstanding read operations exist.
-        /// </summary>
-        /// <returns>Number of bytes to read.</returns>
-        private int NextReadLength()
-        {
-            if (this.copyLen.HasValue)
-            {
-                long bytesRemaining = this.copyLen.Value - Interlocked.Read(ref this.currentBytesReadFromSource);
-                return (int)Math.Min(bytesRemaining, this.currentReadBuff.Length);
-            }
-            
-            return this.currentReadBuff.Length;
-        }
-
-        /// <summary>
-        /// Determines whether no more data can be read from the source Stream.
-        /// </summary>
-        /// <returns>True if at the end, false otherwise.</returns>
-        private bool ReachedEndOfSrc()
-        {
-            return this.lastReadCount == 0;
-        }
-
-        /// <summary>
-        /// Determines whether the current read buffer contains data ready to be written.
-        /// </summary>
-        /// <returns>True if read buffer is full, false otherwise.</returns>
-        private bool ReadBufferFull()
-        {
-            return this.lastReadCount > 0;
-        }
-        #endregion
+#endregion
     }
 }
