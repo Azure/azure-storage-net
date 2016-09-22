@@ -327,9 +327,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Assert.AreEqual("MidDir2", ((CloudFileDirectory)item2).Name);
 
                     results = await ListFilesAndDirectoriesAsync( 
-                        topDir1 /*directory*/,
-                        1 /*maxCount*/,
-                        "mid" /*prefix*/,
+                        topDir1 /* directory */,
+                        "mid" /* prefix */,
+                        1 /* maxCount */,
                         null /* options */,
                         null /* operationContext */);
                     

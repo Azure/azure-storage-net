@@ -732,12 +732,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("List containers with public access")]
+        [Description("List containers and fetch attributes with public access")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersWithPublicAccess()
+        public void CloudBlobClientListContainersAndFetchAttributesWithPublicAccess()
         {
             string name = GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -751,11 +751,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 permissions.PublicAccess = access;
                 container.SetPermissions(permissions);
                 container.FetchAttributes();
-                Assert.IsTrue(container.Properties.PublicAccess == access);
-                Assert.IsTrue(container.GetPermissions().PublicAccess == access);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
+                Assert.AreEqual(access, container.GetPermissions().PublicAccess);
                 IEnumerable<CloudBlobContainer> results = blobClient.ListContainers(name, ContainerListingDetails.None, null, null);
-                Assert.IsTrue(results.Count() == 1);
-                Assert.IsTrue(results.First().Properties.PublicAccess == access);
+                Assert.AreEqual(1, results.Count());
+                Assert.AreEqual(access, results.First().Properties.PublicAccess);
             }
 
             container.Delete();

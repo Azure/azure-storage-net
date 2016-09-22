@@ -309,12 +309,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 permissions.PublicAccess = access;
                 await container.SetPermissionsAsync(permissions);
                 await container.FetchAttributesAsync();
-                Assert.IsTrue(container.Properties.PublicAccess == access);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
                 BlobContainerPermissions containerAccess = await container.GetPermissionsAsync();
-                Assert.IsTrue(containerAccess.PublicAccess == access);
+                Assert.AreEqual(access, containerAccess.PublicAccess);
                 ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
-                Assert.IsTrue(resultSegment.Results.Count() == 1);
-                Assert.IsTrue(resultSegment.Results.First().Properties.PublicAccess == access);
+                Assert.AreEqual(1, resultSegment.Results.Count());
+                Assert.AreEqual(access, resultSegment.Results.First().Properties.PublicAccess);
             }
 
             await container.DeleteAsync();
