@@ -309,7 +309,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     SnapshotTime = parsedSnapshot,
                 };
 
-                CloudBlob.UpdateAfterFetchAttributes(attributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(attributes, resp);
 
                 switch (attributes.Properties.BlobType)
                 {
@@ -360,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     SnapshotTime = parsedSnapshot,
                 };
 
-                CloudBlob.UpdateAfterFetchAttributes(attributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(attributes, resp);
 
                 switch (attributes.Properties.BlobType)
                 {

@@ -1242,6 +1242,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob blob4 = (CloudPageBlob)container.ListBlobs().First();
                 AssertAreEqual(blob2.Properties, blob4.Properties);
+
+                CloudPageBlob blob5 = container.GetPageBlobReference("blob1");
+                Assert.IsNull(blob5.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                blob5.DownloadRangeToByteArray(target, 0, 0, 4);
+                Assert.AreEqual("MDAwMDAwMDA=", blob5.Properties.ContentMD5);
             }
             finally
             {

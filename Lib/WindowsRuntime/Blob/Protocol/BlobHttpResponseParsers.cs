@@ -50,8 +50,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 {
                     properties.ContentDisposition = response.Content.Headers.ContentDisposition.ToString();
                 }
-                
-                if (response.Content.Headers.ContentMD5 != null)
+
+                if (response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header) != null)
+                {
+                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
+                }
+                else
                 {
                     properties.ContentMD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
                 }

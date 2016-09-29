@@ -4072,7 +4072,6 @@ namespace Microsoft.WindowsAzure.Storage.File
             string lockedETag = null;
             AccessCondition lockedAccessCondition = null;
 
-            bool isRangeGet = offset.HasValue;
             bool arePropertiesPopulated = false;
             string storedMD5 = null;
 
@@ -4120,7 +4119,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 if (!arePropertiesPopulated)
                 {
-                    this.UpdateAfterFetchAttributes(resp, isRangeGet);
+                    this.UpdateAfterFetchAttributes(resp);
                     storedMD5 = resp.Headers[HttpResponseHeader.ContentMd5];
 
                     if (!options.DisableContentMD5Validation.Value &&
@@ -4214,7 +4213,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                this.UpdateAfterFetchAttributes(resp, false);
+                this.UpdateAfterFetchAttributes(resp);
                 return NullType.Value;
             };
 
@@ -4242,7 +4241,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
-                this.UpdateAfterFetchAttributes(resp, false);
+                this.UpdateAfterFetchAttributes(resp);
                 return true;
             };
 
@@ -4553,16 +4552,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Updates this file with the given attributes a the end of a fetch attributes operation.
         /// </summary>
         /// <param name="response">The response.</param>
-        /// <param name="ignoreMD5">if set to <c>true</c>, file's MD5 will not be updated.</param>
-        private void UpdateAfterFetchAttributes(HttpWebResponse response, bool ignoreMD5)
+        private void UpdateAfterFetchAttributes(HttpWebResponse response)
         {
             FileProperties properties = FileHttpResponseParsers.GetProperties(response);
             CopyState state = FileHttpResponseParsers.GetCopyAttributes(response);
-            
-            if (ignoreMD5)
-            {
-                properties.ContentMD5 = this.attributes.Properties.ContentMD5;
-            }
 
             this.attributes.Properties = properties;
             this.attributes.Metadata = FileHttpResponseParsers.GetMetadata(response);

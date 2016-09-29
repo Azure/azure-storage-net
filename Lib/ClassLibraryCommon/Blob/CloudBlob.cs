@@ -2905,7 +2905,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 if (!arePropertiesPopulated)
                 {
-                    CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp, isRangeGet);
+                    CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
                     storedMD5 = resp.Headers[HttpResponseHeader.ContentMd5];
 
                     if (options.EncryptionPolicy != null)
@@ -3005,7 +3005,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
                 return NullType.Value;
             };
 
@@ -3037,7 +3037,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
-                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
                 return true;
             };
 
@@ -3429,9 +3429,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobAttributes">The new attributes.</param>
         /// <param name="response">The response.</param>
-        /// <param name="ignoreMD5">if set to <c>true</c>, blob's MD5 will not be updated.</param>
         /// <exception cref="System.InvalidOperationException"></exception>
-        internal static void UpdateAfterFetchAttributes(BlobAttributes blobAttributes, HttpWebResponse response, bool ignoreMD5)
+        internal static void UpdateAfterFetchAttributes(BlobAttributes blobAttributes, HttpWebResponse response)
         {
             BlobProperties properties = BlobHttpResponseParsers.GetProperties(response);
 
@@ -3440,11 +3439,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if (blobAttributes.Properties.BlobType != BlobType.Unspecified && blobAttributes.Properties.BlobType != properties.BlobType)
             {
                 throw new InvalidOperationException(SR.BlobTypeMismatch);
-            }
-
-            if (ignoreMD5)
-            {
-                properties.ContentMD5 = blobAttributes.Properties.ContentMD5;
             }
 
             blobAttributes.Properties = properties;
