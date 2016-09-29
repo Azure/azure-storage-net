@@ -53,7 +53,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                     properties.ContentDisposition = response.Content.Headers.ContentDisposition.ToString();
                 }
 
-                if (response.Content.Headers.ContentMD5 != null)
+                if (response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentMD5Header) != null)
+                {
+                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentMD5Header);
+                }
+                else
                 {
                     properties.ContentMD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
                 }

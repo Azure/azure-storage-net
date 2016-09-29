@@ -796,6 +796,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
                 CloudFile file4 = (CloudFile)rootDirectory.ListFilesAndDirectories().First();
                 Assert.AreEqual(file2.Properties.Length, file4.Properties.Length);
+
+                CloudFile file5 = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsNull(file5.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                file5.DownloadRangeToByteArray(target, 0, 0, 4);
+                Assert.AreEqual("MDAwMDAwMDA=", file5.Properties.ContentMD5);
             }
             finally
             {

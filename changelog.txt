@@ -4,6 +4,7 @@ Changes in 8.0.0 :
 - PageBlobs: Added support for incremental copy.
 - Files: Prefix support for listing files and directories.
 - Blobs: Public access support for Blob Containers.
+- Blobs/Files: Populate content MD5 for range gets on Blobs and Files.
 
 Changes in 7.2.0 :
 

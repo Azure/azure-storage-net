@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 
             properties.ContentDisposition = response.Headers[Constants.HeaderConstants.ContentDispositionResponseHeader];
             properties.ContentEncoding = response.Headers[HttpResponseHeader.ContentEncoding];
-            properties.ContentMD5 = response.Headers[HttpResponseHeader.ContentMd5];
+            properties.ContentMD5 = response.Headers[HttpResponseHeader.ContentMd5] ?? response.Headers[Constants.HeaderConstants.FileContentMD5Header];
             properties.ContentType = response.Headers[HttpResponseHeader.ContentType];
             properties.CacheControl = response.Headers[HttpResponseHeader.CacheControl];
 

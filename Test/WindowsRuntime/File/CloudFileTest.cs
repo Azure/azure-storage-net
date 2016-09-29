@@ -293,6 +293,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                 IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null, null);
                 CloudFile file4 = (CloudFile)results.First();
                 Assert.AreEqual(file2.Properties.Length, file4.Properties.Length);
+
+                CloudFile file5 = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsNull(file5.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                await file5.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
+                Assert.AreEqual("MDAwMDAwMDA=", file5.Properties.ContentMD5);
             }
             finally
             {
