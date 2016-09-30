@@ -72,6 +72,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const long MaxBlobSize = MaxBlockNumber * MaxBlockSize;
 
         /// <summary>
+        /// The minimum size of a block for the large block upload strategy to be employed.
+        /// </summary>
+        public const int MinLargeBlockSize = (int)(4 * Constants.MB) + 1;
+
+        /// <summary>
         /// Constant for the max value of MaximumExecutionTime.
         /// </summary>
         public static readonly TimeSpan MaxMaximumExecutionTime = TimeSpan.FromDays(24.0);

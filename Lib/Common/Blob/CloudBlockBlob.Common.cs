@@ -38,6 +38,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private int streamWriteSizeInBytes = Constants.DefaultWriteBlockSizeBytes;
 
         /// <summary>
+        /// Flag to determine if the block size was modified.
+        /// </summary>
+        private Boolean modifiedStreamWriteSize = false;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
         /// </summary>
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
@@ -118,7 +123,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             set
             {
                 CommonUtility.AssertInBounds("StreamWriteSizeInBytes", value, 16 * Constants.KB, Constants.MaxBlockSize);
+                this.modifiedStreamWriteSize = true;
                 this.streamWriteSizeInBytes = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the modified block size flag.
+        /// </summary>
+        internal Boolean ModifiedStreamWriteSize
+        {
+            get
+            {
+                return this.modifiedStreamWriteSize;
             }
         }
     }

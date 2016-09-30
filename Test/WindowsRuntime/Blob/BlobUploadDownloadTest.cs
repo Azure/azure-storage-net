@@ -187,6 +187,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await this.DoUploadDownloadFileAsync(blob, 0);
             await this.DoUploadDownloadFileAsync(blob, 4096);
             await this.DoUploadDownloadFileAsync(blob, 4097);
+            await this.DoLargeBlockUploadDownloadFileAsync(blob, 4096);
+            await this.DoLargeBlockUploadDownloadFileAsync(blob, 8000);
+            await this.DoLargeBlockUploadDownloadFileAsync(blob, 9000);
         }
 
         [TestMethod]
@@ -280,6 +283,89 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 context = new OperationContext();
                 await blob.DownloadToFileAsync(outputFile, null, null, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                using (Stream inputFileStream = await inputFile.OpenStreamForReadAsync(),
+                    outputFileStream = await outputFile.OpenStreamForReadAsync())
+                {
+                    TestHelper.AssertStreamsAreEqual(inputFileStream, outputFileStream);
+                }
+            }
+            finally
+            {
+                inputFile.DeleteAsync().AsTask().Wait();
+                outputFile.DeleteAsync().AsTask().Wait();
+            }
+#endif
+        }
+
+        private async Task DoLargeBlockUploadDownloadFileAsync(ICloudBlob blob, int fileSize)
+        {
+#if NETCORE
+            string inputFileName = Path.GetTempFileName();
+            string outputFileName = Path.GetTempFileName();
+            if (System.IO.File.Exists(outputFileName))
+            {
+                System.IO.File.Delete(outputFileName);
+            }
+
+            try
+            {
+                byte[] buffer = GetRandomBuffer(fileSize);
+                BlobRequestOptions options = new BlobRequestOptions();
+                options.StoreBlobContentMD5 = false;
+                blob.StreamWriteSizeInBytes = 4 * 1024 * 1024;
+
+                using (FileStream file = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    await file.WriteAsync(buffer, 0, buffer.Length);
+                }
+
+                await blob.UploadFromFileAsync(inputFileName, null, options, null);
+
+                OperationContext context = new OperationContext();
+                await blob.UploadFromFileAsync(inputFileName, null, null, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                context = new OperationContext();
+                await blob.DownloadToFileAsync(outputFileName, FileMode.CreateNew, null, options, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                using (FileStream inputFile = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                    outputFile = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqual(inputFile, outputFile);
+                }
+            }
+            finally
+            {
+                System.IO.File.Delete(inputFileName);
+                System.IO.File.Delete(outputFileName);
+            }
+#else
+            StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
+            StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
+            StorageFile outputFile = await tempFolder.CreateFileAsync("output.file", CreationCollisionOption.GenerateUniqueName);
+
+            try
+            {
+                byte[] buffer = GetRandomBuffer(fileSize);
+                using (Stream file = await inputFile.OpenStreamForWriteAsync())
+                {
+                    await file.WriteAsync(buffer, 0, buffer.Length);
+                }
+                
+                BlobRequestOptions options = new BlobRequestOptions();
+                options.StoreBlobContentMD5 = false;
+                blob.StreamWriteSizeInBytes = 4 * 1024 * 1024;
+                OperationContext context = new OperationContext();
+
+                await blob.UploadFromFileAsync(inputFile);
+                await blob.UploadFromFileAsync(inputFile, null, options, context);
+                Assert.IsNotNull(context.LastResult.ServiceRequestID);
+
+                context = new OperationContext();
+                await blob.DownloadToFileAsync(outputFile, null, options, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 using (Stream inputFileStream = await inputFile.OpenStreamForReadAsync(),
@@ -891,6 +977,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsInstanceOfType(ex.InnerException, typeof(ArgumentOutOfRangeException));
             }
         }
-#endregion
+        #endregion
     }
 }

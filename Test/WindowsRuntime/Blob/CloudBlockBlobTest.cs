@@ -71,7 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blob.PutBlockListAsync(blocks);
             }
         }
-        
+
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -701,7 +701,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, true, true, 1024, true);
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, false, true, 0, true);
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, false, true, 1024, true);
-            
+
                 // Upload exact amount
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, true, true, 0, true);
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, true, true, 1024, true);
@@ -799,6 +799,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * 1024 * 1024, null, null, null, true, false, 0, true);
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * 1024 * 1024, null, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 32 * 1024 * 1024, null, null, null, 0, 4 * 1024 * 1024 + 1);
+                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 32 * 1024 * 1024, null, null, null, 1024, 4 * 1024 * 1024 + 1);
             }
             finally
             {
@@ -830,6 +832,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob blob3 = container.GetBlockBlobReference("blob3");
                 blob3.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+
+                CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
+                blob4.StreamWriteSizeInBytes = 5 * 1024 * 1024;
 
                 using (MemoryStream originalBlobStream = new MemoryStream())
                 {
@@ -877,6 +882,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         // Number or requests should 1, or 2 if there is a retry
                         Assert.IsTrue(context.RequestResults.Count <= 2);
+
+                        sourceStream.Seek(0, SeekOrigin.Begin);
+                        options = new BlobRequestOptions()
+                        {
+                            StoreBlobContentMD5 = false,
+                            SingleBlobUploadThresholdInBytes = Size,
+                            ParallelOperationThreadCount = 3
+                        };
+                        context = new OperationContext();
+                        await blob4.UploadFromStreamAsync(sourceStream, null /* accessCondition */, options, context);
+
+                        // Number or requests should be at least 5 since StreamWriteSizeInBytes is 5 MB
+                        Assert.IsTrue(context.RequestResults.Count >= 5);
                     }
                 }
             }
@@ -899,7 +917,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #else
                 CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
                 hasher.Append(buffer.AsBuffer(startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
-                md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset()); 
+                md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
 #endif
             }
 
@@ -933,18 +951,65 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     };
                     if (copyLength.HasValue)
                     {
-                        await blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, operationContext); 
+                        await blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, operationContext);
                     }
                     else
                     {
                         await blob.UploadFromStreamAsync(sourceStream, accessCondition, options, operationContext);
                     }
                 }
-                
+
                 if (testMd5)
                 {
                     await blob.FetchAttributesAsync();
-                    Assert.AreEqual(md5, blob.Properties.ContentMD5); 
+                    Assert.AreEqual(md5, blob.Properties.ContentMD5);
+                }
+
+                using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())
+                {
+                    await blob.DownloadToStreamAsync(downloadedBlobStream);
+                    Assert.AreEqual(copyLength ?? originalBlobStream.Length, downloadedBlobStream.UnderlyingStream.Length);
+                    TestHelper.AssertStreamsAreEqualAtIndex(
+                        originalBlobStream,
+                        downloadedBlobStream.UnderlyingStream,
+                        0,
+                        0,
+                        copyLength.HasValue ? (int)copyLength : (int)originalBlobStream.Length);
+                }
+            }
+        }
+
+        private async Task CloudBlockBlobLargeBlockUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset, int streamWriteSize)
+        {
+            byte[] buffer = GetRandomBuffer(size);
+            CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+            blob.ServiceClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = size / 2;
+            blob.StreamWriteSizeInBytes = streamWriteSize;
+
+            using (MemoryStream originalBlobStream = new MemoryStream())
+            {
+                originalBlobStream.Write(buffer, startOffset, buffer.Length - startOffset);
+
+                Stream sourceStream;
+                MemoryStream stream = new MemoryStream(buffer);
+                stream.Seek(startOffset, SeekOrigin.Begin);
+                sourceStream = stream;
+
+                using (sourceStream)
+                {
+                    BlobRequestOptions options = new BlobRequestOptions()
+                    {
+                        StoreBlobContentMD5 = false,
+                    };
+
+                    if (copyLength.HasValue)
+                    {
+                        await blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, operationContext);
+                    }
+                    else
+                    {
+                        await blob.UploadFromStreamAsync(sourceStream, accessCondition, options, operationContext);
+                    }
                 }
 
                 using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())

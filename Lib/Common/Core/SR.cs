@@ -38,6 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string BlobDataCorrupted = "Blob data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
         public const string BlobEndPointNotConfigured = "No blob endpoint configured.";
         public const string BlobInvalidSequenceNumber = "The sequence number may not be specified for an increment operation.";
+        public const string BlobOverMaxBlockLimit = "The total blocks for this upload exceeds the maximum allowable limit. Please increase the block size.";
         public const string BlobStreamAlreadyCommitted = "Blob stream has already been committed once.";
         public const string BlobStreamFlushPending = "Blob stream has a pending flush operation. Please call EndFlush first.";
         public const string BlobStreamReadPending = "Blob stream has a pending read operation. Please call EndRead first.";

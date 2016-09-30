@@ -400,13 +400,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                using (CloudBlobStream blobStream = this.OpenWrite(accessCondition, modifiedOptions, operationContext))
+                if (source.CanSeek)
                 {
-                    using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+                    long streamLength = length ?? (source.Length - source.Position);
+                    int totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
+
+                    // Check if the total blocks required will exceed the maximum allowable block count.
+                    if (totalBlocks > Constants.MaxBlockNumber)
                     {
-                        source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
-                        blobStream.Commit();
+                        if (this.modifiedStreamWriteSize)
+                        {
+                            throw new StorageException(SR.BlobOverMaxBlockLimit);
+                        }
+                        else
+                        {
+                            // Scale the block size to allow for successful upload only if the user did not specify a value.
+                            this.streamWriteSizeInBytes = (int)Math.Ceiling((double)streamLength / (double)Constants.MaxBlockNumber);
+                        }
                     }
+                }
+
+                bool useOpenWrite = modifiedOptions.EncryptionPolicy != null
+                       || !source.CanSeek
+                       || this.streamWriteSizeInBytes < Constants.MinLargeBlockSize
+                       || modifiedOptions.StoreBlobContentMD5.Value;
+
+                if (useOpenWrite)
+                {
+                    using (CloudBlobStream blobStream = this.OpenWrite(accessCondition, modifiedOptions, operationContext))
+                    {
+                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+                        {
+                            source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
+                            blobStream.Commit();
+                        }
+                    }
+                }
+                else
+                {
+                    this.UploadLargeBlocksFromStreamAsync(source, length, accessCondition, modifiedOptions, operationContext, CancellationToken.None).Wait();
                 }
             }
         }
@@ -492,7 +524,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 CommonUtility.AssertInBounds("length", length.Value, 1);
 
-                if (source.CanSeek && length > source.Length - source.Position)
+                if (source.CanSeek && length > (source.Length - source.Position))
                 {
                     throw new ArgumentOutOfRangeException("length", SR.StreamLengthShortError);
                 }
@@ -525,13 +557,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         }
 
                         this.UploadFromStreamHandler(
-                            sourceStream,
-                            length,
-                            md5,
-                            accessCondition,
-                            operationContext,
-                            modifiedOptions,
-                            storageAsyncResult);
+                                            sourceStream,
+                                            length,
+                                            md5,
+                                            accessCondition,
+                                            operationContext,
+                                            modifiedOptions,
+                                            storageAsyncResult);
                     };
                 actionToRun = uploadAction;
 
@@ -629,63 +661,172 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                ICancellableAsyncResult result = this.BeginOpenWrite(
-                    accessCondition,
-                    modifiedOptions,
-                    operationContext,
-                    ar =>
+                if (source.CanSeek)
+                {
+                    long streamLength = length ?? (source.Length - source.Position);
+                    int totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
+
+                    // Check if the total blocks required will exceed the maximum allowable block count.
+                    if (totalBlocks > Constants.MaxBlockNumber)
                     {
-                        ContinueAsyncOperation(storageAsyncResult, ar, () =>
-                            {
-                                CloudBlobStream blobStream = this.EndOpenWrite(ar);
-                                storageAsyncResult.OperationState = blobStream;
+                        if (this.modifiedStreamWriteSize)
+                        {
+                            throw new StorageException(SR.BlobOverMaxBlockLimit);
+                        }
+                        else
+                        {
+                            // Scale the block size to allow for successful upload only if the user did not specify a value.
+                            this.streamWriteSizeInBytes = (int)Math.Ceiling((double)streamLength / (double)Constants.MaxBlockNumber);
+                        }
+                    }
+                }
 
-                                source.WriteToAsync(
-                                    blobStream,
-                                    length,
-                                    null /* maxLength */,
-                                    false,
-                                    tempExecutionState,
-                                    null /* streamCopyState */,
-                                    completedState =>
-                                    {
-                                        ContinueAsyncOperation(storageAsyncResult, completedState, () =>
-                                        {
-                                            if (completedState.ExceptionRef != null)
-                                            {
-                                                storageAsyncResult.OnComplete(completedState.ExceptionRef);
-                                            }
-                                            else
-                                            {
-                                                ICancellableAsyncResult commitResult = blobStream.BeginCommit(
-                                                        CloudBlob.BlobOutputStreamCommitCallback,
-                                                        storageAsyncResult);
+                bool useOpenWrite = modifiedOptions.EncryptionPolicy != null
+                   || !source.CanSeek
+                   || this.streamWriteSizeInBytes < Constants.MinLargeBlockSize
+                   || modifiedOptions.StoreBlobContentMD5.Value;
 
-                                                storageAsyncResult.CancelDelegate = commitResult.Cancel;
-                                                if (storageAsyncResult.CancelRequested)
-                                                {
-                                                    storageAsyncResult.Cancel();
-                                                }
-                                            }
-                                        });
-                                    });
-
-                                storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
-                                if (storageAsyncResult.CancelRequested)
+                if (useOpenWrite)
+                {
+                    ICancellableAsyncResult result = this.BeginOpenWrite(
+                        accessCondition,
+                        modifiedOptions,
+                        operationContext,
+                        ar =>
+                        {
+                            ContinueAsyncOperation(storageAsyncResult, ar, () =>
                                 {
-                                    storageAsyncResult.Cancel();
-                                }
-                            });
-                    },
-                    null /* state */);
+                                    CloudBlobStream blobStream = this.EndOpenWrite(ar);
+                                    storageAsyncResult.OperationState = blobStream;
 
-                // We do not need to do this inside a lock, as storageAsyncResult is
-                // not returned to the user yet.
-                storageAsyncResult.CancelDelegate = result.Cancel;
+                                    source.WriteToAsync(
+                                        blobStream,
+                                        length,
+                                        null /* maxLength */,
+                                        false,
+                                        tempExecutionState,
+                                        null /* streamCopyState */,
+                                        completedState =>
+                                        {
+                                            ContinueAsyncOperation(storageAsyncResult, completedState, () =>
+                                            {
+                                                if (completedState.ExceptionRef != null)
+                                                {
+                                                    storageAsyncResult.OnComplete(completedState.ExceptionRef);
+                                                }
+                                                else
+                                                {
+                                                    ICancellableAsyncResult commitResult = blobStream.BeginCommit(
+                                                            CloudBlob.BlobOutputStreamCommitCallback,
+                                                            storageAsyncResult);
+
+                                                    storageAsyncResult.CancelDelegate = commitResult.Cancel;
+                                                    if (storageAsyncResult.CancelRequested)
+                                                    {
+                                                        storageAsyncResult.Cancel();
+                                                    }
+                                                }
+                                            });
+                                        });
+
+                                    storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
+                                    if (storageAsyncResult.CancelRequested)
+                                    {
+                                        storageAsyncResult.Cancel();
+                                    }
+                                });
+                        },
+                        null /* state */);
+
+                    // We do not need to do this inside a lock, as storageAsyncResult is
+                    // not returned to the user yet.
+                    storageAsyncResult.CancelDelegate = result.Cancel;
+                }
+                else
+                {
+                    // Create an APM Wrapper for our upload Task that propagates Cancellations and Exceptions.
+                    return new CancellableAsyncResultTaskWrapper(
+                        (token) => this.UploadLargeBlocksFromStreamAsync(source, length, accessCondition, modifiedOptions, operationContext, token),
+                        callback,
+                        state);
+                }
             }
 
             return storageAsyncResult;
         }
+
+#if TASK
+        /// <summary>
+        ///  Helper function for the memory optimized uploading of BlockBlobs with large block sizes.
+        /// </summary>
+        /// <param name="source">The content stream. Must be seekable.</param>
+        /// <param name="length">Number of bytes to upload from the content stream starting at its current position.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        ///  <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+
+        private async Task UploadLargeBlocksFromStreamAsync(Stream source, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            List<Task> concurrentPutBlocks = new List<Task>();
+            List<string> blockList = new List<string>();
+            long streamLength = length ?? (source.Length - source.Position);
+            int totalBlocks = (int) Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
+            int parallelUploadOperations = options.ParallelOperationThreadCount ?? 1;
+            long substreamLength = this.streamWriteSizeInBytes;
+            long offset = source.Position;
+
+            // Synchronization mutex required to to ensure thread-safe, concurrent operations between related SubStream instances.
+            SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
+
+            for (int i = 0; i < totalBlocks; i++)
+            {
+                // Throws a OperationCanceledException if a cancellation has been detected.
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Ensures that at most, only the designated thread count operations are simultaneously uploaded.
+                if (concurrentPutBlocks.Count() == parallelUploadOperations)
+                {
+                    await Task.WhenAny(concurrentPutBlocks.ToArray()).ConfigureAwait(false);
+                    concurrentPutBlocks.RemoveAll(putBlockUpload => putBlockUpload.IsCompleted);
+                }
+
+                // Must specify remaining bytes in the last block if applicable.
+                // Cannot rely on the wrapped Stream's Read() to implictly determine block size,
+                // as the provided write length may be less than the wrapped stream length.
+                if ((i == totalBlocks - 1) && (streamLength % this.streamWriteSizeInBytes > 0))
+                {
+                    substreamLength = streamLength % this.streamWriteSizeInBytes;
+                }
+
+                // Pad block id to fit the digits up to maximum allowable number of blocks.
+                string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Format("Block_{0}", i.ToString("00000"))));
+                blockList.Add(blockId);
+
+                // Stream abstraction to create a logical substream of a region within an underlying stream.
+                SubStream blockToStream = new SubStream(
+                    source,
+                    offset + (i * this.streamWriteSizeInBytes),
+                    substreamLength,
+                    streamReadThrottler);
+
+                Task putBlockOp = this.PutBlockAsync(
+                    blockId,
+                    blockToStream,
+                    null,
+                    accessCondition,
+                    options,
+                    operationContext,
+                    cancellationToken);
+
+                concurrentPutBlocks.Add(putBlockOp);
+            }
+
+            await Task.WhenAll(concurrentPutBlocks.ToArray()).ConfigureAwait(false);
+            await this.PutBlockListAsync(blockList, accessCondition, options, operationContext).ConfigureAwait(false);
+        }
+#endif
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
         private void UploadFromStreamHandler(Stream source, long? length, string contentMD5, AccessCondition accessCondition, OperationContext operationContext, BlobRequestOptions options, StorageAsyncResult<NullType> storageAsyncResult)
@@ -723,8 +864,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUploadFromStream(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
-            storageAsyncResult.End();
+            if (asyncResult is CancellableAsyncResultTaskWrapper)
+            {
+                CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
+                cancellableAsyncResult.Wait();
+            }
+            else
+            {
+                StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
+                storageAsyncResult.End();
+            }
         }
 
 #if TASK
@@ -1256,7 +1405,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The contents of the blob, as a string.</returns>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual string DownloadText(Encoding encoding = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             using (SyncMemoryStream stream = new SyncMemoryStream())
@@ -1274,7 +1423,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadText(AsyncCallback callback, object state)
         {
             return this.BeginDownloadText(null /* encoding */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
@@ -1741,7 +1890,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
-
 
 #if SYNC
         /// <summary>
@@ -2494,7 +2642,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return false;
             }
 
-            length = length ?? source.Length - source.Position;
+            length = length ?? (source.Length - source.Position);
 
             if (modifiedOptions.EncryptionPolicy != null)
             {
