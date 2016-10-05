@@ -51,13 +51,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     properties.ContentDisposition = response.Content.Headers.ContentDisposition.ToString();
                 }
 
-                if (response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header) != null)
-                {
-                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
-                }
-                else
+                if (response.Content.Headers.ContentMD5 != null && response.Content.Headers.ContentRange == null)
                 {
                     properties.ContentMD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
+                }
+                else if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header)))
+                {
+                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
                 }
 
                 if (response.Content.Headers.ContentType != null)

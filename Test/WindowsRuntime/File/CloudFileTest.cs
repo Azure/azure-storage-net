@@ -234,6 +234,15 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.IsNull(file2.Properties.ContentLanguage);
                 Assert.AreEqual("application/octet-stream", file2.Properties.ContentType);
                 Assert.IsNull(file2.Properties.ContentMD5);
+
+                CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsNull(file3.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                FileRequestOptions options = new FileRequestOptions();
+                options.UseTransactionalMD5 = true;
+                file3.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                await file3.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options, null);
+                Assert.IsNull(file3.Properties.ContentMD5);
             }
             finally
             {
