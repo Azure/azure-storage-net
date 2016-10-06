@@ -265,9 +265,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueCreateIfNotExistsAPM()
         {
-            string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
-            CloudQueue queue = client.GetQueueReference(name);
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+            CloudQueue queue2 = client.GetQueueReference(GenerateNewQueueName());
 
             try
             {
@@ -280,11 +280,30 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     result = queue.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     Assert.IsFalse(queue.EndCreateIfNotExists(result));
+
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = queue2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(queue2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = queue2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(queue2.EndCreateIfNotExists(result));
+
                 }
             }
             finally
             {
-                queue.Delete();
+                queue.DeleteIfExists();
+                queue2.DeleteIfExists();
             }
         }
 

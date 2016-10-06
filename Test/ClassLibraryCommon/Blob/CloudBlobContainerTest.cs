@@ -604,6 +604,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlobContainerCreateIfNotExistsAPM()
         {
             CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlobContainer container2 = GetRandomContainerReference();
             try
             {
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
@@ -618,11 +619,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         null);
                     waitHandle.WaitOne();
                     Assert.IsFalse(container.EndCreateIfNotExists(result));
+
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = container2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(container2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = container2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(container2.EndCreateIfNotExists(result));
                 }
             }
             finally
             {
                 container.DeleteIfExists();
+                container2.DeleteIfExists();
             }
         }
 

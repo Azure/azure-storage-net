@@ -1904,7 +1904,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             catch (StorageException)
             {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "One of the request inputs is not valid.");
+                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "A binary operator with incompatible types was detected. Found operand types 'Edm.String' and 'Edm.Boolean' for operator kind 'And'.");
             }
         }
         #endregion

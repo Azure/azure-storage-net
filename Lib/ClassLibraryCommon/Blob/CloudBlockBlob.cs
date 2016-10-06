@@ -68,15 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 catch (StorageException e)
                 {
-                    if ((e.RequestInformation != null) &&
-                        (((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                        string.IsNullOrEmpty(accessCondition.IfMatchETag)) ||
-                        (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden)))
-                    {
-                        // If we got a 404 and the condition was not an If-Match OR if we got a 403,
-                        // we should continue with the operation.
-                    }
-                    else
+                    if (!CloudBlockBlob.ContinueOpenWriteOnFailure(e, accessCondition))
                     {
                         throw;
                     }
@@ -174,15 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         }
                         catch (StorageException e)
                         {
-                            if ((e.RequestInformation != null) &&
-                                (((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                                string.IsNullOrEmpty(accessCondition.IfMatchETag)) ||
-                                (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden)))
-                            {
-                                // If we got a 404 and the condition was not an If-Match OR if we got a 403,
-                                // we should continue with the operation.
-                            }
-                            else
+                            if (!CloudBlockBlob.ContinueOpenWriteOnFailure(e, accessCondition))
                             {
                                 storageAsyncResult.OnComplete(e);
                                 return;
@@ -2535,6 +2519,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 storageAsyncResult.OnComplete(e);
             }
+        }
+
+        /// <summary>
+        /// Helper method to determine whether we should continue with an OpenWrite operation.
+        /// 
+        /// When we are opening a stream for writing, if there is an access condition, we first try a FetchAttributes on the blob.
+        /// The purpose of this is to fail fast in the case where the access condition would fail the request at the very end.  (Access
+        /// conditions aren't checked for PutBlock, only PutBlockList.)
+        /// 
+        /// If the FetchAttributes call succeeded, we should continue with the OpenWrite operation.  If the FetchAttributes call failed,
+        /// we need to check if the failure is one of the allowed failure modes.  This method does that check.
+        /// </summary>
+        /// <param name="exception">The exception received from the FetchAttributes call.</param>
+        /// <param name="accessCondition">The access condition used on the FetchAttributes call.</param>
+        /// <returns>True if the operation should continue, false if the exception should be re-thrown.</returns>
+        private static bool ContinueOpenWriteOnFailure(StorageException exception, AccessCondition accessCondition)
+        {
+            // If we don't have any request information, don't continue.
+            if (exception.RequestInformation == null) return false;
+
+            // If we got a 404 and the access condition was not an If-Match, continue.  (We don't want an if-none-match to interfere with the case where the blob doesn't exist)
+            if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) && string.IsNullOrEmpty(accessCondition.IfMatchETag)) return true;
+
+            // If we got a 400 and the access condition was If-None-Match-*, continue.  (There is a special case:  If-None-Match-*, on a blob that doesn't exist, will return a 400 on a read operation, because it's an impossible condition.
+            if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.BadRequest) && !string.IsNullOrEmpty(accessCondition.IfNoneMatchETag) && (accessCondition.IfNoneMatchETag == "*")) return true;
+
+            // If we got a 403, continue.  This is to account for the case where our credentials give write, but not read permission.
+            if (exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden) return true;
+
+            return false;
         }
     }
 }

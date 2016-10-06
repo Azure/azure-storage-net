@@ -2991,7 +2991,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
             }
 
-            CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+            CloudAppendBlob blob = container.GetAppendBlobReference("blob" + Guid.NewGuid().ToString());
             blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
 
             using (MemoryStream originalBlobStream = new MemoryStream())

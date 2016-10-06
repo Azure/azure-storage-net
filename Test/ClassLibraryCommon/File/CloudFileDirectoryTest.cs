@@ -265,6 +265,24 @@ namespace Microsoft.WindowsAzure.Storage.File
                         null);
                     waitHandle.WaitOne();
                     Assert.IsTrue(directory.EndCreateIfNotExists(result));
+
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory2");
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = directory2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(directory2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = directory2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(directory2.EndCreateIfNotExists(result));
                 }
             }
             finally
@@ -1195,6 +1213,49 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             CloudFileDirectory empty = parent.Parent;
             Assert.IsNull(empty);
+        }
+
+        [TestMethod]
+        [Description("Test the behavior of CreateIfNotExists on the root directory.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryRootDirectoryCreateIfNotExistsTest()
+        {
+            // This logic needs to be tested because when we call CreateIfNotExists(), internally we just call
+            // Create(), and check for an Http.Conflict (409).
+            // However, if you try to call Create() on the root directory, it will return a 405, 
+            // regardless of whether or not the share / root directory exists.
+
+            CloudFileClient client = GenerateCloudFileClient();
+            string name = GetRandomShareName();
+            CloudFileShare share = client.GetShareReference(name);
+            try
+            {
+                CloudFileDirectory rootDir = share.GetRootDirectoryReference();
+
+                string expectedErrorText = "The remote server returned an error: (404) Not Found.";
+                TestHelper.ExpectedException<StorageException>(() => rootDir.CreateIfNotExists(), expectedErrorText);
+                TestHelper.ExpectedException<StorageException>(() => rootDir.EndCreateIfNotExists(rootDir.BeginCreateIfNotExists(null, null)), expectedErrorText);
+                TestHelper.ExpectedException<StorageException>(() => rootDir.CreateIfNotExistsAsync().Wait(), expectedErrorText);
+                TestHelper.ExpectedException<StorageException>(() => rootDir.CreateIfNotExistsAsync().Wait(), expectedErrorText);
+
+                share.CreateIfNotExists();
+
+                // Root directory always already exists
+                Assert.IsFalse(rootDir.CreateIfNotExists());
+                Assert.IsFalse(rootDir.EndCreateIfNotExists(rootDir.BeginCreateIfNotExists(null, null)));
+                Assert.IsFalse(rootDir.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(rootDir.CreateIfNotExistsAsync(null, null).Result);
+
+                // We don't need to worry about the Delete-If-Exists case, if you try and delete the root directory it'll
+                // fail, which is fine.
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
         }
 
         [TestMethod]

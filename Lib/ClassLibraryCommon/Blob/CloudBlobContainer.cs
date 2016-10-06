@@ -272,9 +272,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 createResult => 
                 {
-                    ExecutionState<NullType> executionResult = createResult as ExecutionState<NullType>;
-                    callback(executionResult);
-                    executionResult.OnComplete();
+                    if (callback != null)
+                    {
+                        callback(createResult);
+                    }
                 },
                 null);
 

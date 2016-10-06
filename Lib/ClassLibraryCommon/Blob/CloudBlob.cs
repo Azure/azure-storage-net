@@ -1809,7 +1809,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
                     if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
                     {
                         return false;
                     }
@@ -1885,7 +1886,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
                             ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound)))
+                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
+                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound)))
                         {
                             storageAsyncResult.Result = false;
                             storageAsyncResult.OnComplete();

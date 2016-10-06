@@ -228,15 +228,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             foreach (string headerName in headerNames)
             {
                 string value = request.Headers[headerName];
-                if (!string.IsNullOrEmpty(value))
-                {
-                    canonicalizedElement.Length = 0;
-                    canonicalizedElement.Append(headerName);
-                    canonicalizedElement.Append(HeaderNameValueSeparator);
-                    canonicalizedElement.Append(value.TrimStart().Replace("\r\n", string.Empty));
+                canonicalizedElement.Length = 0;
+                canonicalizedElement.Append(headerName);
+                canonicalizedElement.Append(HeaderNameValueSeparator);
+                canonicalizedElement.Append(value.TrimStart().Replace("\r\n", string.Empty));
 
-                    canonicalizedString.AppendCanonicalizedElement(canonicalizedElement.ToString());
-                }
+                canonicalizedString.AppendCanonicalizedElement(canonicalizedElement.ToString());
             }
         }
 #endif

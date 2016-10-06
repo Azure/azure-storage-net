@@ -457,8 +457,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void CloudTableCreateIfNotExistsAPM()
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
+            CloudTable tableRef2 = tableClient.GetTableReference(GenerateRandomTableName());
 
             try
             {
@@ -496,10 +496,31 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     // Table should not have been created
                     Assert.IsFalse(tableRef.EndCreateIfNotExists(result));
                 }
+
+                using (ManualResetEvent evt = new ManualResetEvent(false))
+                {
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => evt.Set();
+                    IAsyncResult result = tableRef2.BeginCreateIfNotExists(null, context, null, null);
+                    evt.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(tableRef2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => evt.Set();
+                    result = tableRef2.BeginCreateIfNotExists(null, context, null, null);
+                    evt.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(tableRef2.EndCreateIfNotExists(result));
+                }
             }
             finally
             {
                 tableRef.DeleteIfExists();
+                tableRef2.DeleteIfExists();
             }
         }
         #endregion

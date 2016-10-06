@@ -223,9 +223,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 operationContext,
                 createResult =>
                 {
-                    ExecutionState<NullType> executionResult = createResult as ExecutionState<NullType>;
-                    callback(executionResult);
-                    executionResult.OnComplete();
+                    if (callback != null)
+                    {
+                        callback(createResult);
+                    }
                 },
                 null);
 
@@ -340,7 +341,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             try
             {
-                bool exists = this.Exists(modifiedOptions, operationContext);
+                bool exists = this.Exists(true, modifiedOptions, operationContext);
                 if (!exists)
                 {
                     return false;

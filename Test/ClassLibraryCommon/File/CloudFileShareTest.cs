@@ -241,6 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public void CloudFileShareCreateIfNotExistsAPM()
         {
             CloudFileShare share = GetRandomShareReference();
+            CloudFileShare share2 = GetRandomShareReference();
             try
             {
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
@@ -255,11 +256,29 @@ namespace Microsoft.WindowsAzure.Storage.File
                         null);
                     waitHandle.WaitOne();
                     Assert.IsFalse(share.EndCreateIfNotExists(result));
+
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = share2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(share2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = share2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(share2.EndCreateIfNotExists(result));
                 }
             }
             finally
             {
                 share.DeleteIfExists();
+                share2.DeleteIfExists();
             }
         }
 

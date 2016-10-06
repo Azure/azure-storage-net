@@ -1249,9 +1249,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 operationContext,
                 createResult => 
                 {
-                    ExecutionState<TableResult> executionResult = createResult as ExecutionState<TableResult>;
-                    callback(executionResult);
-                    executionResult.OnComplete();
+                    if (callback != null)
+                    {
+                        callback(createResult);
+                    }
                 },
                 null);
             
@@ -1477,7 +1478,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             try
             {
-                bool exists = this.Exists(modifiedOptions, operationContext);
+                bool exists = this.Exists(true, modifiedOptions, operationContext);
                 if (!exists)
                 {
                     return false;

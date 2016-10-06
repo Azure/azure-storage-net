@@ -680,7 +680,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
                         if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
+                            (extendedInfo.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
+                            (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
                         {
                             return false;
                         }

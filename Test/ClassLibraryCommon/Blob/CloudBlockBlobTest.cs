@@ -1970,7 +1970,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, false, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, false, true);
                 this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, false, true);
@@ -2019,7 +2019,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, true, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.PreconditionFailed);
 
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, true, true);
@@ -3126,12 +3126,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     blob.PutBlock(blockId, stream, null);
                 }
 
-                buffer = new byte[4 * 1024 * 1024 + 1];
+                buffer = new byte[100 * 1024 * 1024 + 1];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     TestHelper.ExpectedException(
                         () => blob.PutBlock(blockId, stream, null),
-                        "Trying to upload a block with more than 4MB should fail",
+                        "Trying to upload a block with more than 100MB should fail",
                         HttpStatusCode.RequestEntityTooLarge);
                 }
             }
@@ -3193,7 +3193,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         blob.EndPutBlock(result);
                     }
 
-                    buffer = new byte[4 * 1024 * 1024 + 1];
+                    buffer = new byte[100 * 1024 * 1024 + 1];
                     using (MemoryStream stream = new MemoryStream(buffer))
                     {
                         result = blob.BeginPutBlock(blockId, stream, null,
@@ -3202,7 +3202,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         waitHandle.WaitOne();
                         TestHelper.ExpectedException(
                             () => blob.EndPutBlock(result),
-                            "Trying to upload a block with more than 4MB should fail",
+                            "Trying to upload a block with more than 100MB should fail",
                             HttpStatusCode.RequestEntityTooLarge);
                     }
                 }
@@ -3251,12 +3251,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     blob.PutBlockAsync(blockId, stream, null).Wait();
                 }
 
-                buffer = new byte[4 * 1024 * 1024 + 1];
+                buffer = new byte[100 * 1024 * 1024 + 1];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     TestHelper.ExpectedExceptionTask(
                         blob.PutBlockAsync(blockId, stream, null),
-                        "Trying to upload a block with more than 4MB should fail",
+                        "Trying to upload a block with more than 100MB should fail",
                         HttpStatusCode.RequestEntityTooLarge);
                 }
             }

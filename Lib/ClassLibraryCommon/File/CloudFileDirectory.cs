@@ -157,6 +157,19 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(FileRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
+            // Root directory always exists if the share exists.
+            // We cannot call this.Create() if this is the root directory, because the service will always 
+            // return a 405 error in that case, regardless of whether or not the share exists.
+            if (String.IsNullOrEmpty(this.Name))
+            {
+                // If the share does not exist, this will throw a 404, which is what we want.
+                // This.Create() will throw the same 404 if the share does not exist, and this is not the root directory.
+                this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).FetchAttributes(null, requestOptions, operationContext);
+
+                // If the above call did not throw an exception, then the share (and thus the root directory) already exists.
+                return false;
+            }
+
             try
             {
                 this.Create(requestOptions, operationContext);
@@ -203,6 +216,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            // Root directory always exists if the share exists.
+            // We cannot call this.BeginCreate() if this is the root directory, because the service will always 
+            // return a 405 error in that case, regardless of whether or not the share exists.
+            if (String.IsNullOrEmpty(this.Name))
+            {
+                // If the share does not exist, the end call will throw a 404, which is what we want.
+                // This.BeginCreate() will throw the same 404 if the share does not exist, and this is not the root directory.
+                return this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).BeginFetchAttributes(null, options, operationContext, callback, state);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -211,9 +234,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 createResult =>
                 {
-                    ExecutionState<NullType> executionResult = createResult as ExecutionState<NullType>;
-                    callback(executionResult);
-                    executionResult.OnComplete();
+                    if (callback != null)
+                    {
+                        callback(createResult);
+                    }
                 },
                 null);
 
@@ -227,6 +251,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
+            if (string.IsNullOrEmpty(this.Name))
+            {
+                this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).EndFetchAttributes(asyncResult);
+
+                // If the above call did not throw an exception, then the share (and thus the root directory) already exists.
+                return false;
+            }
+
             ExecutionState<NullType> executionResult = asyncResult as ExecutionState<NullType>;
             CommonUtility.AssertNotNull("AsyncResult", executionResult);
             try
@@ -265,6 +297,16 @@ namespace Microsoft.WindowsAzure.Storage.File
             return this.CreateIfNotExistsAsync(CancellationToken.None);
         }
 
+        private async Task<bool> CreateIfNotExistsAsyncHelper(FileRequestOptions options, OperationContext context, CancellationToken cancellationToken)
+        {
+            // If the share does not exist, this will throw a 404, which is what we want.
+            // This.Create() will throw the same 404 if the share does not exist, and this is not the root directory.
+            await this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).FetchAttributesAsync(null, options, context, cancellationToken);
+
+            // If the above call did not throw an exception, then the share (and thus the root directory) already exists.
+            return false;
+        }
+
         /// <summary>
         /// Returns a task that performs an asynchronous request to create the directory if it does not already exist.
         /// </summary>
@@ -274,6 +316,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(CancellationToken cancellationToken)
         {
+            // Root directory always exists if the share exists.
+            // We cannot call this.Create() if this is the root directory, because the service will always 
+            // return a 405 error in that case, regardless of whether or not the share exists.
+            if (String.IsNullOrEmpty(this.Name))
+            {
+                return this.CreateIfNotExistsAsyncHelper(null, null, cancellationToken);
+            }
+
             return AsyncExtensions.TaskFromApm(this.BeginCreateIfNotExists, this.EndCreateIfNotExists, cancellationToken);
         }
 
@@ -301,6 +351,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            // Root directory always exists if the share exists.
+            // We cannot call this.Create() if this is the root directory, because the service will always 
+            // return a 405 error in that case, regardless of whether or not the share exists.
+            if (String.IsNullOrEmpty(this.Name))
+            {
+                return this.CreateIfNotExistsAsyncHelper(options, operationContext, cancellationToken);
+            }
+
             return AsyncExtensions.TaskFromApm(this.BeginCreateIfNotExists, this.EndCreateIfNotExists, options, operationContext, cancellationToken);
         }
 #endif

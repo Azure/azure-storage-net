@@ -434,7 +434,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         }
 
         [TestMethod]
-        [Description("Get a container with empty header excluded/included from signature and verify request succeeded")]
+        [Description("Get a container with empty header excluded/included from signature and verify request failed/succeeded")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
@@ -453,7 +453,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
             using (HttpWebResponse response = BlobTestUtils.GetResponse(request, cloudOwnerAsync.BlobContext))
             {
-                BlobTests.ListContainersResponse(response, cloudOwnerAsync.BlobContext, null);
+                BlobTests.ListContainersResponse(response, cloudOwnerAsync.BlobContext, HttpStatusCode.Forbidden);
             }
 
             request = BlobTests.ListContainersRequest(cloudOwnerAsync.BlobContext, listingContext);
