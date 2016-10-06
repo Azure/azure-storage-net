@@ -732,6 +732,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Create a container with public access. Check public access is populated for Exists")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientCreateBlobAndCheckExistsWithPublicAccess()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            BlobContainerPublicAccessType[] accessValues = {BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob};
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                string name = GetRandomContainerName();
+                CloudBlobContainer container = blobClient.GetContainerReference(name);
+                container.Create(access);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                Assert.AreEqual(access, container2.GetPermissions().PublicAccess);
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                container3.Exists();
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                container.Delete();
+            }
+        }
+
+        [TestMethod]
         [Description("List containers and fetch attributes with public access")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -750,9 +780,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 permissions.PublicAccess = access;
                 container.SetPermissions(permissions);
-                container.FetchAttributes();
                 Assert.AreEqual(access, container.Properties.PublicAccess);
-                Assert.AreEqual(access, container.GetPermissions().PublicAccess);
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                Assert.IsFalse(container2.Properties.PublicAccess.HasValue);
+                container2.FetchAttributes();
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                Assert.AreEqual(access, container3.GetPermissions().PublicAccess);
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
                 IEnumerable<CloudBlobContainer> results = blobClient.ListContainers(name, ContainerListingDetails.None, null, null);
                 Assert.AreEqual(1, results.Count());
                 Assert.AreEqual(access, results.First().Properties.PublicAccess);

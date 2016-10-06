@@ -1058,6 +1058,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 this.Properties = ContainerHttpResponseParsers.GetProperties(resp);
                 this.Metadata = ContainerHttpResponseParsers.GetMetadata(resp);
+                this.Properties.PublicAccess = accessType;
+
                 return NullType.Value;
             };
 
@@ -1183,6 +1185,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.UpdateETagAndLastModified(resp);
+                this.Properties.PublicAccess = acl.PublicAccess;
                 return NullType.Value;
             };
 
@@ -1220,6 +1223,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return Task.Factory.StartNew(() =>
                 {
                     ContainerHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, containerAcl);
+                    this.Properties.PublicAccess = containerAcl.PublicAccess;
                     return containerAcl;
                 });
             };
