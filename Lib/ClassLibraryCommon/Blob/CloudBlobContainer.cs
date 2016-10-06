@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a container in the Microsoft Azure Blob service.
     /// </summary>
-    public partial class CloudBlobContainer
+    public partial class CloudBlobContainer : ICloudBlobContainer
     {
 #if SYNC
         /// <summary>
