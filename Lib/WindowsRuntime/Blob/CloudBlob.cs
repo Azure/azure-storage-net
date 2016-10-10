@@ -217,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return Task.Run(async () =>
             {
-                FileStream stream = new FileStream(path, mode, FileAccess.Write);
+                FileStream stream = new FileStream(path, mode, FileAccess.Write, FileAccess.None);
 
                 try
                 {

@@ -5,6 +5,7 @@ Changes in 8.0.0 :
 - Files: Prefix support for listing files and directories.
 - Blobs: Public access support for Blob Containers.
 - Blobs/Files: Populate content MD5 for range gets on Blobs and Files.
+- Blobs/Files: Updated DownloadToFile to prevent reading of partially-written data while downloading.
 
 Changes in 7.2.0 :
 

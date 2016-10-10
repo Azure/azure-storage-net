@@ -504,7 +504,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual void DownloadToFile(string path, FileMode mode, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("path", path);
-            FileStream fileStream = new FileStream(path, mode, FileAccess.Write);
+            FileStream fileStream = new FileStream(path, mode, FileAccess.Write, FileShare.None);
 
             try
             {
@@ -563,7 +563,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             CommonUtility.AssertNotNull("path", path);
 
-            FileStream fileStream = new FileStream(path, mode, FileAccess.Write);
+            FileStream fileStream = new FileStream(path, mode, FileAccess.Write, FileShare.None);
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state)
             {
                 OperationState = Tuple.Create<FileStream, FileMode>(fileStream, mode)
