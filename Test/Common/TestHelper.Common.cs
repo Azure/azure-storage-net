@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 return e;
             }
-//#if NETCORE
+            //#if NETCORE
             catch (AggregateException ex)
             {
                 ex = ex.Flatten();
@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 Assert.Fail("Invalid exception {0} for operation: {1}", ex.GetType(), operationDescription);
             }
-//#endif
+            //#endif
             catch (Exception ex)
             {
                 T e = ex as T; // Test framework changes the value under debugger
@@ -468,7 +468,8 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 Assert.IsNull(propsA);
                 Assert.IsNull(propsB);
-            } else
+            }
+            else
             {
                 AssertPropertiesAreEqual(propsA, propsA.serviceProperties);
                 AssertPropertiesAreEqual(propsB, propsB.serviceProperties);
@@ -482,7 +483,8 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 Assert.IsNull(fileProps);
                 Assert.IsNull(props);
-            } else
+            }
+            else
             {
                 Assert.AreEqual(fileProps.Cors, props.Cors);
                 Assert.AreEqual(fileProps.MinuteMetrics, props.MinuteMetrics);
@@ -530,7 +532,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             if (propsA.DefaultServiceVersion != null && propsB.DefaultServiceVersion != null)
             {
-                Assert.AreEqual(propsA.DefaultServiceVersion, propsB.DefaultServiceVersion); 
+                Assert.AreEqual(propsA.DefaultServiceVersion, propsB.DefaultServiceVersion);
             }
             else
             {
@@ -563,12 +565,38 @@ namespace Microsoft.WindowsAzure.Storage
                     Assert.IsTrue(ruleA.AllowedMethods == ruleB.AllowedMethods);
 
                     Assert.IsTrue(ruleA.MaxAgeInSeconds == ruleB.MaxAgeInSeconds);
-                } 
+                }
             }
             else
             {
                 Assert.IsNull(propsA.Cors);
                 Assert.IsNull(propsB.Cors);
+            }
+        }
+
+        internal static void SpinUpTo30SecondsIgnoringFailures(Action test)
+        {
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+
+            while (true)
+            {
+                try
+                {
+                    test();
+                    return;
+                }
+                catch (Exception)
+                {
+                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        Task.Delay(TimeSpan.FromSeconds(1)).Wait();
+                    }
+                }
             }
         }
     }

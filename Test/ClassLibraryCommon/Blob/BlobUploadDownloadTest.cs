@@ -466,7 +466,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadDownloadFile(blob, 4097, true),
                 "Page blobs must be 512-byte aligned");
- 
+
             TestHelper.ExpectedException<IOException>(
                 () => blob.BeginUploadFromFile("non_existent.file", null, null),
                 "UploadFromFile requires an existing file");
@@ -629,7 +629,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudPageBlob nullBlob = this.testContainer.GetPageBlobReference("null");
             this.DoUploadDownloadFileTask(blob, 0);
             this.DoUploadDownloadFileTask(blob, 4096);
-            
+
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadDownloadFileTask(blob, 4097),
                 "Page blobs must be 512-byte aligned");
@@ -1278,7 +1278,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 0, 2 * 512);
             this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 1 * 512, 2 * 512);
             this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 2 * 512, 2 * 512);
-            
+
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadFromByteArrayTestTask(blob, 512, 0, 511),
                 "Page blobs must be 512-byte aligned");
@@ -2264,6 +2264,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int resultBufSize = 1024;
             byte[] buffer = GetRandomBuffer(blobLength);
             byte[] resultBuffer = new byte[resultBufSize];
+            blob.ServiceClient.DefaultRequestOptions.RetryPolicy = null;
 
             using (MemoryStream stream = new MemoryStream(buffer))
             {

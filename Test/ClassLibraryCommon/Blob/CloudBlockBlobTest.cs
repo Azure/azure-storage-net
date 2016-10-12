@@ -26,6 +26,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -3529,14 +3530,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobMethodsOnPageBlob()
+        public async Task CloudBlockBlobMethodsOnPageBlob()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
 
-                List<string> blobs = CreateBlobs(container, 1, BlobType.PageBlob);
+                List<string> blobs = await CreateBlobs(container, 1, BlobType.PageBlob);
                 CloudBlockBlob blob = container.GetBlockBlobReference(blobs.First());
                 List<string> blockList = GetBlockIdList(1);
 

@@ -1151,6 +1151,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             int resultBufSize = 1024;
             byte[] buffer = GetRandomBuffer(fileLength);
             byte[] resultBuffer = new byte[resultBufSize];
+            file.ServiceClient.DefaultRequestOptions.RetryPolicy = null;
 
             using (MemoryStream stream = new MemoryStream(buffer))
             {

@@ -541,12 +541,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                         });
 
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
-                CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
-                QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissions();
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+                    QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissions();
 
-                AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                    AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                });
             }
             finally
             {
@@ -593,15 +595,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     waitHandle.WaitOne();
                     queue.EndSetPermissions(result);
 
-                    Thread.Sleep(30 * 1000);
+                    TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                    {
+                        CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
 
-                    CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+                        result = queueToRetrieve.BeginGetPermissions(ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        QueuePermissions permissionsToRetrieve = queueToRetrieve.EndGetPermissions(result);
 
-                    result = queueToRetrieve.BeginGetPermissions(ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    QueuePermissions permissionsToRetrieve = queueToRetrieve.EndGetPermissions(result);
-
-                    AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                        AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                    });
                 }
             }
             finally
@@ -646,12 +649,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                         });
 
                 queue.SetPermissionsAsync(permissions).Wait();
-                Thread.Sleep(30 * 1000);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
 
-                CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
-                QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissionsAsync(null, null).Result;
+                    CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+                    QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissionsAsync(null, null).Result;
 
-                AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                    AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                });
             }
             finally
             {
@@ -835,7 +840,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 });
 
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
                 string sasTokenFromId = queue.GetSharedAccessSignature(null, id);
                 StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
@@ -844,22 +848,34 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 CloudQueueClient sasClient = sasAcc.CreateCloudQueueClient();
 
                 CloudQueue sasQueueFromSasUri = new CloudQueue(sasClient.Credentials.TransformUri(queue.Uri));
-                CloudQueueMessage receivedMessage = sasQueueFromSasUri.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage = sasQueueFromSasUri.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage.AsString);
+                });
 
                 CloudQueue sasQueueFromSasUri1 = new CloudQueue(new Uri(queue.Uri.ToString() + sasTokenFromId));
-                CloudQueueMessage receivedMessage1 = sasQueueFromSasUri1.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage1 = sasQueueFromSasUri1.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                });
 
                 CloudQueue sasQueueFromId = new CloudQueue(queue.Uri, sasCredsFromId);
-                CloudQueueMessage receivedMessage2 = sasQueueFromId.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage2 = sasQueueFromId.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                });
 
                 string sasTokenFromPolicy = queue.GetSharedAccessSignature(permissions.SharedAccessPolicies[id], null);
                 StorageCredentials sasCredsFromPolicy = new StorageCredentials(sasTokenFromPolicy);
                 CloudQueue sasQueueFromPolicy = new CloudQueue(queue.Uri, sasCredsFromPolicy);
-                CloudQueueMessage receivedMessage3 = sasQueueFromPolicy.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage3.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage3 = sasQueueFromPolicy.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage3.AsString);
+                });
             }
             finally
             {
@@ -902,19 +918,24 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 });
 
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
                 string sasTokenFromId = queue.GetSharedAccessSignature(null, id);
                 StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
                 CloudQueue sasQueueFromId = new CloudQueue(queue.Uri, sasCredsFromId);
-                CloudQueueMessage receivedMessage1 = sasQueueFromId.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage1 = sasQueueFromId.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                });
 
                 string sasTokenFromPolicy = queue.GetSharedAccessSignature(permissions.SharedAccessPolicies[id], null);
                 StorageCredentials sasCredsFromPolicy = new StorageCredentials(sasTokenFromPolicy);
                 CloudQueue sasQueueFromPolicy = new CloudQueue(queue.Uri, sasCredsFromPolicy);
-                CloudQueueMessage receivedMessage2 = sasQueueFromPolicy.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage2 = sasQueueFromPolicy.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                });
             }
             finally
             {
@@ -954,16 +975,18 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 });
                 permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
-                CloudQueue queue2 = queue.ServiceClient.GetQueueReference(queue.Name);
-                permissions = queue2.GetPermissions();
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessQueuePermissions.Read, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueue queue2 = queue.ServiceClient.GetQueueReference(queue.Name);
+                    permissions = queue2.GetPermissions();
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessQueuePermissions.Read, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {

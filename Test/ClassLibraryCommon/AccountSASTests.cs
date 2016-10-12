@@ -320,7 +320,7 @@ namespace Microsoft.WindowsAzure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.Read) == SharedAccessAccountPermissions.Read) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    List<DynamicTableEntity>  entities = tableWithSAS.ExecuteQuery(query).ToList();
+                    List<DynamicTableEntity> entities = tableWithSAS.ExecuteQuery(query).ToList();
                 }
                 else
                 {
@@ -377,7 +377,7 @@ namespace Microsoft.WindowsAzure.Storage
                 // Update a message (Update perms, Object RT)
                 // Clear all messages (Delete perms, Object RT)
 
-                if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) && 
+                if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Container) == SharedAccessAccountResourceTypes.Container))
                 {
                     queueWithSAS.Create();
@@ -628,25 +628,20 @@ namespace Microsoft.WindowsAzure.Storage
         {
             // Single-threaded, takes 10 minutes to run
             // Parallelized, 1 minute.
-      
-            Task[] tasks = new Task[0x100];
+            List<Task> tasks = new List<Task>();
 
             for (int i = 0; i < 0x100; i++)
             {
-                tasks[i] = Task.Factory.StartNew(() =>
-                    {
-                        SharedAccessAccountPermissions permissions = (SharedAccessAccountPermissions)i;
-                        SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
-                        policy.Permissions = permissions;
-                        this.RunPermissionsTestBlobs(policy);
-                        this.RunPermissionsTestTables(policy);
-                        this.RunPermissionsTestQueues(policy);
-                        this.RunPermissionsTestFiles(policy);
-                    }
-                );
+                SharedAccessAccountPermissions permissions = (SharedAccessAccountPermissions)i;
+                SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
+                policy.Permissions = permissions;
+                tasks.Add(Task.Run(() => this.RunPermissionsTestBlobs(policy)));
+                tasks.Add(Task.Run(() => this.RunPermissionsTestTables(policy)));
+                tasks.Add(Task.Run(() => this.RunPermissionsTestQueues(policy)));
+                tasks.Add(Task.Run(() => this.RunPermissionsTestFiles(policy)));
             }
-
-            Task.WaitAll(tasks);
+            
+            Task.WaitAll(tasks.ToArray());
         }
 
         [TestMethod]
@@ -657,16 +652,18 @@ namespace Microsoft.WindowsAzure.Storage
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void AccountSASResourceTypes()
         {
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < 0x8; i++)
             {
                 SharedAccessAccountResourceTypes resourceTypes = (SharedAccessAccountResourceTypes)i;
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.ResourceTypes = resourceTypes;
-                this.RunPermissionsTestBlobs(policy);
-                this.RunPermissionsTestTables(policy);
-                this.RunPermissionsTestQueues(policy);
-                this.RunPermissionsTestFiles(policy);
+                tasks.Add(Task.Run(() => this.RunPermissionsTestBlobs(policy)));
+                tasks.Add(Task.Run(() => this.RunPermissionsTestTables(policy)));
+                tasks.Add(Task.Run(() => this.RunPermissionsTestQueues(policy)));
+                tasks.Add(Task.Run(() => this.RunPermissionsTestFiles(policy)));
             }
+            Task.WaitAll(tasks.ToArray());
         }
 
         public void RunBlobTest(SharedAccessAccountPolicy policy, Action<Action> testHandler, int? httpsPort)
@@ -758,7 +755,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(queueClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                
+
                 StorageUri storageUri = queueClient.StorageUri;
                 if (httpsPort != null)
                 {
@@ -791,7 +788,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                
+
                 StorageUri storageUri = fileClient.StorageUri;
                 if (httpsPort != null)
                 {
@@ -837,7 +834,7 @@ namespace Microsoft.WindowsAzure.Storage
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void AccountSASServices()
         {
-            for (int i = 0; i < 0x10; i++ )
+            for (int i = 0; i < 0x10; i++)
             {
                 SharedAccessAccountPolicy policy = this.GetPolicyWithFullPermissions();
                 policy.Services = (SharedAccessAccountServices)i;
@@ -904,7 +901,7 @@ namespace Microsoft.WindowsAzure.Storage
                 foreach (int endOffset in endOffsets)
                 {
                     SharedAccessAccountPolicy policy = this.GetPolicyWithFullPermissions();
-                    
+
                     if (startOffset.HasValue)
                     {
                         policy.SharedAccessStartTime = DateTime.Now + TimeSpan.FromMinutes(startOffset.Value);
@@ -1076,7 +1073,7 @@ namespace Microsoft.WindowsAzure.Storage
             for (int i = 0; i < 3; i++)
             {
                 SharedAccessAccountPolicy policy = this.GetPolicyWithFullPermissions();
-                policy.Protocols = i == 0 ? (SharedAccessProtocol?) null : (SharedAccessProtocol)i;
+                policy.Protocols = i == 0 ? (SharedAccessProtocol?)null : (SharedAccessProtocol)i;
 
                 RunBlobTest(policy, action =>
                 {
@@ -1110,8 +1107,8 @@ namespace Microsoft.WindowsAzure.Storage
                 RunTableTest(policy, action =>
                 {
                     action();
-                }, tableHttpsPort); 
-                
+                }, tableHttpsPort);
+
                 RunQueueTest(policy, action =>
                 {
                     if (!policy.Protocols.HasValue || (policy.Protocols == SharedAccessProtocol.HttpsOrHttp))
@@ -1399,7 +1396,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS,  null, null, null, fileClient.StorageUri);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
                 CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
                 CloudFileShare shareWithSAS = fileClientWithSAS.GetShareReference(shareName);
                 CloudFile fileWithSAS = shareWithSAS.GetRootDirectoryReference().GetFileReference(fileName);

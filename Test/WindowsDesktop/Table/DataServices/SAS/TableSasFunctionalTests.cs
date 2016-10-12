@@ -104,9 +104,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 
                 // Test setting empty permissions.
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
 
                 // Add a policy, check setting and getting.
                 expectedPermissions.SharedAccessPolicies.Add(Guid.NewGuid().ToString(), new SharedAccessTablePolicy
@@ -117,9 +119,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
 
                 // Add a policy, check setting and getting.
                 expectedPermissions.SharedAccessPolicies.Add(Guid.NewGuid().ToString(), new SharedAccessTablePolicy
@@ -130,9 +134,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
 
                 // Add a null policy, check setting and getting.
                 expectedPermissions.SharedAccessPolicies.Add(Guid.NewGuid().ToString(), new SharedAccessTablePolicy
@@ -141,9 +147,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
 
                 // Add a policy, check setting and getting.
                 expectedPermissions.SharedAccessPolicies.Add(Guid.NewGuid().ToString(), new SharedAccessTablePolicy
@@ -154,9 +162,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
 
                 // Add a policy, check setting and getting.
                 expectedPermissions.SharedAccessPolicies.Add(Guid.NewGuid().ToString(), new SharedAccessTablePolicy
@@ -167,9 +177,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
             }
             finally
             {
