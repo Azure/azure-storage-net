@@ -1094,7 +1094,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, FileContinuationToken currentToken, CancellationToken cancellationToken)
         {
-            return this.ListFilesAndDirectoriesSegmentedAsync(prefix: prefix, maxResults: null, currentToken: currentToken, options: null, operationContext: null, cancellationToken: cancellationToken);
+            return this.ListFilesAndDirectoriesSegmentedAsync(prefix, null, currentToken, null, null, cancellationToken);
         }
 
         /// <summary>

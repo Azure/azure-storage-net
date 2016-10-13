@@ -50,7 +50,7 @@ For the best development experience, developers should use the official Microsof
 ## Use with the Azure Storage Emulator
 
 - The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
-- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.4. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.6. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 

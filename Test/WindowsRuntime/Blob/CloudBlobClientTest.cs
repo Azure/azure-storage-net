@@ -289,6 +289,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Create a container with public access. Check public access is populated for Exists")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientCreateBlobAndCheckExistsWithPublicAccessAsync()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                string name = GetRandomContainerName();
+                CloudBlobContainer container = blobClient.GetContainerReference(name);
+                await container.CreateAsync(access, null, null);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                BlobContainerPermissions containerAccess = await container2.GetPermissionsAsync();
+                Assert.AreEqual(access, containerAccess.PublicAccess);
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                await container3.ExistsAsync();
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                await container.DeleteAsync();
+            }
+        }
+
+        [TestMethod]
         [Description("List containers with public access")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -303,18 +334,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
             BlobContainerPermissions permissions = new BlobContainerPermissions();
-            BlobContinuationToken token = null;
             foreach (BlobContainerPublicAccessType access in accessValues)
             {
                 permissions.PublicAccess = access;
                 await container.SetPermissionsAsync(permissions);
-                await container.FetchAttributesAsync();
                 Assert.AreEqual(access, container.Properties.PublicAccess);
-                BlobContainerPermissions containerAccess = await container.GetPermissionsAsync();
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                Assert.IsFalse(container2.Properties.PublicAccess.HasValue);
+                await container2.FetchAttributesAsync();
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                BlobContainerPermissions containerAccess = await container3.GetPermissionsAsync();
                 Assert.AreEqual(access, containerAccess.PublicAccess);
-                ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
-                Assert.AreEqual(1, resultSegment.Results.Count());
-                Assert.AreEqual(access, resultSegment.Results.First().Properties.PublicAccess);
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                List<CloudBlobContainer> listedContainers = new List<CloudBlobContainer>();
+                BlobContinuationToken token = null;
+                do
+                {
+                    ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
+                    foreach (CloudBlobContainer returnedContainer in resultSegment.Results)
+                    {
+                        listedContainers.Add(returnedContainer);
+                    }
+                }
+                while (token != null);
+
+                Assert.AreEqual(1, listedContainers.Count());
+                Assert.AreEqual(access, listedContainers.First().Properties.PublicAccess);
             }
 
             await container.DeleteAsync();

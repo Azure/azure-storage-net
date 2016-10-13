@@ -370,6 +370,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsNull(blob2.Properties.ContentMD5);
                 Assert.AreEqual(LeaseStatus.Unlocked, blob2.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.PageBlob, blob2.Properties.BlobType);
+
+                CloudPageBlob blob3 = container.GetPageBlobReference("blob1");
+                Assert.IsNull(blob3.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                BlobRequestOptions options2 = new BlobRequestOptions();
+                options2.UseTransactionalMD5 = true;
+                blob3.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                await blob3.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options2, null);
+                Assert.IsNull(blob3.Properties.ContentMD5);
             }
             finally
             {
@@ -437,6 +446,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 byte[] target = new byte[4];
                 await blob5.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
                 Assert.AreEqual("MDAwMDAwMDA=", blob5.Properties.ContentMD5);
+
+                CloudPageBlob blob6 = container.GetPageBlobReference("blob1");
+                Assert.IsNull(blob6.Properties.ContentMD5);
+                target = new byte[4];
+                BlobRequestOptions options2 = new BlobRequestOptions();
+                options2.UseTransactionalMD5 = true;
+                await blob6.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options2, null);
+                Assert.AreEqual("MDAwMDAwMDA=", blob6.Properties.ContentMD5);
             }
             finally
             {
