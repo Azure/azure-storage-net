@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Auth;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -1285,6 +1286,126 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             dir = share.GetRootDirectoryReference().GetDirectoryReference(share.Uri.AbsoluteUri + "/TopDir1");
             Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(share.Uri, share.Uri.AbsoluteUri + "/TopDir1"), dir.Uri);
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateAndDeleteWithWriteOnlyPermissionsSync()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            fileShareWithSAS.CreateIfNotExists();
+            CloudFileDirectory fileDirectoryWithSAS = fileShareWithSAS.GetRootDirectoryReference().GetDirectoryReference("directory1");
+            try
+            {
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExists());
+                Assert.IsTrue(fileDirectoryWithSAS.CreateIfNotExists());
+                Assert.IsFalse(fileDirectoryWithSAS.CreateIfNotExists());
+                Assert.IsTrue(fileDirectoryWithSAS.DeleteIfExists());
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExists());
+            }
+            finally
+            {
+                fileDirectoryWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - APM ")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateAndDeleteWithWriteOnlyPermissionsAPM()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            fileShareWithSAS.CreateIfNotExistsAsync();
+            CloudFileDirectory fileDirectoryWithSAS = fileShareWithSAS.GetRootDirectoryReference().GetDirectoryReference("directory1");
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    result = fileDirectoryWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileDirectoryWithSAS.EndDeleteIfExists(result));
+
+                    result = fileDirectoryWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(fileDirectoryWithSAS.EndCreateIfNotExists(result));
+
+                    result = fileDirectoryWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileDirectoryWithSAS.EndCreateIfNotExists(result));
+
+                    result = fileDirectoryWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(fileDirectoryWithSAS.EndDeleteIfExists(result));
+
+                    result = fileDirectoryWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileDirectoryWithSAS.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                fileShareWithSAS.DeleteIfExists();
+            }
+
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateAndDeleteWithWriteOnlyPermissionsTask()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            fileShareWithSAS.CreateIfNotExistsAsync();
+            CloudFileDirectory fileDirectoryWithSAS = fileShareWithSAS.GetRootDirectoryReference().GetDirectoryReference("directory1");
+            try
+            {
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(fileDirectoryWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(fileDirectoryWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(fileDirectoryWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                fileShareWithSAS.DeleteIfExists();
+            }
+        }
+#endif
+
+        private CloudFileShare GenerateRandomWriteOnlyFileShare()
+        {
+            string fileName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.File,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+            };
+
+            CloudFileClient fileClient = GenerateCloudFileClient();
+            CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = fileClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
+            CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
+            CloudFileShare fileShareWithSAS = fileClientWithSAS.GetShareReference(fileName);
+            return fileShareWithSAS;
         }
     }
 }

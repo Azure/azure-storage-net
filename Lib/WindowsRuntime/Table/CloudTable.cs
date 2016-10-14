@@ -267,36 +267,29 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return Task.Run(async () =>
             {
-                if (await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
+                try
                 {
-                    return false;
+                    await this.CreateAsync(requestOptions, operationContext, cancellationToken);
+                    return true;
                 }
-                else
+                catch (Exception)
                 {
-                    try
+                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
                     {
-                        await this.CreateAsync(requestOptions, operationContext, cancellationToken);
-                        return true;
-                    }
-                    catch (Exception)
-                    {
-                        if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                        if ((extendedInfo == null) ||
+                            (extendedInfo.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
                         {
-                            StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                            if ((extendedInfo == null) ||
-                                (extendedInfo.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
-                            {
-                                return false;
-                            }
-                            else
-                            {
-                                throw;
-                            }
+                            return false;
                         }
                         else
                         {
                             throw;
                         }
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
             }, cancellationToken);
@@ -384,41 +377,48 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public virtual Task<bool> DeleteIfExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
-
             operationContext = operationContext ?? new OperationContext();
 
             return Task.Run(async () =>
             {
-                if (!await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
+                try
                 {
-                    return false;
-                }
-                else
-                {
-                    try
+                    if (!await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
                     {
-                        await this.DeleteAsync(requestOptions, operationContext, cancellationToken);
-                        return true;
+                        return false;
                     }
-                    catch (Exception)
+                }
+                catch (StorageException e)
+                {
+                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
                     {
-                        if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                        throw;
+                    }
+                }
+
+                try
+                {
+                    await this.DeleteAsync(requestOptions, operationContext, cancellationToken);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    {
+                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                        if ((extendedInfo == null) ||
+                            (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                         {
-                            StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                            if ((extendedInfo == null) ||
-                                (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                            {
-                                return false;
-                            }
-                            else
-                            {
-                                throw;
-                            }
+                            return false;
                         }
                         else
                         {
                             throw;
                         }
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
             }, cancellationToken);

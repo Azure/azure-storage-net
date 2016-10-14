@@ -6,6 +6,8 @@ Changes in 8.0.0 :
 - Blobs: Public access support for Blob Containers.
 - Blobs/Files: Populate content MD5 for range gets on Blobs and Files.
 - Blobs/Files: Updated DownloadToFile to prevent reading of partially-written data while downloading.
+- All: Added support for using Create/Delete and CreateIfNotExists/DeleteIfExists without read SAS permissions. CreateIfNotExists methods will now only do one REST call instead of two.
+- Blobs: Fixed a bug with OpenWrite for BlockBlobs where Upload* APIs would fail due to lack of read SAS permissions.
 
 Changes in 7.2.0 :
 

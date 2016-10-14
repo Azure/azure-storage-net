@@ -58,6 +58,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual void Create(BlobContainerPublicAccessType accessType, BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
             Executor.ExecuteSync(
                 this.CreateContainerImpl(modifiedOptions, accessType),
                 modifiedOptions.RetryPolicy,
@@ -177,7 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
@@ -191,38 +193,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(BlobContainerPublicAccessType accessType, BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            bool exists = this.Exists(true, modifiedOptions, operationContext);
-
-            if (exists)
-            {
-                return false;
-            }
-
             try
             {
-                this.Create(accessType, modifiedOptions, operationContext);
+                this.Create(accessType, requestOptions, operationContext);
                 return true;
-            }
+            } 
             catch (StorageException e)
             {
-                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists)))
                 {
-                    if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return false;
                 }
                 else
                 {
@@ -238,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(AsyncCallback callback, object state)
         {
@@ -253,7 +242,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
@@ -269,104 +258,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-
-            this.CreateIfNotExistsHandler(accessType, modifiedOptions, operationContext, storageAsyncResult);
-            return storageAsyncResult;
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool thread.")]
-        private void CreateIfNotExistsHandler(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
-        {
-            ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                true,
-                options,
+            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
+                accessType,
+                modifiedOptions,
                 operationContext,
-                existsResult =>
+                createResult => 
                 {
-                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                    lock (storageAsyncResult.CancellationLockerObject)
-                    {
-                        storageAsyncResult.CancelDelegate = null;
-                        try
-                        {
-                            bool exists = this.EndExists(existsResult);
-                            if (exists)
-                            {
-                                storageAsyncResult.Result = false;
-                                storageAsyncResult.OnComplete();
-                                return;
-                            }
-
-                            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
-                                accessType,
-                                options,
-                                operationContext,
-                                createResult =>
-                                {
-                                    storageAsyncResult.UpdateCompletedSynchronously(createResult.CompletedSynchronously);
-                                    storageAsyncResult.CancelDelegate = null;
-                                    try
-                                    {
-                                        this.EndCreate(createResult);
-                                        storageAsyncResult.Result = true;
-                                        storageAsyncResult.OnComplete();
-                                    }
-                                    catch (StorageException e)
-                                    {
-                                        if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
-                                        {
-                                            if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                                (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists))
-                                            {
-                                                storageAsyncResult.Result = false;
-                                                storageAsyncResult.OnComplete();
-                                            }
-                                            else
-                                            {
-                                                storageAsyncResult.OnComplete(e);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                },
-                                null /* state */);
-
-                            storageAsyncResult.CancelDelegate = savedCreateResult.Cancel;
-                            if (storageAsyncResult.CancelRequested)
-                            {
-                                storageAsyncResult.Cancel();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            storageAsyncResult.OnComplete(e);
-                        }
-                    }
+                    ExecutionState<NullType> executionResult = createResult as ExecutionState<NullType>;
+                    callback(executionResult);
+                    executionResult.OnComplete();
                 },
-                null /* state */);
+                null);
 
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
+            return savedCreateResult;
         }
 
         /// <summary>
@@ -376,10 +288,30 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = asyncResult as StorageAsyncResult<bool>;
-            CommonUtility.AssertNotNull("AsyncResult", res);
-            res.End();
-            return res.Result;
+            ExecutionState<NullType> executionResult = asyncResult as ExecutionState<NullType>;
+            CommonUtility.AssertNotNull("AsyncResult", executionResult);
+            try
+            {
+                this.EndCreate(executionResult);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists)))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }            
         }
 
 #if TASK
@@ -387,7 +319,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initiates an asynchronous operation that creates the container if it does not already exist.
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -399,7 +331,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(CancellationToken cancellationToken)
         {
@@ -412,7 +344,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobRequestOptions options, OperationContext operationContext)
         {
@@ -426,7 +358,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -440,7 +372,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -455,7 +387,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -586,11 +518,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-
-            bool exists = this.Exists(true, modifiedOptions, operationContext);
-            if (!exists)
+            try
             {
-                return false;
+                bool exists = this.Exists(true, modifiedOptions, operationContext);
+                if (!exists)
+                {
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
             }
 
             try
@@ -679,57 +620,60 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 storageAsyncResult.OnComplete();
                                 return;
                             }
-
-                            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                                accessCondition,
-                                options,
-                                operationContext,
-                                deleteResult =>
-                                {
-                                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                                    storageAsyncResult.CancelDelegate = null;
-                                    try
-                                    {
-                                        this.EndDelete(deleteResult);
-                                        storageAsyncResult.Result = true;
-                                        storageAsyncResult.OnComplete();
-                                    }
-                                    catch (StorageException e)
-                                    {
-                                        if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                                        {
-                                            if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                                (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
-                                            {
-                                                storageAsyncResult.Result = false;
-                                                storageAsyncResult.OnComplete();
-                                            }
-                                            else
-                                            {
-                                                storageAsyncResult.OnComplete(e);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                },
-                                null /* state */);
-
-                            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
-                            if (storageAsyncResult.CancelRequested)
+                        }
+                        catch (StorageException e)
+                        {
+                            if ((e.RequestInformation != null) &&
+                                (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden))
                             {
-                                storageAsyncResult.Cancel();
+                                storageAsyncResult.OnComplete(e);
                             }
                         }
                         catch (Exception e)
                         {
                             storageAsyncResult.OnComplete(e);
+                            return;
+                        }
+
+                        ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
+                            accessCondition,
+                            options,
+                            operationContext,
+                            deleteResult =>
+                            {
+                                storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
+                                storageAsyncResult.CancelDelegate = null;
+                                try
+                                {
+                                    this.EndDelete(deleteResult);
+                                    storageAsyncResult.Result = true;
+                                    storageAsyncResult.OnComplete();
+                                }
+                                catch (StorageException e)
+                                {
+                                    if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
+                                        ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound)))
+                                    {
+                                        storageAsyncResult.Result = false;
+                                        storageAsyncResult.OnComplete();
+                                    }
+                                    else
+                                    {
+                                        storageAsyncResult.OnComplete(e);
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    storageAsyncResult.OnComplete(e);
+                                }
+                            },
+                            null /* state */);
+
+                        storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
+                        if (storageAsyncResult.CancelRequested)
+                        {
+                            storageAsyncResult.Cancel();
                         }
                     }
                 },

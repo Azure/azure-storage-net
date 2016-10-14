@@ -47,6 +47,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
             Executor.ExecuteSync(
                 this.CreateDirectoryImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
@@ -151,16 +153,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="requestOptions">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(FileRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            bool exists = this.Exists(requestOptions, operationContext);
-            if (exists)
-            {
-                return false;
-            }
-
             try
             {
                 this.Create(requestOptions, operationContext);
@@ -168,8 +164,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             catch (StorageException e)
             {
-                if ((e.RequestInformation.ExtendedErrorInformation != null) &&
-                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists))
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists)))
                 {
                     return false;
                 }
@@ -187,7 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(AsyncCallback callback, object state)
         {
@@ -202,92 +199,25 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-            this.CreateIfNotExistsHandler(options, operationContext, storageAsyncResult);
-            return storageAsyncResult;
-        }
+            operationContext = operationContext ?? new OperationContext();
 
-        private void CreateIfNotExistsHandler(FileRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
-        {
-            ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                options,
+            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
+                modifiedOptions,
                 operationContext,
-                existsResult =>
+                createResult =>
                 {
-                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                    lock (storageAsyncResult.CancellationLockerObject)
-                    {
-                        storageAsyncResult.CancelDelegate = null;
-                        try
-                        {
-                            bool exists = this.EndExists(existsResult);
-                            if (exists)
-                            {
-                                storageAsyncResult.Result = false;
-                                storageAsyncResult.OnComplete();
-                                return;
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            storageAsyncResult.OnComplete(e);
-                            return;
-                        }
-
-                        ICancellableAsyncResult savedCreateResult = this.BeginCreate(
-                            options,
-                            operationContext,
-                            createResult =>
-                            {
-                                storageAsyncResult.UpdateCompletedSynchronously(createResult.CompletedSynchronously);
-                                storageAsyncResult.CancelDelegate = null;
-                                try
-                                {
-                                    this.EndCreate(createResult);
-                                    storageAsyncResult.Result = true;
-                                    storageAsyncResult.OnComplete();
-                                }
-                                catch (StorageException e)
-                                {
-                                    if ((e.RequestInformation.ExtendedErrorInformation != null) &&
-                                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists))
-                                    {
-                                        storageAsyncResult.Result = false;
-                                        storageAsyncResult.OnComplete();
-                                    }
-                                    else
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    storageAsyncResult.OnComplete(e);
-                                }
-                            },
-                            null);
-
-                        storageAsyncResult.CancelDelegate = savedCreateResult.Cancel;
-                        if (storageAsyncResult.CancelRequested)
-                        {
-                            storageAsyncResult.Cancel();
-                        }
-                    }
+                    ExecutionState<NullType> executionResult = createResult as ExecutionState<NullType>;
+                    callback(executionResult);
+                    executionResult.OnComplete();
                 },
                 null);
 
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
+            return savedCreateResult;
         }
 
         /// <summary>
@@ -297,10 +227,30 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = asyncResult as StorageAsyncResult<bool>;
-            CommonUtility.AssertNotNull("AsyncResult", res);
-            res.End();
-            return res.Result;
+            ExecutionState<NullType> executionResult = asyncResult as ExecutionState<NullType>;
+            CommonUtility.AssertNotNull("AsyncResult", executionResult);
+            try
+            {
+                this.EndCreate(executionResult);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists)))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
 #if TASK
@@ -308,7 +258,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Returns a task that performs an asynchronous request to create the directory if it does not already exist.
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -320,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(CancellationToken cancellationToken)
         {
@@ -333,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
@@ -347,7 +297,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -478,10 +428,20 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual bool DeleteIfExists(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
-            bool exists = this.Exists(options, operationContext);
-            if (!exists)
+            try
             {
-                return false;
+                bool exists = this.Exists(options, operationContext);
+                if (!exists)
+                {
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
             }
 
             try
@@ -533,6 +493,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 RequestOptions = modifiedOptions,
                 OperationContext = operationContext,
             };
+
             this.DeleteIfExistsHandler(accessCondition, options, operationContext, storageAsyncResult);
             return storageAsyncResult;
         }
@@ -556,6 +517,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                                 storageAsyncResult.Result = false;
                                 storageAsyncResult.OnComplete();
                                 return;
+                            }
+                        }
+                        catch (StorageException e)
+                        {
+                            if ((e.RequestInformation != null) &&
+                                (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden))
+                            {
+                                storageAsyncResult.OnComplete(e);
                             }
                         }
                         catch (Exception e)
@@ -595,7 +564,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                                     storageAsyncResult.OnComplete(e);
                                 }
                             },
-                            null);
+                            null  /* state */);
 
                         storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
                         if (storageAsyncResult.CancelRequested)

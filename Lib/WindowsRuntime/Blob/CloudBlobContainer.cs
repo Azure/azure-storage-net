@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Creates the container if it does not already exist.
         /// </summary>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise, <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -114,7 +114,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobRequestOptions options, OperationContext operationContext)
         {
@@ -128,7 +128,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -143,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -152,13 +152,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-
-                if (exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await this.CreateAsync(accessType, modifiedOptions, operationContext, cancellationToken);
@@ -269,11 +262,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-
-                if (!exists)
+                try
                 {
-                    return false;
+                    bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
+                    if (!exists)
+                    {
+                        return false;
+                    }
+                }
+                catch (StorageException e)
+                {
+                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                    {
+                        throw;
+                    }
                 }
 
                 try

@@ -2509,12 +2509,6 @@ namespace Microsoft.WindowsAzure.Storage.File
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            bool exists = this.Exists(modifiedOptions, operationContext);
-            if (!exists)
-            {
-                return false;
-            }
-
             try
             {
                 this.Delete(accessCondition, modifiedOptions, operationContext);
@@ -2581,84 +2575,43 @@ namespace Microsoft.WindowsAzure.Storage.File
 
         private void DeleteIfExistsHandler(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            ICancellableAsyncResult savedExistsResult = this.BeginExists(
+            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
+                accessCondition,
                 options,
                 operationContext,
-                existsResult =>
+                deleteResult =>
                 {
-                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                    lock (storageAsyncResult.CancellationLockerObject)
+                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
+                    storageAsyncResult.CancelDelegate = null;
+                    try
                     {
-                        storageAsyncResult.CancelDelegate = null;
-                        try
+                        this.EndDelete(deleteResult);
+                        storageAsyncResult.Result = true;
+                        storageAsyncResult.OnComplete();
+                    }
+                    catch (StorageException e)
+                    {
+                        if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
+                            ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound)))
                         {
-                            bool exists = this.EndExists(existsResult);
-                            if (!exists)
-                            {
-                                storageAsyncResult.Result = false;
-                                storageAsyncResult.OnComplete();
-                                return;
-                            }
+                            storageAsyncResult.Result = false;
+                            storageAsyncResult.OnComplete();
                         }
-                        catch (Exception e)
+                        else
                         {
                             storageAsyncResult.OnComplete(e);
-                            return;
                         }
 
-                        ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                            accessCondition,
-                            options,
-                            operationContext,
-                            deleteResult =>
-                            {
-                                storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                                storageAsyncResult.CancelDelegate = null;
-                                try
-                                {
-                                    this.EndDelete(deleteResult);
-                                    storageAsyncResult.Result = true;
-                                    storageAsyncResult.OnComplete();
-                                }
-                                catch (StorageException e)
-                                {
-                                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                                    {
-                                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                                        {
-                                            storageAsyncResult.Result = false;
-                                            storageAsyncResult.OnComplete();
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    storageAsyncResult.OnComplete(e);
-                                }
-                            },
-                            null /* state */);
-
-                        storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
-                        if (storageAsyncResult.CancelRequested)
-                        {
-                            storageAsyncResult.Cancel();
-                        }
+                    }
+                    catch (Exception e)
+                    {
+                        storageAsyncResult.OnComplete(e);
                     }
                 },
                 null /* state */);
 
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
+            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
         }
 
         /// <summary>
@@ -2669,6 +2622,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual bool EndDeleteIfExists(IAsyncResult asyncResult)
         {
             StorageAsyncResult<bool> res = (StorageAsyncResult<bool>)asyncResult;
+            if (res.CancelRequested)
+            {
+                res.Cancel();
+            }
+
             res.End();
             return res.Result;
         }

@@ -69,10 +69,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 catch (StorageException e)
                 {
                     if ((e.RequestInformation != null) &&
-                        (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                        string.IsNullOrEmpty(accessCondition.IfMatchETag))
+                        (((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
+                        string.IsNullOrEmpty(accessCondition.IfMatchETag)) ||
+                        (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden)))
                     {
-                        // If we got a 404 and the condition was not an If-Match,
+                        // If we got a 404 and the condition was not an If-Match OR if we got a 403,
                         // we should continue with the operation.
                     }
                     else
@@ -132,7 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenWrite(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.attributes.AssertNoSnapshot();
@@ -174,10 +175,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         catch (StorageException e)
                         {
                             if ((e.RequestInformation != null) &&
-                                (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                                string.IsNullOrEmpty(accessCondition.IfMatchETag))
+                                (((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
+                                string.IsNullOrEmpty(accessCondition.IfMatchETag)) ||
+                                (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden)))
                             {
-                                // If we got a 404 and the condition was not an If-Match,
+                                // If we got a 404 and the condition was not an If-Match OR if we got a 403,
                                 // we should continue with the operation.
                             }
                             else
@@ -520,7 +522,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             bool lessThanSingleBlobThreshold = CloudBlockBlob.IsLessThanSingleBlobThreshold(source, length, modifiedOptions, false);
             modifiedOptions.AssertPolicyIfRequired();
-            
+
             if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold)
             {
                 // Because we may or may not want to calculate the MD5, and we may or may not want to encrypt, rather than have four branching code
@@ -539,14 +541,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         }
 
                         this.UploadFromStreamHandler(
-                                            sourceStream,
-                                            length,
-                                            md5,
-                                            accessCondition,
-                                            operationContext,
-                                            modifiedOptions,
-                                            storageAsyncResult);
-
+                            sourceStream,
+                            length,
+                            md5,
+                            accessCondition,
+                            operationContext,
+                            modifiedOptions,
+                            storageAsyncResult);
                     };
                 actionToRun = uploadAction;
 
@@ -1305,7 +1306,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadText(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             SyncMemoryStream stream = new SyncMemoryStream();
