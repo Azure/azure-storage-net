@@ -1019,41 +1019,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            if (this.Exists(true, modifiedOptions, operationContext))
+            try
             {
-                return false;
+                this.Create(requestOptions, operationContext);
+                return true;
             }
-            else
+            catch (StorageException e)
             {
-                try
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists)))
                 {
-                    this.Create(modifiedOptions, operationContext);
-                    return true;
+                    return false;
                 }
-                catch (StorageException e)
+                else
                 {
-                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
-                    {
-                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    throw;
                 }
             }
         }
+        
 #endif
 
         /// <summary>
@@ -1079,96 +1064,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         /// <remarks>This API performs an existence check and therefore requires list permissions.</remarks>
         [DoesServiceRequest]
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-
-            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistHandler, storageAsyncResult);
-
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = currentRes.Cancel;
-            return storageAsyncResult;
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void CreateIfNotExistHandler(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<bool> storageAsyncResult = asyncResult.AsyncState as StorageAsyncResult<bool>;
-            bool exists = false;
-
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                storageAsyncResult.CancelDelegate = null;
-                storageAsyncResult.UpdateCompletedSynchronously(asyncResult.CompletedSynchronously);
-
-                try
+            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
+                modifiedOptions,
+                operationContext,
+                createResult => 
                 {
-                    exists = this.EndExists(asyncResult);
-
-                    if (exists)
-                    {
-                        storageAsyncResult.Result = false;
-                        storageAsyncResult.OnComplete();
-                    }
-                    else
-                    {
-                        ICancellableAsyncResult currentRes = this.BeginCreate(
-                             (TableRequestOptions)storageAsyncResult.RequestOptions,
-                             storageAsyncResult.OperationContext,
-                             createRes =>
-                             {
-                                 storageAsyncResult.CancelDelegate = null;
-                                 storageAsyncResult.UpdateCompletedSynchronously(storageAsyncResult.CompletedSynchronously);
-
-                                 try
-                                 {
-                                     this.EndCreate(createRes);
-                                     storageAsyncResult.Result = true;
-                                     storageAsyncResult.OnComplete();
-                                 }
-                                 catch (StorageException e)
-                                 {
-                                     if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
-                                     {
-                                         if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                             (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
-                                         {
-                                             storageAsyncResult.Result = false;
-                                             storageAsyncResult.OnComplete();
-                                         }
-                                         else
-                                         {
-                                             storageAsyncResult.OnComplete(e);
-                                         }
-                                     }
-                                     else
-                                     {
-                                         storageAsyncResult.OnComplete(e);
-                                     }
-                                 }
-                                 catch (Exception createEx)
-                                 {
-                                     storageAsyncResult.OnComplete(createEx);
-                                 }
-                             },
-                             null);
-
-                        storageAsyncResult.CancelDelegate = currentRes.Cancel;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    storageAsyncResult.OnComplete(ex);
-                }
-            }
+                    ExecutionState<TableResult> executionResult = createResult as ExecutionState<TableResult>;
+                    callback(executionResult);
+                    executionResult.OnComplete();
+                },
+                null);
+            
+            return savedCreateResult;
         }
 
         /// <summary>
@@ -1178,10 +1091,30 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns><c>true</c> if table was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = asyncResult as StorageAsyncResult<bool>;
-            CommonUtility.AssertNotNull("AsyncResult", res);
-            res.End();
-            return res.Result;
+            ExecutionState<TableResult> executionResult = asyncResult as ExecutionState<TableResult>;
+            CommonUtility.AssertNotNull("AsyncResult", executionResult);
+            try
+            {
+                this.EndCreate(executionResult);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists)))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }            
         }
 
 #if TASK
@@ -1368,38 +1301,47 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            if (!this.Exists(true, modifiedOptions, operationContext))
+            try
             {
-                return false;
-            }
-            else
-            {
-                try
+                bool exists = this.Exists(modifiedOptions, operationContext);
+                if (!exists)
                 {
-                    this.Delete(modifiedOptions, operationContext);
-                    return true;
+                    return false;
                 }
-                catch (StorageException e)
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
                 {
-                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    throw;
+                }
+            }
+
+            try
+            {
+                this.Delete(modifiedOptions, operationContext);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    if ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                     {
-                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        return false;
                     }
                     else
                     {
                         throw;
                     }
                 }
+                else
+                {
+                    throw;
+                }
             }
-        }
+        }  
 #endif
 
         /// <summary>
@@ -1434,84 +1376,94 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 OperationContext = operationContext
             };
 
-            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
+            this.DeleteIfExistsHandler(modifiedOptions, operationContext, storageAsyncResult);
 
             // We do not need to do this inside a lock, as storageAsyncResult is
             // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = currentRes.Cancel;
             return storageAsyncResult;
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void DeleteIfExistsHandler(IAsyncResult asyncResult)
+        private void DeleteIfExistsHandler(TableRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            StorageAsyncResult<bool> storageAsyncResult = asyncResult.AsyncState as StorageAsyncResult<bool>;
-            bool exists = false;
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                storageAsyncResult.CancelDelegate = null;
-                storageAsyncResult.UpdateCompletedSynchronously(asyncResult.CompletedSynchronously);
+            ICancellableAsyncResult savedExistsResult = this.BeginExists(
+               true,
+               options,
+               operationContext,
+               existsResult =>
+               {
+                   storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
+                   lock (storageAsyncResult.CancellationLockerObject)
+                   {
+                       storageAsyncResult.CancelDelegate = null;
+                       try
+                       {
+                           bool exists = this.EndExists(existsResult);
 
-                try
-                {
-                    exists = this.EndExists(asyncResult);
+                           if (!exists)
+                           {
+                               storageAsyncResult.Result = false;
+                               storageAsyncResult.OnComplete();
+                           }
+                       }
+                       catch (StorageException e)
+                       {
+                           if ((e.RequestInformation != null) &&
+                               (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden))
+                           {
+                               storageAsyncResult.OnComplete(e);
+                           }
+                       }
+                       catch (Exception e)
+                       {
+                           storageAsyncResult.OnComplete(e);
+                           return;
+                       }
 
-                    if (!exists)
-                    {
-                        storageAsyncResult.Result = false;
-                        storageAsyncResult.OnComplete();
-                    }
-                    else
-                    {
-                        ICancellableAsyncResult currentRes = this.BeginDelete(
-                            (TableRequestOptions)storageAsyncResult.RequestOptions,
-                            storageAsyncResult.OperationContext,
-                            (deleteRes) =>
-                            {
-                                storageAsyncResult.CancelDelegate = null;
-                                storageAsyncResult.UpdateCompletedSynchronously(deleteRes.CompletedSynchronously);
+                       ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
+                           (TableRequestOptions)storageAsyncResult.RequestOptions,
+                           storageAsyncResult.OperationContext,
+                           deleteResult =>
+                           {
+                               storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
+                               storageAsyncResult.CancelDelegate = null;
+                               try
+                               {
+                                   this.EndDelete(deleteResult);
+                                   storageAsyncResult.Result = true;
+                                   storageAsyncResult.OnComplete();
+                               }
+                               catch (StorageException e)
+                               {
+                                   if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) && 
+                                       ((e.RequestInformation.ExtendedErrorInformation == null) || 
+                                       (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound)))
+                                   {
+                                       storageAsyncResult.Result = false;
+                                       storageAsyncResult.OnComplete();
+                                   }
+                                   else
+                                   {
+                                       storageAsyncResult.OnComplete(e);
+                                   }
+                               }
+                               catch (Exception createEx)
+                               {
+                                   storageAsyncResult.OnComplete(createEx);
+                               }
+                           },
+                           null);
 
-                                try
-                                {
-                                    this.EndDelete(deleteRes);
-                                    storageAsyncResult.Result = true;
-                                    storageAsyncResult.OnComplete();
-                                }
-                                catch (StorageException e)
-                                {
-                                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                                    {
-                                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                                        {
-                                            storageAsyncResult.Result = false;
-                                            storageAsyncResult.OnComplete();
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                }
-                                catch (Exception createEx)
-                                {
-                                    storageAsyncResult.OnComplete(createEx);
-                                }
-                            },
-                            null);
+                       storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
+                       if (storageAsyncResult.CancelRequested)
+                       {
+                           storageAsyncResult.Cancel();
+                       }
+                   }
+               },
+               null);
 
-                        storageAsyncResult.CancelDelegate = currentRes.Cancel;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    storageAsyncResult.OnComplete(ex);
-                }
-            }
+            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
         }
 
         /// <summary>

@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Creates the directory if it does not already exist.
         /// </summary>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise, <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -90,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
@@ -104,24 +104,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () =>
             {
-                bool exists = await Executor.ExecuteAsync(
-                    this.ExistsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
-
-                if (exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await Executor.ExecuteAsync(
@@ -223,15 +212,25 @@ namespace Microsoft.WindowsAzure.Storage.File
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () =>
             {
-                bool exists = await Executor.ExecuteAsync(
-                    this.ExistsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
-
-                if (!exists)
+                try
                 {
-                    return false;
+                    bool exists = await Executor.ExecuteAsync(
+                        this.ExistsImpl(modifiedOptions),
+                        modifiedOptions.RetryPolicy,
+                        operationContext,
+                        cancellationToken);
+
+                    if (!exists)
+                    {
+                        return false;
+                    }
+                }
+                catch (StorageException e)
+                {
+                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                    {
+                        throw;
+                    }
                 }
 
                 try

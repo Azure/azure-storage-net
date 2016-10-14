@@ -3438,5 +3438,119 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExists();
             }
         }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerCreateAndDeleteWithWriteOnlySync()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try 
+            {
+                Assert.IsFalse(blobContainerWithSAS.DeleteIfExists());
+                Assert.IsTrue(blobContainerWithSAS.CreateIfNotExists());
+                Assert.IsFalse(blobContainerWithSAS.CreateIfNotExists());
+                Assert.IsTrue(blobContainerWithSAS.DeleteIfExists());
+                Assert.IsTrue(blobContainerWithSAS.DeleteIfExists());
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - APM ")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerCreateAndDeleteWithWriteOnlyPermissionsAPM()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    result = blobContainerWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(blobContainerWithSAS.EndDeleteIfExists(result));
+
+                    result = blobContainerWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(blobContainerWithSAS.EndCreateIfNotExists(result));
+
+                    result = blobContainerWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(blobContainerWithSAS.EndCreateIfNotExists(result));
+
+                    result = blobContainerWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(blobContainerWithSAS.EndDeleteIfExists(result));
+
+                    result = blobContainerWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(blobContainerWithSAS.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - TASK ")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerCreateAndDeleteWithWriteOnlyAccountSAS()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                Assert.IsFalse(blobContainerWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(blobContainerWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(blobContainerWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(blobContainerWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(blobContainerWithSAS.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
+#endif
+
+        private CloudBlobContainer GenerateRandomWriteOnlyBlobContainer()
+        {
+            string blobContainerName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+
+            };
+
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = blobClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
+            CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
+            CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(blobContainerName);
+            return containerWithSAS;
+        }
     }
 }

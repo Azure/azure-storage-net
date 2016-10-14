@@ -669,13 +669,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-
-                if (!exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await this.DeleteAsync(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext, cancellationToken);

@@ -1050,12 +1050,6 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
-                if (!exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);

@@ -21,7 +21,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
-
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
@@ -112,11 +111,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     catch (Exception)
                     {
-                        if ((operationContext.LastResult != null) &&
-                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                            string.IsNullOrEmpty(accessCondition.IfMatchETag))
+                        if ((operationContext.LastResult != null) && 
+                            (((operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound) && 
+                            string.IsNullOrEmpty(accessCondition.IfMatchETag)) || 
+                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Forbidden)))
                         {
-                            // If we got a 404 and the condition was not an If-Match,
+                            // If we got a 404 and the condition was not an If-Match OR if we got a 403,
                             // we should continue with the operation.
                         }
                         else
@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, CancellationToken.None);
+            return this.UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -783,7 +783,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<IEnumerable<ListBlockItem>> DownloadBlockListAsync(BlockListingFilter blockListingFilter, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadBlockListAsync(blockListingFilter, accessCondition, options, operationContext,  CancellationToken.None);
+            return this.DownloadBlockListAsync(blockListingFilter, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>

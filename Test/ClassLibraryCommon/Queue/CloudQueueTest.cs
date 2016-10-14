@@ -1654,6 +1654,124 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsSync()
+        {
+            CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
+            try
+            {
+                Assert.IsFalse(queueWithSAS.DeleteIfExists());
+                Assert.IsTrue(queueWithSAS.CreateIfNotExists());
+                Assert.IsFalse(queueWithSAS.CreateIfNotExists());
+                Assert.IsTrue(queueWithSAS.DeleteIfExists());
+                Assert.IsTrue(queueWithSAS.DeleteIfExists());
+            }
+            finally
+            {
+                queueWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - APM ")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsAPM()
+        {
+            CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(queueWithSAS.EndDeleteIfExists(result));
+
+                    result = queueWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(queueWithSAS.EndCreateIfNotExists(result));
+
+                    result = queueWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(queueWithSAS.EndCreateIfNotExists(result));
+
+                    result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(queueWithSAS.EndDeleteIfExists(result));
+
+                    result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(queueWithSAS.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                queueWithSAS.DeleteIfExists();
+            }
+
+        }
+
+#if TASK
+         [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - TASK ")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsTask()
+        {
+            CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
+            try
+            {
+                Assert.IsFalse(queueWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(queueWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(queueWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(queueWithSAS.DeleteIfExistsAsync().Result);
+                // Design mechanic, delete takes time to propagate on the service.
+                Assert.IsTrue(queueWithSAS.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                queueWithSAS.DeleteIfExists();
+            }
+
+        }
+#endif
+
+        private CloudQueue GenerateRandomWriteOnlyQueue()
+        {
+            string queueName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.Queue,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+
+            };
+
+            CloudQueueClient queueClient = GenerateCloudQueueClient();
+            CloudStorageAccount account = new CloudStorageAccount(queueClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = queueClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, queueClient.StorageUri, null, null);
+            CloudQueueClient queueClientWithSAS = accountWithSAS.CreateCloudQueueClient();
+            CloudQueue queueWithSAS = queueClientWithSAS.GetQueueReference(queueName);
+
+            return queueWithSAS;
+        }
+
         #region Test Helpers
         internal static void AssertPermissionsEqual(QueuePermissions permissions1, QueuePermissions permissions2)
         {

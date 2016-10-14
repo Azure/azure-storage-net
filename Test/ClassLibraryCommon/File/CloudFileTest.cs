@@ -489,6 +489,102 @@ namespace Microsoft.WindowsAzure.Storage.File
 #endif
 
         [TestMethod]
+        [Description("Try to delete a non-existing file with write-only Account SAS permissions -- SYNC")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDeleteIfExistsWithWriteOnlyPermissionsSync()
+        {
+            CloudFileShare share = GenerateRandomWriteOnlyFileShare();
+            try
+            {
+                share.Create();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsFalse(file.DeleteIfExists());
+                file.Create(0);
+                Assert.IsTrue(file.DeleteIfExists());
+                Assert.IsFalse(file.DeleteIfExists());
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Try to delete a non-existing file with write-only Account SAS permissions -- APM")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDeleteIfExistsWithWriteOnlyPermissionsAPM()
+        {
+            CloudFileShare share = GenerateRandomWriteOnlyFileShare();
+            try
+            {
+                share.Create();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                    IAsyncResult result = file.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(file.EndDeleteIfExists(result));
+                    result = file.BeginCreate(1024,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    file.EndCreate(result);
+                    result = file.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(file.EndDeleteIfExists(result));
+                    result = file.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(file.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Try to delete a non-existing file with write-only account SAS permissions -- TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDeleteIfExistsWithWriteOnlyPermissionsTask()
+        {
+            CloudFileShare share = GenerateRandomWriteOnlyFileShare();
+            try
+            {
+                share.CreateAsync().Wait();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsFalse(file.DeleteIfExistsAsync().Result);
+                file.CreateAsync(0).Wait();
+                Assert.IsTrue(file.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(file.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
         [Description("Check a file's existence")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -2542,6 +2638,30 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 share.DeleteIfExists();
             }
+        }
+
+        private CloudFileShare GenerateRandomWriteOnlyFileShare()
+        {
+            string fileName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.File,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+            };
+
+            CloudFileClient fileClient = GenerateCloudFileClient();
+            CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = fileClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
+            CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
+            CloudFileShare fileShareWithSAS = fileClientWithSAS.GetShareReference(fileName);
+            return fileShareWithSAS;
         }
     }
 }

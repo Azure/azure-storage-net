@@ -342,6 +342,98 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
+        [Description("Try to delete a non-existing block blob with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsSync()
+        {
+            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                Assert.IsFalse(blob.DeleteIfExists());
+                CreateForTest(blob, 0, 0, false);
+                Assert.IsTrue(blob.DeleteIfExists());
+                Assert.IsFalse(blob.DeleteIfExists());
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Try to delete a non-existing block blob with write-only Account SAS permissions - APM")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsAPM()
+        {
+            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            try
+            {
+                container.Create();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                    IAsyncResult result = blob.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(blob.EndDeleteIfExists(result));
+                    CreateForTest(blob, 0, 0, true);
+                    result = blob.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(blob.EndDeleteIfExists(result));
+                    result = blob.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(blob.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Try to delete a non-existing block blob with write-only Account SAS permissions - TASK")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsTask()
+        {
+            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
+                blob.PutBlockListAsync(new List<string>()).Wait();
+                Assert.IsTrue(blob.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
         [Description("Check a blob's existence")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -3656,6 +3748,309 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
+        [TestMethod]
+        [Description("Test for ensuring read failures are tolerated within Upload/OpenWrite operations with write-only Account SAS permissions.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobUploadTestUploadWithWriteOnlyAccountSAS()
+        {
+            string blobName = "n" + Guid.NewGuid().ToString("N");
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            containerWithSAS.CreateIfNotExists();
+            CloudBlockBlob blockBlobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
+            int bufferSize = 24 * 1024 * 1024;
+            byte[] buffer = GetRandomBuffer(bufferSize);
+            MemoryStream streamBuffer = new MemoryStream(buffer);
+
+            try
+            {
+                blockBlobWithSAS.UploadText("Initializing Block Blob");
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("etag")),
+                    "Should fail as Match Condition is not met.",
+                    HttpStatusCode.PreconditionFailed);
+
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("abcd"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("abcd")),
+                    "Should fail as Match Condition is not met.",
+                HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                containerWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to verify the correct functionality of OpenWrite with write-only Account SAS permissions.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobUploadTestOpenWriteWithWriteOnlyAccountSAS()
+        {
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            containerWithSAS.CreateIfNotExists();
+
+             try 
+             {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudBlockBlob existingBlob = containerWithSAS.GetBlockBlobReference("blob");
+                    existingBlob.PutBlockList(new List<string>());
+                    CloudBlockBlob blob = containerWithSAS.GetBlockBlobReference("blob2");
+                   
+                    //Should normally fail with Read Permissions
+                    AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    IAsyncResult result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob.EndOpenWrite(result);
+                 
+                    blob = containerWithSAS.GetBlockBlobReference("blob3");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Stream blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob4");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob5");
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob6");
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with Read Permissions.
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with read permissions
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+                   
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.Conflict);
+
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with read permissions
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+                   
+
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with read permissions
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    existingBlob.SetProperties();
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob7");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blob.PutBlockList(new List<string>());
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.Conflict);
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob8");
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+
+                    // Wait 1 second so that the last modified time of the blob is in the past
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+
+                    existingBlob.SetProperties();
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+                }
+            }
+            finally
+            {
+                containerWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test for ensuring read failures are tolerated within Upload/OpenWrite operations with write-only Service SAS permissions.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockUplodadTestUploadWithWriteOnlyServiceSAS()
+        {
+            string containerName = "c" + Guid.NewGuid().ToString("N");
+            string blobName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessBlobPermissions.Delete | SharedAccessBlobPermissions.Write,
+            };
+
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer blobContainer = blobClient.GetContainerReference(containerName);
+            blobContainer.CreateIfNotExists();
+            CloudBlockBlob blockBlob = blobContainer.GetBlockBlobReference(blobName);
+            blockBlob.UploadText("Initializing Block Blob");
+            string sasBlobToken = blockBlob.GetSharedAccessSignature(policy);
+            string blockBlobSAS = blockBlob.Uri + sasBlobToken;
+            CloudBlockBlob blockBlobWithSAS = new CloudBlockBlob(new Uri(blockBlobSAS));
+
+            int bufferSize = 24 * 1024 * 1024;
+            byte[] buffer = GetRandomBuffer(bufferSize);
+            MemoryStream streamBuffer = new MemoryStream(buffer);
+
+            try
+            {
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("etag")),
+                    "Should fail as Match Condition is not met.",
+                    HttpStatusCode.PreconditionFailed);
+
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("etag")),
+                    "Should fail as Match Condition is not met.",
+                    HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                blobContainer.DeleteIfExists();
+            }
+        }
+
+
+
+
         private void DoTextUploadDownload(string text, bool checkDifferentEncoding, bool isAsync)
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -3798,6 +4193,32 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(opContext.RequestResults.Count > 1);
                 Assert.AreEqual(StorageLocation.Secondary, opContext.LastResult.TargetLocation);
             }
+        }
+
+        private CloudBlobContainer GenerateRandomWriteOnlyContainer() 
+        {
+            string containerName = "c" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+
+            };
+
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = blobClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
+            CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
+            CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
+
+            return containerWithSAS;
         }
     }
 }
