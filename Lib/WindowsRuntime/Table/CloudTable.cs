@@ -217,6 +217,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             DynamicTableEntity tblEntity = new DynamicTableEntity();
             tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
+            if (this.Properties != null && this.Properties.RequestedIops.HasValue)
+            {
+                CommonUtility.AssertInBounds("RequestedIops", this.Properties.RequestedIops.Value, 1);
+                tblEntity.Properties.Add(TableConstants.RequestedIops, new EntityProperty(this.Properties.RequestedIops));
+            }
+
             TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert, false);
             operation.IsTableEntity = true;
 

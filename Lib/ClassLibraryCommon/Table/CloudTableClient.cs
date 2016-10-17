@@ -115,9 +115,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
             CloudTable serviceTable = this.GetTableReference(TableConstants.TableServiceTablesName);
+            requestOptions.PropertyResolver = (pk, rk, propName, propValue) =>
+            {
+                if (propName == TableConstants.RequestedIops || propName == TableConstants.ProvisionedIops)
+                {
+                    return EdmType.Int32;
+                }
+
+                return EdmType.String;
+            };
 
             return CloudTableClient.GenerateListTablesQuery(prefix, null).ExecuteInternal(this, serviceTable, requestOptions, operationContext).Select(
-                     tbl => new CloudTable(tbl[TableConstants.TableName].StringValue, this));
+                table =>
+                {
+                    CloudTable tableResult = new CloudTable(table[TableConstants.TableName].StringValue, this);
+                    tableResult.Properties = new TableProperties();
+                    tableResult.Properties.RequestedIops = table[TableConstants.RequestedIops].Int32Value;
+                    tableResult.Properties.ProvisionedIops = table[TableConstants.ProvisionedIops].Int32Value;
+                    tableResult.Properties.TableStatus = (TableStatus)Enum.Parse(typeof(TableStatus), table[TableConstants.TableStatus].StringValue);
+                    return tableResult;
+                });
         }
 
         /// <summary>
@@ -162,8 +179,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableQuerySegment<DynamicTableEntity> res =
                 CloudTableClient.GenerateListTablesQuery(prefix, maxResults).ExecuteQuerySegmentedInternal(currentToken, this, serviceTable, requestOptions, operationContext);
 
-            List<CloudTable> tables = res.Results.Select(tbl => new CloudTable(
-                                                                        tbl.Properties[TableConstants.TableName].StringValue,
+            List<CloudTable> tables = res.Results.Select(table => new CloudTable(
+                                                                        table.Properties[TableConstants.TableName].StringValue,
                                                                         this)).ToList();
 
             TableResultSegment retSeg = new TableResultSegment(tables) { ContinuationToken = res.ContinuationToken as TableContinuationToken };
@@ -216,6 +233,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
             CloudTable serviceTable = this.GetTableReference(TableConstants.TableServiceTablesName);
+            requestOptions.PropertyResolver = (pk, rk, propName, propValue) =>
+            {
+                if (propName == TableConstants.RequestedIops || propName == TableConstants.ProvisionedIops)
+                {
+                    return EdmType.Int32;
+                }
+
+                return EdmType.String;
+            };
 
             return CloudTableClient.GenerateListTablesQuery(prefix, maxResults).BeginExecuteQuerySegmentedInternal(
                 currentToken,
@@ -236,9 +262,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             TableQuerySegment<DynamicTableEntity> res = Executor.EndExecuteAsync<TableQuerySegment<DynamicTableEntity>>(asyncResult);
 
-            List<CloudTable> tables = res.Results.Select(tbl => new CloudTable(
-                                                                         tbl.Properties[TableConstants.TableName].StringValue,
-                                                                         this)).ToList();
+            List<CloudTable> tables = res.Results.Select(table =>
+                {
+                    CloudTable tableResult = new CloudTable(table.Properties[TableConstants.TableName].StringValue, this);
+                    tableResult.Properties = new TableProperties();
+                    tableResult.Properties.RequestedIops = table[TableConstants.RequestedIops].Int32Value;
+                    tableResult.Properties.ProvisionedIops = table[TableConstants.ProvisionedIops].Int32Value;
+                    tableResult.Properties.TableStatus =
+                        (TableStatus)Enum.Parse(typeof(TableStatus), table[TableConstants.TableStatus].StringValue);
+                    return tableResult;
+                }).ToList();
 
             TableResultSegment retSeg = new TableResultSegment(tables) { ContinuationToken = res.ContinuationToken };
             return retSeg;

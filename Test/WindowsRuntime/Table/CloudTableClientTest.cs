@@ -262,6 +262,49 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
+        //[TestMethod]
+        //[Description("Test List Tables For Premium Tables")]
+        //[TestCategory(ComponentCategory.PremiumTables)]
+        //public async Task ListPremiumTablesPropertiesCheckAsync()
+        //{
+        //    foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+        //    {
+        //        await ListPremiumTablesPropertiesCheckAsync(payloadFormat);
+        //    }
+        //}
+
+        //private async Task ListPremiumTablesPropertiesCheckAsync(TablePayloadFormat format)
+        //{
+        //    CloudTableClient tableClient = GenerateCloudTableClient();
+        //    tableClient.DefaultRequestOptions.PayloadFormat = format;
+        //    CloudTable testTable = tableClient.GetTableReference(TableTestBase.GenerateRandomTableName());
+
+        //    testTable.Properties = new TableProperties();
+        //    testTable.Properties.RequestedIops = 1000;
+        //    await testTable.CreateAsync();
+
+        //    TableResultSegment segment = null;
+        //    List<CloudTable> totalResults = new List<CloudTable>();
+        //    do
+        //    {
+        //        segment = await tableClient.ListTablesSegmentedAsync(/*testTable.Name,*/ segment != null ? segment.ContinuationToken : null);
+        //        totalResults.AddRange(segment);
+        //    }
+        //    while (segment.ContinuationToken != null);
+
+
+        //    CloudTable returnedTable = totalResults.Find((t) => t.Name == testTable.Name);
+        //    Assert.AreEqual(1000, returnedTable.Properties.RequestedIops.Value);
+        //    Assert.AreEqual(0, returnedTable.Properties.ProvisionedIops.Value);
+        //    Assert.AreEqual(TableStatus.Provisioning, returnedTable.Properties.TableStatus.Value);
+
+        //    Assert.IsTrue(testTable.Properties.RequestedIops.HasValue);
+        //    Assert.IsFalse(testTable.Properties.ProvisionedIops.HasValue);
+        //    Assert.IsFalse(testTable.Properties.TableStatus.HasValue);
+
+        //    await testTable.DeleteAsync();
+        //}
+
         [TestMethod]
         [Description("Test List Tables Segmented with Shared Key Lite")]
         [TestCategory(ComponentCategory.Table)]

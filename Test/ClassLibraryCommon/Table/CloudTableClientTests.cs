@@ -215,6 +215,85 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(createdTables.Where((tbl) => tbl.Name.StartsWith(prefixTablesPrefix)).Count(), retrievedTables.Count());
         }
 
+        //[TestMethod]
+        //[Description("Test List Tables For Premium Tables")]
+        //[TestCategory(ComponentCategory.Table)]
+        //public void ListPremiumTablesPropertiesCheck()
+        //{
+        //    foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+        //    {
+        //        ListPremiumTablesPropertiesCheck(payloadFormat);
+        //    }
+        //}
+
+        //private void ListPremiumTablesPropertiesCheck(TablePayloadFormat format)
+        //{
+        //    CloudTableClient tableClient = GenerateCloudTableClient();
+        //    tableClient.DefaultRequestOptions.PayloadFormat = format;
+        //    CloudTable testTable = tableClient.GetTableReference(TableTestBase.GenerateRandomTableName());
+        //    try
+        //    {
+        //        testTable.Properties = new TableProperties();
+        //        testTable.Properties.RequestedIops = 1000;
+        //        testTable.Create();
+
+        //        CloudTable returnedTable = tableClient.ListTables().ToList().Where((t) => t.Name == testTable.Name).FirstOrDefault();
+        //        Assert.AreEqual(1000, returnedTable.Properties.RequestedIops.Value);
+        //        Assert.AreEqual(0, returnedTable.Properties.ProvisionedIops.Value);
+        //        Assert.AreEqual(TableStatus.Provisioning, returnedTable.Properties.TableStatus.Value);
+
+        //        Assert.IsTrue(testTable.Properties.RequestedIops.HasValue);
+        //        Assert.IsFalse(testTable.Properties.ProvisionedIops.HasValue);
+        //        Assert.IsFalse(testTable.Properties.TableStatus.HasValue);
+        //    }
+        //    finally
+        //    {
+        //        testTable.Delete();
+        //    }
+        //}
+
+        //[TestMethod]
+        //[Description("Test Set and Fetch Table Properties For Premium Tables")]
+        //[TestCategory(ComponentCategory.PremiumTables)]
+        //public void PremiumTableGetSetProperties()
+        //{
+        //    foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+        //    {
+        //        PremiumTableGetSetProperties(payloadFormat);
+        //    }
+        //}
+
+        //private void PremiumTableGetSetProperties(TablePayloadFormat format)
+        //{
+        //    CloudTableClient tableClient = GenerateCloudTableClient();
+        //    tableClient.DefaultRequestOptions.PayloadFormat = format;
+        //    CloudTable testTable = tableClient.GetTableReference(TableTestBase.GenerateRandomTableName());
+        //    try
+        //    {
+        //        testTable.Properties = new TableProperties();
+        //        testTable.Properties.RequestedIops = 1000;
+        //        testTable.Create();
+
+        //        Thread.Sleep(250000);
+        //        testTable.Properties.RequestedIops = 3000;
+        //        testTable.SetProperties();
+
+        //        Assert.AreEqual(3000, testTable.Properties.RequestedIops);
+        //        Assert.IsFalse(testTable.Properties.ProvisionedIops.HasValue);
+        //        Assert.IsFalse(testTable.Properties.TableStatus.HasValue);
+
+        //        testTable.FetchAttributes();
+
+        //        Assert.AreEqual(3000, testTable.Properties.RequestedIops.Value);
+        //        Assert.AreEqual(1000, testTable.Properties.ProvisionedIops.Value);
+        //        Assert.AreEqual(TableStatus.Provisioning, testTable.Properties.TableStatus.Value);
+        //    }
+        //    finally
+        //    {
+        //        testTable.Delete();
+        //    }
+        //}
+
         [TestMethod]
         [Description("Test List Tables Iterator With Prefix Extended, will check a variety of ")]
         [TestCategory(ComponentCategory.Table)]
