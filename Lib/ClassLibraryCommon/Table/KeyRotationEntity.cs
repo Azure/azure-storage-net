@@ -56,7 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// Gets the properties in the table entity, indexed by property name.
         /// </summary>
         /// <value>An <see cref="IDictionary{TKey,TValue}"/> object containing the entity's properties.</value>
-        public IReadOnlyDictionary<string, EntityProperty> Properties { get; }
+        public IReadOnlyDictionary<string, EntityProperty> Properties { get; private set; }
 
         internal String encryptionMetadataJson { get; set; }
 

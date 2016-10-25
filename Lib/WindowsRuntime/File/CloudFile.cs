@@ -620,7 +620,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             return Task.Run(async () =>
             {
-                FileStream stream = new FileStream(path, mode, FileAccess.Write, FileAccess.None);
+                FileStream stream = new FileStream(path, mode, FileAccess.Write);
 
                 try
                 {
