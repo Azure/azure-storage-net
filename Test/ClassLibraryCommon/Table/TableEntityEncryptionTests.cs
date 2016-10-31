@@ -1578,6 +1578,31 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TestHelper.ExpectedException<InvalidOperationException>(() => runQuery(currentTable, query, options), "Key rotation should fail if an entity isn't encrypted and RequireEncryption is true.");
         }
 
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - success case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateSyncSuccessDefaultRequestOptions()
+        {
+            TableRequestOptions oldOptions = null;
+            this.DoCloudTableEncryptionRotateSuccessCase((table, query, options) =>
+            {
+                oldOptions = table.ServiceClient.DefaultRequestOptions;
+                table.ServiceClient.DefaultRequestOptions = options;
+                return table.ExecuteQueryForKeyRotation(query, null).ToList();
+            },
+            (table, operation, options) =>
+            {
+                table.ServiceClient.DefaultRequestOptions = options;
+                table.Execute(operation, null);
+            },
+            (table, options) => { table.ServiceClient.DefaultRequestOptions = oldOptions; });
+        }
+
         #endregion
 
         private List<CloudTable> ListAllTables(CloudTableClient tableClient, string prefix, TableRequestOptions options)

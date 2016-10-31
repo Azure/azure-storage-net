@@ -882,7 +882,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     StorageException storageEx = TestHelper.ExpectedException<StorageException>(
                         () => blockBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithMD5, opContextWithMD5Check),
                         "Downloading more than 4MB with transactional MD5 should not be supported");
-                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(WebException));
+                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
 
                     lastCheckMD5 = null;
                     using (Stream blobStream = blockBlob.OpenRead(null, optionsWithMD5, opContextWithMD5Check))
@@ -934,7 +934,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     storageEx = TestHelper.ExpectedException<StorageException>(
                         () => pageBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithMD5, opContextWithMD5Check),
                         "Downloading more than 4MB with transactional MD5 should not be supported");
-                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(WebException));
+                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
 
                     lastCheckMD5 = null;
                     using (Stream blobStream = pageBlob.OpenRead(null, optionsWithMD5, opContextWithMD5Check))
@@ -1057,7 +1057,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         StorageException storageEx = TestHelper.ExpectedException<StorageException>(
                             () => blockBlob.EndDownloadRangeToStream(result),
                             "Downloading more than 4MB with transactional MD5 should not be supported");
-                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(WebException));
+                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
 
                         lastCheckMD5 = null;
                         result = blockBlob.BeginOpenRead(null, optionsWithMD5, opContextWithMD5Check,
@@ -1141,7 +1141,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         storageEx = TestHelper.ExpectedException<StorageException>(
                             () => pageBlob.EndDownloadRangeToStream(result),
                             "Downloading more than 4MB with transactional MD5 should not be supported");
-                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(WebException));
+                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
 
                         lastCheckMD5 = null;
                         result = pageBlob.BeginOpenRead(null, optionsWithMD5, opContextWithMD5Check,

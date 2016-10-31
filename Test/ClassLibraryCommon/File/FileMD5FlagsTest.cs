@@ -566,7 +566,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     storageEx = TestHelper.ExpectedException<StorageException>(
                         () => file.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithMD5, opContextWithMD5Check),
                         "Downloading more than 4MB with transactional MD5 should not be supported");
-                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(WebException));
+                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
 
                     using (Stream fileStream = file.OpenRead(null, optionsWithMD5, opContextWithMD5Check))
                     {
@@ -682,7 +682,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         storageEx = TestHelper.ExpectedException<StorageException>(
                             () => file.EndDownloadRangeToStream(result),
                             "Downloading more than 4MB with transactional MD5 should not be supported");
-                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(WebException));
+                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
 
                         result = file.BeginOpenRead(null, optionsWithMD5, opContextWithMD5Check,
                             ar => waitHandle.Set(),

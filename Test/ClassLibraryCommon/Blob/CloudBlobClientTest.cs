@@ -1660,6 +1660,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.Create();
                 blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(5);
+                blobClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = 2 * 1024 * 1024;
 
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 blockBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
