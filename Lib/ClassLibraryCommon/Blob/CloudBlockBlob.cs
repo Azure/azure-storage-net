@@ -332,7 +332,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
-            this.CheckAdjustBlockSize(source, length);
+            this.CheckAdjustBlockSize(length ?? (source.CanSeek ? (source.Length - source.Position) : length));
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
@@ -427,7 +427,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     List<Stream> uploadStreamList = new List<Stream>();
                     SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
 
-                    for (int i = 0; i < totalBlocks; i++)
+                    for (long i = 0; i < totalBlocks; i++)
                     {
                         SubStream block = new SubStream(
                             source,
@@ -536,7 +536,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
-            this.CheckAdjustBlockSize(source, length);
+            this.CheckAdjustBlockSize(length ?? (source.CanSeek ? (source.Length - source.Position) : length));
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
 
@@ -737,7 +737,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     List<Stream> uploadStreamList = new List<Stream>();
                     SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
 
-                    for (int i = 0; i < totalBlocks; i++)
+                    for (long i = 0; i < totalBlocks; i++)
                     {
                         SubStream block = new SubStream(
                             source,
@@ -944,11 +944,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                using (FileStream fs = new FileStream(path, FileMode.Open))
-                {
-                    this.CheckAdjustBlockSize(fs, fs.Length);
-                }
-
+                this.CheckAdjustBlockSize(new FileInfo(path).Length);
                 CommonUtility.RunWithoutSynchronizationContext(
                     () => this.UploadFromMultiStreamAsync(
                         this.OpenMultiFileStream(path),
@@ -1015,11 +1011,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                using (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    CheckAdjustBlockSize(fileStream, fileStream.Length);
-                }
-
+                CheckAdjustBlockSize(new FileInfo(path).Length);
                 return new CancellableAsyncResultTaskWrapper((token) => this.UploadFromMultiStreamAsync(
                     this.OpenMultiFileStream(path),
                     accessCondition,
