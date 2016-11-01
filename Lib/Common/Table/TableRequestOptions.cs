@@ -36,11 +36,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         private TimeSpan? maximumExecutionTime;
 
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// If this is set, encryption has been explicitly cleared.
         /// Thus, do not copy the value when applying defaults.
         /// </summary>
         private bool encryptionCleared = false;
+#endif
 
         /// <summary>
         /// Defines the absolute default option values, should neither the user nor client specify anything.
