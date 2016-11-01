@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -2342,10 +2343,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 this.CloudBlockBlobUploadFromStream(container, 16 * 1024 * 1024, null, null, true, false, 0, false, true);
                 this.CloudBlockBlobUploadFromStream(container, 16 * 1024 * 1024, null, null, true, false, 1024, false, true);
-                this.CloudBlockBlobUploadFromStreamLarge(container, 25 * 1024 * 1024, null, null, true, false, 0, false, true, 5 * 1024 * 1024, 2);
-                this.CloudBlockBlobUploadFromStreamLarge(container, 25 * 1024 * 1024, null, null, true, false, 1024, false, true, 5 * 1024 * 1024, 2);
+                this.CloudBlockBlobUploadFromStreamLarge(container, 25 * 1024 * 1024, null, null, true, false, 0, false, true, 5 * 1024 * 1024, 1);
+                this.CloudBlockBlobUploadFromStreamLarge(container, 25 * 1024 * 1024, null, null, true, false, 1024, false, true, 5 * 1024 * 1024, 4);
                 this.CloudBlockBlobUploadFromStreamLarge(container, 32 * 1024 * 1024, null, null, true, false, 0, false, true, 4 * 1024 * 1024 + 1, 2);
-                this.CloudBlockBlobUploadFromStreamLarge(container, 32 * 1024 * 1024, null, null, true, false, 1024, false, true, 4 * 1024 * 1024 + 1, 2);
+                this.CloudBlockBlobUploadFromStreamLarge(container, 32 * 1024 * 1024, null, null, true, false, 1024, false, true, 4 * 1024 * 1024 + 1, 4);
             }
             finally
             {
@@ -2359,7 +2360,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobParallelUploadFromStreamAPM()
+        public void CloudBlockBlobParallelUploadFromStreamApm()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 8;
@@ -2404,8 +2405,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob3 = container.GetBlockBlobReference("blob3");
                 blob3.StreamWriteSizeInBytes = 1 * 1024 * 1024;
 
-                CloudBlockBlob blob4 = container.GetBlockBlobReference("blob3");
-                blob3.StreamWriteSizeInBytes = 6 * 1024 * 1024;
+                CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
+                blob4.StreamWriteSizeInBytes = 5 * 1024 * 1024;
+
+                CloudBlockBlob blob5 = container.GetBlockBlobReference("blob5");
+                blob5.StreamWriteSizeInBytes = 7 * 1024 * 1024;
 
                 using (MemoryStream originalBlobStream = new MemoryStream())
                 {
@@ -2425,7 +2429,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         OperationContext context = new OperationContext();
                         blob.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
+                        // Number of requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
                         Assert.IsTrue(context.RequestResults.Count >= 21);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
@@ -2438,7 +2442,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         context = new OperationContext();
                         blob2.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
+                        // Number of requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
                         Assert.IsTrue(context.RequestResults.Count >= 21);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
@@ -2451,7 +2455,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         context = new OperationContext();
                         blob3.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should 1, or 2 if there is a retry
+                        // Number of requests should 1, or 2 if there is a retry
                         Assert.IsTrue(context.RequestResults.Count <= 2);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
@@ -2464,8 +2468,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         context = new OperationContext();
                         blob4.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 5.
+                        // Number of requests should be at least 5 since StreamWriteSizeInBytes is 5 MB
                         Assert.IsTrue(context.RequestResults.Count >= 5);
+
+                        sourceStream.Seek(0, SeekOrigin.Begin);
+                        context = new OperationContext();
+                        blob5.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
+
+                        // Number of requests should be at least 4 since StreamWriteSizeInBytes is 7 MB
+                        Assert.IsTrue(context.RequestResults.Count >= 4);
                     }
                 }
             }
@@ -2589,10 +2600,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             byte[] buffer = GetRandomBuffer(size);
 
-            CloudBlockBlob blob = container.GetBlockBlobReference("blob2");
+            CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
             blob.ServiceClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = buffer.Length / 2;
-            blob.StreamWriteSizeInBytes = Math.Max(4 * 1024 * 1024, streamWriteSize);
-           
+            blob.StreamWriteSizeInBytes = Math.Max(Constants.MinLargeBlockSize, streamWriteSize);
 
             using (MemoryStream originalBlobStream = new MemoryStream())
             {

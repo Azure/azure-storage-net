@@ -53,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="OpenWriteAsync(AccessCondition, BlobRequestOptions, OperationContext)"/>.</para>        
         /// </remarks>
         public virtual Task<CloudBlobStream> OpenWriteAsync()
@@ -71,7 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
@@ -91,7 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
@@ -260,12 +260,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
+            this.CheckAdjustBlockSize(source, length);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-            return Task.Run(async () =>
+           return Task.Run(async () =>
             {
                 bool lessThanSingleBlobThreshold = sourceAsStream.CanSeek
                                                    && (length ?? sourceAsStream.Length - sourceAsStream.Position)
@@ -297,33 +298,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 else
                 {
-                    int totalBlocks = 0;
-                    long streamLength = 0;
-
-                    if (source.CanSeek)
-                    {
-                        streamLength = length ?? (source.Length - source.Position);
-                        totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
-
-                        // Check if the total blocks required will exceed the maximum allowable block count.
-                        if (totalBlocks > Constants.MaxBlockNumber)
-                        {
-                            if (this.ModifiedStreamWriteSize)
-                            {
-                                throw new StorageException(SR.BlobOverMaxBlockLimit);
-                            }
-                            else
-                            {
-                                // Scale the block size to allow for successful upload only if the user did not specify a value.
-                                this.streamWriteSizeInBytes = (int)Math.Ceiling((double)streamLength / (double)Constants.MaxBlockNumber);
-                                totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
-                            }
-                        }
-                    }
-
                     bool useOpenWrite = !source.CanSeek
                           || this.streamWriteSizeInBytes < Constants.MinLargeBlockSize
-                          || modifiedOptions.StoreBlobContentMD5.Value;
+                          || (modifiedOptions.StoreBlobContentMD5.HasValue && modifiedOptions.StoreBlobContentMD5.Value);
 
                     if (useOpenWrite)
                     {
@@ -337,56 +314,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     else
                     {
-                        List<Task> concurrentPutBlocks = new List<Task>();
-                        List<string> blockList = new List<string>();
-                        int parallelUploadOperations = modifiedOptions.ParallelOperationThreadCount ?? 1;
-                        long substreamLength = this.streamWriteSizeInBytes;
+                        long streamLength = length ?? (source.Length - source.Position);
+                        int totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
+                        int parallelUploadOperations = modifiedOptions.ParallelOperationThreadCount.Value;
                         long offset = source.Position;
+                        List<Stream> blockList = new List<Stream>();
 
-                        // Synchronization mutex required to to ensure thread-safe, concurrent operations on related SubStream instances.
+                        // Synchronization mutex required to ensure thread-safe, concurrent operations on related SubStream instances.
                         SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
 
                         for (int i = 0; i < totalBlocks; i++)
                         {
-                            // Ensures that at most, only the designated thread count operations are simultaneously uploaded.
-                            if (concurrentPutBlocks.Count() == parallelUploadOperations)
-                            {
-                                await Task.WhenAny(concurrentPutBlocks.ToArray()).ConfigureAwait(false);
-                                concurrentPutBlocks.RemoveAll(putBlockUpload => putBlockUpload.IsCompleted);
-                            }
-
-                            // Must specify remaining bytes in the last block if applicable.
-                            // Cannot rely on the wrapped Stream's Read() to implictly determine block size,
-                            // as the provided write length may be less than the wrapped stream length.
-                            if ((i == totalBlocks - 1) && (streamLength % this.streamWriteSizeInBytes > 0))
-                            {
-                                substreamLength = streamLength % this.streamWriteSizeInBytes;
-                            }
-
-                            // Pad block id to fit the digits up to maximum allowable number of blocks.
-                            string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Format("Block_{0}", i.ToString("00000"))));
-                            blockList.Add(blockId);
-
                             // Stream abstraction to create a logical substream of a region within an underlying stream.
                             SubStream blockToStream = new SubStream(
                                 source,
                                 offset + (i * this.streamWriteSizeInBytes),
-                                substreamLength,
+                                this.streamWriteSizeInBytes,
                                 streamReadThrottler);
 
-                            Task putBlockOp = this.PutBlockAsync(
-                                blockId,
-                                blockToStream,
-                                null,
-                                accessCondition,
-                                options,
-                                operationContext);
-
-                            concurrentPutBlocks.Add(putBlockOp);
+                            blockList.Add(blockToStream);
                         }
 
-                        await Task.WhenAll(concurrentPutBlocks.ToArray()).ConfigureAwait(false);
-                        await this.PutBlockListAsync(blockList, accessCondition, options, operationContext).ConfigureAwait(false); 
+                        await this.UploadFromMultiStreamAsync(blockList, accessCondition, modifiedOptions, operationContext, cancellationToken);
                     }
                 }
             }, cancellationToken);
@@ -475,13 +424,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            CommonUtility.AssertNotNull("path", path);
-
+            CommonUtility.AssertNotNull("path", path);   
+            
             return Task.Run(async () =>
             {
-                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+
+                // Determines whether to use the normal, single-stream upload approach or the new parallel, multi-stream strategy.
+                bool useSingleStream = this.streamWriteSizeInBytes < Constants.MinLargeBlockSize 
+                    || (modifiedOptions.StoreBlobContentMD5.HasValue && modifiedOptions.StoreBlobContentMD5.Value); 
+
+                if (useSingleStream)
                 {
-                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
+                    using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                    {
+                        await this.UploadFromStreamAsync(stream, accessCondition, modifiedOptions, operationContext, cancellationToken);
+                    }
+                }
+                else
+                {
+                    using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                    {
+                        this.CheckAdjustBlockSize(stream, stream.Length);
+                    }
+
+                    await this.UploadFromMultiStreamAsync(OpenMultiFileStream(path), accessCondition, modifiedOptions, operationContext, cancellationToken);
                 }
             }, cancellationToken);
         }

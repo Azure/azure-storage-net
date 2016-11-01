@@ -1,4 +1,5 @@
 Changes in 8.0.0 :
+
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
 - Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter, and returns this object as well. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
 - PageBlobs: Added support for incremental copy.
@@ -8,6 +9,8 @@ Changes in 8.0.0 :
 - Blobs/Files: Updated DownloadToFile to prevent reading of partially-written data while downloading.
 - All: Added support for using Create/Delete and CreateIfNotExists/DeleteIfExists without read SAS permissions. CreateIfNotExists methods will now only do one REST call instead of two.
 - Blobs: Fixed a bug with OpenWrite for BlockBlobs where Upload* APIs would fail due to lack of read SAS permissions.
+- Blobs: Added upload support for large Block Blobs for all UploadFrom* APIs. Note: The new, memory-optimized upload strategy can be enabled by disabling BlobContentMD5 for large blocks that do not require encryption. Please see the MSDN API documentation for more information.
+- All: Support for 2015-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
 
 Changes in 7.2.0 :
 

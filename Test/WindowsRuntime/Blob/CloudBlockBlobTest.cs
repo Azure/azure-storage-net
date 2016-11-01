@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -799,8 +800,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * 1024 * 1024, null, null, null, true, false, 0, true);
                 await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * 1024 * 1024, null, null, null, true, false, 1024, true);
-                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 32 * 1024 * 1024, null, null, null, 0, 4 * 1024 * 1024 + 1);
-                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 32 * 1024 * 1024, null, null, null, 1024, 4 * 1024 * 1024 + 1);
+                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 25 * 1024 * 1024, null, null, null, 0, 5 * 1024 * 1024);
+                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 25 * 1024 * 1024, null, null, null, 1024, 5 * 1024 * 1024);
+                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 32 * 1024 * 1024, null, null, null, 0, 10 * 1024 * 1024);
+                await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 32 * 1024 * 1024, null, null, null, 1024 * 1024, 10 * 1024 * 1024);
             }
             finally
             {
@@ -836,6 +839,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
                 blob4.StreamWriteSizeInBytes = 5 * 1024 * 1024;
 
+                CloudBlockBlob blob5 = container.GetBlockBlobReference("blob5");
+                blob5.StreamWriteSizeInBytes = 7 * 1024 * 1024;
+
                 using (MemoryStream originalBlobStream = new MemoryStream())
                 {
                     originalBlobStream.Write(buffer, 0, buffer.Length);
@@ -854,7 +860,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         OperationContext context = new OperationContext();
                         await blob.UploadFromStreamAsync(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
+                        // Number of requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
                         Assert.IsTrue(context.RequestResults.Count >= 21);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
@@ -867,8 +873,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         context = new OperationContext();
                         await blob2.UploadFromStreamAsync(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
-                        Assert.IsTrue(context.RequestResults.Count >= 21);
+                        // Number of requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
+                         Assert.IsTrue(context.RequestResults.Count >= 21);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
                         options = new BlobRequestOptions()
@@ -880,21 +886,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         context = new OperationContext();
                         await blob3.UploadFromStreamAsync(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should 1, or 2 if there is a retry
+                        // Number of requests should 1, or 2 if there is a retry
                         Assert.IsTrue(context.RequestResults.Count <= 2);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
                         options = new BlobRequestOptions()
                         {
                             StoreBlobContentMD5 = false,
-                            SingleBlobUploadThresholdInBytes = Size,
+                            SingleBlobUploadThresholdInBytes = Size/2,
                             ParallelOperationThreadCount = 3
                         };
                         context = new OperationContext();
                         await blob4.UploadFromStreamAsync(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 5 since StreamWriteSizeInBytes is 5 MB
+                        // Number of requests should be at least 5 since StreamWriteSizeInBytes is 5 MB
                         Assert.IsTrue(context.RequestResults.Count >= 5);
+
+                        sourceStream.Seek(0, SeekOrigin.Begin);
+                        context = new OperationContext();
+                        await blob5.UploadFromStreamAsync(sourceStream, null /* accessCondition */, options, context);
+
+                        // Number of requests should be at least 4 since StreamWriteSizeInBytes is 7 MB
+                        Assert.IsTrue(context.RequestResults.Count >= 4);
                     }
                 }
             }
@@ -1000,6 +1013,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     BlobRequestOptions options = new BlobRequestOptions()
                     {
                         StoreBlobContentMD5 = false,
+                        ParallelOperationThreadCount = 3,
+                        RetryPolicy = new RetryPolicies.NoRetry()
                     };
 
                     if (copyLength.HasValue)
@@ -1008,7 +1023,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     else
                     {
-                        await blob.UploadFromStreamAsync(sourceStream, accessCondition, options, operationContext);
+                        await blob.UploadFromStreamAsync(sourceStream, accessCondition, options, operationContext).ConfigureAwait(false);
                     }
                 }
 
@@ -1301,19 +1316,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.PutBlockAsync(blockId, stream, null);
                 }
 
-                buffer = new byte[4 * 1024 * 1024];
+                buffer = new byte[Constants.MaxBlockSize];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     await blob.PutBlockAsync(blockId, stream, null);
                 }
 
-                buffer = new byte[4 * 1024 * 1024 + 1];
+                buffer = new byte[Constants.MaxBlockSize + 1];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     await TestHelper.ExpectedExceptionAsync(
                         async () => await blob.PutBlockAsync(blockId, stream, null, null, null, operationContext),
                         operationContext,
-                        "Trying to upload a block with more than 4MB should fail",
+                        String.Format("Trying to upload a block with more than {0}MB should fail", Constants.MaxBlockSize/Constants.MB),
                         HttpStatusCode.RequestEntityTooLarge);
                 }
             }

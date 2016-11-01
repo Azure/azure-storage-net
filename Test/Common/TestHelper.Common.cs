@@ -206,6 +206,59 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
+        /// Compares two streams fast, will fallback to normal stream comaparison if necessary.
+        /// </summary>
+        internal static void AssertStreamsAreEqualFast(Stream src, Stream dst)
+        {
+            Assert.AreEqual(src.Length, dst.Length);
+
+            const int bufferSize = 4 * 1024;
+            var buffer1 = new byte[bufferSize];
+            var buffer2 = new byte[bufferSize];
+
+            long origDstPosition = dst.Position;
+            long origSrcPosition = src.Position;
+            long bytesRead1 = 0;
+            long bytesRead2 = 0;
+
+            while (true)
+            {
+                int count1 = src.Read(buffer1, 0, bufferSize);
+                bytesRead1 += count1;
+                int count2 = dst.Read(buffer2, 0, bufferSize);
+                bytesRead2 += count2;
+
+                if (count1 != count2 || count1 == 0)
+                {
+                    break;
+                }
+
+                int iterations = (int)Math.Ceiling((double)count1 / sizeof(Int64));
+                for (int i = 0; i < iterations; i++)
+                {
+                    Assert.AreEqual(BitConverter.ToInt64(buffer1, i * sizeof(Int64)), BitConverter.ToInt64(buffer2, i * sizeof(Int64)));
+                }
+            }
+
+            if (bytesRead1 == bytesRead2)
+            {
+                if (bytesRead1 != (src.Length - origSrcPosition))
+                {
+                    AssertStreamsAreEqual(src, dst);
+                }
+            }
+            else
+            {
+                dst.Position = origDstPosition;
+                src.Position = origSrcPosition;
+                AssertStreamsAreEqual(src, dst);
+            }
+
+            dst.Position = origDstPosition;
+            src.Position = origSrcPosition;
+        }
+
+        /// <summary>
         /// Compares two streams from the starting positions and up to length bytes.
         /// </summary>
         internal static void AssertStreamsAreEqualAtIndex(MemoryStream src, MemoryStream dst, int srcIndex, int dstIndex, int length)
