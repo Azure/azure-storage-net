@@ -11,6 +11,9 @@ Changes in 8.0.0 :
 - Blobs: Fixed a bug with OpenWrite for BlockBlobs where Upload* APIs would fail due to lack of read SAS permissions.
 - Blobs: Added upload support for large Block Blobs for all UploadFrom* APIs. Note: The new, memory-optimized upload strategy can be enabled by disabling BlobContentMD5 for large blocks that do not require encryption. Please see the MSDN API documentation for more information.
 - All: Support for 2015-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
+- All: Decoupled StorageExtendedErrorInformation methods using OData to prevent the dependency from loading for Blobs, Queues, and Files.
+- Table: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
+- All: Added logging for the ExtendedErrorInformation 'ErrorMessage' attribute via StorageException ToString() method.
 
 Changes in 7.2.0 :
 

@@ -295,7 +295,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
             cmd.Begin = (callback, state) => localQuery.BeginExecute(callback, state);
             cmd.End = localQuery.EndExecute;
             cmd.ParseResponse = this.ParseTableQueryResponse;
-            cmd.ParseDataServiceError = StorageExtendedErrorInformation.ReadDataServiceResponseFromStream;
+            cmd.ParseDataServiceError = ODataErrorHelper.ReadDataServiceResponseFromStream;
             cmd.Context = this.Context;
             requestOptions.ApplyToStorageCommand(cmd);
 

@@ -551,7 +551,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             requestOptions.ApplyToStorageCommand(putCmd);
-            putCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            putCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
@@ -617,7 +617,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             requestOptions.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            getCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.GetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
