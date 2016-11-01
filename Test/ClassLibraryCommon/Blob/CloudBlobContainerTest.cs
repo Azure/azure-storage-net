@@ -2400,7 +2400,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                await container.DeleteIfExistsAsync();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 #endif
