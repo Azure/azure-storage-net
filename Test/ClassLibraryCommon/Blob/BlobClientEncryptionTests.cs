@@ -63,13 +63,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlobBasicEncryption()
         {
-            this.DoCloudBlobEncryption(BlobType.BlockBlob, false);
-            this.DoCloudBlobEncryption(BlobType.PageBlob, false);
-            this.DoCloudBlobEncryption(BlobType.AppendBlob, false);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => this.DoCloudBlobEncryption(BlobType.BlockBlob, false)));
+            tasks.Add(Task.Run(() => this.DoCloudBlobEncryption(BlobType.PageBlob, false)));
+            tasks.Add(Task.Run(() => this.DoCloudBlobEncryption(BlobType.AppendBlob, false)));
 
-            this.DoCloudBlobEncryption(BlobType.BlockBlob, true);
-            this.DoCloudBlobEncryption(BlobType.PageBlob, true);
-            this.DoCloudBlobEncryption(BlobType.AppendBlob, true);
+            tasks.Add(Task.Run(() => this.DoCloudBlobEncryption(BlobType.BlockBlob, true)));
+            tasks.Add(Task.Run(() => this.DoCloudBlobEncryption(BlobType.PageBlob, true)));
+            tasks.Add(Task.Run(() => this.DoCloudBlobEncryption(BlobType.AppendBlob, true)));
+            Task.WaitAll(tasks.ToArray());
         }
 
         private void DoCloudBlobEncryption(BlobType type, bool partial)
@@ -159,13 +161,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlobBasicEncryptionAPM()
         {
-            DoCloudBlobEncryptionAPM(BlobType.BlockBlob, false);
-            DoCloudBlobEncryptionAPM(BlobType.PageBlob, false);
-            DoCloudBlobEncryptionAPM(BlobType.AppendBlob, false);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => DoCloudBlobEncryptionAPM(BlobType.BlockBlob, false)));
+            tasks.Add(Task.Run(() => DoCloudBlobEncryptionAPM(BlobType.PageBlob, false)));
+            tasks.Add(Task.Run(() => DoCloudBlobEncryptionAPM(BlobType.AppendBlob, false)));
 
-            DoCloudBlobEncryptionAPM(BlobType.BlockBlob, true);
-            DoCloudBlobEncryptionAPM(BlobType.PageBlob, true);
-            DoCloudBlobEncryptionAPM(BlobType.AppendBlob, true);
+            tasks.Add(Task.Run(() => DoCloudBlobEncryptionAPM(BlobType.BlockBlob, true)));
+            tasks.Add(Task.Run(() => DoCloudBlobEncryptionAPM(BlobType.PageBlob, true)));
+            tasks.Add(Task.Run(() => DoCloudBlobEncryptionAPM(BlobType.AppendBlob, true)));
+            Task.WaitAll(tasks.ToArray());
         }
 
         private static void DoCloudBlobEncryptionAPM(BlobType type, bool partial)
@@ -443,8 +447,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             resolver.Add(aesKey);
             resolver.Add(rsaKey);
 
-            DoCloudBlockBlobEncryptionValidateWrappers(aesKey, resolver);
-            DoCloudBlockBlobEncryptionValidateWrappers(rsaKey, resolver);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => DoCloudBlockBlobEncryptionValidateWrappers(aesKey, resolver)));
+            tasks.Add(Task.Run(() => DoCloudBlockBlobEncryptionValidateWrappers(rsaKey, resolver)));
+            Task.WaitAll(tasks.ToArray());
         }
 
         private static void DoCloudBlockBlobEncryptionValidateWrappers(IKey key, DictionaryKeyResolver keyResolver)
@@ -1215,41 +1221,42 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 blob.DownloadToStreamAsync(stream, null, options, null).Wait();
             };
-
-            CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMax, downloadCall, success);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMax, downloadCall, success); }));
             if (success)
             {
-                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin1, downloadCall, success);
-                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin2, downloadCall, success);
-                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin3, downloadCall, success);
+                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin1, downloadCall, success); }));
+                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin2, downloadCall, success); }));
+                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin3, downloadCall, success); }));
             }
+            Task.WaitAll(tasks.ToArray());
         }
 
         private void CloudBlobEncryptionRotateHelper(Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall, bool successCase)
         {
+            List<Task> tasks = new List<Task>();
             if (successCase)
             {
-                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.BlockBlob, false, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.PageBlob, false, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.AppendBlob, false, uploadCall, rotateCall, downloadCall);
-
-                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.BlockBlob, true, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.PageBlob, true, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.AppendBlob, true, uploadCall, rotateCall, downloadCall);
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.BlockBlob, false, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.PageBlob, false, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.AppendBlob, false, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.BlockBlob, true, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.PageBlob, true, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateSuccessCase(BlobType.AppendBlob, true, uploadCall, rotateCall, downloadCall); }));
             }
             else
             {
-                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.BlockBlob, false, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.PageBlob, false, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.AppendBlob, false, uploadCall, rotateCall, downloadCall);
-
-                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.BlockBlob, true, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.PageBlob, true, uploadCall, rotateCall, downloadCall);
-                this.DoCloudBlobEncryptionRotateFailureCases(BlobType.AppendBlob, true, uploadCall, rotateCall, downloadCall);
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.BlockBlob, false, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.PageBlob, false, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.AppendBlob, false, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.BlockBlob, true, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.PageBlob, true, uploadCall, rotateCall, downloadCall); }));
+                tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.AppendBlob, true, uploadCall, rotateCall, downloadCall); }));
             }
+            Task.WaitAll(tasks.ToArray());
         }
 
-        private void DoCloudBlobEncryptionRotateSuccessCase(BlobType type, bool partial, Action<CloudBlob,MemoryStream,int,BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall)
+        private void DoCloudBlobEncryptionRotateSuccessCase(BlobType type, bool partial, Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall)
         {
             CloudBlobContainer container = GetRandomContainerReference();
 
@@ -1860,6 +1867,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.SingleBlobUploadThresholdInBytes = 8 * Constants.MB - 3;  // We should test a non-multiple of 16
             options.ParallelOperationThreadCount = 1;
 
+            List<Task> tasks = new List<Task>();
             Boolean[] bothBools = new Boolean[] { true, false };
 
             foreach (bool isAPM in bothBools)
@@ -1869,14 +1877,34 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     options.StoreBlobContentMD5 = calculateMD5;
                     options.UseTransactionalMD5 = calculateMD5;
                     options.DisableContentMD5Validation = !calculateMD5;
-                    this.CountOperationsHelper(10, 1, true, isAPM, options);
-                    this.CountOperationsHelper((int)(1 * Constants.MB), 1, true, isAPM, options);
+
+                    // We need to make a local copy of the 'isAPM' variable, otherwise the below
+                    // lambdas will all use the final value of 'isAPM'
+                    bool localIsAPM = isAPM;
+
+                    // Make a copy of the options object, so that we can run the tests in parallel.
+                    BlobRequestOptions localOptions = new BlobRequestOptions(options);
+                    tasks.Add(Task.Run(() =>
+                    {
+                        this.CountOperationsHelper(10, 1, true, localIsAPM, localOptions);
+                    }));
+                    tasks.Add(Task.Run(() =>
+                    {
+                        this.CountOperationsHelper((int)(1 * Constants.MB), 1, true, localIsAPM, localOptions);
+                    }));
 
                     // This one should not call put, because encryption padding will put it over length.
-                    this.CountOperationsHelper((int)(options.SingleBlobUploadThresholdInBytes - 2), 3, true, isAPM, options);
-                    this.CountOperationsHelper((int)(13 * Constants.MB), 5, true, isAPM, options);
+                    tasks.Add(Task.Run(() =>
+                        {
+                            this.CountOperationsHelper((int)(options.SingleBlobUploadThresholdInBytes - 2), 3, true, localIsAPM, localOptions);
+                        }));
+                    tasks.Add(Task.Run(() =>
+                    {
+                        this.CountOperationsHelper((int)(13 * Constants.MB), 5, true, localIsAPM, localOptions);
+                    }));
                 }
             }
+            Task.WaitAll(tasks.ToArray());
         }
 
         private void CountOperationsHelper(int size, int targetUploadOperations, bool streamSeekable, bool isAPM, BlobRequestOptions options)

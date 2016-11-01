@@ -880,17 +880,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Permissions = SharedAccessBlobPermissions.List,
                 });
                 container.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
                 CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
-                permissions = container2.GetPermissions();
-                Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    permissions = container2.GetPermissions();
+                    Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -930,17 +932,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 });
                 permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
                 container.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
-                CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
-                permissions = container2.GetPermissions();
-                Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
+                    permissions = container2.GetPermissions();
+                    Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -984,19 +988,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     IAsyncResult result = container.BeginSetPermissions(permissions, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     container.EndSetPermissions(result);
-                    Thread.Sleep(30 * 1000);
 
-                    CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
-                    result = container.BeginGetPermissions(ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    permissions = container.EndGetPermissions(result);
-                    Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
-                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                    Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                    {
+                        CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
+                        result = container.BeginGetPermissions(ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        permissions = container.EndGetPermissions(result);
+                        Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
+                        Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                        Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                        Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                        Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    });
                 }
             }
             finally
@@ -1041,19 +1047,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     IAsyncResult result = container.BeginSetPermissions(permissions, null, null, null, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     container.EndSetPermissions(result);
-                    Thread.Sleep(30 * 1000);
 
-                    CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
-                    result = container.BeginGetPermissions(null, null, null, ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    permissions = container.EndGetPermissions(result);
-                    Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
-                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                    Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                    {
+                        CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
+                        result = container.BeginGetPermissions(null, null, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        permissions = container.EndGetPermissions(result);
+                        Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
+                        Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                        Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                        Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                        Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    });
                 }
             }
             finally
@@ -1094,17 +1102,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Permissions = SharedAccessBlobPermissions.List,
                 });
                 container.SetPermissionsAsync(permissions).Wait();
-                Thread.Sleep(30 * 1000);
 
-                CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
-                permissions = container2.GetPermissionsAsync().Result;
-                Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
+                    permissions = container2.GetPermissionsAsync().Result;
+                    Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -1144,17 +1154,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 });
                 permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
                 container.SetPermissionsAsync(permissions).Wait();
-                Thread.Sleep(30 * 1000);
 
-                CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
-                permissions = container2.GetPermissionsAsync().Result;
-                Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudBlobContainer container2 = container.ServiceClient.GetContainerReference(container.Name);
+                    permissions = container2.GetPermissionsAsync().Result;
+                    Assert.AreEqual(BlobContainerPublicAccessType.Container, permissions.PublicAccess);
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessBlobPermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -2079,7 +2091,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobs()
+        public async Task CloudBlobContainerListBlobs()
         {
             CloudBlobClient client = GenerateCloudBlobClient();
             client.DefaultRequestOptions.LocationMode = RetryPolicies.LocationMode.PrimaryThenSecondary;
@@ -2087,7 +2099,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 IEnumerable<IListBlobItem> results = container.ListBlobs();
                 Assert.AreEqual(blobNames.Count, results.Count());
@@ -2110,46 +2122,49 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric)]
-        public void CloudBlobContainerListManyBlobs()
+        public async Task CloudBlobContainerListManyBlobs()
         {
-            CloudBlobContainer container = GetRandomContainerReference();
-            try
+            for (int i = 0; i < 20; i++)
             {
-                container.Create();
-                List<string> pageBlobNames = CreateBlobs(container, 2000, BlobType.PageBlob);
-                List<string> blockBlobNames = CreateBlobs(container, 2000, BlobType.BlockBlob);
-                List<string> appendBlobNames = CreateBlobs(container, 2000, BlobType.AppendBlob);
-
-                int count = 0;
-                IEnumerable<IListBlobItem> results = container.ListBlobs();
-                foreach (IListBlobItem blobItem in results)
+                CloudBlobContainer container = GetRandomContainerReference();
+                try
                 {
-                    count++;
-                    Assert.IsInstanceOfType(blobItem, typeof(CloudBlob));
-                    CloudBlob blob = (CloudBlob)blobItem;
-                    if (pageBlobNames.Remove(blob.Name))
-                    {
-                        Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
-                    }
-                    else if (blockBlobNames.Remove(blob.Name))
-                    {
-                        Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
-                    }
-                    else if (appendBlobNames.Remove(blob.Name))
-                    {
-                        Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
-                    }
-                    else
-                    {
-                        Assert.Fail("Unexpected blob: " + blob.Uri.AbsoluteUri);
-                    }
-                }
+                    container.Create();
+                    List<string> pageBlobNames = await CreateBlobs(container, 2000, BlobType.PageBlob);
+                    List<string> blockBlobNames = await CreateBlobs(container, 2000, BlobType.BlockBlob);
+                    List<string> appendBlobNames = await CreateBlobs(container, 2000, BlobType.AppendBlob);
 
-                Assert.AreEqual(6000, count);
-            }
-            finally
-            {
-                container.DeleteIfExists();
+                    int count = 0;
+                    IEnumerable<IListBlobItem> results = container.ListBlobs();
+                    foreach (IListBlobItem blobItem in results)
+                    {
+                        count++;
+                        Assert.IsInstanceOfType(blobItem, typeof(CloudBlob));
+                        CloudBlob blob = (CloudBlob)blobItem;
+                        if (pageBlobNames.Remove(blob.Name))
+                        {
+                            Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
+                        }
+                        else if (blockBlobNames.Remove(blob.Name))
+                        {
+                            Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
+                        }
+                        else if (appendBlobNames.Remove(blob.Name))
+                        {
+                            Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                        }
+                        else
+                        {
+                            Assert.Fail("Unexpected blob: " + blob.Uri.AbsoluteUri);
+                        }
+                    }
+
+                    Assert.AreEqual(6000, count);
+                }
+                finally
+                {
+                    container.DeleteIfExists();
+                }
             }
         }
 
@@ -2159,13 +2174,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobsSegmented()
+        public async Task CloudBlobContainerListBlobsSegmented()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 BlobContinuationToken token = null;
                 do
@@ -2196,13 +2211,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobsSegmentedAPM()
+        public async Task CloudBlobContainerListBlobsSegmentedAPM()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -2279,13 +2294,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobsSegmentedOverload()
+        public async Task CloudBlobContainerListBlobsSegmentedOverload()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 BlobContinuationToken token = null;
                 do
@@ -2315,13 +2330,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobsSegmentedAPMOverload()
+        public async Task CloudBlobContainerListBlobsSegmentedAPMOverload()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -2359,13 +2374,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobsSegmentedOverloadTask()
+        public async Task CloudBlobContainerListBlobsSegmentedOverloadTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.CreateAsync().Wait();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 BlobContinuationToken token = null;
                 do
@@ -2385,7 +2400,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 #endif
@@ -2396,13 +2411,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobsSegmentedWithPrefixOverload()
+        public async Task CloudBlobContainerListBlobsSegmentedWithPrefixOverload()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 BlobContinuationToken token = null;
                 do
@@ -2432,7 +2447,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerListBlobsWithSecondaryUri()
+        public async Task CloudBlobContainerListBlobsWithSecondaryUri()
         {
             AssertSecondaryEndpoint();
 
@@ -2440,8 +2455,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.BlockBlob);
-                blobNames.AddRange(CreateBlobs(container, 3, BlobType.PageBlob));
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.BlockBlob);
+                blobNames.AddRange(await CreateBlobs(container, 3, BlobType.PageBlob));
 
                 BlobContinuationToken token = null;
                 do
@@ -2556,13 +2571,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobContinuationTokenVerifyXmlFunctions()
+        public async Task BlobContinuationTokenVerifyXmlFunctions()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 BlobContinuationToken token = null;
                 do
@@ -2612,13 +2627,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobContinuationTokenVerifyXmlWithinXml()
+        public async Task BlobContinuationTokenVerifyXmlWithinXml()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.PageBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.PageBlob);
 
                 BlobContinuationToken token = null;
                 do

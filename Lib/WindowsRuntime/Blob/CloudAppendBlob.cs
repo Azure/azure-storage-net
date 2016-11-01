@@ -978,7 +978,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         StreamDescriptor streamCopyState = new StreamDescriptor();
                         long startPosition = seekableStream.Position;
-                        await blockDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
+                        await blockDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
                         seekableStream.Position = startPosition;
 
                         if (requiresContentMD5)

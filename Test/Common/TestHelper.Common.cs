@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 return e;
             }
-//#if NETCORE
+            //#if NETCORE
             catch (AggregateException ex)
             {
                 ex = ex.Flatten();
@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 Assert.Fail("Invalid exception {0} for operation: {1}", ex.GetType(), operationDescription);
             }
-//#endif
+            //#endif
             catch (Exception ex)
             {
                 T e = ex as T; // Test framework changes the value under debugger
@@ -199,6 +199,59 @@ namespace Microsoft.WindowsAzure.Storage
             for (int i = 0; i < src.Length; i++)
             {
                 Assert.AreEqual(src.ReadByte(), dst.ReadByte());
+            }
+
+            dst.Position = origDstPosition;
+            src.Position = origSrcPosition;
+        }
+
+        /// <summary>
+        /// Compares two streams fast, will fallback to normal stream comaparison if necessary.
+        /// </summary>
+        internal static void AssertStreamsAreEqualFast(Stream src, Stream dst)
+        {
+            Assert.AreEqual(src.Length, dst.Length);
+
+            const int bufferSize = 4 * 1024;
+            var buffer1 = new byte[bufferSize];
+            var buffer2 = new byte[bufferSize];
+
+            long origDstPosition = dst.Position;
+            long origSrcPosition = src.Position;
+            long bytesRead1 = 0;
+            long bytesRead2 = 0;
+
+            while (true)
+            {
+                int count1 = src.Read(buffer1, 0, bufferSize);
+                bytesRead1 += count1;
+                int count2 = dst.Read(buffer2, 0, bufferSize);
+                bytesRead2 += count2;
+
+                if (count1 != count2 || count1 == 0)
+                {
+                    break;
+                }
+
+                int iterations = (int)Math.Ceiling((double)count1 / sizeof(Int64));
+                for (int i = 0; i < iterations; i++)
+                {
+                    Assert.AreEqual(BitConverter.ToInt64(buffer1, i * sizeof(Int64)), BitConverter.ToInt64(buffer2, i * sizeof(Int64)));
+                }
+            }
+
+            if (bytesRead1 == bytesRead2)
+            {
+                if (bytesRead1 != (src.Length - origSrcPosition))
+                {
+                    AssertStreamsAreEqual(src, dst);
+                }
+            }
+            else
+            {
+                dst.Position = origDstPosition;
+                src.Position = origSrcPosition;
+                AssertStreamsAreEqual(src, dst);
             }
 
             dst.Position = origDstPosition;
@@ -415,7 +468,8 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 Assert.IsNull(propsA);
                 Assert.IsNull(propsB);
-            } else
+            }
+            else
             {
                 AssertPropertiesAreEqual(propsA, propsA.serviceProperties);
                 AssertPropertiesAreEqual(propsB, propsB.serviceProperties);
@@ -429,7 +483,8 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 Assert.IsNull(fileProps);
                 Assert.IsNull(props);
-            } else
+            }
+            else
             {
                 Assert.AreEqual(fileProps.Cors, props.Cors);
                 Assert.AreEqual(fileProps.MinuteMetrics, props.MinuteMetrics);
@@ -477,7 +532,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             if (propsA.DefaultServiceVersion != null && propsB.DefaultServiceVersion != null)
             {
-                Assert.AreEqual(propsA.DefaultServiceVersion, propsB.DefaultServiceVersion); 
+                Assert.AreEqual(propsA.DefaultServiceVersion, propsB.DefaultServiceVersion);
             }
             else
             {
@@ -510,12 +565,38 @@ namespace Microsoft.WindowsAzure.Storage
                     Assert.IsTrue(ruleA.AllowedMethods == ruleB.AllowedMethods);
 
                     Assert.IsTrue(ruleA.MaxAgeInSeconds == ruleB.MaxAgeInSeconds);
-                } 
+                }
             }
             else
             {
                 Assert.IsNull(propsA.Cors);
                 Assert.IsNull(propsB.Cors);
+            }
+        }
+
+        internal static void SpinUpTo30SecondsIgnoringFailures(Action test)
+        {
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+
+            while (true)
+            {
+                try
+                {
+                    test();
+                    return;
+                }
+                catch (Exception)
+                {
+                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        Task.Delay(TimeSpan.FromSeconds(1)).Wait();
+                    }
+                }
             }
         }
     }

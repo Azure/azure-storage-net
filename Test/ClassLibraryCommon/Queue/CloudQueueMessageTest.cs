@@ -23,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
@@ -826,21 +827,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageSmallBoundaryTest()
         {
-            CloudQueueClient client = GenerateCloudQueueClient();
-            string name = GenerateNewQueueName();
-            CloudQueue queue = client.GetQueueReference(name);
-            queue.Create();
-
-            CloudQueue queueRefWithoutBase64Encoding = client.GetQueueReference(name);
-            queueRefWithoutBase64Encoding.EncodeMessage = false;
-
             // boundary value 0 and 1
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 0);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(0);
+            CloudQueueMessageBase64EncodingBoundaryTest(1);
 
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 1024);
-
-            queue.Delete();
+            CloudQueueMessageBase64EncodingBoundaryTest(1024);
         }
 
         [TestMethod]
@@ -851,26 +842,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageNormalBoundaryTest()
         {
-            CloudQueueClient client = GenerateCloudQueueClient();
-            string name = GenerateNewQueueName();
-            CloudQueue queue = client.GetQueueReference(name);
-            queue.Create();
-
-            CloudQueue queueRefWithoutBase64Encoding = client.GetQueueReference(name);
-            queueRefWithoutBase64Encoding.EncodeMessage = false;
-
             // a string with ascii chars of length 8*6144 will have Base64-encoded length 8*8192 (64kB)
             // the following three test strings with length 8*6144-1, 8*6144, and 8*6144+1
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 6144 - 1);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 6144);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 6144 + 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144 - 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144 + 1);
 
             // boundary value 8*8192-1, 8*8192, 8*8192+1
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 8192 - 1);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 8192);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 8192 + 1);
-
-            queue.Delete();
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 - 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 + 1);
         }
 
 
@@ -882,6 +863,48 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageOverBoundaryTest()
         {
+            // excessive message size
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 12288);
+        }
+
+        /// <summary>
+        /// Perform a set of Queue message tests given the message length.
+        /// </summary>
+        private void CloudQueueMessageBase64EncodingBoundaryTest(int messageLength)
+        {
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, false, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, false, true, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, true, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, true, true, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, false, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, false, true, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, true, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, true, true, messageLength)));
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        /// <summary>
+        /// Perform a set of Queue message tests with different chars.
+        /// </summary>
+        private void QueueBase64EncodingTest(bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength)
+        {
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, 'a')));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x21)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x7f)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0xd7ff)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, '<')));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x19, '>')));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0xfffe, '&')));
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        /// <summary>
+        /// Perform a PUT and GET queue message test customized by a few parameters.
+        /// </summary>
+        private void QueueBase64EncodingTest(bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength, char invalidXmlChar, char validXmlChar)
+        {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
@@ -890,100 +913,67 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueue queueRefWithoutBase64Encoding = client.GetQueueReference(name);
             queueRefWithoutBase64Encoding.EncodeMessage = false;
 
-            // excessive message size
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 12288);
-
-            queue.Delete();
-        }
-
-        /// <summary>
-        /// Perform a set of Queue message tests given the message length.
-        /// </summary>
-        private void CloudQueueMessageBase64EncodingBoundaryTest(CloudQueue queue, CloudQueue queueRefWithoutBase64Encoding, int messageLength)
-        {
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, false, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, false, true, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, true, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, true, true, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, false, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, false, true, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, true, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, true, true, messageLength);
-        }
-
-        /// <summary>
-        /// Perform a set of Queue message tests with different chars.
-        /// </summary>
-        private void QueueBase64EncodingTest(CloudQueue queue, CloudQueue queueRefWithoutBase64Encoding, bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength)
-        {
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, 'a');
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x21);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x7f);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0xd7ff);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, '<');
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x19, '>');
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0xfffe, '&');
-        }
-
-        /// <summary>
-        /// Perform a PUT and GET queue message test customized by a few parameters.
-        /// </summary>
-        private void QueueBase64EncodingTest(CloudQueue queue, CloudQueue queueRefWithoutBase64Encoding, bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength, char invalidXmlChar, char validXmlChar)
-        {
-            queue.EncodeMessage = useBase64Encoding;
-            CloudQueueMessage originalMessage = null;
-            bool expectedExceptionThrown = false;
-
-            if (!useString)
+            try
             {
-                // hasInvalidCharacter is ignored
-                byte[] data = new byte[messageLength];
-                Random random = new Random();
-                random.NextBytes(data);
-                originalMessage = new CloudQueueMessage(data);
-            }
-            else
-            {
-                string message = CreateMessageString(messageLength, hasInvalidCharacter, invalidXmlChar, validXmlChar);
-                originalMessage = new CloudQueueMessage(message);
-            }
+                queue.EncodeMessage = useBase64Encoding;
+                CloudQueueMessage originalMessage = null;
+                bool expectedExceptionThrown = false;
 
-            // check invalid use case and length validation
-            if (!useString && !queue.EncodeMessage)
-            {
-                TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Binary data must be Base64 encoded");
-                expectedExceptionThrown = true;
-            }
-            else
-            {
-                expectedExceptionThrown = QueueBase64EncodingTestVerifyLength(queue, originalMessage);
-            }
-
-            if (!expectedExceptionThrown)
-            {
-                // check invalid XML characters validation
-                if (!queue.EncodeMessage && hasInvalidCharacter && messageLength > 0)
+                if (!useString)
                 {
-                    TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Invalid characters should throw if Base64 encoding is not used");
+                    // hasInvalidCharacter is ignored
+                    byte[] data = new byte[messageLength];
+                    Random random = new Random();
+                    random.NextBytes(data);
+                    originalMessage = new CloudQueueMessage(data);
+                }
+                else
+                {
+                    string message = CreateMessageString(messageLength, hasInvalidCharacter, invalidXmlChar, validXmlChar);
+                    originalMessage = new CloudQueueMessage(message);
+                }
+
+                // check invalid use case and length validation
+                if (!useString && !queue.EncodeMessage)
+                {
+                    TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Binary data must be Base64 encoded");
                     expectedExceptionThrown = true;
                 }
                 else
                 {
-                    // good to send messages
-                    CloudQueueMessage addedMessage = queue.AddMessage(originalMessage);
-                    VerifyAddMessageResult(originalMessage, addedMessage, !useString /* base64Encoded */);
-                    addedMessage = queue.AddMessage(originalMessage);
-                    VerifyAddMessageResult(originalMessage, addedMessage, !useString /* base64Encoded */);
+                    expectedExceptionThrown = QueueBase64EncodingTestVerifyLength(queue, originalMessage);
+                }
 
-                    if (useString)
+                if (!expectedExceptionThrown)
+                {
+                    // check invalid XML characters validation
+                    if (!queue.EncodeMessage && hasInvalidCharacter && messageLength > 0)
                     {
-                        QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsString);
+                        TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Invalid characters should throw if Base64 encoding is not used");
+                        expectedExceptionThrown = true;
                     }
                     else
                     {
-                        QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsBytes);
+                        // good to send messages
+                        CloudQueueMessage addedMessage = queue.AddMessage(originalMessage);
+                        VerifyAddMessageResult(originalMessage, addedMessage, !useString /* base64Encoded */);
+                        addedMessage = queue.AddMessage(originalMessage);
+                        VerifyAddMessageResult(originalMessage, addedMessage, !useString /* base64Encoded */);
+
+                        if (useString)
+                        {
+                            QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsString);
+                        }
+                        else
+                        {
+                            QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsBytes);
+                        }
                     }
                 }
+            }
+            finally
+            {
+                queue.Delete();
             }
         }
 

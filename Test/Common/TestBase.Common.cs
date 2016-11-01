@@ -189,6 +189,9 @@ namespace Microsoft.WindowsAzure.Storage
             TestBase.TargetTenantConfig = configurations.TenantConfigurations.Single(config => config.TenantName == configurations.TargetTenantName);
             TestBase.StorageCredentials = new StorageCredentials(TestBase.TargetTenantConfig.AccountName, TestBase.TargetTenantConfig.AccountKey);
             TestBase.CurrentTenantType = TargetTenantConfig.TenantType;
+#if WINDOWS_DESKTOP
+            System.Threading.ThreadPool.SetMinThreads(100, 100);
+#endif
         }
     }
 }

@@ -452,7 +452,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             if (offset.HasValue && rangeContentMD5)
             {
                 CommonUtility.AssertNotNull("count", count);
-                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxBlockSize);
+                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxRangeGetContentMD5Size);
             }
 
             HttpWebRequest request = Get(uri, timeout, shareSnapshot, accessCondition, useVersionHeader, operationContext);

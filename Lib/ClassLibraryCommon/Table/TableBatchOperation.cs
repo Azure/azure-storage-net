@@ -135,7 +135,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batchCmd.CommandLocationMode = batch.ContainsWrites ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
             batchCmd.RetrieveResponseStream = true;
             batchCmd.SignRequest = client.AuthenticationHandler.SignRequest;
-            batchCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            batchCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             batchCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableBatchOperation(uri, builder, client.BufferManager, timeout, table.Name, batch, useVersionHeader, ctx, requestOptions, client.AccountName);

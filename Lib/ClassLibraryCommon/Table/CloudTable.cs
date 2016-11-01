@@ -1971,7 +1971,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             retCmd.BuildRequestDelegate = TableHttpWebRequestFactory.GetAcl;
             retCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(System.Net.HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -2115,7 +2115,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.StreamToDispose = str;
             retCmd.RecoveryAction = RecoveryActions.RewindStream;
             retCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 

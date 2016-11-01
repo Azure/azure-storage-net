@@ -187,9 +187,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await this.DoUploadDownloadFileAsync(blob, 0);
             await this.DoUploadDownloadFileAsync(blob, 4096);
             await this.DoUploadDownloadFileAsync(blob, 4097);
-            await this.DoLargeBlockUploadDownloadFileAsync(blob, 4096);
-            await this.DoLargeBlockUploadDownloadFileAsync(blob, 8000);
-            await this.DoLargeBlockUploadDownloadFileAsync(blob, 9000);
+           
+            CloudBlockBlob blob2 = this.testContainer.GetBlockBlobReference("blob2");
+            await this.DoLargeBlockUploadDownloadFileAsync(blob2, 10 * 1024 * 1024, 4 * 1024 * 1024 + 1);
+            await this.DoLargeBlockUploadDownloadFileAsync(blob2, 10 * 1024 * 1024, 5 * 1024 * 1024);
+            await this.DoLargeBlockUploadDownloadFileAsync(blob2, 10 * 1024 * 1024, 10 * 1024 * 1024);
         }
 
         [TestMethod]
@@ -254,7 +256,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (FileStream inputFile = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
                     outputFile = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
                 {
-                    TestHelper.AssertStreamsAreEqual(inputFile, outputFile);
+                    TestHelper.AssertStreamsAreEqualFast(inputFile, outputFile);
                 }
             }
             finally
@@ -298,43 +300,128 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 #endif
         }
-
-        private async Task DoLargeBlockUploadDownloadFileAsync(ICloudBlob blob, int fileSize)
-        {
 #if NETCORE
-            string inputFileName = Path.GetTempFileName();
-            string outputFileName = Path.GetTempFileName();
-            if (System.IO.File.Exists(outputFileName))
+        [TestMethod]
+        [Description("Test upload using multi-filestream upload strategy.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobTestParallelUploadFromFileStream()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            string inputFileName = "i_" + Path.GetRandomFileName();
+            string outputFileName = "o_" + Path.GetRandomFileName();
+
+            try
+            {                
+                await container.CreateAsync();
+
+                BlobRequestOptions options = new BlobRequestOptions()
+                {
+                    UseTransactionalMD5 = false,
+                    StoreBlobContentMD5 = false,
+                    ParallelOperationThreadCount = 1
+                };
+
+                byte[] buffer = GetRandomBuffer(10 * 1024 * 1024);
+ 
+                using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(buffer, 0, buffer.Length);
+                }
+
+                CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
+                CloudBlockBlob blob3 = container.GetBlockBlobReference("blob3");
+                CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
+
+                blob1.StreamWriteSizeInBytes = 5 * 1024 * 1024;
+                await blob1.UploadFromFileAsync(inputFileName, null, options, null);
+                OperationContext context = new OperationContext();
+                await blob1.DownloadToFileAsync(outputFileName, FileMode.CreateNew, null, options, context);
+               
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                     outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }
+                
+                blob2.StreamWriteSizeInBytes = 5 * 1024 * 1024;
+                options.ParallelOperationThreadCount = 4;
+                await blob2.UploadFromFileAsync(inputFileName, null, options, null);
+                await blob2.DownloadToFileAsync(outputFileName, FileMode.Create, null, options, null);
+
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                     outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }
+
+                blob3.StreamWriteSizeInBytes = 6 * 1024 * 1024 + 1;
+                options.ParallelOperationThreadCount = 1;
+                await blob3.UploadFromFileAsync(inputFileName, null, options, null);
+                await blob3.DownloadToFileAsync(outputFileName, FileMode.Create, null, options, null);
+
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                     outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }
+
+                blob4.StreamWriteSizeInBytes = 6 * 1024 * 1024 + 1;
+                options.ParallelOperationThreadCount = 3;
+                await blob4.UploadFromFileAsync(inputFileName, null, options, null);
+                await blob4.DownloadToFileAsync(outputFileName, FileMode.Create, null, options, null);
+
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                     outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }    
+            }
+            finally
             {
+                System.IO.File.Delete(inputFileName);
                 System.IO.File.Delete(outputFileName);
             }
+        }
+#endif
+
+        private async Task DoLargeBlockUploadDownloadFileAsync(ICloudBlob blob, int fileSize, int blockSize)
+        {
+#if NETCORE
+            string inputFileName = Path.GetRandomFileName();
+            string outputFileName = Path.GetRandomFileName();
 
             try
             {
                 byte[] buffer = GetRandomBuffer(fileSize);
-                BlobRequestOptions options = new BlobRequestOptions();
-                options.StoreBlobContentMD5 = false;
-                blob.StreamWriteSizeInBytes = 4 * 1024 * 1024;
+                BlobRequestOptions options = new BlobRequestOptions()
+                {
+                    StoreBlobContentMD5 = false,
+                    ParallelOperationThreadCount = 2
+                };
+            
+                blob.StreamWriteSizeInBytes = blockSize;
 
                 using (FileStream file = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
                 {
                     await file.WriteAsync(buffer, 0, buffer.Length);
                 }
 
-                await blob.UploadFromFileAsync(inputFileName, null, options, null);
-
                 OperationContext context = new OperationContext();
-                await blob.UploadFromFileAsync(inputFileName, null, null, context);
+                await blob.UploadFromFileAsync(inputFileName, null, options, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 context = new OperationContext();
-                await blob.DownloadToFileAsync(outputFileName, FileMode.CreateNew, null, options, context);
+                await blob.DownloadToFileAsync(outputFileName, FileMode.Create, null, options, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
                 using (FileStream inputFile = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
                     outputFile = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
                 {
-                    TestHelper.AssertStreamsAreEqual(inputFile, outputFile);
+                    TestHelper.AssertStreamsAreEqualFast(inputFile, outputFile);
                 }
             }
             finally
@@ -355,9 +442,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await file.WriteAsync(buffer, 0, buffer.Length);
                 }
                 
-                BlobRequestOptions options = new BlobRequestOptions();
-                options.StoreBlobContentMD5 = false;
-                blob.StreamWriteSizeInBytes = 4 * 1024 * 1024;
+                BlobRequestOptions options = new BlobRequestOptions()
+                {
+                    StoreBlobContentMD5 = false,
+                    ParallelOperationThreadCount = 2
+                };
+
+                blob.StreamWriteSizeInBytes = blockSize;
                 OperationContext context = new OperationContext();
 
                 await blob.UploadFromFileAsync(inputFile);
@@ -927,7 +1018,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        #region Negative tests
+#region Negative tests
         [TestMethod]
         [Description("Single put blob and get blob")]
         [TestCategory(ComponentCategory.Blob)]

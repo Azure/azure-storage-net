@@ -47,14 +47,24 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int DefaultWriteBlockSizeBytes = (int)(4 * Constants.MB);
 
         /// <summary>
+        /// Default read buffer size used by the SubStream class for Large Block Blob uploads.
+        /// </summary>
+        public const int DefaultSubStreamBufferSize = (int)(4 * Constants.MB);
+
+        /// <summary>
         /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
         public const long MaxSingleUploadBlobSize = 256 * MB;
 
         /// <summary>
-        /// The maximum size of a single block.
+        /// The maximum size of a single block for Block Blobs.
         /// </summary>
         public const int MaxBlockSize = (int)(100 * Constants.MB);
+
+        /// <summary>
+        /// The maximum size of a single block for Append Blobs.
+        /// </summary>
+        public const int MaxAppendBlockSize = (int)(4 * Constants.MB);
 
         /// <summary>
         /// The maximum size of a range get operation that returns content MD5.

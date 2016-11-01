@@ -112,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             set
             {
-                CommonUtility.AssertInBounds("StreamWriteSizeInBytes", value, 16 * Constants.KB, Constants.MaxBlockSize);
+                CommonUtility.AssertInBounds("StreamWriteSizeInBytes", value, 16 * Constants.KB, Constants.MaxAppendBlockSize);
                 this.streamWriteSizeInBytes = value;
             }
         }

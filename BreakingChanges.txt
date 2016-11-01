@@ -1,6 +1,9 @@
 Tracking Breaking Changes since 7.0
 
 - Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter, and returns this object as well. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
+- All: Decoupled StorageExtendedErrorInformation methods using OData to prevent the dependency from loading for Blobs, Queues, and Files.
+- Table: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
+- All: Added logging for the ExtendedErrorInformation 'ErrorMessage' attribute via StorageException ToString() method.
 
 Tracking Breaking Changes since 6.0
 

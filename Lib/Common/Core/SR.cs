@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string BlobDataCorrupted = "Blob data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
         public const string BlobEndPointNotConfigured = "No blob endpoint configured.";
         public const string BlobInvalidSequenceNumber = "The sequence number may not be specified for an increment operation.";
-        public const string BlobOverMaxBlockLimit = "The total blocks for this upload exceeds the maximum allowable limit. Please increase the block size.";
+        public const string BlobOverMaxBlockLimit = "The total blocks required for this upload exceeds the maximum block limit. Please increase the block size if applicable and ensure the Blob size is not greater than the maximum Blob size limit.";
         public const string BlobStreamAlreadyCommitted = "Blob stream has already been committed once.";
         public const string BlobStreamFlushPending = "Blob stream has a pending flush operation. Please call EndFlush first.";
         public const string BlobStreamReadPending = "Blob stream has a pending read operation. Please call EndRead first.";
@@ -159,6 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string StorageUriMustMatch = "Primary and secondary location URIs in a StorageUri must point to the same resource.";
         public const string MultipleCredentialsProvided = "Cannot provide credentials as part of the address and as constructor parameter. Either pass in the address or use a different constructor.";
         public const string MultipleSnapshotTimesProvided = "Multiple different snapshot times provided as part of query '{0}' and as constructor parameter '{1}'.";
+        public const string NegativeBytesRequestedInCopy = "Internal Error - negative copyLength requested when attempting to copy a stream.  CopyLength = {0}, totalBytes = {1}, total bytes recorded so far = {2}.";
         public const string NoPropertyResolverAvailable = "No property resolver available. Deserializing the entity properties as strings.";
         public const string OffsetNotInRange = "The offset provided is out of range. The range must be between 0 and the length of the byte array.";
         public const string ODataReaderNotInCompletedState = "OData Reader state expected to be Completed state. Actual state: {0}.";

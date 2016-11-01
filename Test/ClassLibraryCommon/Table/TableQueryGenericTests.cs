@@ -421,7 +421,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
             OperationContext opContext = new OperationContext();
             TableQuerySegment<BaseEntity> seg = currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext).Result;
-            
+
             int count = 0;
             foreach (BaseEntity ent in seg)
             {
@@ -992,7 +992,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             BaseEntity entity = entities.First();
             Assert.AreEqual("a", entity.A);
             Assert.IsNull(entity.B);
-            Assert.AreEqual(0, entity.E);      
+            Assert.AreEqual(0, entity.E);
         }
 
         [TestMethod]
@@ -1140,14 +1140,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         query,
                         (pk, rk, ts, prop, etag) =>
                         new BaseEntity()
-                            {
-                                PartitionKey = pk,
-                                RowKey = rk,
-                                Timestamp = ts,
-                                A = prop["A"].StringValue,
-                                C = prop["C"].StringValue,
-                                ETag = etag
-                            },
+                        {
+                            PartitionKey = pk,
+                            RowKey = rk,
+                            Timestamp = ts,
+                            A = prop["A"].StringValue,
+                            C = prop["C"].StringValue,
+                            ETag = etag
+                        },
                         token).Result;
 
                 list1.AddRange(segment.Results);
@@ -1417,14 +1417,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     currentTable.ExecuteQuerySegmentedAsync(
                         query,
                         (pk, rk, ts, prop, etag) => new BaseEntity()
-                            {
-                                PartitionKey = pk,
-                                RowKey = rk,
-                                Timestamp = ts,
-                                A = prop["A"].StringValue,
-                                C = prop["C"].StringValue,
-                                ETag = etag
-                            },
+                        {
+                            PartitionKey = pk,
+                            RowKey = rk,
+                            Timestamp = ts,
+                            A = prop["A"].StringValue,
+                            C = prop["C"].StringValue,
+                            ETag = etag
+                        },
                         token).Result;
 
                 list1.AddRange(segment.Results);
@@ -1482,6 +1482,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     complexEntity.BinaryPrimitive = new byte[] { 0x01, 0x02, (byte)m };
                     complexEntity.Bool = m % 2 == 0 ? true : false;
                     complexEntity.BoolPrimitive = m % 2 == 0 ? true : false;
+                    complexEntity.DateTime = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffset = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffsetN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
                     complexEntity.Double = m + ((double)m / 100);
                     complexEntity.DoublePrimitive = m + ((double)m / 100);
                     complexEntity.Int32 = m;
@@ -1496,9 +1500,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     {
                         middleRef = complexEntity;
                     }
-
-                    // Add delay to make times unique
-                    Thread.Sleep(100);
                 }
 
                 table.ExecuteBatch(batch);
@@ -1619,6 +1620,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     complexEntity.BinaryPrimitive = new byte[] { 0x01, 0x02, (byte)m };
                     complexEntity.Bool = m % 2 == 0 ? true : false;
                     complexEntity.BoolPrimitive = m % 2 == 0 ? true : false;
+                    complexEntity.DateTime = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffset = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffsetN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
                     complexEntity.Double = m + ((double)m / 100);
                     complexEntity.DoublePrimitive = m + ((double)m / 100);
                     complexEntity.Int32 = m;
@@ -1633,9 +1638,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     {
                         middleRef = complexEntity;
                     }
-
-                    // Add delay to make times unique
-                    Thread.Sleep(100);
                 }
 
                 table.ExecuteBatch(batch);

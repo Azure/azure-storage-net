@@ -41,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         #endregion
 
         #region Additional test attributes
-        
+
         /// <summary>
         /// You can use the following additional attributes as you write your tests:
         /// Use ClassInitialize to run code before running the first test in the class
@@ -69,7 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void MyTestInitialize()
         {
             props = DefaultServiceProperties();
-            
+
             if (TestBase.BlobBufferManager != null)
             {
                 TestBase.BlobBufferManager.OutstandingBufferCount = 0;
@@ -116,27 +116,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             props.Cors.CorsRules.Add(
                 new CorsRule()
-                    {
-                        AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
-                        AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
-                        MaxAgeInSeconds = 500,
-                        ExposedHeaders =
-                            new List<string>()
-                                {
-                                    "x-ms-meta-data*",
-                                    "x-ms-meta-source*",
-                                    "x-ms-meta-abc",
-                                    "x-ms-meta-bcd"
-                                },
-                        AllowedHeaders =
-                            new List<string>()
-                                {
-                                    "x-ms-meta-data*",
-                                    "x-ms-meta-target*",
-                                    "x-ms-meta-xyz",
-                                    "x-ms-meta-foo"
-                                }
-                    });
+                {
+                    AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
+                    AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
+                    MaxAgeInSeconds = 500,
+                    ExposedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-source*",
+                                         "x-ms-meta-abc",
+                                         "x-ms-meta-bcd"
+                                      },
+                    AllowedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-target*",
+                                         "x-ms-meta-xyz",
+                                         "x-ms-meta-foo"
+                                     }
+                });
 
             client.SetServiceProperties(props);
 
@@ -169,27 +167,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             props.Cors.CorsRules.Add(
                 new CorsRule()
-                    {
-                        AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
-                        AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
-                        MaxAgeInSeconds = 500,
-                        ExposedHeaders =
-                            new List<string>()
-                                {
-                                    "x-ms-meta-data*",
-                                    "x-ms-meta-source*",
-                                    "x-ms-meta-abc",
-                                    "x-ms-meta-bcd"
-                                },
-                        AllowedHeaders =
-                            new List<string>()
-                                {
-                                    "x-ms-meta-data*",
-                                    "x-ms-meta-target*",
-                                    "x-ms-meta-xyz",
-                                    "x-ms-meta-foo"
-                                }
-                    });
+                {
+                    AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
+                    AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
+                    MaxAgeInSeconds = 500,
+                    ExposedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-source*",
+                                         "x-ms-meta-abc",
+                                         "x-ms-meta-bcd"
+                                     },
+                    AllowedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-target*",
+                                         "x-ms-meta-xyz",
+                                         "x-ms-meta-foo"
+                                     }
+                });
 
             using (ManualResetEvent evt = new ManualResetEvent(false))
             {
@@ -223,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         #endregion
 
-#region TASK
+        #region TASK
         [TestMethod]
         [Description("Test Analytics Round Trip Task")]
         [TestCategory(ComponentCategory.Blob)]
@@ -243,8 +239,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             client.SetServicePropertiesAsync(props).Wait();
 
             // Wait for analytics server to update
-            Thread.Sleep(60 * 1000);
-            TestHelper.AssertServicePropertiesAreEqual(props, client.GetServicePropertiesAsync().Result);
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestHelper.AssertServicePropertiesAreEqual(props, client.GetServicePropertiesAsync().Result));
         }
 
         [TestMethod]
@@ -339,7 +334,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             TestHelper.AssertServicePropertiesAreEqual(props, client.GetServicePropertiesAsync(requestOptions, operationContext).Result);
         }
-#endregion
+        #endregion
 
         #endregion
 
@@ -544,84 +539,77 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlobTestValidCorsRules()
         {
             CorsRule ruleMinRequired = new CorsRule()
-                                           {
-                                               AllowedOrigins = new List<string>() { "www.xyz.com" },
-                                               AllowedMethods = CorsHttpMethods.Get
-                                           };
+            {
+                AllowedOrigins = new List<string>() { "www.xyz.com" },
+                AllowedMethods = CorsHttpMethods.Get
+            };
 
             CorsRule ruleBasic = new CorsRule()
+            {
+                AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
+                AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
+                MaxAgeInSeconds = 500,
+                ExposedHeaders = new List<string>()
                                      {
-                                         AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
-                                         AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
-                                         MaxAgeInSeconds = 500,
-                                         ExposedHeaders =
-                                             new List<string>()
-                                                 {
-                                                     "x-ms-meta-data*",
-                                                     "x-ms-meta-source*",
-                                                     "x-ms-meta-abc",
-                                                     "x-ms-meta-bcd"
-                                                 },
-                                         AllowedHeaders =
-                                             new List<string>()
-                                                 {
-                                                     "x-ms-meta-data*",
-                                                     "x-ms-meta-target*",
-                                                     "x-ms-meta-xyz",
-                                                     "x-ms-meta-foo"
-                                                 }
-                                     };
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-source*",
+                                         "x-ms-meta-abc",
+                                         "x-ms-meta-bcd"
+                                     },
+                AllowedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-target*",
+                                         "x-ms-meta-xyz",
+                                         "x-ms-meta-foo"
+                                     }
+            };
 
             CorsRule ruleAllMethods = new CorsRule()
-                                          {
-                                              AllowedOrigins = new List<string>() { "www.xyz.com" },
-                                              AllowedMethods =
-                                                  CorsHttpMethods.Put | CorsHttpMethods.Trace
-                                                  | CorsHttpMethods.Connect | CorsHttpMethods.Delete
-                                                  | CorsHttpMethods.Get | CorsHttpMethods.Head
-                                                  | CorsHttpMethods.Options | CorsHttpMethods.Post
-                                                  | CorsHttpMethods.Merge
-                                          };
+            {
+                AllowedOrigins = new List<string>() { "www.xyz.com" },
+                AllowedMethods =   CorsHttpMethods.Put | CorsHttpMethods.Trace
+                                 | CorsHttpMethods.Connect | CorsHttpMethods.Delete
+                                 | CorsHttpMethods.Get | CorsHttpMethods.Head
+                                 | CorsHttpMethods.Options | CorsHttpMethods.Post
+                                 | CorsHttpMethods.Merge
+            };
 
             CorsRule ruleSingleExposedHeader = new CorsRule()
-                                                   {
-                                                       AllowedOrigins = new List<string>() { "www.ab.com" },
-                                                       AllowedMethods = CorsHttpMethods.Get,
-                                                       ExposedHeaders = new List<string>() { "x-ms-meta-bcd" },
-                                                   };
+            {
+                AllowedOrigins = new List<string>() { "www.ab.com" },
+                AllowedMethods = CorsHttpMethods.Get,
+                ExposedHeaders = new List<string>() { "x-ms-meta-bcd" },
+            };
 
             CorsRule ruleSingleExposedPrefixHeader = new CorsRule()
-                                                         {
-                                                             AllowedOrigins =
-                                                                 new List<string>() { "www.ab.com" },
-                                                             AllowedMethods = CorsHttpMethods.Get,
-                                                             ExposedHeaders =
-                                                                 new List<string>() { "x-ms-meta-data*" },
-                                                         };
+            {
+                AllowedOrigins = new List<string>() { "www.ab.com" },
+                AllowedMethods = CorsHttpMethods.Get,
+                ExposedHeaders = new List<string>() { "x-ms-meta-data*" },
+            };
 
             CorsRule ruleSingleAllowedHeader = new CorsRule()
-                                                   {
-                                                       AllowedOrigins = new List<string>() { "www.ab.com" },
-                                                       AllowedMethods = CorsHttpMethods.Get,
-                                                       AllowedHeaders = new List<string>() { "x-ms-meta-xyz", },
-                                                   };
+            {
+                AllowedOrigins = new List<string>() { "www.ab.com" },
+                AllowedMethods = CorsHttpMethods.Get,
+                AllowedHeaders = new List<string>() { "x-ms-meta-xyz", },
+            };
 
             CorsRule ruleSingleAllowedPrefixHeader = new CorsRule()
-                                                         {
-                                                             AllowedOrigins =
-                                                                 new List<string>() { "www.ab.com" },
-                                                             AllowedMethods = CorsHttpMethods.Get,
-                                                             AllowedHeaders =
-                                                                 new List<string>() { "x-ms-meta-target*" },
-                                                         };
+            {
+                AllowedOrigins = new List<string>() { "www.ab.com" },
+                AllowedMethods = CorsHttpMethods.Get,
+                AllowedHeaders = new List<string>() { "x-ms-meta-target*" },
+            };
 
             CorsRule ruleAllowAll = new CorsRule()
-                                                  {
-                                                      AllowedOrigins = new List<string>() { "*" },
-                                                      AllowedMethods = CorsHttpMethods.Get,
-                                                      AllowedHeaders = new List<string>() { "*" },
-                                                      ExposedHeaders = new List<string>() { "*" }
-                                                  };
+            {
+                AllowedOrigins = new List<string>() { "*" },
+                AllowedMethods = CorsHttpMethods.Get,
+                AllowedHeaders = new List<string>() { "*" },
+                ExposedHeaders = new List<string>() { "*" }
+            };
 
             CloudBlobClient client = GenerateCloudBlobClient();
 
@@ -690,11 +678,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CorsRule ruleEmpty = new CorsRule();
 
             CorsRule ruleInvalidMaxAge = new CorsRule()
-                                             {
-                                                 AllowedOrigins = new List<string>() { "www.xyz.com" },
-                                                 AllowedMethods = CorsHttpMethods.Get,
-                                                 MaxAgeInSeconds = -1
-                                             };
+            {
+                AllowedOrigins = new List<string>() { "www.xyz.com" },
+                AllowedMethods = CorsHttpMethods.Get,
+                MaxAgeInSeconds = -1
+            };
 
             CloudBlobClient client = GenerateCloudBlobClient();
 
@@ -745,22 +733,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlobTestCorsMaxHeaders()
         {
             CorsRule ruleManyHeaders = new CorsRule()
-                                           {
-                                               AllowedOrigins = new List<string>() { "www.xyz.com" },
-                                               AllowedMethods = CorsHttpMethods.Get,
-                                               AllowedHeaders =
-                                                   new List<string>()
-                                                       {
-                                                           "x-ms-meta-target*",
-                                                           "x-ms-meta-other*"
-                                                       },
-                                               ExposedHeaders =
-                                                   new List<string>()
-                                                       {
-                                                           "x-ms-meta-data*",
-                                                           "x-ms-meta-source*"
-                                                       }
-                                           };
+            {
+                AllowedOrigins = new List<string>() { "www.xyz.com" },
+                AllowedMethods = CorsHttpMethods.Get,
+                AllowedHeaders = new List<string>()
+                                 {
+                                     "x-ms-meta-target*",
+                                     "x-ms-meta-other*"
+                                 },
+                ExposedHeaders = new List<string>()
+                                 {
+                                     "x-ms-meta-data*",
+                                     "x-ms-meta-source*"
+                                 }
+            };
 
             // Add maximum number of non-prefixed headers
             for (int i = 0; i < 64; i++)
@@ -839,7 +825,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
             props.Cors.CorsRules.Clear();
-            
+
             client.SetServiceProperties(props);
 
             ServiceProperties newProps = new ServiceProperties(cors: new CorsProperties());
@@ -850,22 +836,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
                     AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
                     MaxAgeInSeconds = 500,
-                    ExposedHeaders =
-                        new List<string>()
-                                {
-                                    "x-ms-meta-data*",
-                                    "x-ms-meta-source*",
-                                    "x-ms-meta-abc",
-                                    "x-ms-meta-bcd"
-                                },
-                    AllowedHeaders =
-                        new List<string>()
-                                {
-                                    "x-ms-meta-data*",
-                                    "x-ms-meta-target*",
-                                    "x-ms-meta-xyz",
-                                    "x-ms-meta-foo"
-                                }
+                    ExposedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-source*",
+                                         "x-ms-meta-abc",
+                                         "x-ms-meta-bcd"
+                                     },
+                    AllowedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-target*",
+                                         "x-ms-meta-xyz",
+                                         "x-ms-meta-foo"
+                                     }
                 });
 
             client.SetServiceProperties(newProps);
