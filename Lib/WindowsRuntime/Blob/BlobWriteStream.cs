@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="count">The number of bytes to be written to the current stream.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
-            this.WriteAsync(buffer, offset, count).Wait();
+            CommonUtility.RunWithoutSynchronizationContext(() => this.WriteAsync(buffer, offset, count).Wait());
         }
 
         /// <summary>
@@ -168,7 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         public override void Flush()
         {
-            this.FlushAsync().Wait();
+            CommonUtility.RunWithoutSynchronizationContext(() => this.FlushAsync().Wait());
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     if (!this.committed)
                     {
-                        this.CommitAsync().Wait();
+                        CommonUtility.RunWithoutSynchronizationContext(() => this.CommitAsync().Wait());
                     }
                 }
             }

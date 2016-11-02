@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{CE1EB2B6-0DA8-43D4-A2E1-001804697009}"
 	ProjectSection(SolutionItems) = preProject
@@ -51,10 +51,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.WindowsAzure.Storage", "Lib\WindowsPhoneRT\Microsoft.WindowsAzure.Storage.csproj", "{008D78B8-5C78-4BD7-9779-D2A6B2D35091}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.WindowsAzure.Storage.PhoneRT.Test", "Test\WindowsPhoneRT.Test\Microsoft.WindowsAzure.Storage.PhoneRT.Test.csproj", "{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Portable", "Portable", "{A3E3EABF-8451-4E42-AE57-38CE002CBF93}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.WindowsAzure.Storage", "Lib\Portable\Microsoft.WindowsAzure.Storage.csproj", "{603260D9-2609-46DC-B759-CEFF9A93E33C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -256,20 +252,6 @@ Global
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|x86.ActiveCfg = Release|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|x86.Build.0 = Release|x86
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01}.Release|x86.Deploy.0 = Release|x86
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Debug|ARM.ActiveCfg = Debug|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Release|ARM.ActiveCfg = Release|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Release|x64.ActiveCfg = Release|Any CPU
-		{603260D9-2609-46DC-B759-CEFF9A93E33C}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -294,7 +276,5 @@ Global
 		{28E2E0D3-7EA3-4A92-BF2C-02D021D09F51} = {CE1EB2B6-0DA8-43D4-A2E1-001804697009}
 		{008D78B8-5C78-4BD7-9779-D2A6B2D35091} = {28E2E0D3-7EA3-4A92-BF2C-02D021D09F51}
 		{F870054B-A7C4-4DC9-97EB-4741A4AD3C01} = {05A53D9E-8EBD-4F36-8D10-EA070FC3AB8C}
-		{A3E3EABF-8451-4E42-AE57-38CE002CBF93} = {CE1EB2B6-0DA8-43D4-A2E1-001804697009}
-		{603260D9-2609-46DC-B759-CEFF9A93E33C} = {A3E3EABF-8451-4E42-AE57-38CE002CBF93}
 	EndGlobalSection
 EndGlobal

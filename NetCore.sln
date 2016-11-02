@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{0F3C778A-0BBD-4318-A8EE-A7C015C309B2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{DFD3BE24-FF81-4B3F-9956-EA431C1D18A4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B7E0612E-6504-48C6-B46A-B96876BB4DA2}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+		Nuget.config = Nuget.config
+	EndProjectSection
+	ProjectSection(FolderGlobals) = preProject
+		global_1json__JSONSchema = http://json.schemastore.org/global
+	EndProjectSection
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.WindowsAzure.Storage", "Lib\AspNet\Microsoft.WindowsAzure.Storage\Microsoft.WindowsAzure.Storage.xproj", "{10851280-F6EA-4988-80B0-4B0CAEE23196}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.WindowsAzure.Storage.Test", "Test\AspNet\Microsoft.WindowsAzure.Storage.Test\Microsoft.WindowsAzure.Storage.Test.xproj", "{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "XUnitForMsTest", "Test\AspNet\XUnitForMsTest\XUnitForMsTest.xproj", "{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{10851280-F6EA-4988-80B0-4B0CAEE23196}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10851280-F6EA-4988-80B0-4B0CAEE23196}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10851280-F6EA-4988-80B0-4B0CAEE23196}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10851280-F6EA-4988-80B0-4B0CAEE23196}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{10851280-F6EA-4988-80B0-4B0CAEE23196} = {0F3C778A-0BBD-4318-A8EE-A7C015C309B2}
+		{4A6F2277-85AA-47D3-ACBA-25E256DEBDA9} = {DFD3BE24-FF81-4B3F-9956-EA431C1D18A4}
+		{C5B83A60-C8D9-425B-BB44-2E878CF8A1C4} = {DFD3BE24-FF81-4B3F-9956-EA431C1D18A4}
+	EndGlobalSection
+EndGlobal

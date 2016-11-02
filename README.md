@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (7.0.0)
+# Microsoft Azure Storage SDK for .NET (7.2.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -14,13 +14,13 @@ complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http:
 - Blobs
     - Create/Read/Update/Delete Blobs
 - Files
-	- Create/Update/Delete Directories
-	- Create/Read/Update/Delete Files
+    - Create/Update/Delete Directories
+    - Create/Read/Update/Delete Files
 - Queues
     - Create/Delete Queues
     - Insert/Peek Queue Messages
     - Advanced Queue Operations
-	
+
 ## Getting Started
 
 The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://azure.microsoft.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
@@ -34,9 +34,8 @@ For the best development experience, developers should use the official Microsof
 - .NET Framework 4.0: As of October 2012, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4 release and above.
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
-- CoreCLR (rc1): Storage Client Libraries for .NET are available to support CoreCLR application development. This support is currently in preview. 
-- Portable Class Library Profile 111: Storage Client Libraries are available to support building PCL Profile 111 applications, as well as for Xamarin application development. This support is currently in preview.
- 
+- Netstandard1.3 (CoreCLR RTM): Storage Client Libraries for .NET are available to support CoreCLR application development.
+
 ## Requirements
 
 - Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://account.windowsazure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
@@ -46,18 +45,17 @@ For the best development experience, developers should use the official Microsof
 ## Versioning Information
 
 - The Storage Client Library uses [the semantic versioning scheme.](http://semver.org/)
-- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (DNX & DNXCore, PCL/Xamarin).
 
 ## Use with the Azure Storage Emulator
 
 - The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
-- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.3. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.4. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-This version of the Storage Client Library ships with the storage version 2015-07-08.
+This version of the Storage Client Library ships with the storage version 2015-12-11.
 
 ### Via Git
 
@@ -88,6 +86,16 @@ The specific ODataLib packages are:
 - [Microsoft.Data.OData](http://nuget.org/packages/Microsoft.Data.OData/)
 - [Microsoft.Data.Edm](http://nuget.org/packages/Microsoft.Data.Edm/)
 - [System.Spatial](http://nuget.org/packages/System.Spatial)
+
+> Note:
+> The ODataLib packages currently do not support "netstandard1.6" or "netcoreapp1.0" frameworks in projects depending on the current relase of Dotnet CoreCLR. Thus, you may encounter failures while trying to restore the ODataLib dependencies for one of the targeted frameworks mentioned above. Until the support is added, if you run into this, you can use the imports statement within the framework node of your project.json file to specify to NuGet that it can restore the packages targeting the framework within the "imports" statement as shown below:
+
+```
+  "imports": [
+    "dnxcore50",
+    "portable-net451+win8"
+  ]
+```
 
 ### Newtonsoft Json
 
@@ -122,7 +130,7 @@ Once installed:
 - Copy `FiddlerCore.dll` `\azure-storage-net\Test\FaultInjection\Dependencies\DotNet2`
 - Copy `FiddlerCore4.dll` to `azure-storage-net\Test\FaultInjection\Dependencies\DotNet4`
 
-Tests for the client-side encryption preview support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
+Tests for the client-side encryption support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
 
 - [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
@@ -167,6 +175,8 @@ We gladly accept community contributions.
 - Issues: Please report bugs using the Issues section of GitHub
 - Forums: Interact with the development teams on StackOverflow or the Microsoft Azure Forums
 - Source Code Contributions: Please see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to contribute code.
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 For general suggestions about Microsoft Azure please use our [UserVoice forum](http://feedback.azure.com/forums/34192--general-feedback).
 

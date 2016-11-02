@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RetryPolicy = new NoRetry(),
             LocationMode = RetryPolicies.LocationMode.PrimaryOnly,
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             RequireEncryption = null,
 #endif
 
@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 this.RetryPolicy = other.RetryPolicy;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
                 this.RequireEncryption = other.RequireEncryption;
 #endif
                 this.LocationMode = other.LocationMode;
@@ -113,7 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 ?? serviceClient.DefaultRequestOptions.LocationMode 
                 ?? BaseDefaultRequestOptions.LocationMode;
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
             modifiedOptions.RequireEncryption = 
                 modifiedOptions.RequireEncryption 
                 ?? serviceClient.DefaultRequestOptions.RequireEncryption 
@@ -217,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.
         /// </summary>

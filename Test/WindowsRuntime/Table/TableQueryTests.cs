@@ -24,7 +24,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Table.Protocol;
 
-#if ASPNET_K
+#if NETCORE
 using System.Globalization;
 #else
 using Windows.Globalization;
@@ -474,7 +474,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoTableRegionalQueryOnSupportedTypesAsync(TablePayloadFormat format)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
-#if ASPNET_K
+#if NETCORE
             //CultureInfo currentCulture = CultureInfo.CurrentCulture;
             //CultureInfo.CurrentCulture = new CultureInfo("tr");
 #else
@@ -595,7 +595,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             finally
             {
-#if ASPNET_K
+#if NETCORE
                 //CultureInfo.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;

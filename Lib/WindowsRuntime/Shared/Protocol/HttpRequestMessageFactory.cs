@@ -46,7 +46,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 builder.Add("timeout", timeout.ToString());
             }
 
-#if WINDOWS_RT && !ASPNET_K
+#if WINDOWS_RT && !NETCORE
             // Windows Phone does not allow the caller to disable caching, so a random GUID
             // is added to every URI to make it look like a different request.
             builder.Add("randomguid", Guid.NewGuid().ToString("N"));

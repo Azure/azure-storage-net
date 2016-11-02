@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 return e;
             }
-#if ASPNET_K
+#if NETCORE
             catch (AggregateException ex)
             {
                 ex = ex.Flatten();

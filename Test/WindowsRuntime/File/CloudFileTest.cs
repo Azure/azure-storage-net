@@ -23,7 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if NETCORE
 using System.Security.Cryptography;
 #else
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -262,9 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 await Task.Delay(1000);
 
                 file.Properties.CacheControl = "no-transform";
-#if !ASPNET_K
                 file.Properties.ContentEncoding = "gzip";
-#endif
                 file.Properties.ContentLanguage = "tr,en";
                 file.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 file.Properties.ContentType = "text/html";
@@ -275,9 +273,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
                 await file2.FetchAttributesAsync();
                 Assert.AreEqual("no-transform", file2.Properties.CacheControl);
-#if !ASPNET_K
                 Assert.AreEqual("gzip", file2.Properties.ContentEncoding);
-#endif
                 Assert.AreEqual("tr,en", file2.Properties.ContentLanguage);
                 Assert.AreEqual("MDAwMDAwMDA=", file2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", file2.Properties.ContentType);
@@ -465,7 +461,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public async Task CloudFileWriteRangeAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
-#if ASPNET_K
+#if NETCORE
             MD5 md5 = MD5.Create();
             string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
 #else
@@ -667,7 +663,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         private async Task CloudFileUploadFromStreamAsync(CloudFileShare share, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
         {
             byte[] buffer = GetRandomBuffer(size);
-#if ASPNET_K
+#if NETCORE
             MD5 hasher = MD5.Create();
             string md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
 #else

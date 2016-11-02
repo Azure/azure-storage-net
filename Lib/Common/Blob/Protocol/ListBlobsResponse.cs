@@ -331,6 +331,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             copyStatusDescription = reader.ReadElementContentAsString();
                                             break;
 
+                                        case Constants.ServerEncryptionElement:
+                                            blob.Properties.IsServerEncrypted = BlobHttpResponseParsers.GetServerEncrypted(reader.ReadElementContentAsString());
+                                            break;
+
                                         default:
                                             reader.Skip();
                                             break;

@@ -31,12 +31,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             
             HttpContent retContent = new RetryableStreamContent(stream);
             retContent.Headers.ContentLength = length;
-#if !PORTABLE
             if (md5 != null)
             {
                 retContent.Headers.ContentMD5 = Convert.FromBase64String(md5);
             }
-#endif
 
             return retContent;
         }

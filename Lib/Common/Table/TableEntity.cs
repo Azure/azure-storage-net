@@ -33,6 +33,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Concurrent;
 #endif
 
+#if NETCORE
+    using Microsoft.WindowsAzure.Storage.Extensions;
+#endif
+
     /// <summary>
     /// Represents the base object type for a table entity in the Table service.
     /// </summary>
@@ -44,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1117:ParametersMustBeOnSameLineOrSeparateLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:ParameterMustNotSpanMultipleLines", Justification = "Reviewed.")]
     [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1001:CommasMustBeSpacedCorrectly", Justification = "Reviewed.")]
-    public class TableEntity : ITableEntity 
+    public class TableEntity : ITableEntity
     {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
         static TableEntity()
@@ -140,12 +144,37 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ReflectionRead(entity, properties, operationContext);
         }
 
+        /// <summary>
+        /// Returns a custom entity instance which is recomposed using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values.
+        /// </summary>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <typeparam name="TResult">The type of the recomposed object. This can be a simple object with a flat structure or a complex object with complex properties and multiple levels of object hierarchy.</typeparam>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
+        public static TResult ConvertBack<TResult>(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
+        {
+            return EntityPropertyConverter.ConvertBack<TResult>(properties, operationContext);
+        }
+
+        /// <summary>
+        /// Returns a custom entity instance which is recomposed using the specified <see cref="IDictionary{TKey,TValue}"/> of property names to <see cref="EntityProperty"/> data typed values.
+        /// </summary>
+        /// <typeparam name="TResult">The type of the recomposed object. This can be a simple object with a flat structure or a complex object with complex properties and multiple levels of object hierarchy.</typeparam>
+        /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> data values to deserialize and store in this table entity instance.</param>
+        /// <param name="entityPropertyConverterOptions">A <see cref="EntityPropertyConverterOptions"/> object that specifies options for the entity property conversion.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        public static TResult ConvertBack<TResult>(IDictionary<string, EntityProperty> properties, EntityPropertyConverterOptions entityPropertyConverterOptions, OperationContext operationContext)
+        {
+            return EntityPropertyConverter.ConvertBack<TResult>(properties, entityPropertyConverterOptions, operationContext);
+        }
+
         [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1121:UseBuiltInTypeAlias", Justification = "Needed for object type checking.")]
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Reviewed")]
         private static void ReflectionRead(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
+#elif NETCORE
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetAllProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif
@@ -294,12 +323,45 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return ReflectionWrite(entity, operationContext);
         }
 
+        /// <summary>
+        /// Flattens the entity and creates a <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all properties of the specified entity object.
+        /// </summary>
+        /// <param name="entity">The entity object to serialize.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.</returns>
+        /// <remarks>The entity type can be a simple object with a flat structure or a complex object with complex properties and multiple levels of object hierarchy.
+        /// Generic ReadUserObject method can recompose the original entity using the output of this method.</remarks>
+        public static IDictionary<string, EntityProperty> Flatten(object entity, OperationContext operationContext)
+        {
+            CommonUtility.AssertNotNull("entity", entity);
+
+            return EntityPropertyConverter.Flatten(entity, operationContext);
+        }
+
+        /// <summary>
+        /// Flattens the entity and creates a <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all properties of the specified entity object.
+        /// </summary>
+        /// <param name="entity">The entity object to serialize.</param>
+        /// <param name="entityPropertyConverterOptions">A <see cref="EntityPropertyConverterOptions"/> object that specifies options for the entity property conversion.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.</returns>
+        /// <remarks>The entity type can be a simple object with a flat structure or a complex object with complex properties and multiple levels of object hierarchy.
+        /// Generic ReadUserObject method can be used to recompose the original entity passing.</remarks>
+        public static IDictionary<string, EntityProperty> Flatten(object entity, EntityPropertyConverterOptions entityPropertyConverterOptions, OperationContext operationContext)
+        {
+            CommonUtility.AssertNotNull("entity", entity);
+
+            return EntityPropertyConverter.Flatten(entity, entityPropertyConverterOptions, operationContext);
+        }
+
         private static IDictionary<string, EntityProperty> ReflectionWrite(object entity, OperationContext operationContext)
         {
             Dictionary<string, EntityProperty> retVals = new Dictionary<string, EntityProperty>();
 
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetRuntimeProperties();
+#elif NETCORE
+            IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetTypeInfo().GetAllProperties();
 #else
             IEnumerable<PropertyInfo> objectProperties = entity.GetType().GetProperties();
 #endif
@@ -312,10 +374,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
 
                 EntityProperty newProperty = EntityProperty.CreateEntityPropertyFromObject(property.GetValue(entity, null), property.PropertyType);
-                
+
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE)
                 if (Attribute.IsDefined(property, typeof(EncryptPropertyAttribute)))
                 {
                     newProperty.IsEncrypted = true;
@@ -370,7 +432,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // properties with [IgnoreAttribute]
-#if WINDOWS_RT || ASPNET_K || PORTABLE
+#if WINDOWS_RT || NETCORE 
             if (property.GetCustomAttribute(typeof(IgnorePropertyAttribute)) != null)
 #else
             if (Attribute.IsDefined(property, typeof(IgnorePropertyAttribute)))
@@ -571,7 +633,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 // Add the fact that this property needs to be encrypted
                 // properties with [EncryptAttribute]
-#if !(WINDOWS_RT || ASPNET_K || PORTABLE)
+#if !(WINDOWS_RT || NETCORE )
                 if (Attribute.IsDefined(prop, typeof(EncryptPropertyAttribute)))
                 {
                     PropertyInfo property = typeof(EntityProperty).FindProperty("IsEncrypted");

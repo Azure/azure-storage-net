@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
+    using System.Net;
     using System.Globalization;
     using System.Net.Http;
     using System.Net.Http.Headers;
@@ -30,7 +31,15 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
     internal sealed partial class StorageAuthenticationHttpHandler : HttpClientHandler
     {
-        private static Lazy<StorageAuthenticationHttpHandler> instance = new Lazy<StorageAuthenticationHttpHandler>(() => new StorageAuthenticationHttpHandler());
+        private StorageAuthenticationHttpHandler()
+        {
+#if NETCORE
+            this.AutomaticDecompression = DecompressionMethods.None;
+#endif
+        }
+
+        private static Lazy<StorageAuthenticationHttpHandler> instance =
+            new Lazy<StorageAuthenticationHttpHandler>(() => new StorageAuthenticationHttpHandler());
 
         public static StorageAuthenticationHttpHandler Instance
         {
@@ -62,11 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
             if (request.Credentials.IsSharedKey)
             {
-#if PORTABLE
-                throw new NotSupportedException(SR.PortableDoesNotSupportSharedKey);
-#else
                 authenticationHandler = this.GetSharedKeyAuthenticationTask;
-#endif
             }
             else
             {

@@ -31,13 +31,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
-    using System.Threading;
-
-#if !PORTABLE
-    using Microsoft.WindowsAzure.Storage.File;
-#endif
-
-#if ASPNET_K || PORTABLE
+    using System.Threading;   
+    using Microsoft.WindowsAzure.Storage.File;    
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
@@ -46,9 +42,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Windows.Storage.Streams;
 #endif
 
-    /// <summary>
-    /// Represents a blob that is uploaded as a set of blocks.
-    /// </summary>
     public partial class CloudBlockBlob : CloudBlob, ICloudBlob
     {
         /// <summary>
@@ -312,11 +305,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }, cancellationToken);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Uploads a file to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -333,11 +325,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.UploadFromFileAsync(source, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
 #endif
-
         /// <summary>
         /// Uploads a file to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
-#if ASPNET_K
+#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -384,7 +375,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-#if ASPNET_K
+#if NETCORE
         /// <summary>
         /// Uploads a file to a block blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -407,7 +398,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }, cancellationToken);
         }
-#endif
 #endif
 
         /// <summary>
@@ -828,8 +818,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
         }
-  
-#if !PORTABLE
+
         /// <summary>
         /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
         /// </summary>
@@ -848,7 +837,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source));
         }
-#endif
 
         /// <summary>
         /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
@@ -888,7 +876,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
         /// </summary>
@@ -926,7 +913,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Implementation for the CreateSnapshot method.
@@ -994,6 +980,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = length.Value;
                 return NullType.Value;
             };
@@ -1020,7 +1007,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(source, offset, length, contentMD5, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutBlock(uri, serverTimeout, blockId, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                return NullType.Value;
+            };
 
             return putCmd;
         }
@@ -1039,12 +1031,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             memoryStream.Seek(0, SeekOrigin.Begin);
             string contentMD5 = null;
 
-#if !PORTABLE
             if (options.UseTransactionalMD5.HasValue && options.UseTransactionalMD5.Value)
             {
                 contentMD5 = memoryStream.ComputeMD5Hash();
             }
-#endif
 
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
@@ -1061,6 +1051,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };

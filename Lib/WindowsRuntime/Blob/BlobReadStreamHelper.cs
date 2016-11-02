@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if !(ASPNET_K || PORTABLE)
+#if !(NETCORE)
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;

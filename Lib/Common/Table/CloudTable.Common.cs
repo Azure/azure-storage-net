@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Globalization;
 
     /// <summary>
-    /// Represents a Windows Azure table.
+    /// Represents a Microsoft Azure table.
     /// </summary>
     public partial class CloudTable
     {
@@ -105,7 +105,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <value>An object of type <see cref="StorageUri"/> containing the table's URIs for both the primary and secondary locations.</value>
         public StorageUri StorageUri { get; private set; }
 
-#if !PORTABLE
         /// <summary>
         /// Returns a shared access signature for the table.
         /// </summary>
@@ -229,7 +228,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return builder.ToString();
         }
 
-#endif
         /// <summary>
         /// Returns the name of the table.
         /// </summary>

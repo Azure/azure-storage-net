@@ -31,14 +31,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
     using System.Threading;
 
-#if ASPNET_K || PORTABLE
+#if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
 
     /// <summary>
-    /// Represents a container in the Windows Azure Blob service.
+    /// Represents a container in the Microsoft Azure Blob service.
     /// </summary>
     /// <remarks>Containers hold directories, which are encapsulated as <see cref="CloudBlobDirectory"/> objects, and directories hold block blobs and page blobs. Directories can also contain sub-directories.</remarks>
     public partial class CloudBlobContainer
@@ -424,7 +424,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }, cancellationToken);
         }
 
-#if !PORTABLE
         /// <summary>
         /// Sets permissions for the container.
         /// </summary>
@@ -511,7 +510,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Checks existence of the container.
@@ -1163,7 +1161,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return putCmd;
         }
 
-#if !PORTABLE
         /// <summary>
         /// Implementation for the SetPermissions method.
         /// </summary>
@@ -1229,7 +1226,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return getCmd;
         }
-#endif
 
         /// <summary>
         /// Selects the protocol response.

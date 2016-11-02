@@ -22,7 +22,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if ASPNET_K
+#if NETCORE
 using System.Globalization;
 #else
 using Windows.Globalization;
@@ -255,7 +255,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudFileShareRegionalSetMetadataAsync()
         {
-#if ASPNET_K
+#if NETCORE
             //CultureInfo currentCulture = CultureInfo.CurrentCulture;
             //CultureInfo.CurrentCulture = new CultureInfo("sk-SK");
 #else
@@ -272,7 +272,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             finally
             {
-#if ASPNET_K
+#if NETCORE
                 //CultureInfo.CurrentCulture = currentCulture;
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
