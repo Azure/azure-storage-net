@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
@@ -1470,6 +1471,202 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(properties["Breadth"].Int32Value, ent.Shape.Breadth);
                 i++;
             }
+        }
+
+        [TestMethod]
+        [Description("Flattens and recomposes simple object")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeSimpleObject()
+        {
+            ShapeEntity shapeEntity = new ShapeEntity(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "square", 4, 4);
+            OperationContext operationContext = new OperationContext();
+
+            DynamicTableEntity dynamicTableEntity = new DynamicTableEntity(shapeEntity.PartitionKey, shapeEntity.RowKey)
+            {
+                Properties = TableEntity.Flatten(shapeEntity, operationContext)
+            };
+
+            IDictionary<string, EntityProperty> properties = dynamicTableEntity.Properties;
+            Assert.AreEqual(5, properties.Count);
+            Assert.AreEqual(shapeEntity.PartitionKey, properties["PartitionKey"].StringValue);
+            Assert.AreEqual(shapeEntity.RowKey, properties["RowKey"].StringValue);
+            Assert.AreEqual(shapeEntity.Name, properties["Name"].StringValue);
+            Assert.AreEqual(shapeEntity.Length, properties["Length"].Int32Value);
+            Assert.AreEqual(shapeEntity.Breadth, properties["Breadth"].Int32Value);
+
+            ShapeEntity recomposedShapeEntity = TableEntity.ConvertBack<ShapeEntity>(properties, operationContext);
+
+            Assert.AreEqual(properties["PartitionKey"].StringValue, recomposedShapeEntity.PartitionKey);
+            Assert.AreEqual(properties["RowKey"].StringValue, recomposedShapeEntity.RowKey);
+            Assert.AreEqual(properties["Name"].StringValue, recomposedShapeEntity.Name);
+            Assert.AreEqual(properties["Length"].Int32Value, recomposedShapeEntity.Length);
+            Assert.AreEqual(properties["Breadth"].Int32Value, recomposedShapeEntity.Breadth);
+        }
+
+        [TestMethod]
+        [Description("Flattens and recomposes complex object with flat object structure without nested properties")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeComplexObject()
+        {
+            string pk = Guid.NewGuid().ToString();
+            List<ComplexEntity> complexEntities = new List<ComplexEntity>();
+
+            for (int i = 0; i < 10; i++)
+            {
+                ComplexEntity complexEntity = CreateComplexEntity(pk, i);
+
+                complexEntities.Add(complexEntity);
+            }
+
+            OperationContext operationContext = new OperationContext();
+            foreach (ComplexEntity originalComplexEntity in complexEntities)
+            {
+                IDictionary<string, EntityProperty> properties = TableEntity.Flatten(originalComplexEntity, operationContext);
+                ComplexEntity recomposedComplexEntity = TableEntity.ConvertBack<ComplexEntity>(properties, operationContext);
+                ComplexEntity.AssertEquality(originalComplexEntity, recomposedComplexEntity);
+            }
+        }
+
+        [TestMethod]
+        [Description("Flattens and recomposes complex object with multiple layers of nested object hierarchy, containing a mix of complex, composite and simple properties")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeComplexObjectWithNestedComplexProperties()
+        {
+            string pk = Guid.NewGuid().ToString();
+            Random rd = new Random();
+            ComplexEntityWithNestedComplexProperties complexEntityWithNestedComplexProperties = CreateComplexEntityWithNestedComplexProperties(pk, rd.Next());
+
+            // This is a composite complex object with a property of its own type
+            complexEntityWithNestedComplexProperties.InnerComplexEntityWithNestedComplexProperties =
+                CreateComplexEntityWithNestedComplexProperties(Guid.NewGuid().ToString(), rd.Next());
+
+            // Test custom property delimiter
+            EntityPropertyConverterOptions entityPropertyConverterOptions =
+                new EntityPropertyConverterOptions { PropertyNameDelimiter = "[ o_0 ]" };
+
+            OperationContext operationContext = new OperationContext();
+            IDictionary<string, EntityProperty> flattenedProperties =
+                TableEntity.Flatten(complexEntityWithNestedComplexProperties, entityPropertyConverterOptions, operationContext);
+
+            Assert.IsNotNull(flattenedProperties);
+
+            // Validate IgnoreProperty Attribute
+            Assert.IsFalse(flattenedProperties.ContainsKey("IgnoredProperty"));
+            Assert.IsFalse(flattenedProperties.ContainsKey("InnerComplexEntityWithNestedComplexProperties[ o_0 ]IgnoredProperty"));
+            Assert.AreEqual(154, flattenedProperties.Count);
+
+            ComplexEntityWithNestedComplexProperties recomposedObject =
+                TableEntity.ConvertBack<ComplexEntityWithNestedComplexProperties>(flattenedProperties, entityPropertyConverterOptions, operationContext);
+
+            ComplexEntityWithNestedComplexProperties.AssertEquality(complexEntityWithNestedComplexProperties, recomposedObject);
+        }
+
+        [TestMethod]
+        [Description("Flattening detects recursive referenced object and throws.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlatteningDetectsRecursiveReferencedObjectsAndThrows()
+        {
+            string pk = Guid.NewGuid().ToString();
+            Random rd = new Random();
+            ComplexEntityWithNestedComplexProperties recursiveReferencedObject = CreateComplexEntityWithNestedComplexProperties(pk, rd.Next());
+
+            // Create a recursive reference to itself via its composite property
+            recursiveReferencedObject.InnerComplexEntityWithNestedComplexProperties = recursiveReferencedObject;
+
+            OperationContext operationContext = new OperationContext();
+            // Flattening detects recursive reference and throws.
+            SerializationException ex = TestHelper.ExpectedException<SerializationException>(
+                () => TableEntity.Flatten(recursiveReferencedObject, operationContext),
+                "Flatten should throw SerializationException for recursive referenced objects.");
+
+            Assert.AreEqual("Recursive reference detected. Object Path: InnerComplexEntityWithNestedComplexProperties"
+                + " Property Type: Microsoft.WindowsAzure.Storage.Table.Entities.ComplexEntityWithNestedComplexProperties.", ex.Message);
+        }
+
+        private static ComplexEntity CreateComplexEntity(string pk, int seed)
+        {
+            ComplexEntity complexEntity = new ComplexEntity(pk, string.Format("{0:0000}", seed));
+            complexEntity.String = string.Format("{0:0000}", seed);
+            complexEntity.Binary = new byte[] { 0x01, 0x02, 0x03, (byte)seed };
+            complexEntity.BinaryPrimitive = new byte[] { 0x01, 0x02, 0x03, (byte)seed };
+            complexEntity.Bool = seed % 2 == 0;
+            complexEntity.BoolNull = complexEntity.Bool;
+            complexEntity.BoolPrimitive = seed % 2 == 0;
+            complexEntity.BoolPrimitiveNull = complexEntity.BoolPrimitive;
+            complexEntity.Double = seed + ((double)seed / 100);
+            complexEntity.DoubleNull = complexEntity.Double;
+            complexEntity.DoublePrimitive = seed + ((double)seed / 100);
+            complexEntity.DoublePrimitiveNull = complexEntity.DoublePrimitive;
+            complexEntity.Int32 = seed;
+            complexEntity.Int32Null = complexEntity.Int32;
+            complexEntity.IntegerPrimitive = seed;
+            complexEntity.IntegerPrimitiveNull = complexEntity.IntegerPrimitive;
+            complexEntity.Int64 = (long)int.MaxValue + seed;
+            complexEntity.Int64Null = complexEntity.Int64;
+            complexEntity.LongPrimitive = (long)int.MaxValue + seed;
+            complexEntity.LongPrimitiveNull = complexEntity.LongPrimitive;
+            complexEntity.Guid = Guid.NewGuid();
+            complexEntity.GuidNull = complexEntity.Guid;
+            return complexEntity;
+        }
+
+        private static ComplexEntityWithNestedComplexProperties CreateComplexEntityWithNestedComplexProperties(string pk, int seed)
+        {
+            ComplexEntityWithNestedComplexProperties complexEntityWithNestedComplexProperties = new ComplexEntityWithNestedComplexProperties();
+
+            // Set ComplexEntity type complex property
+            complexEntityWithNestedComplexProperties.ComplexEntity = CreateComplexEntity(Guid.NewGuid().ToString(), seed * 2);
+
+            // Set ShapeEntity type complex property
+            complexEntityWithNestedComplexProperties.ShapeEntity =
+                new ShapeEntity
+                {
+                    PartitionKey = Guid.NewGuid().ToString(),
+                    RowKey = Guid.NewGuid().ToString(),
+                    Breadth = 123,
+                    Length = 456,
+                    Name = Guid.NewGuid().ToString()
+                };
+
+            // Set ignored property
+            complexEntityWithNestedComplexProperties.IgnoredProperty = Guid.NewGuid();
+
+            // Set simple properties
+            complexEntityWithNestedComplexProperties.String = string.Format("{0:0000}", seed);
+            complexEntityWithNestedComplexProperties.Binary = new byte[] { 0x01, 0x02, 0x03, (byte)seed };
+            complexEntityWithNestedComplexProperties.BinaryPrimitive = new byte[] { 0x01, 0x02, 0x03, (byte)seed };
+            complexEntityWithNestedComplexProperties.Bool = seed % 2 == 0;
+            complexEntityWithNestedComplexProperties.BoolNull = complexEntityWithNestedComplexProperties.Bool;
+            complexEntityWithNestedComplexProperties.BoolPrimitive = seed % 2 == 0;
+            complexEntityWithNestedComplexProperties.BoolPrimitiveNull = complexEntityWithNestedComplexProperties.BoolPrimitive;
+            complexEntityWithNestedComplexProperties.Double = seed + ((double)seed / 100);
+            complexEntityWithNestedComplexProperties.DoubleNull = complexEntityWithNestedComplexProperties.Double;
+            complexEntityWithNestedComplexProperties.DoublePrimitive = seed + ((double)seed / 100);
+            complexEntityWithNestedComplexProperties.DoublePrimitiveNull = complexEntityWithNestedComplexProperties.DoublePrimitive;
+            complexEntityWithNestedComplexProperties.Int32 = seed;
+            complexEntityWithNestedComplexProperties.Int32Null = complexEntityWithNestedComplexProperties.Int32;
+            complexEntityWithNestedComplexProperties.IntegerPrimitive = seed;
+            complexEntityWithNestedComplexProperties.IntegerPrimitiveNull = complexEntityWithNestedComplexProperties.IntegerPrimitive;
+            complexEntityWithNestedComplexProperties.Int64 = (long)int.MaxValue + seed;
+            complexEntityWithNestedComplexProperties.Int64Null = complexEntityWithNestedComplexProperties.Int64;
+            complexEntityWithNestedComplexProperties.LongPrimitive = (long)int.MaxValue + seed;
+            complexEntityWithNestedComplexProperties.LongPrimitiveNull = complexEntityWithNestedComplexProperties.LongPrimitive;
+            complexEntityWithNestedComplexProperties.Guid = Guid.NewGuid();
+            complexEntityWithNestedComplexProperties.GuidNull = complexEntityWithNestedComplexProperties.Guid;
+
+            return complexEntityWithNestedComplexProperties;
         }
 
         #endregion
