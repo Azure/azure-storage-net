@@ -507,6 +507,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 Assert.IsTrue(share2.Properties.LastModified.Value.AddHours(1) > DateTimeOffset.Now);
                 Assert.IsNotNull(share2.Properties.ETag);
+
+                CloudFileShare share3 = share.ServiceClient.GetShareReference(share.Name);
+                share3.Exists();
+                Assert.AreEqual(1, share3.Metadata.Count);
+                Assert.AreEqual("value1", share3.Metadata["key1"]);
             }
             finally
             {

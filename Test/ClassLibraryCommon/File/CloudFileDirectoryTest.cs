@@ -381,6 +381,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                 directory2.FetchAttributes();
                 Assert.AreEqual(1, directory2.Metadata.Count);
                 Assert.AreEqual("value1", directory2.Metadata["key1"]);
+
+                CloudFileDirectory directory3 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory3.Exists();
+                Assert.AreEqual(1, directory3.Metadata.Count);
+                Assert.AreEqual("value1", directory3.Metadata["key1"]);
             }
             finally
             {

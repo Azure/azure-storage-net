@@ -4,6 +4,7 @@ Tracking Breaking Changes since 7.0
 - All: Decoupled StorageExtendedErrorInformation methods using OData to prevent the dependency from loading for Blobs, Queues, and Files.
 - Table: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
 - All: Added logging for the ExtendedErrorInformation 'ErrorMessage' attribute via StorageException ToString() method.
+- Files: Changed Exists() calls on CloudFileDirectory objects to now populate metadata. This was already being done for CloudFiles and CloudFileShares.
 
 Tracking Breaking Changes since 6.0
 
