@@ -942,7 +942,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 BlobRequestOptions options = new BlobRequestOptions()
                 {
-                    UseTransactionalMD5 = false,
                     StoreBlobContentMD5 = false,
                     ParallelOperationThreadCount = 1
                 };

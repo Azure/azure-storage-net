@@ -260,7 +260,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
-            this.CheckAdjustBlockSize(source, length);
+            this.CheckAdjustBlockSize(length ?? (source.CanSeek ? (source.Length - source.Position) : length));
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
@@ -323,7 +323,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         // Synchronization mutex required to ensure thread-safe, concurrent operations on related SubStream instances.
                         SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
 
-                        for (int i = 0; i < totalBlocks; i++)
+                        for (long i = 0; i < totalBlocks; i++)
                         {
                             // Stream abstraction to create a logical substream of a region within an underlying stream.
                             SubStream blockToStream = new SubStream(
@@ -443,11 +443,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 else
                 {
-                    using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-                    {
-                        this.CheckAdjustBlockSize(stream, stream.Length);
-                    }
-
+                    CheckAdjustBlockSize(new FileInfo(path).Length);
                     await this.UploadFromMultiStreamAsync(OpenMultiFileStream(path), accessCondition, modifiedOptions, operationContext, cancellationToken);
                 }
             }, cancellationToken);

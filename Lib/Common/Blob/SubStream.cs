@@ -225,15 +225,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 int readCount = this.CheckAdjustReadCount(count, offset, buffer.Length);
-                int bytesRead =
-                    await this.bufferedStream.ReadAsync(buffer, offset, Math.Min(readCount, this.readBufferLength), cancellationToken).ConfigureAwait(false);
+                int bytesRead = await this.bufferedStream.ReadAsync(buffer, offset, Math.Min(readCount, this.readBufferLength), cancellationToken).ConfigureAwait(false);
                 int bytesLeft = readCount - bytesRead;
 
                 // must adjust readbufferLength
                 this.shouldSeek = false;
                 this.Position += bytesRead;
 
-                if (bytesLeft > 0)
+                if (bytesLeft > 0 && readBufferLength == 0)
                 {
                     this.bufferedStream.Position = 0;
                     int bytesAdded =
@@ -297,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotSupportedException();
+            return this.ReadAsync(buffer, offset, count).Result;
         }
 
         /// <summary>

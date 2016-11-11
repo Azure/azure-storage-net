@@ -216,7 +216,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             int totalBlocks = (int)Math.Ceiling((double)length / this.streamWriteSizeInBytes);
 
-            for (int i = 0; i < totalBlocks; i++)
+            for (long i = 0; i < totalBlocks; i++)
             {
                 FileStream f = new FileStream(path, FileMode.Open, FileAccess.Read);
                 f.Seek(i * this.streamWriteSizeInBytes, SeekOrigin.Begin);
@@ -232,33 +232,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source"> The stream source to be uploaded.</param>
         /// <param name="streamLength">The length of the stream.</param>
-        internal void CheckAdjustBlockSize(Stream source, long? streamLength)
+        internal void CheckAdjustBlockSize(long? streamLength)
         {
-            if (!streamLength.HasValue)
+            if (streamLength.HasValue)
             {
-                if (source.CanSeek)
-                {
-                    streamLength = source.Length - source.Position;
-                }
-                else
-                {
-                    return;
-                }
-            }
+                long totalBlocks = (int) Math.Ceiling((double) streamLength/(double) this.streamWriteSizeInBytes);
 
-            long totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
-
-            // Check if the total required blocks for the upload exceeds the maximum allowable block limit.
-            if (totalBlocks > Constants.MaxBlockNumber)
-            {
-                if (this.IsStreamWriteSizeModified || streamLength > Constants.MaxBlobSize)
+                // Check if the total required blocks for the upload exceeds the maximum allowable block limit.
+                if (totalBlocks > Constants.MaxBlockNumber)
                 {
-                    throw new StorageException(SR.BlobOverMaxBlockLimit);
-                }
-                else
-                {
-                    // Scale the block size to ensure a successful upload (only if the user did not specify a value).
-                    this.streamWriteSizeInBytes = (int)Math.Ceiling((double)streamLength / (double)Constants.MaxBlockNumber);
+                    if (this.IsStreamWriteSizeModified || streamLength > Constants.MaxBlobSize)
+                    {
+                        throw new StorageException(SR.BlobOverMaxBlockLimit);
+                    }
+                    else
+                    {
+                        // Scale the block size to ensure a successful upload (only if the user did not specify a value).
+                        this.streamWriteSizeInBytes = (int) Math.Ceiling((double) streamLength/(double) Constants.MaxBlockNumber);
+                    }
                 }
             }
         }
