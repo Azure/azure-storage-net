@@ -528,6 +528,8 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
                 this.Properties = DirectoryHttpResponseParsers.GetProperties(resp);
+                this.Metadata = DirectoryHttpResponseParsers.GetMetadata(resp);
+
                 return true;
             };
 
