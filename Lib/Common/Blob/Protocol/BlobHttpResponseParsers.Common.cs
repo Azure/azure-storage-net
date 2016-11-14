@@ -159,7 +159,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copySourceString,
             string copyProgressString,
             string copyCompletionTimeString,
-            string copyStatusDescription)
+            string copyStatusDescription,
+            string copyDestinationSnapshotTimeString)
         {
             CopyState copyAttributes = new CopyState
             {
@@ -205,6 +206,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             if (!string.IsNullOrEmpty(copyCompletionTimeString))
             {
                 copyAttributes.CompletionTime = copyCompletionTimeString.ToUTCTime();
+            }
+
+            if (!string.IsNullOrEmpty(copyDestinationSnapshotTimeString))
+            {
+                copyAttributes.DestinationSnapshotTime = copyDestinationSnapshotTimeString.ToUTCTime();
             }
 
             return copyAttributes;
