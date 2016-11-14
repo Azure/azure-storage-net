@@ -388,6 +388,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string IncrementalCopy = "IncrementalCopy";
 
         /// <summary>
+        /// XML element for destination snapshot time.
+        /// </summary>
+        public const string CopyDestinationSnapshotElement = "CopyDestinationSnapshot";
+
+        /// <summary>
         /// Constant signaling a page blob.
         /// </summary>
         public const string PageBlobValue = "PageBlob";
@@ -1216,7 +1221,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Header that specifies an incremental copy.
             /// </summary>
-            public const string IncrementalCopy = PrefixForStorageHeader + "incremental-copy";
+            public const string IncrementalCopyHeader = PrefixForStorageHeader + "incremental-copy";
+
+            /// <summary>
+            /// Header that specifies the snapshot time of the last successful incremental copy snapshot.
+            /// </summary>
+            public const string CopyDestinationSnapshotHeader = PrefixForStorageHeader + "copy-destination-snapshot";
 
             /// <summary>
             /// Header that specifies the share size, in gigabytes.
