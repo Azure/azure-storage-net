@@ -57,6 +57,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual void Create(BlobContainerPublicAccessType accessType, BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -105,6 +110,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.CreateContainerImpl(modifiedOptions, accessType),
@@ -197,6 +207,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(BlobContainerPublicAccessType accessType, BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -263,6 +278,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -2605,6 +2625,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand{T}"/> that sets the permissions.</returns>
         private RESTCommand<NullType> SetPermissionsImpl(BlobContainerPermissions acl, AccessCondition accessCondition, BlobRequestOptions options)
         {
+            if (acl.PublicAccess == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
             BlobRequest.WriteSharedAccessIdentifiers(acl.SharedAccessPolicies, memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);

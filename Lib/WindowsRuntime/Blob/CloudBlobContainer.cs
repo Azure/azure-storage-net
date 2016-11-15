@@ -89,6 +89,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task CreateAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.CreateContainerImpl(modifiedOptions, accessType),
@@ -147,6 +152,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -1174,6 +1184,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that sets the permissions.</returns>
         private RESTCommand<NullType> SetPermissionsImpl(BlobContainerPermissions acl, AccessCondition accessCondition, BlobRequestOptions options)
         {
+            if (acl.PublicAccess == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
             BlobRequest.WriteSharedAccessIdentifiers(acl.SharedAccessPolicies, memoryStream);
 
