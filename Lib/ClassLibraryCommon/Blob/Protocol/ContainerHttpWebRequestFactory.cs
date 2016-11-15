@@ -80,6 +80,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Create(Uri uri, int? timeout, bool useVersionHeader, OperationContext operationContext, BlobContainerPublicAccessType accessType)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
             HttpWebRequest request = HttpWebRequestFactory.Create(uri, timeout, containerBuilder, useVersionHeader, operationContext);
 
@@ -396,6 +401,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest SetAcl(Uri uri, int? timeout, BlobContainerPublicAccessType publicAccess, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            if (publicAccess == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             HttpWebRequest request = HttpWebRequestFactory.SetAcl(uri, GetContainerUriQueryBuilder(), timeout, useVersionHeader, operationContext);
 
             if (publicAccess != BlobContainerPublicAccessType.Off)

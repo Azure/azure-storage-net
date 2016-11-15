@@ -67,8 +67,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                         break;
 
                     default:
-                        string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.InvalidAclType, acl);
-                        throw new InvalidOperationException(errorMessage);
+                        accessType = BlobContainerPublicAccessType.Unknown;
+                        break;
                 }
             }
 
