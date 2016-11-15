@@ -1,7 +1,7 @@
 Changes in 8.0.0 :
 
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
-- Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter, and returns this object as well. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
+- Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
 - PageBlobs: Added support for incremental copy.
 - Files: Prefix support for listing files and directories.
 - Blobs: Public access support for Blob Containers.
