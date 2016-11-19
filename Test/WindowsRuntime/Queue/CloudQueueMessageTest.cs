@@ -78,8 +78,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 await queue.CreateIfNotExistsAsync();
 
                 CloudQueueMessage message = new CloudQueueMessage(Guid.NewGuid().ToString());
-                CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-                VerifyAddMessageResult(message, addedMessage);
+                await queue.AddMessageAsync(message);
+                VerifyAddMessageResult(message);
 
                 CloudQueueMessage retrMessage = await queue.GetMessageAsync();
                 string messageId = retrMessage.Id;
@@ -118,25 +118,25 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 await queue.CreateIfNotExistsAsync();
 
-                CloudQueueMessage addedMessage = await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromDays(2), null, null);
-                VerifyAddMessageResult(futureMessage, addedMessage);
+                await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromDays(2), null, null);
+                VerifyAddMessageResult(futureMessage);
 
                 // We should not be able to see the future message yet.
                 CloudQueueMessage retrievedMessage = await queue.GetMessageAsync();
                 Assert.IsNull(retrievedMessage);
 
-                addedMessage = await queue.AddMessageAsync(presentMessage, null, TimeSpan.Zero, null, null);
-                VerifyAddMessageResult(presentMessage, addedMessage);
-                addedMessage = await queue.AddMessageAsync(presentMessage, TimeSpan.FromDays(1), null, null, null);
-                VerifyAddMessageResult(presentMessage, addedMessage);
+                await queue.AddMessageAsync(presentMessage, null, TimeSpan.Zero, null, null);
+                VerifyAddMessageResult(presentMessage);
+                await queue.AddMessageAsync(presentMessage, TimeSpan.FromDays(1), null, null, null);
+                VerifyAddMessageResult(presentMessage);
 
                 // We should be able to see the present message.
                 retrievedMessage = await queue.GetMessageAsync();
                 Assert.IsNotNull(retrievedMessage);
                 Assert.AreEqual<string>(presentMessage.AsString, retrievedMessage.AsString);
 
-                addedMessage = await queue.AddMessageAsync(futureMessage, TimeSpan.FromDays(2), TimeSpan.FromDays(1), null, null);
-                VerifyAddMessageResult(futureMessage, addedMessage);
+                await queue.AddMessageAsync(futureMessage, TimeSpan.FromDays(2), TimeSpan.FromDays(1), null, null);
+                VerifyAddMessageResult(futureMessage);
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                             async () => await queue.AddMessageAsync(futureMessage, TimeSpan.FromDays(1), TimeSpan.FromDays(2), null, null),
@@ -175,8 +175,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 CloudQueueMessage message = new CloudQueueMessage(msgContent);
                 message.NextVisibleTime = null;
 
-                CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-                VerifyAddMessageResult(message, addedMessage);
+                await queue.AddMessageAsync(message);
+                VerifyAddMessageResult(message);
                 Assert.IsTrue(message.AsString == msgContent);
             }
             finally
@@ -200,8 +200,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
-            CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-            VerifyAddMessageResult(message, addedMessage);
+            await queue.AddMessageAsync(message);
+            VerifyAddMessageResult(message);
             await queue.DeleteMessageAsync(message.Id, message.PopReceipt);
 
             CloudQueueMessage receivedMessage = await queue.GetMessageAsync();
@@ -251,8 +251,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
-            CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-            VerifyAddMessageResult(message, addedMessage);
+            await queue.AddMessageAsync(message);
+            VerifyAddMessageResult(message);
 
             CloudQueueMessage receivedMessage1 = await queue.GetMessageAsync();
 
@@ -284,8 +284,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 string messageContent = i.ToString();
                 CloudQueueMessage message = new CloudQueueMessage(messageContent);
-                CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-                VerifyAddMessageResult(message, addedMessage);
+                await queue.AddMessageAsync(message);
+                VerifyAddMessageResult(message);
                 messageContentList.Add(messageContent);
             }
 
@@ -318,8 +318,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
-            CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-            VerifyAddMessageResult(message, addedMessage);
+            await queue.AddMessageAsync(message);
+            VerifyAddMessageResult(message);
 
             CloudQueueMessage receivedMessage1 = await queue.PeekMessageAsync();
 
@@ -351,8 +351,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 string messageContent = i.ToString();
                 CloudQueueMessage message = new CloudQueueMessage(messageContent);
-                CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-                VerifyAddMessageResult(message, addedMessage);
+                await queue.AddMessageAsync(message);
+                VerifyAddMessageResult(message);
                 messageContentList.Add(messageContent);
             }
 
@@ -382,8 +382,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
-            CloudQueueMessage addedMessage = await queue.AddMessageAsync(message);
-            VerifyAddMessageResult(message, addedMessage);
+            await queue.AddMessageAsync(message);
+            VerifyAddMessageResult(message);
             CloudQueueMessage receivedMessage1 = await queue.PeekMessageAsync();
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
             await queue.ClearAsync();
@@ -392,17 +392,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         #region Test Helpers
-        private void VerifyAddMessageResult(CloudQueueMessage originalMessage, CloudQueueMessage returnedMessage, bool base64Encoded = false)
+        private void VerifyAddMessageResult(CloudQueueMessage originalMessage, bool base64Encoded = false)
         {
-            Assert.IsFalse(string.IsNullOrEmpty(returnedMessage.Id));
-            Assert.AreEqual(originalMessage.Id, returnedMessage.Id);
-            Assert.IsTrue(returnedMessage.InsertionTime.HasValue);
-            Assert.IsTrue(returnedMessage.ExpirationTime.HasValue);
-            Assert.IsFalse(string.IsNullOrEmpty(returnedMessage.PopReceipt));
-            Assert.IsTrue(originalMessage == returnedMessage);
+            Assert.IsFalse(string.IsNullOrEmpty(originalMessage.Id));
+            Assert.IsTrue(originalMessage.InsertionTime.HasValue);
+            Assert.IsTrue(originalMessage.ExpirationTime.HasValue);
+            Assert.IsFalse(string.IsNullOrEmpty(originalMessage.PopReceipt));
 
-            Assert.IsTrue(returnedMessage.NextVisibleTime.HasValue);
-            Assert.AreEqual(originalMessage.NextVisibleTime.Value, returnedMessage.NextVisibleTime.Value);
+            Assert.IsTrue(originalMessage.NextVisibleTime.HasValue);
         }
         #endregion
     }

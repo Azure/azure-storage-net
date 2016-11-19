@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------
+﻿    //-----------------------------------------------------------------------
 // <copyright file="CancellableAsyncResultTaskWrapper.cs" company="Microsoft">
 //    Copyright 2016 Microsoft Corporation
 //
@@ -53,7 +53,16 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         public CancellableAsyncResultTaskWrapper(Func<CancellationToken, Task> generateTask, AsyncCallback callback, Object state) : this()
         {
-            this.internalAsyncResult = generateTask(cancellationTokenSource.Token).AsApm(callback, state);
+            // We cannot pass the user callback into the AsApm method, because it breaks the general APM contract - namely, that the IAsyncResult returned from the Begin method
+            // is what's passed into the callback. The AsApm method will pass in this.internalAsyncResult to its callback, not this.
+            AsyncCallback newCallback = ar =>
+            {
+                // Avoid the potential race condition where the callback is called before AsApm returns.
+                this.internalAsyncResult = ar;
+                callback(this);
+            };
+
+            this.internalAsyncResult = generateTask(cancellationTokenSource.Token).AsApm(newCallback, state);
         }
 
         /// <summary>
@@ -121,7 +130,16 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         public CancellableAsyncResultTaskWrapper(Func<CancellationToken, Task<TResult>> generateTask, AsyncCallback callback, Object state) : base()
         {
-            this.internalAsyncResult = generateTask(cancellationTokenSource.Token).AsApm<TResult>(callback, state);
+            // We cannot pass the user callback into the AsApm method, because it breaks the general APM contract - namely, that the IAsyncResult returned from the Begin method
+            // is what's passed into the callback. The AsApm method will pass in this.internalAsyncResult to its callback, not this.
+            AsyncCallback newCallback = ar =>
+            {
+                // Avoid the potential race condition where the callback is called before AsApm returns.
+                this.internalAsyncResult = ar;
+                callback(this);
+            };
+
+            this.internalAsyncResult = generateTask(cancellationTokenSource.Token).AsApm(newCallback, state);
         }
 
         internal TResult Result

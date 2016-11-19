@@ -76,7 +76,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <summary>
         /// Begins a stream copy operation.
         /// 
-        /// This method wraps the 
+        /// This method wraps the StartCopyStreamAsync method, presenting a different API for it.
+        /// As we update the library to be more task-based, callers should gradually move to StartCopyStreamAsync.
         /// </summary>
         /// <param name="completedDelegate">Callback delegate</param>
         /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot pass in both copyLength and maxLength.</param>
@@ -206,7 +207,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 this.cancellationTokenSourceCombined = this.cancellationTokenSourceAbort;
             }
 
-            await this.StartCopyStreamAsyncHelper(copyLength, maxLength, this.cancellationTokenSourceCombined.Token);
+            await this.StartCopyStreamAsyncHelper(copyLength, maxLength, this.cancellationTokenSourceCombined.Token).ConfigureAwait(false);
         }
 
         /// <summary>

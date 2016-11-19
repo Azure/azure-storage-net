@@ -1079,6 +1079,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                 file2.FetchAttributes();
                 Assert.AreEqual(1, file2.Metadata.Count);
                 Assert.AreEqual("value1", file2.Metadata["key1"]);
+
+                CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
+                file3.Exists();
+                Assert.AreEqual(1, file3.Metadata.Count);
+                Assert.AreEqual("value1", file3.Metadata["key1"]);
             }
             finally
             {
