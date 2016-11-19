@@ -178,24 +178,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 try
                 {
                     Task uploadTask = this.PutBlockAsync(blockId, block, null, accessCondition, modifiedOptions, operationContext, cancellationToken);
-                    if (block.GetType() == typeof(ReadLengthLimitingStream))
+                    Task cleanupTask = uploadTask.ContinueWith(finishedUpload =>
                     {
-                        Task cleanupTask = uploadTask.ContinueWith(finishedUpload =>
-                        {
-                            localBlock.Dispose();
-                        });
-                    }
+                        localBlock.Dispose();
+                    });
 
                     uploadTaskList.Add(uploadTask);
                 }
                 catch (Exception)
                 {
                     // This is necessary in case an exception is thrown in PutBlockAsync before the continuation is registered.
-                    if (localBlock.GetType() == typeof(ReadLengthLimitingStream))
-                    {
-                        localBlock.Dispose();
-                    }
-
+                    localBlock.Dispose();
                     throw;
                 }
             }
@@ -226,11 +219,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         /// <summary>
+        /// Returns an enumerable collection of SubStream handles that wraps a seekable stream.
+        /// This method is intended for usage within the Large BlockBlob upload algorithm.
+        /// </summary>
+        /// <param name="wrappedStream">The seekable <see cref="Stream"/> object to be wrapped.</param>
+        /// <param name="length">The length (copyValue) of the stream.</param>
+        /// <param name="mutex">A <see cref="SemaphoreSlim"/> object which serves as an intrinsic lock/mutex to manage concurrent operations.</param>
+        /// <returns>
+        /// An enumerable collection of <see cref="SubStream"/> objects,
+        /// each representing multiples of the StreamWriteSizeInBytes (blocks) in the wrapped stream.
+        /// </returns>
+        private IEnumerable<Stream> OpenMultiSubStream(Stream wrappedStream, long? length, SemaphoreSlim mutex)
+        {
+            if (!wrappedStream.CanSeek)
+            {
+                throw new ArgumentException();
+            }
+
+            long streamLength = length ?? (wrappedStream.Length - wrappedStream.Position);
+            int totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
+            long offset = wrappedStream.Position;
+            SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
+
+            for (long i = 0; i < totalBlocks; i++)
+            {
+                // Stream abstraction to create a logical substream of a region within an underlying stream.
+                yield return new SubStream(
+                    wrappedStream,
+                    offset + (i * this.streamWriteSizeInBytes),
+                    this.streamWriteSizeInBytes,
+                    streamReadThrottler);
+            }
+        }
+
+        /// <summary>
         /// Check if the total required blocks for the upload exceeds the maximum allowable block limit.
         /// Adjusts the block size to ensure a successful upload only if the value has not been explicitly set.
         /// Otherwise, throws a StorageException if the default value has been changed or if the blob size exceeds the maximum capacity.
         /// </summary>
-        /// <param name="source"> The stream source to be uploaded.</param>
         /// <param name="streamLength">The length of the stream.</param>
         internal void CheckAdjustBlockSize(long? streamLength)
         {

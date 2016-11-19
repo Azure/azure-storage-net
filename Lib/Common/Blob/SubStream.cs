@@ -45,16 +45,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         // Tracks the current position in the substream.
         private long substreamCurrentIndex;
 
-        // Stream to manage read buffer.
-        private MemoryStream bufferedStream;
+        // Stream to manage read buffer, lazily initialized when read or seek operations commence.
+        private Lazy<MemoryStream> readBufferStream;
 
-        // Internal read buffer.
-        private byte[] readBuffer;
+        // Internal read buffer, lazily initialized when read or seek operations commence.
+        private Lazy<byte[]> readBuffer;
 
         // Tracks the valid bytes remaining in the readBuffer
         private int readBufferLength;
 
-        // Determines where to update readbuffer stream.
+        // Determines where to update the position of the readbuffer stream depending on the scenario)
         private bool shouldSeek = false;
 
         // Non-blocking semaphore for controlling read operations between related SubStream instances.
@@ -63,32 +63,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         // Current relative position in the substream.
         public override long Position
         {
-            get { return this.substreamCurrentIndex; }
+            get
+            {
+                return this.substreamCurrentIndex;
+            }
 
             set
             {
                 CommonUtility.AssertInBounds("Position", value, 0, this.substreamLength);
+                
+                // Check if we can potentially advance substream position without reallocating the read buffer.
                 if (value >= this.substreamCurrentIndex)
                 {
                     long offset = value - this.substreamCurrentIndex;
+
+                    // New position is within the valid bytes stored in the readBuffer.
                     if (offset <= this.readBufferLength)
                     {
                         this.readBufferLength -= (int)offset;
                         if (shouldSeek)
                         {
-                            this.bufferedStream.Seek(offset, SeekOrigin.Current);
+                            this.readBufferStream.Value.Seek(offset, SeekOrigin.Current);
                         }
                     }
                     else
                     {
+                        // Resets the read buffer.
                         this.readBufferLength = 0;
-                        this.bufferedStream.Seek(0, SeekOrigin.End);
+                        this.readBufferStream.Value.Seek(0, SeekOrigin.End);
                     }
                 }
                 else
                 {
+                    // Resets the read buffer.
                     this.readBufferLength = 0;
-                    this.bufferedStream.Seek(0, SeekOrigin.End);
+                    this.readBufferStream.Value.Seek(0, SeekOrigin.End);
                 }
 
                 this.substreamCurrentIndex = value;
@@ -127,6 +136,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         protected override void Dispose(bool disposing)
         {
             this.wrappedStream = null;
+            this.readBufferStream = null;
+            this.readBuffer = null;
         }
 
         public override void Flush()
@@ -137,19 +148,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         // Initiates the new buffer size to be used for read operations.
         public int ReadBufferSize
         {
-            get { return this.readBuffer.Length; }
+            get
+            {
+                return this.readBuffer.Value.Length;
+            }
 
             set
             {
                 if (value < 2 * Constants.DefaultBufferSize)
                 {
-                    throw new ArgumentOutOfRangeException(string.Format(SR.ArgumentTooSmallError, "ReadBufferSize",
-                        2 * Constants.DefaultBufferSize));
+                    throw new ArgumentOutOfRangeException(string.Format(SR.ArgumentTooSmallError, "ReadBufferSize", 2 * Constants.DefaultBufferSize));
                 }
 
-                this.readBuffer = new byte[value];
-                this.bufferedStream = new MemoryStream(this.readBuffer, 0, value, true);
-                this.bufferedStream.Seek(0, SeekOrigin.End);
+                this.readBuffer = new Lazy<byte[]>(() => new byte[value]);
+                this.readBufferStream = new Lazy<MemoryStream>(() => new MemoryStream(this.readBuffer.Value, 0, value, true));
+                this.readBufferStream.Value.Seek(0, SeekOrigin.End);
             }
         }
 
@@ -185,14 +198,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.wrappedStream = stream;
             this.Mutex = globalSemaphore;
             this.substreamLength = Math.Min(substreamLength, stream.Length - streamBeginIndex);
-            this.ReadBufferSize = Constants.DefaultSubStreamBufferSize;
-            this.Position = 0;
             this.readBufferLength = 0;
+            this.Position = 0;
+            this.ReadBufferSize = Constants.DefaultSubStreamBufferSize;
         }
 
 #if !(WINDOWS_RT || NETCORE)
-        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback,
-            object state)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             return this.ReadAsync(buffer, offset, count, CancellationToken.None).AsApm<int>(callback, state);
         }
@@ -217,15 +229,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// the wrapped stream will be called to refill the read buffer.
         /// Only one read request to the underlying wrapped stream will be allowed at a time and concurrent requests will be queued up by effect of the shared semaphore mutex.
         /// </remarks>
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count,
-            CancellationToken cancellationToken)
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             this.CheckDisposed();
 
             try
             {
                 int readCount = this.CheckAdjustReadCount(count, offset, buffer.Length);
-                int bytesRead = await this.bufferedStream.ReadAsync(buffer, offset, Math.Min(readCount, this.readBufferLength), cancellationToken).ConfigureAwait(false);
+                int bytesRead = await this.readBufferStream.Value.ReadAsync(buffer, offset, Math.Min(readCount, this.readBufferLength), cancellationToken).ConfigureAwait(false);
                 int bytesLeft = readCount - bytesRead;
 
                 // must adjust readbufferLength
@@ -234,18 +245,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 if (bytesLeft > 0 && readBufferLength == 0)
                 {
-                    this.bufferedStream.Position = 0;
+                    this.readBufferStream.Value.Position = 0;
                     int bytesAdded =
-                        await this.ReadAsyncHelper(this.readBuffer, 0, this.readBuffer.Length, cancellationToken).ConfigureAwait(false);
+                        await this.ReadAsyncHelper(this.readBuffer.Value, 0, this.readBuffer.Value.Length, cancellationToken).ConfigureAwait(false);
                     this.readBufferLength = bytesAdded;
                     if (bytesAdded > 0)
                     {
                         bytesLeft = Math.Min(bytesAdded, bytesLeft);
-                        int secondRead = await this.bufferedStream.ReadAsync(buffer, bytesRead + offset, bytesLeft, cancellationToken).ConfigureAwait(false);
+                        int secondRead = await this.readBufferStream.Value.ReadAsync(buffer, bytesRead + offset, bytesLeft, cancellationToken).ConfigureAwait(false);
                         bytesRead += secondRead;
                         this.Position += secondRead;
                     }
                 }
+
                 return bytesRead;
             }
             finally
