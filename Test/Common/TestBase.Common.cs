@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage
     {
         private const AuthenticationScheme DefaultAuthenticationScheme = AuthenticationScheme.SharedKey;
 
-        public static byte[] GetRandomBuffer(int size)
+        public static byte[] GetRandomBuffer(long size)
         {
             byte[] buffer = new byte[size];
             Random random = new Random();

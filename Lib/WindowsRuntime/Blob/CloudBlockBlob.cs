@@ -314,28 +314,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     else
                     {
-                        long streamLength = length ?? (source.Length - source.Position);
-                        int totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
-                        int parallelUploadOperations = modifiedOptions.ParallelOperationThreadCount.Value;
-                        long offset = source.Position;
-                        List<Stream> blockList = new List<Stream>();
-
                         // Synchronization mutex required to ensure thread-safe, concurrent operations on related SubStream instances.
                         SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
-
-                        for (long i = 0; i < totalBlocks; i++)
-                        {
-                            // Stream abstraction to create a logical substream of a region within an underlying stream.
-                            SubStream blockToStream = new SubStream(
-                                source,
-                                offset + (i * this.streamWriteSizeInBytes),
-                                this.streamWriteSizeInBytes,
-                                streamReadThrottler);
-
-                            blockList.Add(blockToStream);
-                        }
-
-                        await this.UploadFromMultiStreamAsync(blockList, accessCondition, modifiedOptions, operationContext, cancellationToken);
+                        await this.UploadFromMultiStreamAsync(this.OpenMultiSubStream(source, length, streamReadThrottler), accessCondition, modifiedOptions, operationContext, cancellationToken);
                     }
                 }
             }, cancellationToken);

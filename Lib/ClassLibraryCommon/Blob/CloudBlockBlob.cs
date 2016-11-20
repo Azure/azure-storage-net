@@ -420,27 +420,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 else
                 {
-                    long streamLength = length ?? (source.Length - source.Position);
-                    int totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
-                    long offset = source.Position;
-                    long substreamLength = this.streamWriteSizeInBytes;
-                    List<Stream> uploadStreamList = new List<Stream>();
+                    // Synchronization mutex required to ensure thread-safe, concurrent operations on related SubStream instances.
                     SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
-
-                    for (long i = 0; i < totalBlocks; i++)
-                    {
-                        SubStream block = new SubStream(
-                            source,
-                            offset + (i * this.streamWriteSizeInBytes),
-                            this.streamWriteSizeInBytes,
-                            streamReadThrottler);
-
-                        uploadStreamList.Add(block);
-                    }
-
                     CommonUtility.RunWithoutSynchronizationContext(
                         () => this.UploadFromMultiStreamAsync(
-                            uploadStreamList, 
+                            this.OpenMultiSubStream(source, length,streamReadThrottler), 
                             accessCondition, 
                             modifiedOptions, 
                             operationContext, 
@@ -731,25 +715,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 else
                 {
-                    long streamLength = length ?? (source.Length - source.Position);
-                    int totalBlocks = (int)Math.Ceiling((double)streamLength / (double)this.streamWriteSizeInBytes);
-                    long offset = source.Position;
-                    List<Stream> uploadStreamList = new List<Stream>();
+                    // Synchronization mutex required to ensure thread-safe, concurrent operations on related SubStream instances.
                     SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
-
-                    for (long i = 0; i < totalBlocks; i++)
-                    {
-                        SubStream block = new SubStream(
-                            source,
-                            offset + (i * this.streamWriteSizeInBytes),
-                            this.streamWriteSizeInBytes,
-                            streamReadThrottler);
-
-                        uploadStreamList.Add(block);
-                    }
-
                     return new CancellableAsyncResultTaskWrapper(
-                        (cancellationToken) => this.UploadFromMultiStreamAsync(uploadStreamList, accessCondition, modifiedOptions, operationContext, cancellationToken),
+                        (cancellationToken) => this.UploadFromMultiStreamAsync(this.OpenMultiSubStream(source, length, streamReadThrottler), accessCondition, modifiedOptions, operationContext, cancellationToken),
                         callback,
                         state);
                 }

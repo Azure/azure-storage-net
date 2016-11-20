@@ -1018,7 +1018,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobTestParallelUploadFromFileStreamAPM()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            string inputFileName = Path.GetRandomFileName();
+            string inputFileName = "i_" + Path.GetRandomFileName();
             string outputFileName = "o_" + Path.GetRandomFileName();
 
             try
@@ -1110,6 +1110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 File.Delete(inputFileName);
                 File.Delete(outputFileName);
+                container.Delete();
             }
         }
 
