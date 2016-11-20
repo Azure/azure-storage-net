@@ -201,20 +201,6 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 StringBuilder sb = new StringBuilder();
                 bool started = false;
 
-                if ((detailsIncluded & ShareListingDetails.Snapshots) == ShareListingDetails.Snapshots)
-                {
-                    if (!started)
-                    {
-                        started = true;
-                    }
-                    else
-                    {
-                        sb.Append(",");
-                    }
-
-                    sb.Append("snapshots");
-                }
-
                 if ((detailsIncluded & ShareListingDetails.Metadata) == ShareListingDetails.Metadata)
                 {
                     if (!started)

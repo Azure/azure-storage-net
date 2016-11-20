@@ -36,13 +36,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         Metadata = 0x1,
 
         /// <summary>
-        /// Retrieve share snapshots.
-        /// </summary>
-        Snapshots = 0x2,
-
-        /// <summary>
         /// Retrieve all available details.
         /// </summary>
-        All = Metadata | Snapshots
+        All = Metadata
     }
 }

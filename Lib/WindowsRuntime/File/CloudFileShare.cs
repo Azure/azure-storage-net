@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns>A share snapshot.</returns>
         [DoesServiceRequest]
-        public virtual Task<CloudFileShare> SnapshotAsync()
+        internal virtual Task<CloudFileShare> SnapshotAsync()
         {
             return this.SnapshotAsync(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -157,7 +157,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A share snapshot.</returns>
         [DoesServiceRequest]
-        public virtual Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
+        internal virtual Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
         {
             return this.SnapshotAsync(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */, cancellationToken);
         }
@@ -171,7 +171,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A share snapshot.</returns>
         [DoesServiceRequest]
-        public virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SnapshotAsync(metadata, accessCondition, options, operationContext, CancellationToken.None);
         }
@@ -186,7 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A share snapshot.</returns>
         [DoesServiceRequest]
-        public virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync<CloudFileShare>(
