@@ -165,8 +165,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (uploadTaskList.Count == parallelOperations)
                 {
+                    // The await on WhenAny does not await on the upload task itself, hence exceptions must be repropagated.
                     await Task.WhenAny(uploadTaskList.ToArray()).ConfigureAwait(false);
-                    uploadTaskList.RemoveAll(putBlockUpload => putBlockUpload.IsCompleted);
+                    uploadTaskList.RemoveAll(putBlockUpload =>
+                    {
+                        // If set, gets the AggregateException from the upload Task.
+                        if (putBlockUpload.Exception != null)
+                        {
+                            throw putBlockUpload.Exception;
+                        }
+
+                        return putBlockUpload.IsCompleted;
+                    });
                 }
 
                 string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Format("Block_{0}", (++blockNum).ToString("00000"))));
