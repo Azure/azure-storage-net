@@ -388,7 +388,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             if (snapshot.HasValue)
             {
-                builder.Add(Constants.QueryConstants.Snapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
+                builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
             }
         }
 
