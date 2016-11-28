@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            ShareHttpWebRequestFactory.AddSnapshot(shareBuilder, snapshot);
+            ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.Delete(uri, shareBuilder, timeout, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            ShareHttpWebRequestFactory.AddSnapshot(shareBuilder, snapshot);
+            ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, shareBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -161,7 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         public static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            ShareHttpWebRequestFactory.AddSnapshot(shareBuilder, snapshot);
+            ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, shareBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -380,11 +380,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         }
 
         /// <summary>
-        /// Adds the snapshot.
+        /// Adds the share snapshot.
         /// </summary>
         /// <param name="builder">An object of type <see cref="UriQueryBuilder"/> that contains additional parameters to add to the URI query string.</param>
         /// <param name="snapshot">The snapshot version, if the share is a snapshot.</param>
-        private static void AddSnapshot(UriQueryBuilder builder, DateTimeOffset? snapshot)
+        private static void AddShareSnapshot(UriQueryBuilder builder, DateTimeOffset? snapshot)
         {
             if (snapshot.HasValue)
             {

@@ -46,6 +46,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual void Create(FileRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -80,6 +85,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual ICancellableAsyncResult BeginCreate(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.CreateShareImpl(modifiedOptions),
@@ -203,6 +213,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -1116,6 +1132,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ShareStats GetStats(FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.AssertNoSnapshot();
             options = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
             return Executor.ExecuteSync(
@@ -1148,6 +1165,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetStats(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            this.AssertNoSnapshot();
             options = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
             return Executor.BeginExecuteAsync(
@@ -1458,6 +1476,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual void SetProperties(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -1491,6 +1514,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.BeginExecuteAsync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),

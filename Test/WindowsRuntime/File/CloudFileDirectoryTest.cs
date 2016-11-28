@@ -18,7 +18,9 @@
 namespace Microsoft.WindowsAzure.Storage.File
 {
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -715,6 +717,81 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             dir = share.GetRootDirectoryReference().GetDirectoryReference(share.Uri.AbsoluteUri + "/TopDir1");
             Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(share.Uri, share.Uri.AbsoluteUri + "/TopDir1"), dir.Uri);
+        }
+
+        [TestMethod]
+        [Description("Test CloudFileDirectory APIs within a share snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryApisInShareSnapshotAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+            CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            await dir.CreateAsync();
+            dir.Metadata["key1"] = "value1";
+            await dir.SetMetadataAsync(null, null, null);
+            CloudFileShare snapshot = await share.SnapshotAsync();
+
+            CloudFileDirectory snapshotDir = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            dir.Metadata["key2"] = "value2";
+            await dir.SetMetadataAsync(null, null, null);
+            await snapshotDir.FetchAttributesAsync();
+
+            Assert.IsTrue(snapshotDir.Metadata.Count == 1 && snapshotDir.Metadata["key1"].Equals("value1"));
+            Assert.IsNotNull(snapshotDir.Properties.ETag);
+
+            await dir.FetchAttributesAsync();
+            Assert.IsTrue(dir.Metadata.Count == 2 && dir.Metadata["key2"].Equals("value2"));
+            Assert.IsNotNull(dir.Properties.ETag);
+            Assert.AreNotEqual(dir.Properties.ETag, snapshotDir.Properties.ETag);
+
+            //snapshot.Delete();
+            //share.Delete();
+        }
+
+        [TestMethod]
+        [Description("Test CloudFileDirectory APIs within a share snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryApisInvalidApisInShareSnapshotAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+            CloudFileShare snapshot = await share.SnapshotAsync();
+            CloudFileDirectory dir = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
+
+            try
+            {
+                dir.CreateAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                dir.DeleteAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                dir.SetMetadataAsync(null, null, null).Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+
+            //snapshot.Delete();
+            //share.Delete();
         }
     }
 }
