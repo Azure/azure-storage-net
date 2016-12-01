@@ -4193,8 +4193,90 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        [TestMethod]
+        [Description("Tests if exceptions are propagated up from UploadFromMultiStreamAsync")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobTestExceptionUploadFromMultiStreamAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.Create();
+            try
+            {
+                CloudBlockBlob blob = container.GetBlockBlobReference("test1");
+                List<Stream> uploadList = new List<Stream>();
+                OperationContext operationContext = new OperationContext();
+                long blockSize = 4 * Constants.MB + 1;
+                int blockNum = 0;
+                Object thisLock = new Object();
+                BlobRequestOptions options = new BlobRequestOptions()
+                {
+                    StoreBlobContentMD5 = false,
+                    ParallelOperationThreadCount = 2,
+                };
 
+                operationContext.SendingRequest += (sender, e) =>
+                {
+                    lock (thisLock)
+                    {
+                        if (++blockNum >= 3)
+                        {
+                            e.Request.ContentLength = 32;
+                        }
+                    }
+                };
 
+                for (int i = 0; i < 6; i++)
+                {
+                    uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
+                }
+
+                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
+
+                uploadList.Clear();
+                blockNum = 0;
+                operationContext.SendingRequest += (sender, e) =>
+                {
+                    lock (thisLock)
+                    {
+                        if (++blockNum >= 3)
+                        {
+                            e.Request.ContentLength = blockSize * 2;
+                        }
+                    }
+                };
+
+                for (int i = 0; i < 6; i++)
+                {
+                    uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
+                }
+
+                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
+
+                blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB + 1);
+                using (MemoryStream ms = new MemoryStream(GetRandomBuffer(20 * 1024 * 1024)))
+                {
+                    blockNum = 0;
+                    TestHelper.ExpectedException<StorageException>(() => blob.UploadFromStream(ms, null, options, operationContext), "UploadfromStream", "abc");
+                    ms.Seek(0, SeekOrigin.Begin);
+
+                    blockNum = 0;
+                    Task uploadTask = blob.UploadFromStreamAsync(ms, null, options, operationContext);
+                    TestHelper.ExpectedExceptionTask<StorageException>(uploadTask, "UploadFromStreamAsync");
+                    ms.Seek(0, SeekOrigin.Begin);
+
+                    await blob.UploadFromStreamAsync(ms, null, options, null);
+                }
+            }
+            finally
+            {
+                container.DeleteAsync().Wait();
+            }
+        }
 
         private void DoTextUploadDownload(string text, bool checkDifferentEncoding, bool isAsync)
         {
