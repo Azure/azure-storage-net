@@ -169,13 +169,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await Task.WhenAny(uploadTaskList.ToArray()).ConfigureAwait(false);
                     uploadTaskList.RemoveAll(putBlockUpload =>
                     {
-                        // If set, gets the AggregateException from the upload Task.
-                        if (putBlockUpload.Exception != null)
+                        if (putBlockUpload.IsCompleted)
                         {
-                            throw putBlockUpload.Exception;
+                            // If set, gets the AggregateException from the upload Task.
+                            if (putBlockUpload.Exception != null)
+                            {
+                                throw putBlockUpload.Exception;
+                            }
+
+                            return true;
                         }
 
-                        return putBlockUpload.IsCompleted;
+                        return false;
                     });
                 }
 
