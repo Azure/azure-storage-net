@@ -1335,7 +1335,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             catch (Exception)
             {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, new string[] { "99:One of the request inputs is not valid." }, false);
+                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidDuplicateRow" }, new string[] { "99:The batch request contains multiple changes with same row key. An entity can appear only once in a batch request." }, false);
             }
         }
 
