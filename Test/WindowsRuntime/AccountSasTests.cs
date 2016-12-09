@@ -357,7 +357,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, blobClient.StorageUri, null, null, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, blobClient.StorageUri, null, null, null);
                 CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
                 CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
                 CloudBlobContainer container = blobClient.GetContainerReference(containerName);
@@ -472,7 +472,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(tableClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, null, tableClient.StorageUri, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, tableClient.StorageUri, null);
                 CloudTableClient tableClientWithSAS = accountWithSAS.CreateCloudTableClient();
                 CloudTable tableWithSAS = tableClientWithSAS.GetTableReference(tableName);
                 CloudTable table = tableClient.GetTableReference(tableName);
@@ -669,7 +669,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(queueClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, queueClient.StorageUri, null, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, queueClient.StorageUri, null, null);
                 CloudQueueClient queueClientWithSAS = accountWithSAS.CreateCloudQueueClient();
                 CloudQueue queueWithSAS = queueClientWithSAS.GetQueueReference(queueName);
                 CloudQueue queue = queueClient.GetQueueReference(queueName);
@@ -798,7 +798,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, null, null, fileClient.StorageUri);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
                 CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
                 CloudFileShare shareWithSAS = fileClientWithSAS.GetShareReference(shareName);
                 CloudFileShare share = fileClient.GetShareReference(shareName);
@@ -944,7 +944,7 @@ namespace Microsoft.WindowsAzure.Storage
                     storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
                 }
 
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, storageUri, null, null, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
                 CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
                 CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
                 CloudBlobContainer container = blobClient.GetContainerReference(containerName);
@@ -980,7 +980,7 @@ namespace Microsoft.WindowsAzure.Storage
                     storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
                 }
 
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, null, storageUri, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, storageUri, null);
                 CloudTableClient tableClientWithSAS = accountWithSAS.CreateCloudTableClient();
                 CloudTable tableWithSAS = tableClientWithSAS.GetTableReference(tableName);
                 CloudTable table = tableClient.GetTableReference(tableName);
@@ -1024,7 +1024,7 @@ namespace Microsoft.WindowsAzure.Storage
                     storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
                 }
 
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, storageUri, null, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, storageUri, null, null);
                 CloudQueueClient queueClientWithSAS = accountWithSAS.CreateCloudQueueClient();
                 CloudQueue queueWithSAS = queueClientWithSAS.GetQueueReference(queueName);
                 CloudQueue queue = queueClient.GetQueueReference(queueName);
@@ -1057,7 +1057,7 @@ namespace Microsoft.WindowsAzure.Storage
                     storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
                 }
 
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, null, null, storageUri);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, storageUri);
                 CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
                 CloudFileShare shareWithSAS = fileClientWithSAS.GetShareReference(shareName);
                 CloudFileShare share = fileClient.GetShareReference(shareName);
@@ -1105,7 +1105,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, blobClient.StorageUri, null, null, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, blobClient.StorageUri, null, null, null);
                 CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
                 CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
                 CloudBlockBlob blockblobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
@@ -1151,7 +1151,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(queueClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, queueClient.StorageUri, null, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, queueClient.StorageUri, null, null);
                 CloudQueueClient queueClientWithSAS = accountWithSAS.CreateCloudQueueClient();
                 CloudQueue queueWithSAS = queueClientWithSAS.GetQueueReference(queueName);
 
@@ -1205,7 +1205,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(tableClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, null, tableClient.StorageUri, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, tableClient.StorageUri, null);
                 CloudTableClient tableClientWithSAS = accountWithSAS.CreateCloudTableClient();
                 CloudTable tableWithSAS = tableClientWithSAS.GetTableReference(tableName);
 
@@ -1256,7 +1256,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, null, null, null, fileClient.StorageUri);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
                 CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
                 CloudFileShare shareWithSAS = fileClientWithSAS.GetShareReference(shareName);
                 CloudFile fileWithSAS = shareWithSAS.GetRootDirectoryReference().GetFileReference(fileName);
@@ -1305,7 +1305,7 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
                 string accountSASToken = account.GetSharedAccessSignature(policy);
                 StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, blobClient.StorageUri, null, null, null);
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, blobClient.StorageUri, null, null, null);
                 CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
                 CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
                 CloudBlockBlob blockblobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);

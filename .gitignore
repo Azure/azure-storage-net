@@ -137,9 +137,14 @@ Test/Common/TestConfigurations.xml
 buildfre.*
 objfre/
 *.playlist
+
+# NetCore Dependency Project.lock.json
 Test/AspNet/Microsoft.WindowsAzure.Storage.Test/TestConfigurations.xml
 Lib/AspNet/Microsoft.WindowsAzure.Storage/project.lock.json
 Test/AspNet/Microsoft.WindowsAzure.Storage.Test/project.lock.json
 Test/AspNet/XUnitForMsTest/project.lock.json
+
+# VS14 Misc.
 UpgradeLog.htm
 .vs/
+.cr/

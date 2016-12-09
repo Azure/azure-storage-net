@@ -167,10 +167,10 @@
     <None Include="RT_Test_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj">
+    <ProjectReference Include="..\..\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.RT.csproj">
       <Project>{42cb7861-70bb-4f34-a815-4355e6ea2589}</Project>
       <Name>RT %28Lib\WindowsRuntime%29</Name>
-      <Name>Microsoft.WindowsAzure.Storage</Name>
+      <Name>Microsoft.WindowsAzure.Storage.RT</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />

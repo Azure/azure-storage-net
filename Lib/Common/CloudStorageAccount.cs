@@ -249,17 +249,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="queueStorageUri">A <see cref="StorageUri"/> specifying the Queue service endpoint or endpoints.</param>
         /// <param name="tableStorageUri">A <see cref="StorageUri"/> specifying the Table service endpoint or endpoints.</param>
         /// <param name="fileStorageUri">A <see cref="StorageUri"/> specifying the File service endpoint or endpoints.</param>
-#if WINDOWS_RT
-        /// <returns>A <see cref="CloudStorageAccount"/> instance for the specific credentials and service endpoints.</returns>
-        public static CloudStorageAccount Create(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
-        {
-            return new CloudStorageAccount(storageCredentials, blobStorageUri, queueStorageUri, tableStorageUri, fileStorageUri);
-        }
-
-        private CloudStorageAccount(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
-#else
         public CloudStorageAccount(StorageCredentials storageCredentials, StorageUri blobStorageUri, StorageUri queueStorageUri, StorageUri tableStorageUri, StorageUri fileStorageUri)
-#endif
         {
             this.Credentials = storageCredentials;
             this.BlobStorageUri = blobStorageUri;

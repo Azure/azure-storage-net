@@ -530,11 +530,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Uri sourceSnapshotUri = blobSAS.TransformUri(TestHelper.Defiddler(sourceSnapshot).SnapshotQualifiedUri);
 
                 StorageCredentials accountSAS = new StorageCredentials(sasToken);
-#if !NETCORE
-                CloudStorageAccount accountWithSAS = CloudStorageAccount.Create(accountSAS, source.ServiceClient.StorageUri, null, null, null);
-#else
                 CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, source.ServiceClient.StorageUri, null, null, null);
-#endif
+
                 CloudPageBlob snapshotWithSas = await accountWithSAS.CreateCloudBlobClient().GetBlobReferenceFromServerAsync(sourceSnapshot.SnapshotQualifiedUri) as CloudPageBlob;
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");

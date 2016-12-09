@@ -3651,7 +3651,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
         /// <param name="modifiedOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. Must have already been processed with Apply Defaults.</param>
         /// <param name="cancellationToken">The cancellation token to use for the async requests.</param>
-        /// <param name="encryptionData">The encryption data to generate and return.</param>
         /// <returns>The Task that generates the wrappped key.</returns>
         private async Task<WrappedKeyData> RotateEncryptionHelper(AccessCondition accessCondition, BlobRequestOptions modifiedOptions, CancellationToken cancellationToken)
         {

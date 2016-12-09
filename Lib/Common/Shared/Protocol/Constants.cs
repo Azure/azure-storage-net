@@ -133,7 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const long MB = 1024 * KB;
 
         /// <summary>
-        /// A constant representing a megabyte (Non-SI version).
+        /// A constant representing a gigabyte (Non-SI version).
         /// </summary>
         public const long GB = 1024 * MB;
 

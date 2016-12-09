@@ -139,7 +139,7 @@
     </Content>
     <Content Include="..\Common\TestConfigurationsTemplate.xml">
       <Link>TestConfigurationsTemplate.xml</Link>
-    </Content>	
+    </Content>
   </ItemGroup>
   <ItemGroup Condition="Exists('..\Common\TestConfigurations.xml')">
     <Content Include="..\Common\TestConfigurations.xml">
@@ -219,10 +219,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lib\WindowsPhone\Microsoft.WindowsAzure.Storage.csproj">
+    <ProjectReference Include="..\..\Lib\WindowsPhone\Microsoft.WindowsAzure.Storage.WindowsPhone8.csproj">
       <Project>{CF1D432A-380F-434A-BC43-FC39AC8B61A8}</Project>
       <Name>Microsoft.WindowsAzure.Storage %28Lib\WindowsPhone%29</Name>
-      <Name>Microsoft.WindowsAzure.Storage</Name>
+      <Name>Microsoft.WindowsAzure.Storage.WindowsPhone8</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
