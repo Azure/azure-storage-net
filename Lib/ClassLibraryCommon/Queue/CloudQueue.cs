@@ -2575,7 +2575,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
-                CopyMessage(message, messageResponse.Messages.First());
+                CopyMessage(message, messageResponse.Messages.ToList().First());
                 return NullType.Value;
             };
 
