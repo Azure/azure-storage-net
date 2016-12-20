@@ -192,6 +192,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 }
                 catch (Exception ex)
                 {
+                    if (this.state == null)
+                    {
+                        // This should not be possible unless there is a bug in one of the streams being copied to/from (which
+                        // has been known to happen.)
+                        // If the state is null, the below line will throw a NullPointerException.  Because it's unhandled and in
+                        // a threadpool thread, it can crash the AppDomain.
+                        return;
+                    }
+
                     if (this.state.ReqTimedOut)
                     {
                         this.exceptionRef = Exceptions.GenerateTimeoutException(this.state.Cmd != null ? this.state.Cmd.CurrentResult : null, ex);

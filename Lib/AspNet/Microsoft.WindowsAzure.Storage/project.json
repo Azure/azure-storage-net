@@ -1,5 +1,5 @@
 ﻿{
-    "version": "7.2.0.0",
+    "version": "7.2.1.0",
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for CoreCLR Preview",
     "dependencies": {
