@@ -735,19 +735,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters);
 
-            // SAS credentials were passed in the Uri if parsedCredentials is non null.
-            if (parsedCredentials != null)
-            {
-                string signedResource;
-                queryParameters.TryGetValue(Constants.QueryConstants.SignedResource, out signedResource);
-
-                if (string.IsNullOrEmpty(signedResource))
-                {
-                    string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.MissingMandatoryParametersForSAS);
-                    throw new ArgumentException(errorMessage);
-                }
-            }
-
             return new Uri(address.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped));
         }
 
@@ -802,22 +789,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
 
             IDictionary<string, string> queryParameters = HttpWebUtility.ParseQueryString(address.Query);
-
             parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters);
-
-            // SAS credentials were passed in the Uri if parsedCredentials is non null.
-            if (parsedCredentials != null)
-            {
-                string signedResource;
-                queryParameters.TryGetValue(Constants.QueryConstants.SignedResource, out signedResource);
-
-                if (string.IsNullOrEmpty(signedResource))
-                {
-                    string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.MissingMandatoryParametersForSAS);
-                    throw new ArgumentException(errorMessage);
-                }
-            }
-
+            
             return new Uri(address.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped));
         }
 

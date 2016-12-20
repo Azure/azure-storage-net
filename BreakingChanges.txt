@@ -1,3 +1,8 @@
+Tracking Breaking Changes since 7.0
+
+- Blobs: Change boundary checks for lease duration to be in line with those used in the REST endpoints.
+- All: Virtualized Get*Reference Apis and unsealed Blob/Container/ShareResultSegment classes.
+
 Tracking Breaking Changes since 6.0
 
 - All: Support for 2015-07-08 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.3.

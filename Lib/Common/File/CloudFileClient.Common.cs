@@ -111,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="shareName">A string containing the name of the share.</param>
         /// <returns>A reference to a share.</returns>
-        public CloudFileShare GetShareReference(string shareName)
+        public virtual CloudFileShare GetShareReference(string shareName)
         {
             CommonUtility.AssertNotNullOrEmpty("shareName", shareName);
             return new CloudFileShare(shareName, this);

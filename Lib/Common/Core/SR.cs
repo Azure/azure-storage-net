@@ -236,6 +236,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string UndefinedBlobType = "The blob type cannot be undefined.";
         public const string UnexpectedElement = "Unexpected Element '{0}'";
         public const string UnexpectedEmptyElement = "Unexpected Empty Element '{0}'";
+        public const string UnexpectedParameterInSAS = "The parameter `api-version` should not be included in the SAS token. Please allow the library to set the  `api-version` parameter.";
         public const string UnexpectedContinuationType = "Unexpected Continuation Type";
         public const string UnexpectedLocation = "Unexpected Location '{0}'";
         public const string UnexpectedResponseCode = "Unexpected response code, Expected:{0}, Received:{1}";

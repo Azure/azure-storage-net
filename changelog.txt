@@ -1,3 +1,9 @@
+Changes in 8.0.0 :
+
+- Blobs: Fixed boundary checks for lease durations and break lease period to be in line with REST endpoints
+- All: Using a SAS token with a non-null 'api-version' parameter will cause an ArgumentException with a new clearer message indicating the unexpected parameter in the SAS token.
+- All: Virtualized Get*Reference Apis and unsealed Blob/Container/ShareResultSegment classes.
+
 Changes in 7.2.1 :
 
 - All: Changes error handling in the case where Streams that are passed into the library have a specific bug.  This case will no longer crash the AppDomain.

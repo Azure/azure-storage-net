@@ -108,7 +108,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="queueName">A string containing the name of the queue.</param>
         /// <returns>A <see cref="CloudQueue"/> object.</returns>
-        public CloudQueue GetQueueReference(string queueName)
+        public virtual CloudQueue GetQueueReference(string queueName)
         {
             CommonUtility.AssertNotNullOrEmpty("queueName", queueName);
             return new CloudQueue(queueName, this);

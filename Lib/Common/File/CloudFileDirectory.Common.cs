@@ -206,7 +206,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="fileName">A <see cref="System.String"/> containing the name of the file.</param>
         /// <returns>A <see cref="CloudFile"/> object.</returns>
-        public CloudFile GetFileReference(string fileName)
+        public virtual CloudFile GetFileReference(string fileName)
         {
             CommonUtility.AssertNotNullOrEmpty("fileName", fileName);
 
@@ -219,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="itemName">A <see cref="System.String"/> containing the name of the subdirectory.</param>
         /// <returns>A <see cref="CloudFileDirectory"/> object.</returns>
-        public CloudFileDirectory GetDirectoryReference(string itemName)
+        public virtual CloudFileDirectory GetDirectoryReference(string itemName)
         {
             CommonUtility.AssertNotNullOrEmpty("itemName", itemName);
 

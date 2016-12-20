@@ -107,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 return default(T);
             }
 
-#if WINDOWS_DESKTOP || WINDOWS_RT || PORTABLE
+#if WINDOWS_DESKTOP || WINDOWS_RT || NETCORE
             T root = (T)Activator.CreateInstance(typeof(T));
 #else
             T root = (T)FormatterServices.GetUninitializedObject(typeof(T));
@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 return true;
             }
 
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT
             IEnumerable<PropertyInfo> propertyInfos = type.GetRuntimeProperties();
 #elif NETCORE
             IEnumerable<PropertyInfo> propertyInfos = type.GetTypeInfo().GetAllProperties();
@@ -164,7 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             bool isAntecedent = false;
 
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT || NETCORE
             if (!type.GetTypeInfo().IsValueType)
 #else
             if (!type.IsValueType)
@@ -294,7 +294,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 return new EntityProperty(unchecked((long?)Convert.ToUInt64(value, CultureInfo.InvariantCulture)));
             }
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT || NETCORE
             else if (type.GetTypeInfo().IsEnum)
 #else
             else if (type.IsEnum)
@@ -352,7 +352,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 for (int i = 0; i < properties.Length - 1; i++)
                 {
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT || NETCORE
                     PropertyInfo propertyToGet = parentProperty.GetType().GetRuntimeProperty(properties[i]);
 #else
                     PropertyInfo propertyToGet = parentProperty.GetType().GetProperty(properties[i]);
@@ -362,7 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                     if (temp == null)
                     {
-#if WINDOWS_DESKTOP || WINDOWS_RT || PORTABLE
+#if WINDOWS_DESKTOP || WINDOWS_RT || NETCORE
                         temp = Activator.CreateInstance(type);
 #else
                         temp = FormatterServices.GetUninitializedObject(type);
@@ -370,7 +370,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         propertyToGet.SetValue(parentProperty, ChangeType(temp, propertyToGet.PropertyType), index: null);
                     }
 
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT || NETCORE
                     if (valueTypeDetected || type.GetTypeInfo().IsValueType)
 #else
                     if (valueTypeDetected || type.IsValueType)
@@ -383,7 +383,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     parentProperty = temp;
                 }
 
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT || NETCORE
                 PropertyInfo propertyToSet = parentProperty.GetType().GetRuntimeProperty(properties.Last());
 #else
                 PropertyInfo propertyToSet = parentProperty.GetType().GetProperty(properties.Last());
@@ -416,7 +416,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Type underlyingType = Nullable.GetUnderlyingType(propertyType);
             Type type = underlyingType ?? propertyType;
 
-#if WINDOWS_RT || PORTABLE
+#if WINDOWS_RT || NETCORE
             if (type.GetTypeInfo().IsEnum)
 #else
             if (type.IsEnum)
@@ -469,7 +469,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 return true;
             }
 
-#if WINDOWS_RT || NETCORE || PORTABLE
+#if WINDOWS_RT || NETCORE
             return propertyInfo.GetCustomAttribute(typeof(IgnorePropertyAttribute)) != null;
 #else
             return Attribute.IsDefined(propertyInfo, typeof(IgnorePropertyAttribute));

@@ -134,7 +134,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <param name="tableName">A string containing the name of the table.</param>
         /// <returns>A <see cref="CloudTable"/> object.</returns>
-        public CloudTable GetTableReference(string tableName)
+        public virtual CloudTable GetTableReference(string tableName)
         {
             CommonUtility.AssertNotNullOrEmpty("tableName", tableName);
             return new CloudTable(tableName, this);
