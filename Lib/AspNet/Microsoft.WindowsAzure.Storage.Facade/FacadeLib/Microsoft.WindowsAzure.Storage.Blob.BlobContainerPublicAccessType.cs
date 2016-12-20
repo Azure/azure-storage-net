@@ -6,6 +6,7 @@ public enum BlobContainerPublicAccessType
     Off,
     Container,
     Blob,
+    Unknown,
 }
 
 }

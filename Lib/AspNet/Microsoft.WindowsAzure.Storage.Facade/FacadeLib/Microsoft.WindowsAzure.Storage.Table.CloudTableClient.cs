@@ -159,7 +159,7 @@ public class CloudTableClient
     {
         throw new System.NotImplementedException();
     }
-    public CloudTable GetTableReference(string tableName)
+    public virtual CloudTable GetTableReference(string tableName)
     {
         throw new System.NotImplementedException();
     }

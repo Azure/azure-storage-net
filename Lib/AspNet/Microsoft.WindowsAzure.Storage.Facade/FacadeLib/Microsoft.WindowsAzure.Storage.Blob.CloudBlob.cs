@@ -458,6 +458,58 @@ public class CloudBlob : IListBlobItem
     {
         throw new System.NotImplementedException();
     }
+    private RESTCommand<NullType> GetBlobImpl(BlobAttributes attributes, Stream destStream, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> FetchAttributesImpl(BlobAttributes attributes, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<bool> ExistsImpl(BlobAttributes attributes, BlobRequestOptions options, bool primaryOnly)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> SetMetadataImpl(BlobAttributes attributes, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> SetPropertiesImpl(BlobAttributes attributes, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> DeleteBlobImpl(BlobAttributes attributes, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<string> AcquireLeaseImpl(BlobAttributes attributes, TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> RenewLeaseImpl(BlobAttributes attributes, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<string> ChangeLeaseImpl(BlobAttributes attributes, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> ReleaseLeaseImpl(BlobAttributes attributes, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<TimeSpan> BreakLeaseImpl(BlobAttributes attributes, TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> AbortCopyImpl(BlobAttributes attributes, string copyId, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
     private RESTCommand<CloudBlob> SnapshotImpl(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options)
     {
         throw new System.NotImplementedException();

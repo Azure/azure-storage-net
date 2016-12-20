@@ -10,10 +10,7 @@ internal class TableStorageEntityContainer : EdmEntityContainer
     {
         throw new System.NotImplementedException();
     }
-    public override IEdmEntitySet FindEntitySet(string setName)
-    {
-        throw new System.NotImplementedException();
-    }
+
     private string InferServerTypeNameFromTableName(string setName)
     {
         throw new System.NotImplementedException();

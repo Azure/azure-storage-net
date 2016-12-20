@@ -37,6 +37,10 @@ internal class UriQueryBuilder
     {
         throw new System.NotImplementedException();
     }
+    public bool ContainsQueryStringName(string name)
+    {
+        throw new System.NotImplementedException();
+    }
     public override string ToString()
     {
         throw new System.NotImplementedException();

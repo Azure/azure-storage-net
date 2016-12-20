@@ -42,7 +42,6 @@ public sealed class OperationContext
         }
     }
 
-
     static OperationContext()
     {
         throw new System.NotImplementedException();

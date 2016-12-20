@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     /// <summary>
-    /// Represents a Windows Azure Storage account.
+    /// Represents a Microsoft Azure Storage account.
     /// </summary>
     public sealed class CloudStorageAccount
     {

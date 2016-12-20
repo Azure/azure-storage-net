@@ -22,9 +22,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 #if !(NETCORE)
     using System.Runtime.InteropServices.WindowsRuntime;
 #endif
-    /// <summary>
-    /// Represents a message in the Windows Azure Queue service.
-    /// </summary>
     public sealed partial class CloudQueueMessage
     {
         /// <summary>

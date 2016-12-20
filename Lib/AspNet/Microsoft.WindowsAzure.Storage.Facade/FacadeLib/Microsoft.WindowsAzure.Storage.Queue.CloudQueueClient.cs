@@ -144,7 +144,7 @@ public class CloudQueueClient
     {
         throw new System.NotImplementedException();
     }
-    public CloudQueue GetQueueReference(string queueName)
+    public virtual CloudQueue GetQueueReference(string queueName)
     {
         throw new System.NotImplementedException();
     }

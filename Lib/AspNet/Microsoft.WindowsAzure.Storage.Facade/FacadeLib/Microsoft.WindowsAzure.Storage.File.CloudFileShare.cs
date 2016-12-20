@@ -142,7 +142,22 @@ public class CloudFileShare
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    internal virtual Task<CloudFileShare> SnapshotAsync()
+    {
+        throw new System.NotImplementedException();
+    }
+    internal virtual Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task DeleteAsync()
     {
         throw new System.NotImplementedException();

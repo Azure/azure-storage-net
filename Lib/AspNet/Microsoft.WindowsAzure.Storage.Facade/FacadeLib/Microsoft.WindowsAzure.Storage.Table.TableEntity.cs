@@ -43,6 +43,14 @@ public class TableEntity : ITableEntity
     {
         throw new System.NotImplementedException();
     }
+    public static TResult ConvertBack<TResult>(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    public static TResult ConvertBack<TResult>(IDictionary<string, EntityProperty> properties, EntityPropertyConverterOptions entityPropertyConverterOptions, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
     private static void ReflectionRead(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
     {
         throw new System.NotImplementedException();
@@ -52,6 +60,14 @@ public class TableEntity : ITableEntity
         throw new System.NotImplementedException();
     }
     public static IDictionary<string, EntityProperty> WriteUserObject(object entity, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    public static IDictionary<string, EntityProperty> Flatten(object entity, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    public static IDictionary<string, EntityProperty> Flatten(object entity, EntityPropertyConverterOptions entityPropertyConverterOptions, OperationContext operationContext)
     {
         throw new System.NotImplementedException();
     }

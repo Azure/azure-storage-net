@@ -1119,7 +1119,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, FileContinuationToken currentToken, CancellationToken cancellationToken)
+        public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, FileContinuationToken currentToken, CancellationToken cancellationToken)
         {
             return this.ListFilesAndDirectoriesSegmentedAsync(prefix, null, currentToken, null, null, cancellationToken);
         }
@@ -1170,7 +1170,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginListFilesAndDirectoriesSegmented, this.EndListFilesAndDirectoriesSegmented, prefix, maxResults, currentToken, options, operationContext, cancellationToken);
         }

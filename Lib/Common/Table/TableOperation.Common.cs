@@ -153,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the entity that is being operated upon.
         /// </summary>
-        internal ITableEntity Entity { get; private set; }
+        public ITableEntity Entity { get; private set; }
 
 #if !(WINDOWS_RT || NETCORE)
         /// <summary>
@@ -166,7 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the type of operation.
         /// </summary>
-        internal TableOperationType OperationType { get; private set; }
+        public TableOperationType OperationType { get; private set; }
 
         /// <summary>
         /// Gets or sets the value that represents whether the message payload should be returned in the response.

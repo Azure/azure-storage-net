@@ -91,12 +91,12 @@ public class TableOperation
         get; set;
     }
 
-    internal ITableEntity Entity
+    public ITableEntity Entity
     {
         get; private set;
     }
 
-    internal TableOperationType OperationType
+    public TableOperationType OperationType
     {
         get; private set;
     }

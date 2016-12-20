@@ -92,6 +92,10 @@ namespace Microsoft.WindowsAzure.Storage
                 string blobName = "blob";
                 CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 CloudAppendBlob appendBlobWithSAS = containerWithSAS.GetAppendBlobReference(blobName);
+
+                //Try creating credentials using SAS Uri directly
+                CloudAppendBlob appendBlobWithSASUri = new CloudAppendBlob(new Uri(container.Uri + accountSASToken));
+
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
@@ -531,6 +535,9 @@ namespace Microsoft.WindowsAzure.Storage
                 CloudFile fileWithSAS = shareWithSAS.GetRootDirectoryReference().GetFileReference(filename);
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference(filename);
 
+                //Try creating credentials using SAS Uri directly
+                CloudFile fileWithSASUri = new CloudFile(new Uri(share.Uri + accountSASToken));
+
                 byte[] content = new byte[] { 0x1, 0x2, 0x3, 0x4 };
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
@@ -628,6 +635,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
             // Single-threaded, takes 10 minutes to run
             // Parallelized, 1 minute.
+
             List<Task> tasks = new List<Task>();
 
             for (int i = 0; i < 0x100; i++)

@@ -1,7 +1,8 @@
 {
     "version": "8.0.0.0",
+
     "authors": [ "Microsoft Corporation" ],
-  "description": "Azure Storage SDK for NetCore",
+    "description": "Azure Storage SDK for NetCore",
     "dependencies": {
         "Microsoft.Data.OData": "5.7.0",
         "Microsoft.Data.Services.Client": "5.7.0",

@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
     public interface IAuthenticationHandler
     {
         /// <summary>
-        /// Signs the specified HTTP request so it can be authenticated by the Windows Azure storage services.
+        /// Signs the specified HTTP request so it can be authenticated by the Microsoft Azure storage services.
         /// </summary>
         /// <param name="request">The HTTP request to sign.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>

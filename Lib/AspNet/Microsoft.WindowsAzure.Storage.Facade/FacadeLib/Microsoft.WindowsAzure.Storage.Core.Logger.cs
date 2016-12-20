@@ -26,10 +26,6 @@ internal static class Logger
     {
         throw new System.NotImplementedException();
     }
-    private static bool ShouldLog(LogLevel level, OperationContext operationContext)
-    {
-        throw new System.NotImplementedException();
-    }
 }
 
 }

@@ -154,19 +154,6 @@
     </Compile>
     <Compile Include="..\..\..\WindowsPhoneCommon\DescriptionAttribute.cs" />
     <Compile Include="..\..\..\WindowsPhoneCommon\SampleTest.cs" />
-    <Compile Include="..\FacadeInternals\CommonUtility.cs">
-      <Link>Internals\CommonUtility.cs</Link>
-    </Compile>
-    <Compile Include="..\FacadeInternals\HttpWebUtility.cs">
-      <Link>Internals\HttpWebUtility.cs</Link>
-    </Compile>
-    <Compile Include="..\FacadeInternals\NavigationHelper.cs">
-      <Link>Internals\NavigationHelper.cs</Link>
-    </Compile>
-    <Compile Include="..\FacadeInternals\SR.cs">
-      <Link>Internals\SR.cs</Link>
-    </Compile>
-    <Compile Include="Internals\SharedAccessSignatureHelper.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

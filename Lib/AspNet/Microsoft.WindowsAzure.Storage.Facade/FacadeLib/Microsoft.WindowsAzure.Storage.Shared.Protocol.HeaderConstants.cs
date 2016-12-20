@@ -89,7 +89,8 @@ public static class HeaderConstants
     public const string CopyActionHeader = "x-ms-copy-action";
     public const string CopyTypeHeader = "x-ms-copy-type";
     public const string CopyActionAbort = "abort";
-    public const string IncrementalCopy = "x-ms-incremental-copy";
+    public const string IncrementalCopyHeader = "x-ms-incremental-copy";
+    public const string CopyDestinationSnapshotHeader = "x-ms-copy-destination-snapshot";
     public const string ShareSize = "x-ms-share-size";
     public const string ShareQuota = "x-ms-share-quota";
     internal const string PayloadAcceptHeader = "Accept";

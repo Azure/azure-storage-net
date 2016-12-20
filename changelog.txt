@@ -1,31 +1,45 @@
 Changes in 8.0.0 :
 
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
+- All: (NetFx/Desktop) Desktop library is now targeting .Net 4.5.2.
+- Tables : Table Serivce is now enforcing timeouts.
+- Tables : Numerous changes in Table Service error codes/messages in batch operations.
 - Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
-- PageBlobs: Added support for incremental copy.
+- PageBlobs: Added support for incremental copy.- Blobs: Fixed error for AcquireLease on non-existent container
+- PageBlobs: Fixed error response for GetPageRangesDiff to not mention GenID 
 - Files: Prefix support for listing files and directories.
 - Blobs: Public access support for Blob Containers.
+- Blobs: Fixed error code for AcquireLease on non-existent Blob Container.
+- Blobs: Fixed error for code blob operations on non-existent Blob Container.
+- Blobs: Improve error responses for exceeding block limit 
 - Blobs/Files: Populate content MD5 for range gets on Blobs and Files.
 - Blobs/Files: Updated DownloadToFile to prevent reading of partially-written data while downloading.
 - All: Added support for using Create/Delete and CreateIfNotExists/DeleteIfExists without read SAS permissions. CreateIfNotExists methods will now only do one REST call instead of two.
 - Blobs: Fixed a bug with OpenWrite for BlockBlobs where Upload* APIs would fail due to lack of read SAS permissions.
 - Blobs: Added large block blob upload support. Blocks can now support sizes up to 100 MB.
-- Blobs: Added a new, memory-optimized upload algorithm for UploadFrom* APIs. This strategy only applies for blocks greater than 4MB and when StoreBlobContentMD5 and Client-Side Encryption are disabled
-- All: Support for 2015-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
+- Blobs: Added a new, memory-optimized upload algorithm for UploadFrom* APIs. This strategy only applies for blocks greater than 4MB and when StoreBlobContentMD5 and Client-Side Encryption are disabled.
 - All: Decoupled StorageExtendedErrorInformation methods using OData to prevent the dependency from loading for Blobs, Queues, and Files.
 - Table: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
 - All: Added logging for the ExtendedErrorInformation 'ErrorMessage' attribute via StorageException ToString() method.
+- Blobs: Fixed boundary checks for lease durations and break lease period to be in line with REST endpoints
+- All: Using a SAS token with a non-null 'api-version' parameter will cause an ArgumentException with a new clearer message indicating the unexpected parameter in the SAS token.
+- All: Virtualized Get*Reference Apis and unsealed Blob/Container/ShareResultSegment classes.
+
+Changes in 7.2.1 :
+
+- All: Changes error handling in the case where Streams that are passed into the library have a specific bug.  This case will no longer crash the AppDomain.
+
 
 Changes in 7.2.0 :
 
 - All (CoreCLR): NetStandard target framework changed to netstandard1.3
 - All (PCL): Removed support for PCL in favor of NetStandard GA release
-- Table (CoreCLR) : Added a workaround for missing GetProperties method on TypeInfo in reflection-based Read/Write methods in TableEntity after change to netstandard11.3 TFM
-- Table (CoreCLR) : Added logic to wrap the error stream in a noncloseable stream to prevent it from being disposed by ODataMessageReader
+- Table (CoreCLR): Added a workaround for missing GetProperties method on TypeInfo in reflection-based Read/Write methods in TableEntity after change to netstandard11.3 TFM
+- Table (CoreCLR): Added logic to wrap the error stream in a noncloseable stream to prevent it from being disposed by ODataMessageReader
 
 Changes in 7.1.3-preview :
 
-- All : CoreCLR projects were updated to use the RTM release of .Net Core 1.0
+- All: CoreCLR projects were updated to use the RTM release of .Net Core 1.0
 
 Changes in 7.1.2 :
 

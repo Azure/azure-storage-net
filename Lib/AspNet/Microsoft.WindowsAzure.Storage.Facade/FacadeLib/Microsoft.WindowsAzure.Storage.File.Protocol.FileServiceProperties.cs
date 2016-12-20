@@ -45,11 +45,11 @@ public sealed class FileServiceProperties
 
     public FileServiceProperties()
     {
-        this.serviceProperties = new ServiceProperties();
+        throw new System.NotImplementedException();
     }
     public FileServiceProperties(MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null)
     {
-        this.serviceProperties = new ServiceProperties(null, hourMetrics, minuteMetrics, cors);
+        throw new System.NotImplementedException();
     }
 
     internal static FileServiceProperties FromServiceXml(XDocument servicePropertiesDocument)

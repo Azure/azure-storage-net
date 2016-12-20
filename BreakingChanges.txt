@@ -1,10 +1,22 @@
 Tracking Breaking Changes since 7.0
 
+- All: (NetFx/Desktop) Desktop library is now targeting .Net 4.5.2.
+- Tables : Table Serivce is now enforcing timeouts.
+- Tables : Improved numerous Table Service error codes and messages
+- Blobs : Improved numerous Blob Service error codes and messages
 - Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
+- Blobs/Files: Populate content MD5 for range gets on Blobs and Files.
+- Blobs: Public access support for Blob Containers.
+- All: "If-None-Match: *" pre-condition now fails for reads 
 - All: Decoupled StorageExtendedErrorInformation methods using OData to prevent the dependency from loading for Blobs, Queues, and Files.
 - Table: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
 - All: Added logging for the ExtendedErrorInformation 'ErrorMessage' attribute via StorageException ToString() method.
 - Files: Changed Exists() calls on CloudFileDirectory objects to now populate metadata. This was already being done for CloudFiles and CloudFileShares.
+- Blobs: Change boundary checks for lease duration to be in line with those used in the REST endpoints.
+- All: (WinRT) Removed the static CloudStorageAccount.Create method. Please use the instance level consructor instead.
+- Blob: Removed the IAsyncOperation* overloads for GetPageRangesDiffAsync APIs
+- Table: (WinRT/NetCore) Unsealed the TableQuery class
+- All: Virtualized Get*Reference Apis and unsealed Blob/Container/ShareResultSegment classes.
 
 Tracking Breaking Changes since 6.0
 

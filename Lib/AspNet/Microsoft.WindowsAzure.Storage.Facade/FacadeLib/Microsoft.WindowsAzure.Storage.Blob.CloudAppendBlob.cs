@@ -211,7 +211,10 @@ public class CloudAppendBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accesscondition, BlobRequestOptions options, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();

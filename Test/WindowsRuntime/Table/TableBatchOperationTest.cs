@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-#if !FACADE_NETCORE
+#if FACADE_NETCORE
 using System.Threading;
 #endif
 using System.Threading.Tasks;

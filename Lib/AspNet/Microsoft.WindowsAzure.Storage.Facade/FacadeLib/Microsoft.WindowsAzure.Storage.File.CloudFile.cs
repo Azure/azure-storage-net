@@ -84,7 +84,7 @@ public class CloudFile : IListFileItem
         }
     }
 
-    public Uri SnapshotQualifiedUri
+    internal Uri SnapshotQualifiedUri
     {
         get
         {
@@ -92,7 +92,7 @@ public class CloudFile : IListFileItem
         }
     }
 
-    public StorageUri SnapshotQualifiedStorageUri
+    internal StorageUri SnapshotQualifiedStorageUri
     {
         get
         {

@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a Windows Azure page blob.
+    /// Represents a Microsoft Azure page blob.
     /// </summary>
     public partial class CloudPageBlob : CloudBlob, ICloudBlob
     {
@@ -1511,7 +1511,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of page ranges.</returns>
         [DoesServiceRequest]
-        public IEnumerable<PageDiffRange> GetPageRangesDiff(DateTimeOffset previousSnapshotTime, long? offset = null, long? length = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual IEnumerable<PageDiffRange> GetPageRangesDiff(DateTimeOffset previousSnapshotTime, long? offset = null, long? length = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             return Executor.ExecuteSync(
@@ -1529,7 +1529,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginGetPageRangesDiff(DateTimeOffset previousSnapshotTime, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginGetPageRangesDiff(DateTimeOffset previousSnapshotTime, AsyncCallback callback, object state)
         {
             return this.BeginGetPageRangesDiff(previousSnapshotTime, null /* offset */, null /* length */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
@@ -1547,7 +1547,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public ICancellableAsyncResult BeginGetPageRangesDiff(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginGetPageRangesDiff(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             return Executor.BeginExecuteAsync(
@@ -1563,7 +1563,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns>An enumerable collection of page ranges.</returns>
-        public IEnumerable<PageDiffRange> EndGetPageRangesDiff(IAsyncResult asyncResult)
+        public virtual IEnumerable<PageDiffRange> EndGetPageRangesDiff(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<IEnumerable<PageDiffRange>>(asyncResult);
         }
@@ -1575,7 +1575,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="previousSnapshotTime">A <see cref="DateTimeOffset"/> representing the snapshot timestamp to use as the starting point for the diff. If this CloudPageBlob represents a snapshot, the previousSnapshotTime parameter must be prior to the current snapshot timestamp.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="PageRange"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
+        public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
         {
             return this.GetPageRangesDiffAsync(previousSnapshotTime, CancellationToken.None);
         }
@@ -1587,7 +1587,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="PageRange"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, CancellationToken cancellationToken)
+        public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginGetPageRangesDiff, this.EndGetPageRangesDiff, previousSnapshotTime, cancellationToken);
         }
@@ -1603,7 +1603,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="PageRange"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetPageRangesDiffAsync(previousSnapshotTime, offset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
@@ -1620,7 +1620,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="PageRange"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginGetPageRangesDiff, this.EndGetPageRangesDiff, previousSnapshotTime, offset, length, accessCondition, options, operationContext, cancellationToken);
         }

@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Globalization;
 
     /// <summary>
-    /// Represents a Windows Azure File.
+    /// Represents a Microsoft Azure File.
     /// </summary>
     public partial class CloudFile : IListFileItem
     {

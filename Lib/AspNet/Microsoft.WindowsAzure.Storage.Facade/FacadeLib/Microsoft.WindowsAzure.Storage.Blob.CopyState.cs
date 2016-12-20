@@ -37,6 +37,11 @@ public sealed class CopyState
     {
         get; internal set;
     }
+
+    public DateTimeOffset? DestinationSnapshotTime
+    {
+        get; internal set;
+    }
 }
 
 }

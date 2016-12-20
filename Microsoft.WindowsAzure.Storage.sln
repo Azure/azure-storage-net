@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{CE1EB2B6-0DA8-43D4-A2E1-001804697009}"
 	ProjectSection(SolutionItems) = preProject
@@ -139,7 +139,7 @@ Global
 		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Debug|x86.ActiveCfg = Debug|x86
 		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Debug|x86.Build.0 = Debug|x86
 		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Debug|x86.Deploy.0 = Debug|x86
-		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Release|Any CPU.ActiveCfg = Release|x86
+		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Release|ARM.ActiveCfg = Release|ARM
 		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Release|ARM.Build.0 = Release|ARM
 		{9456513A-1DDD-44E8-9FF0-985317F29A50}.Release|ARM.Deploy.0 = Release|ARM
@@ -161,7 +161,7 @@ Global
 		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Debug|x86.ActiveCfg = Debug|x86
 		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Debug|x86.Build.0 = Debug|x86
 		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Debug|x86.Deploy.0 = Debug|x86
-		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Release|Any CPU.ActiveCfg = Release|x86
+		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Release|ARM.ActiveCfg = Release|ARM
 		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Release|ARM.Build.0 = Release|ARM
 		{5AD650DA-6FCE-413F-B5E5-D6D436359853}.Release|ARM.Deploy.0 = Release|ARM
@@ -207,8 +207,8 @@ Global
 		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|ARM.ActiveCfg = Release|ARM
 		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|ARM.Build.0 = Release|ARM
-		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|Mixed Platforms.Build.0 = Release|x86
+		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|x64.ActiveCfg = Release|Any CPU
 		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|x86.ActiveCfg = Release|x86
 		{CF1D432A-380F-434A-BC43-FC39AC8B61A8}.Release|x86.Build.0 = Release|x86

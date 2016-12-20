@@ -409,7 +409,7 @@ public class CloudQueue
     {
         throw new System.NotImplementedException();
     }
-    private static CloudQueueMessage SelectAddMessageResponse(CloudQueueMessage message, QueueMessage protocolMessage)
+    private static void CopyMessage(CloudQueueMessage message, QueueMessage protocolMessage)
     {
         throw new System.NotImplementedException();
     }

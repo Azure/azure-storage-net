@@ -62,39 +62,39 @@ public class CloudBlobDirectory : IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    public CloudPageBlob GetPageBlobReference(string blobName)
+    public virtual CloudPageBlob GetPageBlobReference(string blobName)
     {
         throw new System.NotImplementedException();
     }
-    public CloudPageBlob GetPageBlobReference(string blobName, DateTimeOffset? snapshotTime)
+    public virtual CloudPageBlob GetPageBlobReference(string blobName, DateTimeOffset? snapshotTime)
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlockBlob GetBlockBlobReference(string blobName)
+    public virtual CloudBlockBlob GetBlockBlobReference(string blobName)
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlockBlob GetBlockBlobReference(string blobName, DateTimeOffset? snapshotTime)
+    public virtual CloudBlockBlob GetBlockBlobReference(string blobName, DateTimeOffset? snapshotTime)
     {
         throw new System.NotImplementedException();
     }
-    public CloudAppendBlob GetAppendBlobReference(string blobName)
+    public virtual CloudAppendBlob GetAppendBlobReference(string blobName)
     {
         throw new System.NotImplementedException();
     }
-    public CloudAppendBlob GetAppendBlobReference(string blobName, DateTimeOffset? snapshotTime)
+    public virtual CloudAppendBlob GetAppendBlobReference(string blobName, DateTimeOffset? snapshotTime)
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlob GetBlobReference(string blobName)
+    public virtual CloudBlob GetBlobReference(string blobName)
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlob GetBlobReference(string blobName, DateTimeOffset? snapshotTime)
+    public virtual CloudBlob GetBlobReference(string blobName, DateTimeOffset? snapshotTime)
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlobDirectory GetDirectoryReference(string itemName)
+    public virtual CloudBlobDirectory GetDirectoryReference(string itemName)
     {
         throw new System.NotImplementedException();
     }

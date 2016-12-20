@@ -1369,17 +1369,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         // Check that the incremental copied blob is found exactly once
                         Assert.IsFalse(incrementalCopyFound);
                         Assert.IsTrue(blob.Properties.IsIncrementalCopy);
-#if !FACADE_NETCORE
                         Assert.IsTrue(blob.CopyState.DestinationSnapshotTime.HasValue);
-#endif
                         incrementalCopyFound = true;
                     }
-#if !FACADE_NETCORE
                     else if (blob.Name == "copy")
                     {
                         Assert.IsTrue(blob.CopyState.DestinationSnapshotTime.HasValue);
                     }
-#endif
                 }
 
                 Assert.IsTrue(incrementalCopyFound);

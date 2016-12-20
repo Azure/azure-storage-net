@@ -30,7 +30,7 @@ internal static class BlobHttpResponseParsers
     {
         throw new System.NotImplementedException();
     }
-    internal static CopyState GetCopyAttributes(string copyStatusString, string copyId, string copySourceString, string copyProgressString, string copyCompletionTimeString, string copyStatusDescription)
+    internal static CopyState GetCopyAttributes(string copyStatusString, string copyId, string copySourceString, string copyProgressString, string copyCompletionTimeString, string copyStatusDescription, string copyDestinationSnapshotTimeString)
     {
         throw new System.NotImplementedException();
     }

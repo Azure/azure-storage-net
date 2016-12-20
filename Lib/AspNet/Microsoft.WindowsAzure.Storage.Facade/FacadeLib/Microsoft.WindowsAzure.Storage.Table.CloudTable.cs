@@ -68,7 +68,18 @@ public class CloudTable
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task<TableResult> ExecuteAsync(TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch, TableRequestOptions requestOptions, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();

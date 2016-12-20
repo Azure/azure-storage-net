@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
     /// <summary>
-    /// Contains the URIs for both the primary and secondary locations of a Windows Azure Storage resource.
+    /// Contains the URIs for both the primary and secondary locations of a Microsoft Azure Storage resource.
     /// </summary>
     public sealed class StorageUri
 #if !WINDOWS_RT

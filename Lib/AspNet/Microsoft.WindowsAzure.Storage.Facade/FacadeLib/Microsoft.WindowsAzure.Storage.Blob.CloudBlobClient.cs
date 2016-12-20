@@ -208,11 +208,11 @@ public class CloudBlobClient
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlobContainer GetRootContainerReference()
+    public virtual CloudBlobContainer GetRootContainerReference()
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlobContainer GetContainerReference(string containerName)
+    public virtual CloudBlobContainer GetContainerReference(string containerName)
     {
         throw new System.NotImplementedException();
     }

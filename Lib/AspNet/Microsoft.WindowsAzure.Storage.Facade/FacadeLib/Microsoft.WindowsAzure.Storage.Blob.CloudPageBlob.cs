@@ -182,7 +182,18 @@ public class CloudPageBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task<CloudPageBlob> CreateSnapshotAsync()
     {
         throw new System.NotImplementedException();

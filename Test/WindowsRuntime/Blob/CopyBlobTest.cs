@@ -587,9 +587,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
                 Assert.IsTrue(copy.Properties.IsIncrementalCopy);
-#if !FACADE_NETCORE
                 Assert.IsTrue(copy.CopyState.DestinationSnapshotTime.HasValue);
-#endif
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
             }
             finally

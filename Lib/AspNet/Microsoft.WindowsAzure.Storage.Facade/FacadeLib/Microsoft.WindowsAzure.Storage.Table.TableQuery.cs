@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-public sealed class TableQuery
+public class TableQuery
 {
     public int? TakeCount
     {

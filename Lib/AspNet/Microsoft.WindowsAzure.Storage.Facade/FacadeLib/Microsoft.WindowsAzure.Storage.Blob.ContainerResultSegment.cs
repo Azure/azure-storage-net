@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-public sealed class ContainerResultSegment
+public class ContainerResultSegment
 {
     public IEnumerable<CloudBlobContainer> Results
     {

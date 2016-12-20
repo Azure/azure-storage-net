@@ -62,11 +62,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             FileContinuationToken token = null;
             do
             {
-#if !FACADE_NETCORE
                 FileResultSegment resultSegment = await directory.ListFilesAndDirectoriesSegmentedAsync(prefix, maxResults, token, options, operationContext);
-#else
-                FileResultSegment resultSegment = await directory.ListFilesAndDirectoriesSegmentedAsync(maxResults, token, options, operationContext);
-#endif
                 results.AddRange(resultSegment.Results);
                 token = resultSegment.ContinuationToken;
             }

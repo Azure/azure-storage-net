@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-public sealed class BlobResultSegment
+public class BlobResultSegment
 {
     public IEnumerable<IListBlobItem> Results
     {

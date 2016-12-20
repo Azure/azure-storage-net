@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 namespace Microsoft.WindowsAzure.Storage.File
 {
-public sealed class ShareResultSegment
+public class ShareResultSegment
 {
     public IEnumerable<CloudFileShare> Results
     {

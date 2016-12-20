@@ -263,6 +263,11 @@ public class CloudBlockBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
+
+    private IEnumerable<Stream> OpenMultiSubStream(Stream wrappedStream, long? length, SemaphoreSlim mutex)
+    {
+        throw new System.NotImplementedException();
+    }
     internal void CheckAdjustBlockSize(long? streamLength)
     {
         throw new System.NotImplementedException();

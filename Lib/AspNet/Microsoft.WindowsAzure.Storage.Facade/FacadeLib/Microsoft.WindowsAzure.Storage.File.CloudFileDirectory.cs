@@ -204,7 +204,10 @@ public class CloudFileDirectory : IListFileItem
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
     {
         throw new System.NotImplementedException();
@@ -246,11 +249,11 @@ public class CloudFileDirectory : IListFileItem
     {
         throw new System.NotImplementedException();
     }
-    public CloudFile GetFileReference(string fileName)
+    public virtual CloudFile GetFileReference(string fileName)
     {
         throw new System.NotImplementedException();
     }
-    public CloudFileDirectory GetDirectoryReference(string itemName)
+    public virtual CloudFileDirectory GetDirectoryReference(string itemName)
     {
         throw new System.NotImplementedException();
     }

@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Globalization;
 
     /// <summary>
-    /// Represents a share in the Windows Azure File service.
+    /// Represents a share in the Microsoft Azure File service.
     /// </summary>
     public partial class CloudFileShare
     {

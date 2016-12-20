@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Threading.Tasks;
 
     /// <summary>
-    /// This class represents a queue in the Windows Azure Queue service.
+    /// This class represents a queue in the Microsoft Azure Queue service.
     /// </summary>
     public partial class CloudQueue
     {

@@ -1,12 +1,12 @@
 ﻿// -----------------------------------------------------------------------------------------
-// <copyright file="TypeInfoExtension.cs" company="Microsoft">
+// <copyright file="EntityPropertyConverterOptions.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
-// 
+//
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
 //      http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,31 +15,29 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using System.Linq;
-
-namespace Microsoft.WindowsAzure.Storage.Extensions
+namespace Microsoft.WindowsAzure.Storage.Table
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Reflection;
-
-    internal static class TypeInfoExtension
+    /// <summary>
+    /// Represents a set of options that may be specified for flattening and re-composition of objects by the Entity property converter.
+    /// </summary>
+    public class EntityPropertyConverterOptions
     {
-        public static IEnumerable<PropertyInfo> GetAllProperties(this TypeInfo typeInfo)
+        private string propertyNameDelimiter = EntityPropertyConverter.DefaultPropertyNameDelimiter;
+
+        /// <summary>
+        /// Gets or sets the delimiter that will be used to separate names of nested properties.
+        /// </summary>
+        public string PropertyNameDelimiter
         {
-            IList<PropertyInfo> propertyList = new List<PropertyInfo>();
-
-            while (typeInfo != null)
+            get
             {
-                foreach (var declaredProperty in typeInfo.DeclaredProperties.Where(declaredProperty => propertyList.All(x => x.Name != declaredProperty.Name)))
-                {
-                    propertyList.Add(declaredProperty);
-                }
-
-                typeInfo = typeInfo.BaseType?.GetTypeInfo();
+                return propertyNameDelimiter;
             }
 
-            return propertyList;
+            set
+            {
+                propertyNameDelimiter = value;
+            }
         }
     }
 }

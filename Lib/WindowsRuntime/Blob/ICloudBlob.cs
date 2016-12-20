@@ -30,9 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Windows.Storage.Streams;
     using System.IO;
 #endif
-    /// <summary>
-    /// An interface required for Windows Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.
-    /// </summary>
+
     public partial interface ICloudBlob : IListBlobItem
     {
         /// <summary>
@@ -45,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         Task<Stream> OpenReadAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 
         /// <summary>
-        /// Uploads a stream to the Windows Azure Blob Service. 
+        /// Uploads a stream to the Microsoft Azure Blob Service. 
         /// </summary>
         /// <param name="source">The stream providing the blob content.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
@@ -80,7 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext);
 
-        /// Uploads a file to the Windows Azure Blob Service. 
+        /// Uploads a file to the Microsoft Azure Blob Service. 
         /// </summary>
 #if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
