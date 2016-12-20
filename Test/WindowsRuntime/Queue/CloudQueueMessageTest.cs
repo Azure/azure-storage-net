@@ -391,7 +391,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             await queue.DeleteAsync();
         }
 
-        #region Test Helpers
+#region Test Helpers
         private void VerifyAddMessageResult(CloudQueueMessage originalMessage, bool base64Encoded = false)
         {
             Assert.IsFalse(string.IsNullOrEmpty(originalMessage.Id));
@@ -401,6 +401,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             Assert.IsTrue(originalMessage.NextVisibleTime.HasValue);
         }
-        #endregion
+#endregion
     }
 }

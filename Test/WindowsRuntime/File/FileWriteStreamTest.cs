@@ -23,7 +23,6 @@ using System.Net;
 using System.Threading.Tasks;
 
 #if NETCORE
-using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Security.Cryptography;
 #else
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -330,6 +329,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         /// [Description("Upload a file using file stream and verify contents")]
         [TestCategory(ComponentCategory.File)]
@@ -398,5 +398,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
+
     }
 }

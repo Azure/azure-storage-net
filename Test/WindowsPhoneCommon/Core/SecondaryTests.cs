@@ -174,6 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             await testMethodAsync(null, LocationMode.SecondaryThenPrimary, StorageLocation.Secondary, retryContextList, retryInfoList);
         }
 
+
         private static void AddUpdatedLocationModes(IList<RetryContext> retryContextList, IList<RetryInfo> retryInfoList)
         {
             retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(4) });

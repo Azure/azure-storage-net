@@ -1663,10 +1663,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 // Number of service calls
                 OperationContext context = new OperationContext();
+#if !FACADE_NETCORE
                 await blob.UploadTextAsync(text, null, null, context);
                 Assert.AreEqual(1, context.RequestResults.Count);
                 await blob.DownloadTextAsync(null, null, context);
                 Assert.AreEqual(2, context.RequestResults.Count);
+#else
+                await blob.UploadTextAsync(text, Encoding.ASCII, null, null, context);
+                Assert.AreEqual(1, context.RequestResults.Count);
+                await blob.DownloadTextAsync(Encoding.ASCII, null, null, context);
+                Assert.AreEqual(2, context.RequestResults.Count);
+#endif
             }
             finally
             {

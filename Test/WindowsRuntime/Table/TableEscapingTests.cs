@@ -17,6 +17,11 @@
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
+
+#if FACADE_NETCORE
+using System.Threading;
+#endif
+
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
@@ -284,7 +289,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Insert(ent);
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
             }
             else
             {
@@ -297,7 +306,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Retrieve(ent.PartitionKey, ent.RowKey);
+#if !FACADE_NETCORE
                 res = (await currentTable.ExecuteBatchAsync(batch))[0];
+#else
+                res = (await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None))[0];
+#endif
             }
             else
             {
@@ -319,7 +332,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Merge(ent);
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
             }
             else
             {
@@ -331,7 +348,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Retrieve(ent.PartitionKey, ent.RowKey);
+#if !FACADE_NETCORE
                 res = (await currentTable.ExecuteBatchAsync(batch))[0];
+#else
+                res = (await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None))[0];
+#endif
             }
             else
             {
@@ -353,7 +374,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Replace(ent);
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
             }
             else
             {
@@ -365,7 +390,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Retrieve(ent.PartitionKey, ent.RowKey);
+#if !FACADE_NETCORE
                 res = (await currentTable.ExecuteBatchAsync(batch))[0];
+#else
+                res = (await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None))[0];
+#endif
             }
             else
             {

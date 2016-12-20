@@ -19,6 +19,9 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.IO;
 using System.Net;
+#if FACADE_NETCORE
+using System.Threading;
+#endif
 using System.Threading.Tasks;
 
 #if !NETCORE
@@ -155,7 +158,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
+#if !FACADE_NETCORE
                     await blob.AppendBlockAsync(wholeBlob);
+#else
+                    await blob.AppendBlockAsync(wholeBlob, null, null, null, null, CancellationToken.None);
+#endif
                 }
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
@@ -319,7 +326,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
+#if !FACADE_NETCORE
                     await blob.AppendBlockAsync(wholeBlob);
+#else
+                    await blob.AppendBlockAsync(wholeBlob, string.Empty, null, null, null, CancellationToken.None);
+#endif
                 }
 
                 OperationContext opContext = new OperationContext();
@@ -365,15 +376,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if WINDOWS_RT
         private static async Task<uint> BlobReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
-#else
+#elif NETCORE || FACADE_NETCORE
         private static async Task<uint> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
 #endif
         {
             byte[] testBuffer = new byte[readSize];
-#if NETCORE
+#if (NETCORE && !FACADE_NETCORE)
             int actualReadSize = await blobStream.ReadAsync(testBuffer, 0, (int) readSize);
             Assert.AreEqual(expectedReadCount, actualReadSize);
-#else
+#elif WINDOWS_RT
             IBuffer testBufferAsIBuffer = testBuffer.AsBuffer();
             await blobStream.ReadAsync(testBufferAsIBuffer, readSize, InputStreamOptions.None);
             Assert.AreEqual(expectedReadCount, testBufferAsIBuffer.Length);
@@ -386,7 +397,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return expectedReadCount;
         }
-
+#if !FACADE_NETCORE
 #if WINDOWS_RT
         private static async Task<int> BlobReadStreamSeekTestAsync(IRandomAccessStreamWithContentType blobStream, long streamReadSize, byte[] bufferToCompare)
 #else
@@ -475,7 +486,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
 #if WINDOWS_RT
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream.AsRandomAccessStream(), blob.StreamMinimumReadSizeInBytes, buffer);
-#else 
+#else
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
 #endif
                     TestHelper.AssertNAttempts(opContext, attempts);
@@ -513,7 +524,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
 #if WINDOWS_RT
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream.AsRandomAccessStream(), blob.StreamMinimumReadSizeInBytes, buffer);
-#else 
+#else
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
 #endif
                     TestHelper.AssertNAttempts(opContext, attempts);
@@ -553,7 +564,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
 #if WINDOWS_RT
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream.AsRandomAccessStream(), blob.StreamMinimumReadSizeInBytes, buffer);
-#else 
+#else
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
 #endif
                     TestHelper.AssertNAttempts(opContext, attempts);
@@ -564,5 +575,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+        
+#endif //FacadeNetcore
     }
 }

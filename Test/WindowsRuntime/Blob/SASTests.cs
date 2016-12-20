@@ -95,7 +95,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 else
                 {
+#if !FACADE_NETCORE
                     blob = new CloudPageBlob(blob.Uri, credentials);
+#else
+                    blob = new CloudPageBlob(blob.Uri, null, credentials);
+#endif
                 }
             }
 

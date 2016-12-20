@@ -1346,8 +1346,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, source.ServiceClient.StorageUri, null, null, null);
 
                 CloudPageBlob snapshotWithSas = await accountWithSAS.CreateCloudBlobClient().GetBlobReferenceFromServerAsync(sourceSnapshot.SnapshotQualifiedUri) as CloudPageBlob;
-
+#if !FACADE_NETCORE
                 string copyId = await copy.StartIncrementalCopyAsync(accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri));
+#else
+                Uri snapShotQualifiedUri = accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri);
+                string copyId = await copy.StartIncrementalCopyAsync(new CloudPageBlob(new StorageUri(snapShotQualifiedUri), null, null));
+#endif
                 await WaitForCopyAsync(copy);
 
                 BlobResultSegment results = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null);
@@ -1365,13 +1369,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         // Check that the incremental copied blob is found exactly once
                         Assert.IsFalse(incrementalCopyFound);
                         Assert.IsTrue(blob.Properties.IsIncrementalCopy);
+#if !FACADE_NETCORE
                         Assert.IsTrue(blob.CopyState.DestinationSnapshotTime.HasValue);
+#endif
                         incrementalCopyFound = true;
                     }
+#if !FACADE_NETCORE
                     else if (blob.Name == "copy")
                     {
                         Assert.IsTrue(blob.CopyState.DestinationSnapshotTime.HasValue);
                     }
+#endif
                 }
 
                 Assert.IsTrue(incrementalCopyFound);

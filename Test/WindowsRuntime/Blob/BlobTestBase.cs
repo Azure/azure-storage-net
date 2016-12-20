@@ -19,6 +19,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+#if FACADE_NETCORE
+using System.Threading;
+#endif
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
@@ -92,7 +95,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     CloudAppendBlob blob1 = blob as CloudAppendBlob;
                     await blob1.CreateOrReplaceAsync();
+#if !FACADE_NETCORE
                     await blob1.AppendBlockAsync(stream, null);
+#else
+                    await blob1.AppendBlockAsync(stream, null, null, null, null, CancellationToken.None);
+#endif
                 }
                 else if (blob.BlobType == BlobType.PageBlob)
                 {

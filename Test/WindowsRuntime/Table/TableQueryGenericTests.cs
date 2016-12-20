@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if FACADE_NETCORE
+using System.Threading;
+#endif
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
@@ -95,8 +98,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     ent.RowKey = string.Format("{0:0000}", j);
                     batch.Insert(ent);
                 }
-
+#if !FACADE_NETCORE
                 currentTable.ExecuteBatchAsync(batch).Wait();
+#else
+                currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None).Wait();
+#endif
             }
         }
         //
@@ -130,7 +136,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
 
-        #region Unit Tests
+#region Unit Tests
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("A test to validate basic table query")]
         [TestCategory(ComponentCategory.Table)]
@@ -144,13 +151,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 await DoTableGenericQueryBasicAsync(payloadFormat);
             }
         }
+#endif
 
         private async Task DoTableGenericQueryBasicAsync(TablePayloadFormat format)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
+#if !FACADE_NETCORE
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
-
             TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, null);
+#else
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", "tables_batch_1"));
+            TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query, null, null);
+#endif
 
             foreach (BaseEntity ent in seg)
             {
@@ -176,10 +188,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoTableGenericQueryWithContinuationAsync(TablePayloadFormat format)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
-            TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
 
             OperationContext opContext = new OperationContext();
+#if !FACADE_NETCORE
+            TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
             TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext);
+#else
+            TableQuery query = new TableQuery();
+            TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query,
+               (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk) { foo = "bar", A = "a", B = "b", C = "c", D = "d", E = 1234 }, null, null, opContext);
+#endif
 
             int count = 0;
             foreach (BaseEntity ent in seg)
@@ -191,7 +209,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // Second segment
             Assert.IsNotNull(seg.ContinuationToken);
+#if !FACADE_NETCORE
             seg = await currentTable.ExecuteQuerySegmentedAsync(query, seg.ContinuationToken, null, opContext);
+#else
+            seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query,
+                (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk) { foo = "bar", A = "a", B = "b", C = "c", D = "d", E = 1234 },
+                seg.ContinuationToken, null, opContext);
+#endif
 
             foreach (BaseEntity ent in seg)
             {
@@ -212,12 +236,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericQueryWithFilter()
         {
-            TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}')", "tables_batch_1", "0050"));
-
             OperationContext opContext = new OperationContext();
             int count = 0;
 
+#if !FACADE_NETCORE
+            TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}')", "tables_batch_1", "0050"));
+
             foreach (BaseEntity ent in ExecuteQuery(currentTable, query))
+#else
+
+            TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}')", "tables_batch_1", "0050"));
+            foreach (BaseEntity ent in ExecuteQueryBaseEntity<BaseEntity>(currentTable, query))
+#endif
             {
                 Assert.AreEqual(ent.PartitionKey, "tables_batch_1");
                 Assert.AreEqual(ent.RowKey, string.Format("{0:0000}", count + 50));
@@ -228,6 +258,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(count, 50);
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Basic projection test")]
         [TestCategory(ComponentCategory.Table)]
@@ -239,14 +270,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableGenericQueryProjection(false);
             DoTableGenericQueryProjection(true);
         }
+#endif
 
         private void DoTableGenericQueryProjection(bool projectSystemProperties)
         {
             tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
-
+#if !FACADE_NETCORE
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "C" });
 
             foreach (BaseEntity ent in ExecuteQuery(currentTable, query))
+#else
+            TableQuery query = new TableQuery().Select(new List<string>() { "A", "C" });
+
+            foreach (BaseEntity ent in ExecuteQueryBaseEntity<BaseEntity>(currentTable, query))
+#endif
             {
                 Assert.AreEqual(ent.A, "a");
                 Assert.IsNull(ent.B);
@@ -261,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
             }
         }
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Basic projection test")]
         [TestCategory(ComponentCategory.Table)]
@@ -273,14 +310,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DoTableGenericQueryProjectionSpecifyingSystemProperties(false);
             DoTableGenericQueryProjectionSpecifyingSystemProperties(true);
         }
+#endif
 
         private void DoTableGenericQueryProjectionSpecifyingSystemProperties(bool projectSystemProperties)
         {
             tableClient.DefaultRequestOptions.ProjectSystemProperties = projectSystemProperties;
-
+#if !FACADE_NETCORE
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Select(new List<string>() { "A", "C", TableConstants.PartitionKey, TableConstants.Timestamp });
 
             foreach (BaseEntity ent in ExecuteQuery(currentTable, query))
+#else
+            TableQuery query = new TableQuery().Select(new List<string>() { "A", "C", TableConstants.PartitionKey, TableConstants.Timestamp });
+
+            foreach (BaseEntity ent in ExecuteQueryBaseEntity<BaseEntity>(currentTable, query))
+#endif
             {
                 Assert.AreEqual(ent.A, "a");
                 Assert.IsNull(ent.B);
@@ -304,6 +347,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericWithResolver()
         {
+#if !FACADE_NETCORE
             TableQuery<TableEntity> query = new TableQuery<TableEntity>().Select(new List<string>() { "A", "C" });
 
             foreach (string ent in ExecuteQuery(currentTable, query, (pk, rk, ts, prop, etag) => prop["A"].StringValue + prop["C"].StringValue))
@@ -324,6 +368,28 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(ent.C, "c");
                 Assert.IsNull(ent.D);
             }
+#else
+            TableQuery query = new TableQuery().Select(new List<string>() { "A", "C" });
+
+            foreach (string ent in ExecuteQuery(currentTable, query, (pk, rk, ts, prop, etag) => prop["A"].StringValue + prop["C"].StringValue))
+            {
+                Assert.AreEqual(ent, "ac");
+            }
+
+            foreach (BaseEntity ent in ExecuteQuery(currentTable, query,
+                (pk, rk, ts, prop, etag) => new BaseEntity() { PartitionKey = pk, RowKey = rk, Timestamp = ts, A = prop["A"].StringValue, C = prop["C"].StringValue, ETag = etag }))
+            {
+                Assert.IsNotNull(ent.PartitionKey);
+                Assert.IsNotNull(ent.RowKey);
+                Assert.IsNotNull(ent.Timestamp);
+                Assert.IsNotNull(ent.ETag);
+
+                Assert.AreEqual(ent.A, "a");
+                Assert.IsNull(ent.B);
+                Assert.AreEqual(ent.C, "c");
+                Assert.IsNull(ent.D);
+            }
+#endif
         }
 
         [TestMethod]
@@ -353,6 +419,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("A test validate all supported query types")]
         [TestCategory(ComponentCategory.Table)]
@@ -366,7 +433,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 await DoTableGenericQueryOnSupportedTypesAsync(payloadFormat);
             }
         }
-
+#endif
         private async Task DoTableGenericQueryOnSupportedTypesAsync(TablePayloadFormat format)
         {
             CloudTableClient client = GenerateCloudTableClient();
@@ -408,6 +475,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     await Task.Delay(100);
                 }
 
+#if !FACADE_NETCORE
                 await table.ExecuteBatchAsync(batch);
 
                 // 1. Filter on String
@@ -482,6 +550,54 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForBinary("BinaryPrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.BinaryPrimitive), 50);
 
+#else
+                await table.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+
+                // 1. Filter on String
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterCondition("String", "ge", "0050"), 50);
+
+                // 2. Filter on Guid
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForGuid("Guid", "eq", middleRef.Guid), 1);
+
+                // 3. Filter on Long
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForLong("Int64", "ge",
+                                middleRef.LongPrimitive), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForLong("LongPrimitive",
+                        "ge", middleRef.LongPrimitive), 50);
+
+                // 4. Filter on Double
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDouble("Double", "ge",
+                                middleRef.Double), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForDouble("DoublePrimitive",
+                        "ge", middleRef.DoublePrimitive), 50);
+
+                // 5. Filter on Integer
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForInt("Int32", "ge",
+                                middleRef.Int32), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForInt("IntegerPrimitive",
+                        "ge", middleRef.IntegerPrimitive), 50);
+
+                // 6. Filter on Date
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDate("DateTimeOffset", "ge",
+                                middleRef.DateTimeOffset), 50);
+
+                // 7. Filter on Boolean
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForBool("Bool", "eq", middleRef.Bool), 50);
+
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForBool("BoolPrimitive", "eq", middleRef.BoolPrimitive),
+                        50);
+#endif
 
             }
             finally
@@ -490,9 +606,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Negative Tests
+#region Negative Tests
 
         [TestMethod]
         [Description("A test with invalid take count")]
@@ -548,12 +664,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoTableGenericQueryWithInvalidQueryAsync(TablePayloadFormat format)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
+#if !FACADE_NETCORE
             TableQuery<ComplexEntity> query = new TableQuery<ComplexEntity>().Where(string.Format("(PartitionKey ) and (RowKey ge '{1}')", "tables_batch_1", "000050"));
+#else
+            TableQuery query = new TableQuery().Where(string.Format("(PartitionKey ) and (RowKey ge '{1}')", "tables_batch_1", "000050"));
+#endif
 
             OperationContext opContext = new OperationContext();
             try
             {
+#if !FACADE_NETCORE
                 await currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext);
+#else
+                await currentTable.ExecuteQuerySegmentedAsync<ComplexEntity>(query, (pk, rk, tse, prop, etag) => new ComplexEntity(pk, rk), null, null, opContext);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
@@ -562,10 +686,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Helpers
+#region Helpers
 
+#if !FACADE_NETCORE
         private static List<T> ExecuteQuery<T>(CloudTable table, TableQuery<T> query) where T: ITableEntity, new()
         {
             List<T> retList = new List<T>();
@@ -582,6 +707,48 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return retList;
         }
+#else
+        private static List<BaseEntity> ExecuteQueryBaseEntity<T>(CloudTable table, TableQuery query) where T : BaseEntity, new()
+        {
+            List<BaseEntity> retList = new List<BaseEntity>();
+
+            TableQuerySegment<T> currSeg = null;
+
+            while (currSeg == null || currSeg.ContinuationToken != null)
+            {
+                Task<TableQuerySegment<T>> task = Task.Run(() => table.ExecuteQuerySegmentedAsync<T>(query, 
+                    (pk, rk, tse, prop, etag) => (T) new BaseEntity(pk, rk)
+                                        { foo = prop.ContainsKey("foo") ? "bar" : null, A = prop.ContainsKey("A") ? "a" : null, B = prop.ContainsKey("B") ? "b" : null, C = prop.ContainsKey("C") ? "c" : null,
+                                           D = prop.ContainsKey("D")? "d" : null, E = prop.ContainsKey("E") ? 1234 : 0},
+                    currSeg != null ? currSeg.ContinuationToken : null, null, null));
+
+                task.Wait();
+                currSeg = task.Result;
+                retList.AddRange(currSeg.Results);
+            }
+
+            return retList;
+        }
+
+        private static List<ComplexEntity> ExecuteQueryComplexEntity<T>(CloudTable table, TableQuery query) where T : ComplexEntity, new()
+        {
+            List<ComplexEntity> retList = new List<ComplexEntity>();
+
+            TableQuerySegment<T> currSeg = null;
+
+            while (currSeg == null || currSeg.ContinuationToken != null)
+            {
+                Task<TableQuerySegment<T>> task = Task.Run(() => table.ExecuteQuerySegmentedAsync<T>(query, (pk, rk, tse, prop, etag) => (T)new ComplexEntity(pk, rk), currSeg != null ? currSeg.ContinuationToken : null, null, null));
+
+                task.Wait();
+                currSeg = task.Result;
+                retList.AddRange(currSeg.Results);
+            }
+
+            return retList;
+        }
+#endif
+
 
         private static List<TResult> ExecuteQueryWithResolver<TResult>(CloudTable table, TableQuery query, EntityResolver<TResult> resolver)
         {
@@ -601,7 +768,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return retList;
         }
 
+#if !FACADE_NETCORE
         private static List<TResult> ExecuteQuery<T,TResult>(CloudTable table, TableQuery<T> query, EntityResolver<TResult> resolver) where T : ITableEntity, new()
+#else
+        private static List<TResult> ExecuteQuery<TResult>(CloudTable table, TableQuery query, EntityResolver<TResult> resolver)
+#endif
         {
             List<TResult> retList = new List<TResult>();
 
@@ -620,7 +791,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static void ExecuteQueryAndAssertResults(CloudTable table, string filter, int expectedResults)
         {
+#if !FACADE_NETCORE
             Assert.AreEqual(expectedResults, ExecuteQuery(table, new TableQuery<ComplexEntity>().Where(filter)).Count());
+#else
+            Assert.AreEqual(expectedResults, ExecuteQueryComplexEntity<ComplexEntity>(table, new TableQuery().Where(filter)).Count());
+#endif
         }
 
         private static BaseEntity GenerateRandomEntity(string pk)
@@ -631,6 +806,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ent.RowKey = Guid.NewGuid().ToString();
             return ent;
         }
-        #endregion
+#endregion
     }
 }

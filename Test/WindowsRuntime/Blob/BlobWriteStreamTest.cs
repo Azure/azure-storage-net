@@ -23,7 +23,6 @@ using System.Net;
 using System.Threading.Tasks;
 
 #if NETCORE
-using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Security.Cryptography;
 using System.Threading;
 #else
@@ -588,6 +587,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Test the effects of blob stream's flush functionality")]
         [TestCategory(ComponentCategory.Blob)]
@@ -650,6 +650,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
 
         [TestMethod]
         [Description("Upload a page blob using blob stream and verify contents")]
@@ -806,6 +807,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Test the effects of blob stream's flush functionality")]
         [TestCategory(ComponentCategory.Blob)]
@@ -874,6 +876,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
 
         [TestMethod]
         [Description("Upload an append blob using blob stream and verify contents")]
@@ -976,6 +979,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Test the effects of blob stream's flush functionality")]
         [TestCategory(ComponentCategory.Blob)]
@@ -1044,6 +1048,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
 
         [TestMethod]
         [Description("Upload an append blob using blob stream and verify that max conditions is passed through")]

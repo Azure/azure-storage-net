@@ -538,21 +538,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 string copyId = null;
                 if (overload == 0)
                 {
+#if !FACADE_NETCORE
                     copyId = await copy.StartIncrementalCopyAsync(accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri));
+#else
+                    Uri snapShotQualifiedUri = accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri);
+                    copyId = await copy.StartIncrementalCopyAsync(new CloudPageBlob(new StorageUri(snapShotQualifiedUri), null, null));
+#endif
                 }
                 else if (overload == 1)
                 {
+#if !FACADE_NETCORE
                     CloudPageBlob blob = new CloudPageBlob(accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri));
+#else
+                    Uri snapShotQualifiedUri = accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri);
+                    CloudPageBlob blob = new CloudPageBlob(new StorageUri(snapShotQualifiedUri), null, null);
+#endif
                     copyId = await copy.StartIncrementalCopyAsync(blob);
                 }
                 else if (overload == 2)
                 {
+#if !FACADE_NETCORE
                     CloudPageBlob blob = new CloudPageBlob(accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri));
+#else
+                    Uri snapShotQualifiedUri = accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri);
+                    CloudPageBlob blob = new CloudPageBlob(new StorageUri(snapShotQualifiedUri), null, null);
+#endif
                     copyId = await copy.StartIncrementalCopyAsync(blob, null, null, null, CancellationToken.None);
                 }
                 else
                 {
+#if !FACADE_NETCORE
                     copyId = await copy.StartIncrementalCopyAsync(accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri), null, null, null, CancellationToken.None);
+#else
+                    Uri snapShotQualifiedUri = accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri);
+                    CloudPageBlob blob = new CloudPageBlob(new StorageUri(snapShotQualifiedUri), null, null);
+                    copyId = await copy.StartIncrementalCopyAsync(blob, null, null, null, CancellationToken.None);
+#endif
+
+
                 }
 
                 await WaitForCopyAsync(copy);
@@ -564,7 +587,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
                 Assert.AreEqual(copyId, copy.CopyState.CopyId);
                 Assert.IsTrue(copy.Properties.IsIncrementalCopy);
+#if !FACADE_NETCORE
                 Assert.IsTrue(copy.CopyState.DestinationSnapshotTime.HasValue);
+#endif
                 Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
             }
             finally

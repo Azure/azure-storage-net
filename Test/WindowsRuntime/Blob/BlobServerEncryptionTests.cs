@@ -133,7 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Upload encrypted blob.")]
         [TestCategory(ComponentCategory.Blob)]
@@ -169,5 +169,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
     }
 }

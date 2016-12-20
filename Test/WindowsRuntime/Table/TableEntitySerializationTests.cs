@@ -152,10 +152,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
             rand.NextBytes(bytes);
 
             // Ctor
+#if !FACADE_NETCORE
             EntityProperty binProp = EntityProperty.GeneratePropertyForByteArray(bytes);
-            Assert.AreEqual(binProp.BinaryValue, bytes);
+#else
+            EntityProperty binProp = EntityProperty.GeneratePropertyForString(bytes.ToString());
+#endif
 
-            // Setter
+#if !FACADE_NETCORE
+            Assert.AreEqual(binProp.BinaryValue, bytes);
+              // Setter
             byte[] bytes2 = new byte[1024];
             rand.NextBytes(bytes2);
             binProp.BinaryValue = bytes2;
@@ -258,6 +263,113 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string string3 = null;
             stringProp.StringValue = string3;
             Assert.AreEqual(stringProp.StringValue, string3);
+#else
+            Assert.AreEqual(binProp.StringValue, bytes.ToString());
+            // Setter
+            byte[] bytes2 = new byte[1024];
+            rand.NextBytes(bytes2);
+            binProp.StringValue = bytes2.ToString();
+            Assert.AreEqual(binProp.StringValue, bytes2.ToString());
+
+            // Null
+            binProp.StringValue = null;
+            Assert.AreEqual(binProp.StringValue, null);
+
+            // bool
+            bool boolVal = true;
+
+            // Ctor
+            EntityProperty boolProp = EntityProperty.GeneratePropertyForBool(boolVal);
+            Assert.AreEqual(boolProp.BooleanValue, boolVal);
+
+            // Setter
+            bool boolVal2 = true;
+            boolProp.BooleanValue = boolVal2;
+            Assert.AreEqual(boolProp.BooleanValue, boolVal2);
+
+            // DateTimeOffset
+            DateTimeOffset dto = DateTimeOffset.Now;
+
+            // Ctor
+            EntityProperty dtoProp = EntityProperty.GeneratePropertyForDateTimeOffset(dto);
+            Assert.AreEqual(dtoProp.DateTimeOffsetValue, dto);
+
+            // Setter
+            DateTimeOffset dto2 = DateTimeOffset.UtcNow;
+            dtoProp.DateTimeOffsetValue = dto2;
+            Assert.AreEqual(dtoProp.DateTimeOffsetValue, dto2);
+
+            // Null
+            DateTimeOffset? dto3 = (DateTimeOffset?)null;
+            dtoProp.DateTimeOffsetValue = dto3;
+            Assert.AreEqual(dtoProp.DateTimeOffsetValue, dto3);
+
+            // double
+            double doubleVal = 1234.4564;
+
+            // Ctor
+            EntityProperty doubleProp = EntityProperty.GeneratePropertyForDouble(doubleVal);
+            Assert.AreEqual(doubleProp.DoubleValue, doubleVal);
+
+            // Setter
+            double doubleVal2 = 8979654.35454;
+            doubleProp.DoubleValue = doubleVal2;
+            Assert.AreEqual(doubleProp.DoubleValue, doubleVal2);
+
+            // Guid
+            Guid guidVal = new Guid();
+
+            // Ctor
+            EntityProperty guidProp = EntityProperty.GeneratePropertyForGuid(guidVal);
+            Assert.AreEqual(guidProp.GuidValue, guidVal);
+
+            // Setter
+            Guid guidVal2 = new Guid();
+            guidProp.GuidValue = guidVal2;
+            Assert.AreEqual(guidProp.GuidValue, guidVal2);
+
+            // int
+            int intVal = 1234;
+
+            // Ctor
+            EntityProperty intProp = EntityProperty.GeneratePropertyForInt(intVal);
+            Assert.AreEqual(intProp.Int32Value, intVal);
+
+            // Setter
+            int intVal2 = 8979654;
+            intProp.Int32Value = intVal2;
+            Assert.AreEqual(intProp.Int32Value, intVal2);
+
+            // long
+            long longVal = 123456789012;
+
+            // Ctor
+            EntityProperty longProp = EntityProperty.GeneratePropertyForLong(longVal);
+            Assert.AreEqual(longProp.Int64Value, longVal);
+
+            // Setter
+            long longVal2 = 56789012345;
+            longProp.Int64Value = longVal2;
+            Assert.AreEqual(longProp.Int64Value, longVal2);
+
+            // string
+            string string1 = "abcdefghijklmnop";
+
+            // Ctor
+            EntityProperty stringProp = EntityProperty.GeneratePropertyForString(string1);
+            Assert.AreEqual(stringProp.StringValue, string1);
+
+            // Setter
+            string string2 = "1234567890";
+            stringProp.StringValue = string2;
+            Assert.AreEqual(stringProp.StringValue, string2);
+
+            // Null
+            string string3 = null;
+            stringProp.StringValue = string3;
+            Assert.AreEqual(stringProp.StringValue, string3);
+#endif
+
         }
     }
 }
