@@ -1,29 +1,41 @@
 Changes in 8.0.0 :
 
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
-- All: (NetFx/Desktop) Desktop library is now targeting .Net 4.5.2.
-- Tables : Table Serivce is now enforcing timeouts.
-- Tables : Numerous changes in Table Service error codes/messages in batch operations.
+- All: (Desktop) Updated the desktop library to target .Net 4.5.2.
+- All: Added a new Netstandard 1.0 Target Framework (facade) as PCL support.
+- Blobs: Added large block blob upload support. The supported Blocks can now support sizes up to 100 MB.
+- Blobs: Added a new, memory-optimized upload algorithm for UploadFrom* APIs. This strategy only applies for blocks greater than 4MB and when StoreBlobContentMD5 and Client-Side Encryption are disabled.
+- All: Added Key Rotation support for Client Side Encryption.
+- All: Fixed a race condition where calls to CreateIfNotExistsAsync and DeleteIfExistsAsync might never complete when the operation is canceled.
+- Tables: Added Flattener/Recomposer APIs for writing complex objects to Azure Table Storage.
+- Blobs: Fixed boundary checks for lease durations and break lease period to be in line with REST endpoints.
 - Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
-- PageBlobs: Added support for incremental copy.- Blobs: Fixed error for AcquireLease on non-existent container
-- PageBlobs: Fixed error response for GetPageRangesDiff to not mention GenID 
+- PageBlobs: Added a new method that performs an incremental snapshot copy. See the service documentation for more information on how to use this API.
 - Files: Prefix support for listing files and directories.
-- Blobs: Public access support for Blob Containers.
-- Blobs: Fixed error code for AcquireLease on non-existent Blob Container.
-- Blobs: Fixed error for code blob operations on non-existent Blob Container.
-- Blobs: Improve error responses for exceeding block limit 
+- Blobs: Created a new container attribute that stores the public access state of the container. This attribute is populated by FetchAttributes and in container listing operations.
 - Blobs/Files: Populate content MD5 for range gets on Blobs and Files.
 - Blobs/Files: Updated DownloadToFile to prevent reading of partially-written data while downloading.
 - All: Added support for using Create/Delete and CreateIfNotExists/DeleteIfExists without read SAS permissions. CreateIfNotExists methods will now only do one REST call instead of two.
 - Blobs: Fixed a bug with OpenWrite for BlockBlobs where Upload* APIs would fail due to lack of read SAS permissions.
-- Blobs: Added large block blob upload support. Blocks can now support sizes up to 100 MB.
-- Blobs: Added a new, memory-optimized upload algorithm for UploadFrom* APIs. This strategy only applies for blocks greater than 4MB and when StoreBlobContentMD5 and Client-Side Encryption are disabled.
 - All: Decoupled StorageExtendedErrorInformation methods using OData to prevent the dependency from loading for Blobs, Queues, and Files.
-- Table: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
+- Tables: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
 - All: Added logging for the ExtendedErrorInformation 'ErrorMessage' attribute via StorageException ToString() method.
-- Blobs: Fixed boundary checks for lease durations and break lease period to be in line with REST endpoints
+- All: Added the 'virtual' qualifier to Get*Reference APIs and unsealed Blob/Container/ShareResultSegment classes.
+- All: Added the 'virtual' qualifier to numerous service call APIs.
+- Blobs (WinRT/CoreCLR): Fixed a bug where the Content-Disposition header was not persisted when uploading a new blob.
+- Table (CoreCLR): Fixed a bug where reflection-based Read/Write of TableEntity would throw for derived properties.
+- Blobs/Files: Fixed a bug where creating Blob/Files would fail if Account SAS is present in the URI.
+- Table: (WinRT/NetCore) Unsealed the TableQuery class.
+- Table: Updated the access modifiers of "Entity" and "OperationType" properties of the TableOperation class from internal to public.
 - All: Using a SAS token with a non-null 'api-version' parameter will cause an ArgumentException with a new clearer message indicating the unexpected parameter in the SAS token.
-- All: Virtualized Get*Reference Apis and unsealed Blob/Container/ShareResultSegment classes.
+- Files: Changed Exists() calls on CloudFileDirectory objects to populate metadata. This was already being done for CloudFiles and CloudFileShares.
+- All: (WinRT) Removed the static CloudStorageAccount.Create method. Please use the instance level consructor instead.
+- Blobs: Removed the IAsyncOperation* overloads for GetPageRangesDiffAsync APIs.
+- Tables: Numerous changes in Table Service error codes and messages.
+- Blobs: Improved numerous Blob Service error codes and messages.
+- Blobs: Fixed error for AcquireLease on non-existent container.
+- PageBlobs: Fixed error response for GetPageRangesDiff.
+- Blobs: Update in "If-None-Match: *" pre-condition behavior to fail for reads(previously disregarded by the service).
 
 Changes in 7.2.1 :
 
