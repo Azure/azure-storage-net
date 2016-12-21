@@ -407,7 +407,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
             cmd.Begin = (callback, state) => this.BeginSaveChanges(options, callback, state);
             cmd.End = this.EndSaveChanges;
             cmd.ParseResponse = this.ParseDataServiceResponse;
-            cmd.ParseDataServiceError = StorageExtendedErrorInformation.ReadDataServiceResponseFromStream;
+            cmd.ParseDataServiceError = ODataErrorHelper.ReadDataServiceResponseFromStream;
             cmd.Context = this;
             requestOptions.ApplyToStorageCommand(cmd);
 

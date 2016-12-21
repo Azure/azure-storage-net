@@ -15,12 +15,14 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 #if NETCORE
@@ -368,6 +370,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsNull(blob2.Properties.ContentMD5);
                 Assert.AreEqual(LeaseStatus.Unlocked, blob2.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.PageBlob, blob2.Properties.BlobType);
+
+                CloudPageBlob blob3 = container.GetPageBlobReference("blob1");
+                Assert.IsNull(blob3.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                BlobRequestOptions options2 = new BlobRequestOptions();
+                options2.UseTransactionalMD5 = true;
+                blob3.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                await blob3.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options2, null);
+                Assert.IsNull(blob3.Properties.ContentMD5);
             }
             finally
             {
@@ -429,6 +440,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
                 CloudPageBlob blob4 = (CloudPageBlob)results.Results.First();
                 AssertAreEqual(blob2.Properties, blob4.Properties);
+
+                CloudPageBlob blob5 = container.GetPageBlobReference("blob1");
+                Assert.IsNull(blob5.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                await blob5.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
+                Assert.AreEqual("MDAwMDAwMDA=", blob5.Properties.ContentMD5);
+
+                CloudPageBlob blob6 = container.GetPageBlobReference("blob1");
+                Assert.IsNull(blob6.Properties.ContentMD5);
+                target = new byte[4];
+                BlobRequestOptions options2 = new BlobRequestOptions();
+                options2.UseTransactionalMD5 = true;
+                await blob6.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options2, null);
+                Assert.AreEqual("MDAwMDAwMDA=", blob6.Properties.ContentMD5);
             }
             finally
             {
@@ -1278,6 +1303,83 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.DownloadToStreamAsync(stream);
                     Assert.AreEqual(0, stream.Length);
                 }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("List blobs with an incremental copied blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task ListBlobsWithIncrementalCopiedBlobTestAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+                CloudPageBlob source = container.GetPageBlobReference("source");
+                await source.CreateAsync(1024);
+
+                CloudPageBlob sourceSnapshot = await source.CreateSnapshotAsync(null, null, null, null);
+
+                CloudPageBlob copy = container.GetPageBlobReference("copy");
+
+                SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+                };
+
+                string sasToken = sourceSnapshot.GetSharedAccessSignature(policy);
+
+                StorageCredentials blobSAS = new StorageCredentials(sasToken);
+                Uri sourceSnapshotUri = blobSAS.TransformUri(TestHelper.Defiddler(sourceSnapshot).SnapshotQualifiedUri);
+
+                StorageCredentials accountSAS = new StorageCredentials(sasToken);
+
+                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, source.ServiceClient.StorageUri, null, null, null);
+
+                CloudPageBlob snapshotWithSas = await accountWithSAS.CreateCloudBlobClient().GetBlobReferenceFromServerAsync(sourceSnapshot.SnapshotQualifiedUri) as CloudPageBlob;
+#if !FACADE_NETCORE
+                string copyId = await copy.StartIncrementalCopyAsync(accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri));
+#else
+                Uri snapShotQualifiedUri = accountSAS.TransformUri(TestHelper.Defiddler(snapshotWithSas).SnapshotQualifiedUri);
+                string copyId = await copy.StartIncrementalCopyAsync(new CloudPageBlob(new StorageUri(snapShotQualifiedUri), null, null));
+#endif
+                await WaitForCopyAsync(copy);
+
+                BlobResultSegment results = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null);
+
+                List<IListBlobItem> listResults = results.Results.ToList();
+                Assert.AreEqual(listResults.Count(), 4);
+
+                bool incrementalCopyFound = false;
+                foreach (IListBlobItem blobItem in listResults)
+                {
+                    CloudPageBlob blob = blobItem as CloudPageBlob;
+
+                    if (blob.Name == "copy" && blob.IsSnapshot)
+                    {
+                        // Check that the incremental copied blob is found exactly once
+                        Assert.IsFalse(incrementalCopyFound);
+                        Assert.IsTrue(blob.Properties.IsIncrementalCopy);
+                        Assert.IsTrue(blob.CopyState.DestinationSnapshotTime.HasValue);
+                        incrementalCopyFound = true;
+                    }
+                    else if (blob.Name == "copy")
+                    {
+                        Assert.IsTrue(blob.CopyState.DestinationSnapshotTime.HasValue);
+                    }
+                }
+
+                Assert.IsTrue(incrementalCopyFound);
+
             }
             finally
             {

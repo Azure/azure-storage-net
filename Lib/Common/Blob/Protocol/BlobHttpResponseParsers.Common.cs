@@ -152,6 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="copyProgressString">A string formatted as progressBytes/TotalBytes.</param>
         /// <param name="copyCompletionTimeString">The copy completion time, as a string, or <c>null</c>.</param>
         /// <param name="copyStatusDescription">The copy status description, if any.</param>
+        /// <param name="copyDestinationSnapshotTimeString">The incremental destination snapshot time for the latest incremental copy</param>
         /// <returns>A <see cref="CopyState"/> object populated from the given strings.</returns>
         internal static CopyState GetCopyAttributes(
             string copyStatusString,
@@ -159,7 +160,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copySourceString,
             string copyProgressString,
             string copyCompletionTimeString,
-            string copyStatusDescription)
+            string copyStatusDescription,
+            string copyDestinationSnapshotTimeString)
         {
             CopyState copyAttributes = new CopyState
             {
@@ -207,6 +209,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 copyAttributes.CompletionTime = copyCompletionTimeString.ToUTCTime();
             }
 
+            if (!string.IsNullOrEmpty(copyDestinationSnapshotTimeString))
+            {
+                copyAttributes.DestinationSnapshotTime = copyDestinationSnapshotTimeString.ToUTCTime();
+            }
+
             return copyAttributes;
         }
 
@@ -217,7 +224,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns><c>true</c> if blob encrypted or <c>false</c> if not.</returns>
         public static bool GetServerEncrypted(string encryptionHeader)
         {
-            return string.Equals(encryptionHeader, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+            return CheckIfTrue(encryptionHeader);
+        }
+
+        /// <summary>
+        /// Determines if a blob in an incremental copy.
+        /// </summary>
+        /// <param name="incrementalCopyHeader">String giving the incremental copy status of the blob</param>
+        /// <returns><c>true</c> if blob is an incremental copy or <c>false</c> if not.</returns>
+        public static bool GetIncrementalCopyStatus(string incrementalCopyHeader)
+        {
+            return CheckIfTrue(incrementalCopyHeader);
+        }
+
+        /// <summary>
+        /// Determines if the header is equal to the value true.
+        /// </summary>
+        /// <param name="header">The header to check</param>
+        /// <returns><c>true</c> if header equals true or <c>false</c> if not.</returns>
+        private static bool CheckIfTrue(string header)
+        {
+            return string.Equals(header, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

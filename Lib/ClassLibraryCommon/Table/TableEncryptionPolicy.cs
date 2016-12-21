@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Represents an encryption policy for performing envelope encryption/decryption of entities in Azure tables.
@@ -336,6 +337,61 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 throw new StorageException(SR.DecryptionLogicError, ex) { IsRetryable = false };
             }
+        }
+
+        private static void ValidateKeyRotationArguments(KeyRotationEntity rotationEntity, TableRequestOptions options, bool encryptionMetadataAvailable)
+        {
+            if (options.EncryptionPolicy == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionPolicy, "options.EncryptionPolicy");
+            }
+
+            if (options.EncryptionPolicy.Key == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionKey, "options.EncryptionPolicy.Key");
+            }
+
+            if (options.EncryptionPolicy.KeyResolver == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionKeyResolver, "options.EncryptionPolicy.KeyResolver");
+            }
+
+            if (rotationEntity.ETag == null)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoEtag);
+            }
+        }
+
+        internal static async Task<string> RotateEncryptionHelper(KeyRotationEntity rotationEntity, TableRequestOptions modifiedOptions, CancellationToken cancellationToken)
+        {
+            // Validate arguments:
+            String encryptionDataString = rotationEntity.encryptionMetadataJson;
+            TableEncryptionPolicy.ValidateKeyRotationArguments(rotationEntity, modifiedOptions, !String.IsNullOrWhiteSpace(encryptionDataString));
+
+            // Deserialize the old encryption data and validate:
+            EncryptionData tableEncryptionData = Newtonsoft.Json.JsonConvert.DeserializeObject<EncryptionData>(encryptionDataString);
+            if (tableEncryptionData.WrappedContentKey.EncryptedKey == null)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoKeyID);
+            }
+
+            // Use the key resolver to resolve the old KEK.
+            Azure.KeyVault.Core.IKey oldKey = await modifiedOptions.EncryptionPolicy.KeyResolver.ResolveKeyAsync(tableEncryptionData.WrappedContentKey.KeyId, cancellationToken).ConfigureAwait(false);
+
+            if (oldKey == null)
+            {
+                throw new ArgumentException(SR.KeyResolverCannotResolveExistingKey);
+            }
+
+            // Use the old KEK to unwrap the CEK.
+            byte[] unwrappedOldKey = await oldKey.UnwrapKeyAsync(tableEncryptionData.WrappedContentKey.EncryptedKey, tableEncryptionData.WrappedContentKey.Algorithm, cancellationToken).ConfigureAwait(false);
+
+            // Use the new KEK to re-wrap the CEK.
+            Tuple<byte[], string> wrappedNewKeyTuple = await modifiedOptions.EncryptionPolicy.Key.WrapKeyAsync(unwrappedOldKey, null /* algorithm */, cancellationToken).ConfigureAwait(false);
+
+            TaskCompletionSource<string> tcs = new TaskCompletionSource<string>();
+            tableEncryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedNewKeyTuple.Item1, wrappedNewKeyTuple.Item2);
+            return Newtonsoft.Json.JsonConvert.SerializeObject(tableEncryptionData);
         }
     }
 }

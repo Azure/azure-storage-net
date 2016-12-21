@@ -1,0 +1,52 @@
+{
+  "title": "Microsoft.WindowsAzure.Storage.Facade.NetCore.Test",
+  "version": "8.0.0.0",
+  "testRunner": "xunit",
+
+  "dependencies": {
+    "xunit": "2.1.0",
+    "dotnet-test-xunit": "2.2.0-preview2-build1029",
+    "XUnitForMsTest": "1.0.0.0"
+    },
+
+  "frameworks": {
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        },
+        "Microsoft.WindowsAzure.Storage.Facade.Portable": "8.0.0.0"
+      },
+      "imports": [
+        "dnxcore50",
+        "portable-net45+win8"
+      ]
+    }
+  },
+
+  "buildOptions": {
+    "define": [ "FACADE_NETCORE", "FACADE", "NETCORE", "XUNIT" ],
+    "delaySign": true,
+    "keyFile": "MSSharedLibKey.snk",
+    "outputName": "Microsoft.WindowsAzure.Storage.Facade.NetCore.Test",
+    "compile": [
+      "**/*.cs",
+      "../../../Common/*.cs",
+      "../../../Common/Blob/*.cs",
+      "../../../Common/Core/*.cs",
+      "../../../Common/File/*.cs",
+      "../../../Common/Queue/*.cs",
+      "../../../Common/Table/*.cs",
+      "../../../Common/Table/Entities/*.cs",
+      "../../../Common/Core/**/*.cs",
+      "../../../Common/TestConfigProcess/**/*.cs",
+
+      "../../../WindowsRuntime/Core/**/*.cs",
+      "../../../WindowsRuntime/Blob/**/*.cs",
+      "../../../WindowsRuntime/Queue/**/*.cs",
+      "../../../WindowsRuntime/File/**/*.cs",
+      "../../../WindowsRuntime/Table/**/*.cs"
+    ]
+  }
+}

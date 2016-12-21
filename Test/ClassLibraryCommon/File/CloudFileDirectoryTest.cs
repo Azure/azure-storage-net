@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Auth;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -264,6 +265,24 @@ namespace Microsoft.WindowsAzure.Storage.File
                         null);
                     waitHandle.WaitOne();
                     Assert.IsTrue(directory.EndCreateIfNotExists(result));
+
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory2");
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = directory2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(directory2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = directory2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(directory2.EndCreateIfNotExists(result));
                 }
             }
             finally
@@ -362,6 +381,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                 directory2.FetchAttributes();
                 Assert.AreEqual(1, directory2.Metadata.Count);
                 Assert.AreEqual("value1", directory2.Metadata["key1"]);
+
+                CloudFileDirectory directory3 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory3.Exists();
+                Assert.AreEqual(1, directory3.Metadata.Count);
+                Assert.AreEqual("value1", directory3.Metadata["key1"]);
             }
             finally
             {
@@ -605,6 +629,107 @@ namespace Microsoft.WindowsAzure.Storage.File
                     IListFileItem item22 = simpleList2.ElementAt(1);
                     Assert.IsTrue(item22.Uri.Equals(share.Uri + "/TopDir1/MidDir2/EndDir2"));
                     Assert.AreEqual("EndDir2", ((CloudFileDirectory)item22).Name);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("CloudFileDirectory listing with prefix")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryListFilesAndDirectoriesWithPrefix()
+        {
+            CloudFileClient client = GenerateCloudFileClient();
+            string name = GetRandomShareName();
+            CloudFileShare share = client.GetShareReference(name);
+
+            try
+            {
+                share.Create();
+                if (CloudFileDirectorySetup(share))
+                {
+                    CloudFileDirectory topDir1 = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1");
+                    
+                    IEnumerable<IListFileItem> res = topDir1.ListFilesAndDirectories("file");
+                    List<IListFileItem> list = res.ToList();
+                    Assert.IsTrue(list.Count == 1);
+                    IListFileItem item = list.ElementAt(0);
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/File1"));
+                    Assert.AreEqual("File1", ((CloudFile)item).Name);
+
+                    res = topDir1.ListFilesAndDirectories("mid");
+                    list = res.ToList();
+                    Assert.IsTrue(list.Count == 2);
+                    IListFileItem item1 = list.ElementAt(0);
+                    IListFileItem item2 = list.ElementAt(1);
+                    Assert.IsTrue(item1.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item1).Name);
+                    Assert.IsTrue(item2.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item2).Name);
+
+                    FileResultSegment segmentResults = topDir1.ListFilesAndDirectoriesSegmented(
+                        "mid" /* prefix */,
+                        1 /* maxCount */,
+                        null /* currentToken */,
+                        null /* options */,
+                        null /* operationContext */);
+
+                    Assert.IsTrue(segmentResults.ContinuationToken.NextMarker != null);
+                    Assert.IsTrue(segmentResults.Results.Count() == 1);
+                    item = segmentResults.Results.First();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item).Name);
+
+                    segmentResults = topDir1.ListFilesAndDirectoriesSegmented(
+                        "mid" /*prefix*/,
+                        null /*maxCount*/,
+                        segmentResults.ContinuationToken /*currentToken*/,
+                        null /* options */,
+                        null /* operationContext */);
+
+                    Assert.IsTrue(segmentResults.ContinuationToken == null);
+                    Assert.AreEqual(1, segmentResults.Results.Count());
+                    item = segmentResults.Results.First();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item).Name);
+
+                    List<IListFileItem> simpleList1 = new List<IListFileItem>();
+                    using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                    {
+                        FileContinuationToken token = null;
+                        do
+                        {
+                            IAsyncResult result = topDir1.BeginListFilesAndDirectoriesSegmented(
+                            "mid" /* prefix */,
+                            null /* maxCount */,
+                            segmentResults.ContinuationToken /* currentToken */,
+                            null /* options */,
+                            null /* operationContext */,
+                            ar => waitHandle.Set(),
+                                    null);
+                            waitHandle.WaitOne();
+                            FileResultSegment segment = topDir1.EndListFilesAndDirectoriesSegmented(result);
+                            simpleList1.AddRange(segment.Results);
+                            token = segment.ContinuationToken;
+                        }
+                        while (token != null);
+                    }
+
+                    Assert.IsTrue(segmentResults.ContinuationToken == null);
+                    Assert.AreEqual(2, simpleList1.Count());
+                    item = simpleList1.First();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item).Name);
+
+                    item = simpleList1.Last();
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item).Name);
                 }
             }
             finally
@@ -1096,6 +1221,49 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Test the behavior of CreateIfNotExists on the root directory.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryRootDirectoryCreateIfNotExistsTest()
+        {
+            // This logic needs to be tested because when we call CreateIfNotExists(), internally we just call
+            // Create(), and check for an Http.Conflict (409).
+            // However, if you try to call Create() on the root directory, it will return a 405, 
+            // regardless of whether or not the share / root directory exists.
+
+            CloudFileClient client = GenerateCloudFileClient();
+            string name = GetRandomShareName();
+            CloudFileShare share = client.GetShareReference(name);
+            try
+            {
+                CloudFileDirectory rootDir = share.GetRootDirectoryReference();
+
+                string expectedErrorText = "The remote server returned an error: (404) Not Found.";
+                TestHelper.ExpectedException<StorageException>(() => rootDir.CreateIfNotExists(), expectedErrorText);
+                TestHelper.ExpectedException<StorageException>(() => rootDir.EndCreateIfNotExists(rootDir.BeginCreateIfNotExists(null, null)), expectedErrorText);
+                TestHelper.ExpectedException<StorageException>(() => rootDir.CreateIfNotExistsAsync().Wait(), expectedErrorText);
+                TestHelper.ExpectedException<StorageException>(() => rootDir.CreateIfNotExistsAsync().Wait(), expectedErrorText);
+
+                share.CreateIfNotExists();
+
+                // Root directory always already exists
+                Assert.IsFalse(rootDir.CreateIfNotExists());
+                Assert.IsFalse(rootDir.EndCreateIfNotExists(rootDir.BeginCreateIfNotExists(null, null)));
+                Assert.IsFalse(rootDir.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(rootDir.CreateIfNotExistsAsync(null, null).Result);
+
+                // We don't need to worry about the Delete-If-Exists case, if you try and delete the root directory it'll
+                // fail, which is fine.
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("Hierarchical traversal")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1184,6 +1352,126 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             dir = share.GetRootDirectoryReference().GetDirectoryReference(share.Uri.AbsoluteUri + "/TopDir1");
             Assert.AreEqual(NavigationHelper.AppendPathToSingleUri(share.Uri, share.Uri.AbsoluteUri + "/TopDir1"), dir.Uri);
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateAndDeleteWithWriteOnlyPermissionsSync()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            fileShareWithSAS.CreateIfNotExists();
+            CloudFileDirectory fileDirectoryWithSAS = fileShareWithSAS.GetRootDirectoryReference().GetDirectoryReference("directory1");
+            try
+            {
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExists());
+                Assert.IsTrue(fileDirectoryWithSAS.CreateIfNotExists());
+                Assert.IsFalse(fileDirectoryWithSAS.CreateIfNotExists());
+                Assert.IsTrue(fileDirectoryWithSAS.DeleteIfExists());
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExists());
+            }
+            finally
+            {
+                fileDirectoryWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - APM ")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateAndDeleteWithWriteOnlyPermissionsAPM()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            fileShareWithSAS.CreateIfNotExistsAsync();
+            CloudFileDirectory fileDirectoryWithSAS = fileShareWithSAS.GetRootDirectoryReference().GetDirectoryReference("directory1");
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    result = fileDirectoryWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileDirectoryWithSAS.EndDeleteIfExists(result));
+
+                    result = fileDirectoryWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(fileDirectoryWithSAS.EndCreateIfNotExists(result));
+
+                    result = fileDirectoryWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileDirectoryWithSAS.EndCreateIfNotExists(result));
+
+                    result = fileDirectoryWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(fileDirectoryWithSAS.EndDeleteIfExists(result));
+
+                    result = fileDirectoryWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileDirectoryWithSAS.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                fileShareWithSAS.DeleteIfExists();
+            }
+
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateAndDeleteWithWriteOnlyPermissionsTask()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            fileShareWithSAS.CreateIfNotExistsAsync();
+            CloudFileDirectory fileDirectoryWithSAS = fileShareWithSAS.GetRootDirectoryReference().GetDirectoryReference("directory1");
+            try
+            {
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(fileDirectoryWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(fileDirectoryWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(fileDirectoryWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(fileDirectoryWithSAS.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                fileShareWithSAS.DeleteIfExists();
+            }
+        }
+#endif
+
+        private CloudFileShare GenerateRandomWriteOnlyFileShare()
+        {
+            string fileName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.File,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+            };
+
+            CloudFileClient fileClient = GenerateCloudFileClient();
+            CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = fileClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
+            CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
+            CloudFileShare fileShareWithSAS = fileClientWithSAS.GetShareReference(fileName);
+            return fileShareWithSAS;
         }
     }
 }

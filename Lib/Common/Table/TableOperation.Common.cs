@@ -45,7 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         internal TableOperation(ITableEntity entity, TableOperationType operationType, bool echoContent)
         {
-            if (entity == null && operationType != TableOperationType.Retrieve)
+            if (entity == null && operationType != TableOperationType.Retrieve && operationType != TableOperationType.RotateEncryptionKey)
             {
                 throw new ArgumentNullException("entity");
             }
@@ -76,6 +76,58 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         internal string RetrieveRowKey { get; set; }
 
+        internal string PartitionKey
+        {
+            get
+            {
+                switch (this.OperationType)
+                {
+                    case TableOperationType.Retrieve:
+                        return this.RetrievePartitionKey;
+#if !(WINDOWS_RT || NETCORE)
+                    case TableOperationType.RotateEncryptionKey:
+                        return this.keyRotationEntity.PartitionKey;
+#endif
+                    default:
+                        return this.Entity.PartitionKey;
+                }
+            }
+        }
+
+        internal string RowKey
+        {
+            get
+            {
+                switch (this.OperationType)
+                {
+                    case TableOperationType.Retrieve:
+                        return this.RetrieveRowKey;
+#if !(WINDOWS_RT || NETCORE)
+                    case TableOperationType.RotateEncryptionKey:
+                        return this.keyRotationEntity.RowKey;
+#endif
+                    default:
+                        return this.Entity.RowKey;
+                }
+            }
+        }
+
+        internal string ETag
+        {
+            get
+            {
+                switch (this.OperationType)
+                {
+#if !(WINDOWS_RT || NETCORE)
+                    case TableOperationType.RotateEncryptionKey:
+                        return this.keyRotationEntity.ETag;
+#endif
+                    default:
+                        return this.Entity.ETag;
+                }
+            }
+        }
+
         private Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, object> retrieveResolver = null;
 
         internal Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, object> RetrieveResolver
@@ -101,12 +153,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Gets the entity that is being operated upon.
         /// </summary>
-        internal ITableEntity Entity { get; private set; }
+        public ITableEntity Entity { get; private set; }
+
+#if !(WINDOWS_RT || NETCORE)
+        /// <summary>
+        /// The entity used for key rotation.
+        /// If this is set, then Entity must not be set.
+        /// </summary>
+        internal KeyRotationEntity keyRotationEntity;
+#endif
 
         /// <summary>
         /// Gets the type of operation.
         /// </summary>
-        internal TableOperationType OperationType { get; private set; }
+        public TableOperationType OperationType { get; private set; }
 
         /// <summary>
         /// Gets or sets the value that represents whether the message payload should be returned in the response.
@@ -314,6 +374,22 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return new TableOperation(null /* entity */, TableOperationType.Retrieve) { RetrievePartitionKey = partitionKey, RetrieveRowKey = rowkey, SelectColumns = selectedColumns };
         }
 
+#if !(WINDOWS_RT || NETCORE)
+        /// <summary>
+        /// Creates a new table operation that rotates the content encryption key of
+        /// the given entity in a table.
+        /// </summary>
+        /// <param name="entity">The <see cref="KeyRotationEntity"/> entity to have its key rotated.  Must be the output of a call to an "ExecuteQueryForKeyRotation()" call.</param>
+        /// <returns>The <see cref="TableOperation"/> object.</returns>
+        public static TableOperation RotateEncryptionKey(KeyRotationEntity entity)
+        {
+            // Validate a bunch of stuff here
+            TableOperation rotationOperation = new TableOperation(null, TableOperationType.RotateEncryptionKey, false);
+            rotationOperation.keyRotationEntity = entity;
+            return rotationOperation;
+        }
+#endif
+
         private static object DynamicEntityResolver(string partitionKey, string rowKey, DateTimeOffset timestamp, IDictionary<string, EntityProperty> properties, string etag)
         {
             ITableEntity entity = new DynamicTableEntity();
@@ -353,15 +429,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     // Note tableEntity is only used internally, so we can assume operationContext is not needed
                     identity = string.Format(CultureInfo.InvariantCulture, "'{0}'", this.Entity.WriteEntity(null /* OperationContext  */)[TableConstants.TableName].StringValue);
                 }
-                else if (this.OperationType == TableOperationType.Retrieve)
-                {
-                    // OData readers expect single quote to be escaped in a param value.
-                    identity = string.Format(CultureInfo.InvariantCulture, "{0}='{1}',{2}='{3}'", TableConstants.PartitionKey, this.RetrievePartitionKey.Replace("'", "''"), TableConstants.RowKey, this.RetrieveRowKey.Replace("'", "''"));
-                }
                 else
                 {
                     // OData readers expect single quote to be escaped in a param value.
-                    identity = string.Format(CultureInfo.InvariantCulture, "{0}='{1}',{2}='{3}'", TableConstants.PartitionKey, this.Entity.PartitionKey.Replace("'", "''"), TableConstants.RowKey, this.Entity.RowKey.Replace("'", "''"));
+                    identity = string.Format(CultureInfo.InvariantCulture, "{0}='{1}',{2}='{3}'", TableConstants.PartitionKey, this.PartitionKey.Replace("'", "''"), TableConstants.RowKey, this.RowKey.Replace("'", "''"));
                 }
 
                 return NavigationHelper.AppendPathToSingleUri(uri, string.Format(CultureInfo.InvariantCulture, "{0}({1})", tableName, identity));

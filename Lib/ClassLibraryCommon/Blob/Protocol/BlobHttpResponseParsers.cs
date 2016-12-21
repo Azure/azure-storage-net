@@ -64,12 +64,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             properties.ContentDisposition = response.Headers[Constants.HeaderConstants.ContentDispositionResponseHeader];
             properties.ContentEncoding = response.Headers[HttpResponseHeader.ContentEncoding];
-            properties.ContentMD5 = response.Headers[HttpResponseHeader.ContentMd5];
+
+            // For range gets, only look at 'x-ms-blob-content-md5' for overall MD5
+            if (response.Headers[HttpResponseHeader.ContentRange] != null)
+            {
+                properties.ContentMD5 = response.Headers[Constants.HeaderConstants.BlobContentMD5Header];
+            }
+            else
+            {
+                properties.ContentMD5 = response.Headers[HttpResponseHeader.ContentMd5];
+            }
+
             properties.ContentType = response.Headers[HttpResponseHeader.ContentType];
             properties.CacheControl = response.Headers[HttpResponseHeader.CacheControl];
 
             string blobEncryption = response.Headers[Constants.HeaderConstants.ServerEncrypted];
             properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+
+            string incrementalCopy = response.Headers[Constants.HeaderConstants.IncrementalCopyHeader];
+            properties.IsIncrementalCopy = string.Equals(incrementalCopy, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
             // Get blob type
             string blobType = response.Headers[Constants.HeaderConstants.BlobType];
@@ -228,7 +241,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     response.Headers[Constants.HeaderConstants.CopySourceHeader],
                     response.Headers[Constants.HeaderConstants.CopyProgressHeader],
                     response.Headers[Constants.HeaderConstants.CopyCompletionTimeHeader],
-                    response.Headers[Constants.HeaderConstants.CopyDescriptionHeader]);
+                    response.Headers[Constants.HeaderConstants.CopyDescriptionHeader],
+                    response.Headers[Constants.HeaderConstants.CopyDestinationSnapshotHeader]);
             }
             else
             {

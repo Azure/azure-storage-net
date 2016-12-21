@@ -151,11 +151,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new Uri("http://" + AccountName + FileService + EndpointSuffix),
                 new Uri("http://" + AccountName + SecondarySuffix + FileService + EndpointSuffix));
 
-#if WINDOWS_RT
-            CloudStorageAccount account = CloudStorageAccount.Create(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);
-#else
             CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);
-#endif
+
             Assert.IsTrue(blobEndpoint.Equals(account.BlobStorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.QueueStorageUri));
             Assert.IsTrue(tableEndpoint.Equals(account.TableStorageUri));

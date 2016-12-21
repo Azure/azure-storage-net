@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using System.Net.Http;
     using System.Threading.Tasks;
 
-    internal class HttpResponseAdapterMessage : IODataResponseMessage
+    internal class HttpResponseAdapterMessage : IODataResponseMessageAsync
     {
         private HttpResponseMessage resp = null;
         private Stream str = null;

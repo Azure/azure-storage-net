@@ -50,10 +50,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 {
                     properties.ContentDisposition = response.Content.Headers.ContentDisposition.ToString();
                 }
-                
-                if (response.Content.Headers.ContentMD5 != null)
+
+                if (response.Content.Headers.ContentMD5 != null && response.Content.Headers.ContentRange == null)
                 {
                     properties.ContentMD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
+                }
+                else if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header)))
+                {
+                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
                 }
 
                 if (response.Content.Headers.ContentType != null)
@@ -63,6 +67,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
                 string blobEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
                 properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+
+                string incrementalCopy = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.IncrementalCopyHeader);
+                properties.IsIncrementalCopy = string.Equals(incrementalCopy, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
                 // Get the content length. Prioritize range and x-ms over content length for the special cases.
                 string contentLengthHeader = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentLengthHeader);
@@ -214,7 +221,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopySourceHeader),
                     response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyProgressHeader),
                     response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyCompletionTimeHeader),
-                    response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyDescriptionHeader));
+                    response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyDescriptionHeader),
+                    response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CopyDestinationSnapshotHeader));
             }
             else
             {

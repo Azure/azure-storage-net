@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.Auth;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -456,8 +457,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void CloudTableCreateIfNotExistsAPM()
         {
             CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = GenerateRandomTableName();
-            CloudTable tableRef = tableClient.GetTableReference(tableName);
+            CloudTable tableRef = tableClient.GetTableReference(GenerateRandomTableName());
+            CloudTable tableRef2 = tableClient.GetTableReference(GenerateRandomTableName());
 
             try
             {
@@ -495,10 +496,31 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     // Table should not have been created
                     Assert.IsFalse(tableRef.EndCreateIfNotExists(result));
                 }
+
+                using (ManualResetEvent evt = new ManualResetEvent(false))
+                {
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => evt.Set();
+                    IAsyncResult result = tableRef2.BeginCreateIfNotExists(null, context, null, null);
+                    evt.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(tableRef2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => evt.Set();
+                    result = tableRef2.BeginCreateIfNotExists(null, context, null, null);
+                    evt.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(tableRef2.EndCreateIfNotExists(result));
+                }
             }
             finally
             {
                 tableRef.DeleteIfExists();
+                tableRef2.DeleteIfExists();
             }
         }
         #endregion
@@ -1302,5 +1324,131 @@ namespace Microsoft.WindowsAzure.Storage.Table
         #endregion
 
         #endregion
+
+        #region Table Permissions Create and Delete
+
+        #region SYNC
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableCreateAndDeleteWithWriteOnlyPermissionsSync()
+        {
+            CloudTable tableWithSAS = GenerateRandomWriteOnlyTable();
+            try
+            {
+                Assert.IsFalse(tableWithSAS.DeleteIfExists());
+                Assert.IsTrue(tableWithSAS.CreateIfNotExists());
+                Assert.IsFalse(tableWithSAS.CreateIfNotExists());
+                Assert.IsTrue(tableWithSAS.DeleteIfExists());
+                Assert.IsFalse(tableWithSAS.DeleteIfExists());
+            }
+            finally
+            {
+                tableWithSAS.DeleteIfExists();
+            }
+        }
+        #endregion
+
+        #region APM
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - APM ")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableCreateAndDeleteWithWriteOnlyPermissionsAPM()
+        {
+            CloudTable tableWithSAS = GenerateRandomWriteOnlyTable();
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    result = tableWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(tableWithSAS.EndDeleteIfExists(result));
+
+                    result = tableWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(tableWithSAS.EndCreateIfNotExists(result));
+
+                    result = tableWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(tableWithSAS.EndCreateIfNotExists(result));
+
+                    result = tableWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(tableWithSAS.EndDeleteIfExists(result));
+
+                    result = tableWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(tableWithSAS.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                tableWithSAS.DeleteIfExists();
+            }
+
+        }
+        #endregion
+
+        #region TASK
+#if TASK
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - TASK ")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableCreateAndDeleteWithWriteOnlyPermissionsTask()
+        {
+            CloudTable tableWithSAS = GenerateRandomWriteOnlyTable();
+            try
+            {
+                Assert.IsFalse(tableWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(tableWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(tableWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(tableWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(tableWithSAS.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                tableWithSAS.DeleteIfExists();
+            }
+        }
+#endif
+        #endregion
+
+        private CloudTable GenerateRandomWriteOnlyTable()
+        {
+            string tableName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.Table,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+
+            };
+
+            CloudTableClient tableClient = GenerateCloudTableClient();
+            CloudStorageAccount account = new CloudStorageAccount(tableClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = tableClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, tableClient.StorageUri, null);
+            CloudTableClient tableClientWithSAS = accountWithSAS.CreateCloudTableClient();
+            CloudTable tableWithSAS = tableClientWithSAS.GetTableReference(tableName);
+
+            return tableWithSAS;
+        }
+        #endregion
+
     }
 }

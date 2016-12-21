@@ -174,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>Note that the root container must be explicitly created, if it does not already exist, before
         /// you can read from it or write to it.</remarks>
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Reviewed")]
-        public CloudBlobContainer GetRootContainerReference()
+        public virtual CloudBlobContainer GetRootContainerReference()
         {
             return new CloudBlobContainer(NavigationHelper.RootContainerName, this);
         }
@@ -184,7 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="containerName">A string containing the name of the container.</param>
         /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
-        public CloudBlobContainer GetContainerReference(string containerName)
+        public virtual CloudBlobContainer GetContainerReference(string containerName)
         {
             CommonUtility.AssertNotNullOrEmpty("containerName", containerName);
             return new CloudBlobContainer(containerName, this);
