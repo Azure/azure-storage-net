@@ -184,6 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         /// [Description("Upload from file to a file")]
         [TestCategory(ComponentCategory.File)]
@@ -197,6 +198,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             await this.DoUploadDownloadFileAsync(file, 4096);
             await this.DoUploadDownloadFileAsync(file, 4097);
         }
+#endif
 
         private async Task DoUploadDownloadFileAsync(CloudFile file, int fileSize)
         {
@@ -215,6 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await localFile.WriteAsync(buffer, 0, buffer.Length);
                 }
 
+#if !FACADE_NETCORE
                 await file.UploadFromFileAsync(inputFileName);
 
                 OperationContext context = new OperationContext();
@@ -224,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 context = new OperationContext();
                 await file.DownloadToFileAsync(outputFileName, FileMode.CreateNew, null, null, context);
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
-
+#endif
                 using (FileStream inputFile = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
                     outputFile = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
                 {
@@ -237,7 +240,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 System.IO.File.Delete(outputFileName);
             }
 #else
-            StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
+                StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
             StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
             StorageFile outputFile = await tempFolder.CreateFileAsync("output.file", CreationCollisionOption.GenerateUniqueName);
             try
@@ -482,7 +485,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
-#if NETCORE
+#if NETCORE && !FACADE_NETCORE
         [TestMethod]
         [Description("Upload from file to a file with file cleanup for failure cases")]
         [TestCategory(ComponentCategory.File)]
@@ -529,7 +532,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-        #region Negative tests
+#region Negative tests
         [TestMethod]
         // [Description("Single put file and get file")]
         [TestCategory(ComponentCategory.File)]

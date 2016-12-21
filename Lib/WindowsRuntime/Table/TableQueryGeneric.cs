@@ -141,7 +141,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             queryCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(token);
             queryCmd.RetrieveResponseStream = true;
-            queryCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            queryCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             queryCmd.Builder = builder;
             queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);

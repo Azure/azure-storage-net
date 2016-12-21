@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// <summary>
     /// Represents a segment of <see cref="CloudFileShare"/> results and contains continuation and pagination information.
     /// </summary>
-    public sealed class ShareResultSegment
+    public class ShareResultSegment
     {
         internal ShareResultSegment(IEnumerable<CloudFileShare> shares, FileContinuationToken continuationToken)
         {

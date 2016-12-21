@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Creates the directory if it does not already exist.
         /// </summary>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise, <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -90,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext)
         {
@@ -104,24 +104,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () =>
             {
-                bool exists = await Executor.ExecuteAsync(
-                    this.ExistsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
-
-                if (exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await Executor.ExecuteAsync(
@@ -223,15 +212,25 @@ namespace Microsoft.WindowsAzure.Storage.File
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () =>
             {
-                bool exists = await Executor.ExecuteAsync(
-                    this.ExistsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
-
-                if (!exists)
+                try
                 {
-                    return false;
+                    bool exists = await Executor.ExecuteAsync(
+                        this.ExistsImpl(modifiedOptions),
+                        modifiedOptions.RetryPolicy,
+                        operationContext,
+                        cancellationToken);
+
+                    if (!exists)
+                    {
+                        return false;
+                    }
+                }
+                catch (StorageException e)
+                {
+                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                    {
+                        throw;
+                    }
                 }
 
                 try
@@ -346,7 +345,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(FileContinuationToken currentToken)
         {
-            return this.ListFilesAndDirectoriesSegmentedAsync(null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
+            return this.ListFilesAndDirectoriesSegmentedAsync(null /* prefix */, null /* maxResults */, currentToken, null /* options */, null /* operationContext */);
         }
 
         /// <summary>
@@ -354,15 +353,32 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// in the share.
         /// </summary>
         /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
-        /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>         
-        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param> 
+        /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <returns>A file result segment.</returns>
         [DoesServiceRequest]
         public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
         {
-            return this.ListFilesAndDirectoriesSegmentedAsync(maxResults, currentToken, options, operationContext, CancellationToken.None);
+            return this.ListFilesAndDirectoriesSegmentedAsync(null /* prefix */, maxResults, currentToken, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Returns a result segment containing a collection of file items 
+        /// in the share.
+        /// </summary>
+        /// <param name="prefix">A string containing the file or directory name prefix.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
+        /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <returns>A file result segment.</returns>
+        [DoesServiceRequest]
+        public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.ListFilesAndDirectoriesSegmentedAsync(prefix, maxResults, currentToken, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -379,11 +395,29 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.ListFilesAndDirectoriesSegmentedAsync(null /* prefix */, maxResults, currentToken, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Returns a result segment containing a collection of file items 
+        /// in the share.
+        /// </summary>
+        /// <param name="prefix">A string containing the file or directory name prefix.</param>
+        /// <param name="maxResults">A non-negative integer value that indicates the maximum number of results to be returned at a time, up to the 
+        /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>         
+        /// <param name="currentToken">A continuation token returned by a previous listing operation.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A file result segment.</returns>
+        [DoesServiceRequest]
+        public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () =>
             {
                 ResultSegment<IListFileItem> resultSegment = await Executor.ExecuteAsync(
-                    this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken),
+                    this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken, prefix),
                     modifiedOptions.RetryPolicy,
                     operationContext,
                     cancellationToken);
@@ -484,7 +518,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<bool> getCmd = new RESTCommand<bool>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(getCmd);
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.GetProperties(uri, serverTimeout, null, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, null, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
@@ -494,6 +528,8 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
                 this.Properties = DirectoryHttpResponseParsers.GetProperties(resp);
+                this.Metadata = DirectoryHttpResponseParsers.GetMetadata(resp);
+
                 return true;
             };
 
@@ -511,7 +547,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> getCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(getCmd);
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.GetProperties(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -530,12 +566,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// per-operation limit of 5000. If this value is zero, the maximum possible number of results will be returned, up to 5000.</param>         
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="currentToken">The continuation token.</param>
+        /// <param name="prefix">A string containing the file or directory name prefix.</param>
         /// <returns>A <see cref="RESTCommand"/> that lists the files.</returns>
-        private RESTCommand<ResultSegment<IListFileItem>> ListFilesAndDirectoriesImpl(int? maxResults, FileRequestOptions options, FileContinuationToken currentToken)
+        private RESTCommand<ResultSegment<IListFileItem>> ListFilesAndDirectoriesImpl(int? maxResults, FileRequestOptions options, FileContinuationToken currentToken, string prefix)
         {
             FileListingContext listingContext = new FileListingContext(maxResults)
             {
-                Marker = currentToken != null ? currentToken.NextMarker : null
+                Marker = currentToken != null ? currentToken.NextMarker : null,
+                Prefix = string.IsNullOrEmpty(prefix) ? null : prefix
             };
 
             RESTCommand<ResultSegment<IListFileItem>> getCmd = new RESTCommand<ResultSegment<IListFileItem>>(this.ServiceClient.Credentials, this.StorageUri);
@@ -543,7 +581,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.List(uri, serverTimeout, this.Share.SnapshotTime, listingContext, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {

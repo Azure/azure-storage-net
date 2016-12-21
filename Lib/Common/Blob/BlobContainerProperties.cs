@@ -53,5 +53,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <value>A <see cref="LeaseDuration"/> object that indicates the container's lease duration.</value>
         public LeaseDuration LeaseDuration { get; internal set; }
+
+        /// <summary>
+        ///  Gets the public access for the container.
+        /// </summary>
+        /// <remarks>This field should only be set using the container's Create() method or SetPermissions() method</remarks>
+        /// <value>A <see cref="BlobContainerPublicAccessType"/> that specifies the level of public access that is allowed on the container.</value>
+        public BlobContainerPublicAccessType? PublicAccess { get; internal set; }
     }
 }

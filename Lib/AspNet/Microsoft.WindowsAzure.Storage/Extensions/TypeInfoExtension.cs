@@ -15,6 +15,8 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using System.Linq;
+
 namespace Microsoft.WindowsAzure.Storage.Extensions
 {
     using System;
@@ -23,17 +25,21 @@ namespace Microsoft.WindowsAzure.Storage.Extensions
 
     internal static class TypeInfoExtension
     {
-        public static IEnumerable<PropertyInfo> GetAllProperties(this TypeInfo typeInfo) 
+        public static IEnumerable<PropertyInfo> GetAllProperties(this TypeInfo typeInfo)
         {
+            IList<PropertyInfo> propertyList = new List<PropertyInfo>();
+
             while (typeInfo != null)
             {
-                foreach (var t in typeInfo.DeclaredProperties)
+                foreach (var declaredProperty in typeInfo.DeclaredProperties.Where(declaredProperty => propertyList.All(x => x.Name != declaredProperty.Name)))
                 {
-                    yield return t;
+                    propertyList.Add(declaredProperty);
                 }
 
                 typeInfo = typeInfo.BaseType?.GetTypeInfo();
             }
+
+            return propertyList;
         }
     }
 }

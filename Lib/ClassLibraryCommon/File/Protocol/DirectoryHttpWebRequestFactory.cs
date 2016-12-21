@@ -92,7 +92,23 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return DirectoryHttpWebRequestFactory.GetProperties(uri, timeout, null /* shareSnapshot */, accessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to return the properties and user-defined metadata for this directory.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the directory.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        internal static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            DirectoryHttpWebRequestFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, directoryBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -110,7 +126,23 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return DirectoryHttpWebRequestFactory.GetMetadata(uri, timeout, null /* shareSnapshot */, accessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to return the user-defined metadata for this directory.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the directory.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            DirectoryHttpWebRequestFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, directoryBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -128,7 +160,23 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest List(Uri uri, int? timeout, FileListingContext listingContext, bool useVersionHeader, OperationContext operationContext)
         {
+            return DirectoryHttpWebRequestFactory.List(uri, timeout, listingContext, null /* shareSnapshot */, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to return a listing of all files and subdirectories in the directory.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the share.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="listingContext">A set of parameters for the listing operation.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        internal static HttpWebRequest List(Uri uri, int? timeout, FileListingContext listingContext, DateTimeOffset? shareSnapshot, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
+            DirectoryHttpWebRequestFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
             directoryBuilder.Add(Constants.QueryConstants.Component, "list");
 
             if (listingContext != null)
@@ -141,6 +189,11 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 if (listingContext.MaxResults.HasValue)
                 {
                     directoryBuilder.Add("maxresults", listingContext.MaxResults.ToString());
+                }
+
+                if (listingContext.Prefix != null)
+                {
+                    directoryBuilder.Add("prefix", listingContext.Prefix);
                 }
             }
 
@@ -163,6 +216,19 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             HttpWebRequest request = HttpWebRequestFactory.SetMetadata(uri, timeout, directoryBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
             return request;
+        }
+
+        /// <summary>
+        /// Adds the share snapshot.
+        /// </summary>
+        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/> that contains additional parameters to add to the URI query string.</param>
+        /// <param name="snapshot">The snapshot version, if the share is a snapshot.</param>
+        private static void AddShareSnapshot(UriQueryBuilder builder, DateTimeOffset? snapshot)
+        {
+            if (snapshot.HasValue)
+            {
+                builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
+            }
         }
 
         /// <summary>

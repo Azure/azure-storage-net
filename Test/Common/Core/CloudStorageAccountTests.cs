@@ -36,6 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     public class CloudStorageAccountTests : TestBase
     {
         private string token = "?sp=abcde&sig=1";
+        private string tokenWithApiVersion = "?sp=abcde&sig=1&api-version=2015-04-05";
 
         [TestMethod]
         [Description("Anonymous credentials")]
@@ -121,6 +122,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             TestHelper.ExpectedException<InvalidOperationException>(
                 () => cred.UpdateKey(base64EncodedDummyKey),
                 "Updating shared key on a SAS credentials instance should fail.");
+
+            TestHelper.ExpectedException<ArgumentException>(
+                () => new StorageCredentials(tokenWithApiVersion),
+                "Unexpected 'api-version' parameter included in the SAS token.");
         }
 
         [TestMethod]

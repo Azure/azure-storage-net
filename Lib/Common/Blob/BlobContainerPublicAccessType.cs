@@ -35,6 +35,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Blob-level public access. Anonymous clients can read blob data within this container, but not container data.
         /// </summary>
-        Blob
+        Blob,
+
+        /// <summary>
+        /// Unknown access type.
+        /// </summary>
+        Unknown
     }
 }

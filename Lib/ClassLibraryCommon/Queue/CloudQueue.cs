@@ -154,47 +154,37 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-
-            bool exists = this.Exists(true, modifiedOptions, operationContext);
-            if (exists)
-            {
-                return false;
-            }
-
             try
             {
-                this.Create(modifiedOptions, operationContext);
-                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NoContent)
-                {
-                    return false;
-                }
-
-                return true;
+                this.Create(options, operationContext);
             }
             catch (StorageException e)
             {
-                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists)))
                 {
-                    if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return false;
                 }
                 else
                 {
                     throw;
                 }
+            }
+
+            if ((operationContext.LastResult != null) &&
+                (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Created))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 #endif
@@ -205,7 +195,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(AsyncCallback callback, object state)
         {
@@ -220,98 +210,27 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-
-            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistsHandler, storageAsyncResult);
-
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = currentRes.Cancel;
-            return storageAsyncResult;
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void CreateIfNotExistsHandler(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<bool> storageAsyncResult = asyncResult.AsyncState as StorageAsyncResult<bool>;
-            bool exists = false;
-
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                storageAsyncResult.CancelDelegate = null;
-                storageAsyncResult.UpdateCompletedSynchronously(asyncResult.CompletedSynchronously);
-
-                try
+            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
+                modifiedOptions,
+                operationContext,
+                createResult =>
                 {
-                    exists = this.EndExists(asyncResult);
-
-                    if (exists)
+                    if (callback != null)
                     {
-                        storageAsyncResult.Result = false;
-                        storageAsyncResult.OnComplete();
+                        callback(createResult);
                     }
-                    else
-                    {
-                        ICancellableAsyncResult currentRes = this.BeginCreate(
-                             (QueueRequestOptions)storageAsyncResult.RequestOptions,
-                             storageAsyncResult.OperationContext,
-                             createRes =>
-                             {
-                                 storageAsyncResult.CancelDelegate = null;
-                                 storageAsyncResult.UpdateCompletedSynchronously(createRes.CompletedSynchronously);
+                },
+                null);
 
-                                 try
-                                 {
-                                     this.EndCreate(createRes);
-                                     storageAsyncResult.Result = true;
-                                     storageAsyncResult.OnComplete();
-                                 }
-                                 catch (StorageException e)
-                                 {
-                                     if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
-                                     {
-                                         if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                             (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists))
-                                         {
-                                             storageAsyncResult.Result = false;
-                                             storageAsyncResult.OnComplete();
-                                         }
-                                         else
-                                         {
-                                             storageAsyncResult.OnComplete(e);
-                                         }
-                                     }
-                                     else
-                                     {
-                                         storageAsyncResult.OnComplete(e);
-                                     }
-                                 }
-                                 catch (Exception createEx)
-                                 {
-                                     storageAsyncResult.OnComplete(createEx);
-                                 }
-                             },
-                             null);
-
-                        storageAsyncResult.CancelDelegate = currentRes.Cancel;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    storageAsyncResult.OnComplete(ex);
-                }
-            }
+            return savedCreateResult;
         }
 
         /// <summary>
@@ -321,10 +240,38 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = asyncResult as StorageAsyncResult<bool>;
-            CommonUtility.AssertNotNull("AsyncResult", res);
-            res.End();
-            return res.Result;
+            ExecutionState<NullType> executionResult = asyncResult as ExecutionState<NullType>;
+            CommonUtility.AssertNotNull("AsyncResult", executionResult);
+            try
+            {
+                this.EndCreate(executionResult);
+                if ((executionResult.OperationContext.LastResult != null) &&
+                    (executionResult.OperationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Created))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists)))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }            
         }
 
 #if TASK
@@ -332,7 +279,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Initiates an asynchronous operation to create the queue if it does not already exist.
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -344,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(CancellationToken cancellationToken)
         {
@@ -357,7 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -371,7 +318,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -392,10 +339,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            bool exists = this.Exists(true, modifiedOptions, operationContext);
-            if (!exists)
+            try
             {
-                return false;
+                bool exists = this.Exists(true, modifiedOptions, operationContext);
+                if (!exists)
+                {
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
             }
 
             try
@@ -457,38 +414,50 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 OperationContext = operationContext,
             };
 
-            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
-
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = currentRes.Cancel;
+            this.DeleteIfExistsHandler(modifiedOptions, operationContext, storageAsyncResult);
             return storageAsyncResult;
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void DeleteIfExistsHandler(IAsyncResult asyncResult)
+        private void DeleteIfExistsHandler(QueueRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            StorageAsyncResult<bool> storageAsyncResult = asyncResult.AsyncState as StorageAsyncResult<bool>;
-            bool exists = false;
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                storageAsyncResult.CancelDelegate = null;
-                storageAsyncResult.UpdateCompletedSynchronously(asyncResult.CompletedSynchronously);
-
-                try
+            ICancellableAsyncResult savedExistsResult = this.BeginExists(
+                true,
+                options,
+                operationContext,
+                existsResult =>
                 {
-                    exists = this.EndExists(asyncResult);
+                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
+                    lock (storageAsyncResult.CancellationLockerObject)
+                    {
+                        storageAsyncResult.CancelDelegate = null;
+                        try
+                        {
+                            bool exists = this.EndExists(existsResult);
+                            if (!exists)
+                            {
+                                storageAsyncResult.Result = false;
+                                storageAsyncResult.OnComplete();
+                                return;
+                            }
+                        }
+                        catch (StorageException e)
+                        {
+                            if ((e.RequestInformation != null) &&
+                                (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden))
+                            {
+                                storageAsyncResult.OnComplete(e);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            storageAsyncResult.OnComplete(e);
+                            return;
+                        }
 
-                    if (!exists)
-                    {
-                        storageAsyncResult.Result = false;
-                        storageAsyncResult.OnComplete();
-                    }
-                    else
-                    {
                         ICancellableAsyncResult currentRes = this.BeginDelete(
-                            (QueueRequestOptions)storageAsyncResult.RequestOptions,
-                            storageAsyncResult.OperationContext,
+                            options,
+                            operationContext,
                             (deleteRes) =>
                             {
                                 storageAsyncResult.CancelDelegate = null;
@@ -502,18 +471,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                                 }
                                 catch (StorageException e)
                                 {
-                                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                                    if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
+                                        ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueNotFound)))
                                     {
-                                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueNotFound))
-                                        {
-                                            storageAsyncResult.Result = false;
-                                            storageAsyncResult.OnComplete();
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
+                                        storageAsyncResult.Result = false;
+                                        storageAsyncResult.OnComplete();
                                     }
                                     else
                                     {
@@ -528,13 +491,17 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                             null);
 
                         storageAsyncResult.CancelDelegate = currentRes.Cancel;
+                        if (storageAsyncResult.CancelRequested)
+                        {
+                            storageAsyncResult.Cancel();
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    storageAsyncResult.OnComplete(ex);
-                }
-            }
+                },
+                null /* state */);
+
+            // We do not need to do this inside a lock, as storageAsyncResult is
+            // not returned to the user yet.
+            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
         }
 
         /// <summary>
@@ -1305,6 +1272,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// If <c>null</c> then the message will be visible immediately.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual void AddMessage(CloudQueueMessage message, TimeSpan? timeToLive = null, TimeSpan? initialVisibilityDelay = null, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1365,6 +1333,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Ends an asynchronous operation to add a message to the queue.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         public virtual void EndAddMessage(IAsyncResult asyncResult)
         {
             Executor.EndExecuteAsync<NullType>(asyncResult);
@@ -1376,6 +1345,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message)
         {
@@ -1388,6 +1358,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="message">A <see cref="CloudQueueMessage"/> object.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message, CancellationToken cancellationToken)
         {
@@ -1404,6 +1375,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -1421,6 +1393,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -2571,6 +2544,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(putCmd);
+            putCmd.RetrieveResponseStream = true;
             putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, useVersionHeader, ctx);
             putCmd.SendStream = memoryStream;
             putCmd.StreamToDispose = memoryStream;
@@ -2597,9 +2571,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             };
 
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+            putCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
+                CopyMessage(message, messageResponse.Messages.ToList().First());
                 return NullType.Value;
             };
 

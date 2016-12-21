@@ -21,6 +21,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if FACADE_NETCORE
+using System.Threading;
+#endif
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Table.Protocol;
 
@@ -102,8 +105,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     ent.RowKey = string.Format("{0:0000}", j);
                     batch.Insert(ent);
                 }
-
+#if !FACADE_NETCORE
                 currentTable.ExecuteBatchAsync(batch).Wait();
+#else
+                currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None).Wait();
+#endif
             }
         }
         //
@@ -135,9 +141,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Unit Tests
+#region Unit Tests
 
         [TestMethod]
         [Description("A test to validate basic table query")]
@@ -156,9 +162,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private async Task DoTableQueryBasicAsync(TablePayloadFormat format)
         {
             tableClient.DefaultRequestOptions.PayloadFormat = format;
-            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
 
+#if !FACADE_NETCORE
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
             TableQuerySegment seg = await currentTable.ExecuteQuerySegmentedAsync(query, null);
+#else
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", "tables_batch_1"));
+            TableQuerySegment<DynamicTableEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<DynamicTableEntity>(query, (pk, rk, ts, etag, prop) => new DynamicTableEntity(pk, rk, prop, etag), null);
+#endif
 
             foreach (DynamicTableEntity ent in seg)
             {
@@ -187,7 +198,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableQuery query = new TableQuery();
 
             OperationContext opContext = new OperationContext();
+#if !FACADE_NETCORE
             TableQuerySegment seg = await currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext);
+#else
+            TableQuerySegment<DynamicTableEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<DynamicTableEntity>(query, (pk, rk, tse, prop, etag) => new DynamicTableEntity(pk, rk, etag, prop), null, null, opContext);
+#endif
 
             int count = 0;
             foreach (DynamicTableEntity ent in seg)
@@ -199,7 +214,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // Second segment
             Assert.IsNotNull(seg.ContinuationToken);
+#if !FACADE_NETCORE
             seg = await currentTable.ExecuteQuerySegmentedAsync(query, seg.ContinuationToken, null, opContext);
+#else
+            seg = await currentTable.ExecuteQuerySegmentedAsync<DynamicTableEntity>(query, (pk, rk, tse, prop, etag) => new DynamicTableEntity(pk, rk, etag, prop), seg.ContinuationToken, null, opContext);
+#endif
 
             foreach (DynamicTableEntity ent in seg)
             {
@@ -376,7 +395,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     // Add delay to make times unique
                     await Task.Delay(100);
                 }
-
+#if !FACADE_NETCORE
                 await table.ExecuteBatchAsync(batch);
 
                 // 1. Filter on String
@@ -450,6 +469,54 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForBinary("BinaryPrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.Properties["BinaryPrimitive"].BinaryValue), 50);
+#else
+                await table.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+
+                // 1. Filter on String
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterCondition("String", "ge", "0050"), 50);
+
+                // 2. Filter on Guid
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForGuid("Guid", "eq", middleRef.Properties["Guid"].GuidValue.Value), 1);
+
+                // 3. Filter on Long
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForLong("Int64", "ge",
+                                middleRef.Properties["LongPrimitive"].Int64Value.Value), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForLong("LongPrimitive",
+                        "ge", middleRef.Properties["LongPrimitive"].Int64Value.Value), 50);
+
+                // 4. Filter on Double
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDouble("Double", "ge",
+                                middleRef.Properties["Double"].DoubleValue.Value), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForDouble("DoublePrimitive",
+                        "ge", middleRef.Properties["DoublePrimitive"].DoubleValue.Value), 50);
+
+                // 5. Filter on Integer
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForInt("Int32", "ge",
+                                middleRef.Properties["Int32"].Int32Value.Value), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForInt("IntegerPrimitive",
+                        "ge", middleRef.Properties["IntegerPrimitive"].Int32Value.Value), 50);
+
+                // 6. Filter on Date
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDate("DateTimeOffset", "ge",
+                                middleRef.Properties["DateTimeOffset"].DateTimeOffsetValue.Value), 50);
+
+                // 7. Filter on Boolean
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForBool("Bool", "eq", middleRef.Properties["Bool"].BooleanValue.Value), 50);
+
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForBool("BoolPrimitive", "eq", middleRef.Properties["BoolPrimitive"].BooleanValue.Value),
+                        50);
+#endif
             }
             finally
             {
@@ -519,9 +586,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     await Task.Delay(100);
                 }
 
+#if !FACADE_NETCORE
                 await table.ExecuteBatchAsync(batch);
 
                 // 1. Filter on String
+
                 ExecuteQueryAndAssertResults(table,
                         TableQuery.GenerateFilterCondition("String", QueryComparisons.GreaterThanOrEqual, "0050"), 50);
 
@@ -592,6 +661,56 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForBinary("BinaryPrimitive",
                         QueryComparisons.GreaterThanOrEqual, middleRef.Properties["BinaryPrimitive"].BinaryValue), 50);
+#else
+                await table.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+
+                // 1. Filter on String
+
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterCondition("String", "ge", "0050"), 50);
+
+                // 2. Filter on Guid
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForGuid("Guid", "eq", middleRef.Properties["Guid"].GuidValue.Value), 1);
+
+                // 3. Filter on Long
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForLong("Int64", "ge",
+                                middleRef.Properties["LongPrimitive"].Int64Value.Value), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForLong("LongPrimitive",
+                        "ge", middleRef.Properties["LongPrimitive"].Int64Value.Value), 50);
+
+                // 4. Filter on Double
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDouble("Double", "ge",
+                                middleRef.Properties["Double"].DoubleValue.Value), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForDouble("DoublePrimitive",
+                        "ge", middleRef.Properties["DoublePrimitive"].DoubleValue.Value), 50);
+
+                // 5. Filter on Integer
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForInt("Int32", "ge",
+                                middleRef.Properties["Int32"].Int32Value.Value), 50);
+
+                ExecuteQueryAndAssertResults(table, TableQuery.GenerateFilterConditionForInt("IntegerPrimitive",
+                        "ge", middleRef.Properties["IntegerPrimitive"].Int32Value.Value), 50);
+
+                // 6. Filter on Date
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForDate("DateTimeOffset", "ge",
+                                middleRef.Properties["DateTimeOffset"].DateTimeOffsetValue.Value), 50);
+
+                // 7. Filter on Boolean
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForBool("Bool", "eq", middleRef.Properties["Bool"].BooleanValue.Value), 50);
+
+                ExecuteQueryAndAssertResults(table,
+                        TableQuery.GenerateFilterConditionForBool("BoolPrimitive", "eq", middleRef.Properties["BoolPrimitive"].BooleanValue.Value),
+                        50);
+
+#endif
             }
             finally
             {
@@ -632,11 +751,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await table.ExecuteAsync(TableOperation.Insert(dynEnt));
 
             // 1. Filter on String
+#if !FACADE_NETCORE
             List<DynamicTableEntity> results = (await table.ExecuteQuerySegmentedAsync(new TableQuery().Where(TableQuery.GenerateFilterCondition("A", QueryComparisons.Equal, string.Empty)), null)).ToList();
             Assert.AreEqual(1, results.Count);
 
             List<BaseEntity> pocoresults = (await table.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>().Where(TableQuery.GenerateFilterCondition("A", QueryComparisons.Equal, string.Empty)), null)).ToList();
             Assert.AreEqual(1, pocoresults.Count);
+#else
+            var q = new TableQuery().Where(TableQuery.GenerateFilterCondition("A", "eq", string.Empty));
+            List<DynamicTableEntity> results = (await table.ExecuteQuerySegmentedAsync<DynamicTableEntity>(q, (prk, rk, ts, prop, etag) => new DynamicTableEntity(prk, rk, etag, prop), null)).ToList();
+            Assert.AreEqual(1, results.Count);
+
+            List<BaseEntity> pocoresults = (await table.ExecuteQuerySegmentedAsync<BaseEntity>(q, (prk2, rk, ts, prop, etag) => new BaseEntity(prk2, rk), null)).ToList();
+            Assert.AreEqual(1, pocoresults.Count);
+#endif
         }
 #endregion
 
@@ -710,12 +838,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
             OperationContext opContext = new OperationContext();
             try
             {
+#if !FACADE_NETCORE
                 await currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext);
+#else
+                await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query, (pk, rk, tse, prop, etag) => new BaseEntity(pk, rk), null, null,opContext);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
             {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "One of the request inputs is not valid.");
+                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "A binary operator with incompatible types was detected. Found operand types 'Edm.String' and 'Edm.Boolean' for operator kind 'And'.");
             }
         }
 
@@ -726,12 +858,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         private static List<DynamicTableEntity> ExecuteQuery(CloudTable table, TableQuery query)
         {
             List<DynamicTableEntity> retList = new List<DynamicTableEntity>();
-
+#if !FACADE_NETCORE
             TableQuerySegment currSeg = null;
+#else
+            TableQuerySegment<DynamicTableEntity> currSeg = null;
+#endif
 
             while (currSeg == null || currSeg.ContinuationToken != null)
             {
+#if !FACADE_NETCORE
                 Task<TableQuerySegment> task = Task.Run(() => table.ExecuteQuerySegmentedAsync(query, currSeg != null ? currSeg.ContinuationToken : null));
+#else
+                Task<TableQuerySegment<DynamicTableEntity>> task = Task.Run(() => table.ExecuteQuerySegmentedAsync<DynamicTableEntity>(query, 
+                    (pk, rk, ts, prop, etag) => new DynamicTableEntity(pk, rk, ts, etag, prop), currSeg != null ? currSeg.ContinuationToken : null));
+#endif
                 task.Wait();
                 currSeg = task.Result;
                 retList.AddRange(currSeg.Results);

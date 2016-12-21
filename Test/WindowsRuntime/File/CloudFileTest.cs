@@ -234,6 +234,15 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.IsNull(file2.Properties.ContentLanguage);
                 Assert.AreEqual("application/octet-stream", file2.Properties.ContentType);
                 Assert.IsNull(file2.Properties.ContentMD5);
+
+                CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsNull(file3.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                FileRequestOptions options = new FileRequestOptions();
+                options.UseTransactionalMD5 = true;
+                file3.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                await file3.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options, null);
+                Assert.IsNull(file3.Properties.ContentMD5);
             }
             finally
             {
@@ -290,9 +299,15 @@ namespace Microsoft.WindowsAzure.Storage.File
                 AssertAreEqual(file2.Properties, file3.Properties);
 
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
-                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null);
+                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null, null);
                 CloudFile file4 = (CloudFile)results.First();
                 Assert.AreEqual(file2.Properties.Length, file4.Properties.Length);
+
+                CloudFile file5 = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsNull(file5.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                await file5.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
+                Assert.AreEqual("MDAwMDAwMDA=", file5.Properties.ContentMD5);
             }
             finally
             {

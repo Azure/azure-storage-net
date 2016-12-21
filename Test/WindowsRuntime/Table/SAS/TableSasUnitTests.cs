@@ -145,25 +145,41 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 sasClient = sasAccount.CreateCloudTableClient();
                 sasTable = sasClient.GetTableReference(table.Name);
 
+#if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
+#else
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(),(pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+#endif
 
                 // SAS via account constructor
                 sasCreds = new StorageCredentials(sasToken);
                 sasAccount = new CloudStorageAccount(sasCreds, null, null, baseUri, null);
                 sasClient = sasAccount.CreateCloudTableClient();
                 sasTable = sasClient.GetTableReference(table.Name);
+#if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
+#else
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(), (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+#endif
 
                 // SAS via client constructor URI + Creds
                 sasCreds = new StorageCredentials(sasToken);
                 sasClient = new CloudTableClient(baseUri, sasCreds);
+#if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
+#else
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(), (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+#endif
 
                 // SAS via CloudTable constructor Uri + Client
                 sasCreds = new StorageCredentials(sasToken);
                 sasTable = new CloudTable(table.Uri, tableClient.Credentials);
                 sasClient = sasTable.ServiceClient;
+#if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
+#else
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(), (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+#endif
             }
             finally
             {
@@ -171,9 +187,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Permissions
+#region Permissions
 
         [TestMethod]
         [Description("Tests setting and getting table permissions Async")]
@@ -289,9 +305,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region SAS Operations
+#region SAS Operations
 
         [TestMethod]
         [Description("Tests table SAS with query permissions.")]
@@ -965,9 +981,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
             }
         }
-        #endregion
+#endregion
 
-        #region SAS Error Conditions
+#region SAS Error Conditions
 
         //[TestMethod] // Disabled until service bug is fixed
         [Description("Attempt to use SAS to authenticate table operations that must not work with SAS.")]
@@ -1031,9 +1047,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Update SAS token
+#region Update SAS token
         [TestMethod]
         [Description("Update table SAS.")]
         [TestCategory(ComponentCategory.Table)]
@@ -1091,9 +1107,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 table.DeleteIfExistsAsync().Wait();
             }
         }
-        #endregion
+#endregion
 
-        #region SasUri
+#region SasUri
         [TestMethod]
         [Description("Use table SasUri.")]
         [TestCategory(ComponentCategory.Table)]
@@ -1137,9 +1153,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 table.DeleteIfExistsAsync().Wait();
             }
         }
-        #endregion
+#endregion
 
-        #region Test Helpers
+#region Test Helpers
         internal static void AssertPermissionsEqual(TablePermissions permissions1, TablePermissions permissions2)
         {
             Assert.AreEqual(permissions1.SharedAccessPolicies.Count, permissions2.SharedAccessPolicies.Count);
@@ -1164,6 +1180,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
             }
         }
-        #endregion
+#endregion
     }
 }

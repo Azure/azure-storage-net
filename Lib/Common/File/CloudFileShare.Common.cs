@@ -55,12 +55,36 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Initializes a new instance of the <see cref="CloudFileShare"/> class.
         /// </summary>
         /// <param name="shareAddress">The absolute URI to the share.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
+        internal CloudFileShare(Uri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
+            : this(new StorageUri(shareAddress), snapshotTime, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudFileShare"/> class.
+        /// </summary>
+        /// <param name="shareAddress">The absolute URI to the share.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudFileShare(StorageUri shareAddress, StorageCredentials credentials)
+         
+            : this(shareAddress, null /* snapshotTime */, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudFileShare"/> class.
+        /// </summary>
+        /// <param name="shareAddress">The absolute URI to the share.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
+        internal CloudFileShare(StorageUri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
         {
             CommonUtility.AssertNotNull("shareAddress", shareAddress);
             CommonUtility.AssertNotNull("shareAddress", shareAddress.PrimaryUri);
-        
+
+            this.SnapshotTime = snapshotTime;
             this.ParseQueryAndVerify(shareAddress, credentials);
             this.Metadata = new Dictionary<string, string>();
             this.Properties = new FileShareProperties();
@@ -70,9 +94,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Initializes a new instance of the <see cref="CloudFileShare" /> class.
         /// </summary>
         /// <param name="shareName">The share name.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="serviceClient">A client object that specifies the endpoint for the File service.</param>
-        internal CloudFileShare(string shareName, CloudFileClient serviceClient)
-            : this(new FileShareProperties(), new Dictionary<string, string>(), shareName, serviceClient)
+        internal CloudFileShare(string shareName, DateTimeOffset? snapshotTime, CloudFileClient serviceClient)
+            : this(new FileShareProperties(), new Dictionary<string, string>(), shareName, snapshotTime, serviceClient)
         {
         }
 
@@ -82,14 +107,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="properties">The properties.</param>
         /// <param name="metadata">The metadata.</param>
         /// <param name="shareName">The share name.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="serviceClient">The client to be used.</param>
-        internal CloudFileShare(FileShareProperties properties, IDictionary<string, string> metadata, string shareName, CloudFileClient serviceClient)
+        internal CloudFileShare(FileShareProperties properties, IDictionary<string, string> metadata, string shareName, DateTimeOffset? snapshotTime, CloudFileClient serviceClient)
         {
             this.StorageUri = NavigationHelper.AppendPathToUri(serviceClient.StorageUri, shareName);
             this.ServiceClient = serviceClient;
             this.Name = shareName;
             this.Metadata = metadata;
             this.Properties = properties;
+            this.SnapshotTime = snapshotTime;
         }
 
         /// <summary>
@@ -115,7 +142,84 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>The list of URIs for all locations.</value>
         public StorageUri StorageUri { get; private set; }
-        
+
+
+        /// <summary>
+        /// Gets the date and time that the share snapshot was taken, if this share is a snapshot.
+        /// </summary>
+        /// <value>A <see cref="DateTimeOffset"/> containing the share's snapshot time if the share is a snapshot; otherwise, <c>null</c>.</value>
+        /// <remarks>
+        /// If the share is not a snapshot, the value of this property is <c>null</c>.
+        /// </remarks>
+        internal DateTimeOffset? SnapshotTime { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether this share is a snapshot.
+        /// </summary>
+        /// <value><c>true</c> if this share is a snapshot; otherwise, <c>false</c>.</value>
+        internal bool IsSnapshot
+        {
+            get
+            {
+                return this.SnapshotTime.HasValue;
+            }
+        }
+
+        /// <summary>
+        /// Gets the absolute URI to the share, including query string information if the share is a snapshot.
+        /// </summary>
+        /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the share, including snapshot query information if the share is a snapshot.</value>
+        internal Uri SnapshotQualifiedUri
+        {
+            get
+            {
+                if (this.SnapshotTime.HasValue)
+                {
+                    UriQueryBuilder builder = new UriQueryBuilder();
+                    builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value));
+                    return builder.AddToUri(this.Uri);
+                }
+                else
+                {
+                    return this.Uri;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the share's URI for both the primary and secondary locations, including query string information if the share is a snapshot.
+        /// </summary>
+        /// <value>An object of type <see cref="StorageUri"/> containing the share's URIs for both the primary and secondary locations, 
+        /// including snapshot query information if the share is a snapshot.</value>
+        internal StorageUri SnapshotQualifiedStorageUri
+        {
+            get
+            {
+                if (this.SnapshotTime.HasValue)
+                {
+                    UriQueryBuilder builder = new UriQueryBuilder();
+                    builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(this.SnapshotTime.Value));
+                    return builder.AddToUri(this.StorageUri);
+                }
+                else
+                {
+                    return this.StorageUri;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the share is not a snapshot.
+        /// </summary>
+        internal void AssertNoSnapshot()
+        {
+            if (this.SnapshotTime.HasValue)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotModifyShareSnapshot);
+                throw new InvalidOperationException(errorMessage);
+            }
+        }
+
         /// <summary>
         /// Gets the name of the share.
         /// </summary>
@@ -204,12 +308,24 @@ namespace Microsoft.WindowsAzure.Storage.File
         private void ParseQueryAndVerify(StorageUri address, StorageCredentials credentials)
         {
             StorageCredentials parsedCredentials;
-            this.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials);
+            DateTimeOffset? parsedSnapshot;
+            this.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials, out parsedSnapshot);
 
             if (parsedCredentials != null && credentials != null)
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);
+            }
+
+            if (parsedSnapshot.HasValue && this.SnapshotTime.HasValue && !parsedSnapshot.Value.Equals(this.SnapshotTime.Value))
+            {
+                string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleSnapshotTimesProvided, parsedSnapshot, this.SnapshotTime);
+                throw new ArgumentException(error);
+            }
+
+            if (parsedSnapshot.HasValue)
+            {
+                this.SnapshotTime = parsedSnapshot;
             }
             
             if (this.ServiceClient == null)

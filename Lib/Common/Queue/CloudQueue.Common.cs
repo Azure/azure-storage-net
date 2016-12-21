@@ -201,6 +201,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue
        }
 
         /// <summary>
+        /// Copies protocol message to message.
+        /// </summary>
+        /// <param name="message">The queue message.</param>
+        /// <param name="protocolMessage">The protocol message.</param>
+        private static void CopyMessage(CloudQueueMessage message, QueueMessage protocolMessage)
+        {
+            message.InsertionTime = protocolMessage.InsertionTime;
+            message.ExpirationTime = protocolMessage.ExpirationTime;
+            message.NextVisibleTime = protocolMessage.NextVisibleTime.Value;
+            message.PopReceipt = protocolMessage.PopReceipt;
+            message.Id = protocolMessage.Id;
+        }
+
+        /// <summary>
         /// Selects the get message response.
         /// </summary>
         /// <param name="protocolMessage">The protocol message.</param>

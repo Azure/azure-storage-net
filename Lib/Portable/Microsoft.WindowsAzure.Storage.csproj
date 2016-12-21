@@ -529,6 +529,12 @@
     <Compile Include="..\Common\Table\EntityProperty.cs">
       <Link>Table\EntityProperty.cs</Link>
     </Compile>
+    <Compile Include="..\Common\Table\EntityPropertyConverter.cs">
+      <Link>Table\EntityPropertyConverter.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\Table\EntityPropertyConverterOptions.cs">
+      <Link>Table\EntityPropertyConverterOptions.cs</Link>
+    </Compile>
     <Compile Include="..\Common\Table\EntityReadFlags.cs">
       <Link>Table\EntityReadFlags.cs</Link>
     </Compile>

@@ -606,11 +606,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="previousSnapshotTime">A <see cref="DateTimeOffset"/> representing the snapshot timestamp to use as the starting point for the diff. If this CloudPageBlob represents a snapshot, the previousSnapshotTime parameter must be prior to the current snapshot timestamp.</param>
         /// <returns>An enumerable collection of page ranges.</returns>
         [DoesServiceRequest]
-#if NETCORE
-        public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
-#else
-        public IAsyncOperation<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
-#endif
+        public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime)
         {
             return this.GetPageRangesDiffAsync(previousSnapshotTime, null /* offset */, null /* length */, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
@@ -626,24 +622,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of page ranges.</returns>
         [DoesServiceRequest]
-#if NETCORE
-        public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.GetPageRangesDiffAsync(previousSnapshotTime, offset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        public IAsyncOperation<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return AsyncInfo.Run(async (token) => await Executor.ExecuteAsync(
-                this.GetPageRangesDiffImpl(previousSnapshotTime, offset, length, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                token));
-        }
-#endif
 
-#if NETCORE
         /// <summary>
         /// Gets the collection of page ranges that differ between a specified snapshot and this object.
         /// </summary>
@@ -656,7 +639,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>An enumerable collection of page ranges.</returns>
         [DoesServiceRequest]
-        public Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync(
@@ -665,7 +648,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Creates a snapshot of the blob.
@@ -862,7 +844,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Begins an operation to start copying an existing blob's contents, properties, and metadata to a new blob.
         /// </summary>
-        /// <param name="source">The URI of a source blob.</param>
+        /// <param name="source">The source blob.</param>
         /// <returns>The copy ID associated with the copy operation.</returns>
         /// <remarks>
         /// This method fetches the blob's ETag, last modified time, and part of the copy state.
@@ -875,9 +857,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Begins an operation to start an incremental copy of an existing blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The source blob which must be a snapshot.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob sourceSnapshot)
+        {
+            return this.StartIncrementalCopyAsync(CloudBlob.SourceBlobToUri(sourceSnapshot));
+        }
+
+        /// <summary>
+        /// Begins an operation to start an incremental copy of an existing blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The URI of a source blob which must be a snapshot.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(Uri sourceSnapshot)
+        {
+            return this.StartIncrementalCopyAsync(sourceSnapshot, null /* destAccessCondition */, null /* options */, null /* operationContext */, CancellationToken.None);
+        }
+
+        /// <summary>
         /// Begins an operation to start copying a blob's contents, properties, and metadata to a new blob.
         /// </summary>
-        /// <param name="source">The URI of a source blob.</param>
+        /// <param name="source">The source blob.</param>
         /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -911,6 +923,50 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Begins an operation to start an incremental copy of another page blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The source blob which must be a snapshot.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob sourceSnapshot, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.StartIncrementalCopyAsync(CloudBlob.SourceBlobToUri(sourceSnapshot), destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Begins an operation to start an incremental copy of a blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The URI of a source blob which must be a snapshot.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(Uri sourceSnapshot, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            CommonUtility.AssertNotNull("sourceSnapshot", sourceSnapshot);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Task.Run(async () => await Executor.ExecuteAsync(
+                this.StartCopyImpl(this.attributes, sourceSnapshot, true /*incrementalCopy */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken), cancellationToken);
         }
 
         /// <summary>

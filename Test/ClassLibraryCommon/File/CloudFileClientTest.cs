@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
@@ -358,42 +359,55 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric)]
-        public void CloudFileClientListManySharesSegmentedWithPrefix()
+        public async Task CloudFileClientListManySharesSegmentedWithPrefix()
         {
             string name = GetRandomShareName();
             List<string> shareNames = new List<string>();
             CloudFileClient fileClient = GenerateCloudFileClient();
 
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < 5050; i++)
             {
                 string shareName = name + i.ToString();
                 shareNames.Add(shareName);
-                fileClient.GetShareReference(shareName).Create();
+                tasks.Add(Task.Run(() => fileClient.GetShareReference(shareName).Create()));
+                while (tasks.Count > 50)
+                {
+                    Task t = await Task.WhenAny(tasks);
+                    await t;
+                    tasks.Remove(t);
+                }
             }
+            await Task.WhenAll(tasks);
 
             List<string> listedShareNames = new List<string>();
             FileContinuationToken token = null;
             do
             {
-                ShareResultSegment resultSegment = fileClient.ListSharesSegmented(name, ShareListingDetails.None, 1, token);
+                ShareResultSegment resultSegment = fileClient.ListSharesSegmented(name, ShareListingDetails.None, null, token);
                 token = resultSegment.ContinuationToken;
 
-                int count = 0;
                 foreach (CloudFileShare share in resultSegment.Results)
                 {
-                    count++;
                     listedShareNames.Add(share.Name);
                 }
-                Assert.IsTrue(count <= 1);
             }
             while (token != null);
 
             Assert.AreEqual(shareNames.Count, listedShareNames.Count);
+            tasks = new List<Task>();
             foreach (string shareName in listedShareNames)
             {
                 Assert.IsTrue(shareNames.Remove(shareName));
-                fileClient.GetShareReference(shareName).Delete();
+                tasks.Add(Task.Run(() => fileClient.GetShareReference(shareName).Delete()));
+                while (tasks.Count > 50)
+                {
+                    Task t = await Task.WhenAny(tasks);
+                    await t;
+                    tasks.Remove(t);
+                }
             }
+            await Task.WhenAll(tasks);
         }
 
         [TestMethod]
@@ -1007,7 +1021,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 share.Create();
 
-                fileClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(30);
+                fileClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(2);
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file");
                 file.StreamWriteSizeInBytes = 1024 * 1024;
                 file.StreamMinimumReadSizeInBytes = 1024 * 1024;

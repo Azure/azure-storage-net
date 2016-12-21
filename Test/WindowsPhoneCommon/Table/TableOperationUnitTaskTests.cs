@@ -866,19 +866,21 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string pk = Guid.NewGuid().ToString();
             string rk = Guid.NewGuid().ToString();
 
-            IgnoreEntity sendEnt = new IgnoreEntity(pk, rk);
-            sendEnt.Bool = true;
-            sendEnt.BoolN = true;
-            sendEnt.BoolNull = null;
-            sendEnt.BoolPrimitive = true;
-            sendEnt.BoolPrimitiveN = true;
-            sendEnt.BoolPrimitiveNull = true;
-            sendEnt.DateTime = DateTime.UtcNow.AddMinutes(1);
-            sendEnt.DateTimeN = DateTime.UtcNow.AddMinutes(1);
-            sendEnt.DateTimeNull = null;
-            sendEnt.DateTimeOffset = DateTimeOffset.Now.AddMinutes(1);
-            sendEnt.DateTimeOffsetN = DateTimeOffset.Now.AddMinutes(1);
-            sendEnt.DateTimeOffsetNull = DateTimeOffset.Now.AddMinutes(1);
+            IgnoreEntity sendEnt = new IgnoreEntity(pk, rk)
+            {
+                Bool = true,
+                BoolN = true,
+                BoolNull = null,
+                BoolPrimitive = true,
+                BoolPrimitiveN = true,
+                BoolPrimitiveNull = true,
+                DateTime = DateTime.UtcNow.AddMinutes(1),
+                DateTimeN = DateTime.UtcNow.AddMinutes(1),
+                DateTimeNull = null,
+                DateTimeOffset = DateTimeOffset.Now.AddMinutes(1),
+                DateTimeOffsetN = DateTimeOffset.Now.AddMinutes(1),
+                DateTimeOffsetNull = DateTimeOffset.Now.AddMinutes(1)
+            };
 
             await currentTable.ExecuteAsync(TableOperation.Insert(sendEnt));
 

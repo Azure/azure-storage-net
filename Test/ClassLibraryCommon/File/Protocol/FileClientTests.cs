@@ -241,7 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             // 3. Now do a List Ranges
             List<FileRange> fileRanges = new List<FileRange>();
             opContext = new OperationContext();
-            HttpWebRequest listRangesRequest = FileHttpWebRequestFactory.ListRanges(uri, FileContext.Timeout, null, null, null, true, opContext);
+            HttpWebRequest listRangesRequest = FileHttpWebRequestFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, true, opContext);
             FileTests.SignRequest(listRangesRequest, FileContext);
             using (HttpWebResponse rangeResponse = listRangesRequest.GetResponse() as HttpWebResponse)
             {
@@ -272,7 +272,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             List<FileRange> newFileRanges = new List<FileRange>();
 
             opContext = new OperationContext();
-            HttpWebRequest newFileRangeRequest = FileHttpWebRequestFactory.ListRanges(uri, FileContext.Timeout, null, null, null, true, opContext);
+            HttpWebRequest newFileRangeRequest = FileHttpWebRequestFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, true, opContext);
             FileTests.SignRequest(newFileRangeRequest, FileContext);
             using (HttpWebResponse newFileRangeResponse = newFileRangeRequest.GetResponse() as HttpWebResponse)
             {

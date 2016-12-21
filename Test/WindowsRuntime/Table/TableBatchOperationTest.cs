@@ -23,6 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if FACADE_NETCORE
+using System.Threading;
+#endif
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table
@@ -46,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             MyTestCleanup();
         }
 #endif
-        #region Locals + Ctors
+#region Locals + Ctors
         private TestContext testContextInstance;
 
         /// <summary>
@@ -68,9 +71,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         CloudTable currentTable = null;
         CloudTableClient tableClient = null;
 
-        #endregion
+#endregion
 
-        #region Additional test attributes
+#region Additional test attributes
         //
         // You can use the following additional attributes as you write your tests:
         //
@@ -108,9 +111,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Insert
+#region Insert
 
         [TestMethod]
         [Description("A test to check batch insert functionality")]
@@ -144,8 +147,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // Add delete
             batch.Delete(ent);
-
+#if !FACADE_NETCORE
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch);
+#else
+            IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             Assert.AreEqual(results.Count, 4);
 
@@ -189,7 +195,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             OperationContext opContext = new OperationContext();
             try
             {
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
@@ -197,9 +207,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.Conflict, new string[] { "EntityAlreadyExists" }, "The specified entity already exists", "The specified entity already exists");
             }
         }
-        #endregion
+#endregion
 
-        #region Insert Or Merge
+#region Insert Or Merge
 
         [TestMethod]
         [Description("TableBatch Insert Or Merge")]
@@ -225,7 +235,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableBatchOperation batch = new TableBatchOperation();
             batch.InsertOrMerge(insertOrMergeEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             // Retrieve Entity & Verify Contents
             TableResult result = await currentTable.ExecuteAsync(TableOperation.Retrieve(insertOrMergeEntity.PartitionKey, insertOrMergeEntity.RowKey));
@@ -238,7 +252,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableBatchOperation batch2 = new TableBatchOperation();
             batch2.InsertOrMerge(mergeEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch2);
+#else
+            await currentTable.ExecuteBatchAsync(batch2, null, null, CancellationToken.None);
+#endif
 
             // Retrieve Entity & Verify Contents
             result = await currentTable.ExecuteAsync(TableOperation.Retrieve(insertOrMergeEntity.PartitionKey, insertOrMergeEntity.RowKey));
@@ -251,9 +269,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(mergeEntity.Properties["prop2"], retrievedEntity.Properties["prop2"]);
         }
 
-        #endregion
+#endregion
 
-        #region Insert Or Replace
+#region Insert Or Replace
 
         [TestMethod]
         [Description("TableOperation Insert Or Replace")]
@@ -279,7 +297,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableBatchOperation batch = new TableBatchOperation();
             batch.InsertOrReplace(insertOrReplaceEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             // Retrieve Entity & Verify Contents
             TableResult result = await currentTable.ExecuteAsync(TableOperation.Retrieve(insertOrReplaceEntity.PartitionKey, insertOrReplaceEntity.RowKey));
@@ -292,7 +314,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableBatchOperation batch2 = new TableBatchOperation();
             batch2.InsertOrReplace(replaceEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch2);
+#else
+            await currentTable.ExecuteBatchAsync(batch2, null, null, CancellationToken.None);
+#endif
 
             // Retrieve Entity & Verify Contents
             result = await currentTable.ExecuteAsync(TableOperation.Retrieve(insertOrReplaceEntity.PartitionKey, insertOrReplaceEntity.RowKey));
@@ -302,9 +328,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(replaceEntity.Properties["prop2"], retrievedEntity.Properties["prop2"]);
         }
 
-        #endregion
+#endregion
 
-        #region Delete
+#region Delete
 
         [TestMethod]
         [Description("A test to check batch delete functionality")]
@@ -335,7 +361,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batch.Delete(ent);
 
             // success
+#if !FACADE_NETCORE
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch);
+#else
+
+            IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
             Assert.AreEqual(results.Count, 1);
             Assert.AreEqual(results.First().HttpStatusCode, (int)HttpStatusCode.NoContent);
 
@@ -343,7 +374,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             OperationContext opContext = new OperationContext();
             try
             {
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
@@ -387,7 +422,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             OperationContext opContext = new OperationContext();
             try
             {
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
@@ -399,9 +438,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                       new string[] { "The update condition specified in the request was not satisfied.", "The condition specified using HTTP conditional header(s) is not met." });
             }
         }
-        #endregion
+#endregion
 
-        #region Merge
+#region Merge
 
         [TestMethod]
         [Description("TableBatch Merge")]
@@ -431,7 +470,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableBatchOperation batch = new TableBatchOperation();
             batch.Merge(mergeEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             // Retrieve Entity & Verify Contents
             TableResult result = await currentTable.ExecuteAsync(TableOperation.Retrieve(baseEntity.PartitionKey, baseEntity.RowKey));
@@ -483,7 +526,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Merge(mergeEntity);
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
 
                 Assert.Fail();
             }
@@ -510,7 +557,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Merge(mergeEntity);
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
 
                 Assert.Fail();
             }
@@ -519,9 +570,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.NotFound, new string[] { "ResourceNotFound" }, "The specified resource does not exist.");
             }
         }
-        #endregion
+#endregion
 
-        #region Replace
+#region Replace
 
         [TestMethod]
         [Description("TableBatch Replace")]
@@ -552,7 +603,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableBatchOperation batch = new TableBatchOperation();
             batch.Replace(replaceEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             // Retrieve Entity & Verify Contents
             TableResult result = await currentTable.ExecuteAsync(TableOperation.Retrieve(baseEntity.PartitionKey, baseEntity.RowKey));
@@ -602,7 +657,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Replace(replaceEntity);
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
@@ -627,7 +686,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 TableBatchOperation batch = new TableBatchOperation();
                 batch.Replace(replaceEntity);
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
@@ -636,9 +699,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Batch With All Supported Operations
+#region Batch With All Supported Operations
 
         [TestMethod]
         [Description("A test to check batch with all supported operations")]
@@ -697,8 +760,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 await currentTable.ExecuteAsync(TableOperation.Insert(entity));
                 batch.InsertOrMerge(entity);
             }
-
+#if !FACADE_NETCORE
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch);
+#else
+            IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             Assert.AreEqual(results.Count, 6);
 
@@ -717,9 +783,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.NoContent);
         }
 
-        #endregion
+#endregion
 
-        #region Retrieve
+#region Retrieve
 
         [TestMethod]
         [Description("A test to check batch retrieve functionality")]
@@ -756,7 +822,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batch.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey);
 
             // not found
+#if !FACADE_NETCORE
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch);
+#else
+            IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
             Assert.AreEqual(results.Count, 1);
             Assert.AreEqual(results.First().HttpStatusCode, (int)HttpStatusCode.NotFound);
             Assert.IsNull(results.First().Result);
@@ -766,7 +836,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await currentTable.ExecuteAsync(TableOperation.Insert(sendEnt));
 
             // Success
+#if !FACADE_NETCORE
             results = await currentTable.ExecuteBatchAsync(batch);
+#else
+            results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
+
             Assert.AreEqual(results.Count, 1);
             Assert.AreEqual(results.First().HttpStatusCode, (int)HttpStatusCode.OK);
             DynamicTableEntity retrievedEntity = results.First().Result as DynamicTableEntity;
@@ -830,7 +905,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batch.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, resolver);
 
             // not found
+#if !FACADE_NETCORE
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch);
+#else
+            IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
             Assert.AreEqual(results.Count, 1);
             Assert.AreEqual(results.First().HttpStatusCode, (int)HttpStatusCode.NotFound);
             Assert.IsNull(results.First().Result);
@@ -840,15 +919,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await currentTable.ExecuteAsync(TableOperation.Insert(sendEnt));
 
             // Success
+#if !FACADE_NETCORE
             results = await currentTable.ExecuteBatchAsync(batch);
+#else
+            results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
             Assert.AreEqual(results.Count, 1);
             Assert.AreEqual(results.First().HttpStatusCode, (int)HttpStatusCode.OK);
             // Since there are properties in ComplexEntity set to null, we do not receive those from the server. Hence we need to check for non null values.
             Assert.AreEqual((string)results.First().Result, sendEnt.PartitionKey + sendEnt.RowKey + sendEnt.Properties["foo"].StringValue + ComplexEntity.NumberOfNonNullProperties);
         }
-        #endregion
+#endregion
 
-        #region Empty Keys Test
+#region Empty Keys Test
 
         [TestMethod]
         [Description("TableBatchOperations with Empty keys")]
@@ -874,12 +957,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ent.Properties.Add("foo", new EntityProperty("bar"));
             TableBatchOperation batch = new TableBatchOperation();
             batch.Insert(ent);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             // Retrieve Entity
             TableBatchOperation retrieveBatch = new TableBatchOperation();
             retrieveBatch.Retrieve(ent.PartitionKey, ent.RowKey);
+#if !FACADE_NETCORE
             TableResult result = (await currentTable.ExecuteBatchAsync(retrieveBatch)).First();
+#else
+            TableResult result = (await currentTable.ExecuteBatchAsync(retrieveBatch, null, null, CancellationToken.None)).First();
+#endif
 
             DynamicTableEntity retrievedEntity = result.Result as DynamicTableEntity;
             Assert.IsNotNull(retrievedEntity);
@@ -896,9 +987,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertOrMergeEntity.Properties.Add("foo3", new EntityProperty("value"));
             batch = new TableBatchOperation();
             batch.InsertOrMerge(insertOrMergeEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
-
             result = (await currentTable.ExecuteBatchAsync(retrieveBatch)).First();
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+            result = (await currentTable.ExecuteBatchAsync(retrieveBatch, null, null, CancellationToken.None)).First();
+#endif
+
             retrievedEntity = result.Result as DynamicTableEntity;
             Assert.IsNotNull(retrievedEntity);
             Assert.AreEqual(insertOrMergeEntity.Properties["foo3"], retrievedEntity.Properties["foo3"]);
@@ -908,9 +1004,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertOrReplaceEntity.Properties.Add("prop2", new EntityProperty("otherValue"));
             batch = new TableBatchOperation();
             batch.InsertOrReplace(insertOrReplaceEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
-
             result = (await currentTable.ExecuteBatchAsync(retrieveBatch)).First();
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+            result = (await currentTable.ExecuteBatchAsync(retrieveBatch, null, null, CancellationToken.None)).First();
+#endif
             retrievedEntity = result.Result as DynamicTableEntity;
             Assert.IsNotNull(retrievedEntity);
             Assert.AreEqual(1, retrievedEntity.Properties.Count);
@@ -921,10 +1021,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
             mergeEntity.Properties.Add("mergeProp", new EntityProperty("merged"));
             batch = new TableBatchOperation();
             batch.Merge(mergeEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
 
             // Retrieve Entity & Verify Contents
             result = (await currentTable.ExecuteBatchAsync(retrieveBatch)).First();
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+
+            // Retrieve Entity & Verify Contents
+            result = (await currentTable.ExecuteBatchAsync(retrieveBatch, null, null, CancellationToken.None)).First();
+#endif
             retrievedEntity = result.Result as DynamicTableEntity;
 
             Assert.IsNotNull(retrievedEntity);
@@ -935,10 +1042,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
             replaceEntity.Properties.Add("replaceProp", new EntityProperty("replace"));
             batch = new TableBatchOperation();
             batch.Replace(replaceEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
 
             // Retrieve Entity & Verify Contents
             result = (await currentTable.ExecuteBatchAsync(retrieveBatch)).First();
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+
+            // Retrieve Entity & Verify Contents
+            result = (await currentTable.ExecuteBatchAsync(retrieveBatch, null, null, CancellationToken.None)).First();
+#endif
             retrievedEntity = result.Result as DynamicTableEntity;
             Assert.IsNotNull(retrievedEntity);
             Assert.AreEqual(replaceEntity.Properties.Count, retrievedEntity.Properties.Count);
@@ -947,16 +1061,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
             // Delete Entity
             batch = new TableBatchOperation();
             batch.Delete(retrievedEntity);
+#if !FACADE_NETCORE
             await currentTable.ExecuteBatchAsync(batch);
 
             // Retrieve Entity
             result = (await currentTable.ExecuteBatchAsync(retrieveBatch)).First();
+#else
+            await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+
+            // Retrieve Entity
+            result = (await currentTable.ExecuteBatchAsync(retrieveBatch, null, null, CancellationToken.None)).First();
+
+#endif
             Assert.IsNull(result.Result);
         }
 
-        #endregion
+#endregion
 
-        #region Bulk insert
+#region Bulk insert
 
         [TestMethod]
         [Description("A test to peform batch insert and delete with batch size of 1")]
@@ -1024,8 +1146,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 batch.Insert(GenerateRandomEntity(pk), true);
             }
-
+            
+#if !FACADE_NETCORE
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch);
+#else
+            IList<TableResult> results = await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
             TableBatchOperation delBatch = new TableBatchOperation();
 
@@ -1035,15 +1161,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(res.HttpStatusCode, (int)HttpStatusCode.Created);
             }
 
+#if !FACADE_NETCORE
             IList<TableResult> delResults = await currentTable.ExecuteBatchAsync(delBatch);
+#else
+            IList<TableResult> delResults = await currentTable.ExecuteBatchAsync(delBatch, null, null, CancellationToken.None);
+#endif
             foreach (TableResult res in delResults)
             {
                 Assert.AreEqual(res.HttpStatusCode, (int)HttpStatusCode.NoContent);
             }
         }
-        #endregion
+#endregion
 
-        #region Bulk Upsert
+#region Bulk Upsert
 
         [TestMethod]
         [Description("A test to peform batch InsertOrMerge with batch size of 1")]
@@ -1116,7 +1246,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 insertBatch.InsertOrMerge(GenerateRandomEntity(pk));
             }
 
+#if !FACADE_NETCORE
             IList<TableResult> results = await currentTable.ExecuteBatchAsync(insertBatch);
+#else
+            IList<TableResult> results = await currentTable.ExecuteBatchAsync(insertBatch, null, null, CancellationToken.None);
+#endif
             foreach (TableResult res in results)
             {
                 Assert.AreEqual(res.HttpStatusCode, (int)HttpStatusCode.NoContent);
@@ -1129,7 +1263,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // execute insertOrMerge batch, this time entities exist
+#if !FACADE_NETCORE
             IList<TableResult> mergeResults = await currentTable.ExecuteBatchAsync(mergeBatch);
+#else
+            IList<TableResult> mergeResults = await currentTable.ExecuteBatchAsync(mergeBatch, null, null, CancellationToken.None);
+#endif
 
             foreach (TableResult res in mergeResults)
             {
@@ -1138,17 +1276,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // Add to delete batch
                 delBatch.Delete((ITableEntity)res.Result);
             }
-
+#if !FACADE_NETCORE
             IList<TableResult> delResults = await currentTable.ExecuteBatchAsync(delBatch);
+#else
+            IList<TableResult> delResults = await currentTable.ExecuteBatchAsync(delBatch, null, null, CancellationToken.None);
+#endif
             foreach (TableResult res in delResults)
             {
                 Assert.AreEqual(res.HttpStatusCode, (int)HttpStatusCode.NoContent);
             }
         }
-        #endregion
+#endregion
 
-        #region Secondary
-
+#region Secondary
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("A test to check batch retrieve functionality on secondary")]
         [TestCategory(ComponentCategory.Table)]
@@ -1180,6 +1321,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batch.Retrieve("PartitionKey", "RowKey");
 
             OperationContext context = new OperationContext();
+
             await table.ExecuteBatchAsync(batch, options, context);
             Assert.AreEqual(StorageLocation.Secondary, context.LastResult.TargetLocation);
 
@@ -1231,8 +1373,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 "Batch operations other than retrieve should not be sent to secondary");
             Assert.AreEqual(SR.PrimaryOnlyCommand, e.Message);
         }
-        #endregion
-        #region Boundary Conditions
+#endif
+#endregion
+#region Boundary Conditions
 
         [TestMethod]
         [Description("Ensure that adding null to the batch will throw")]
@@ -1330,15 +1473,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
             OperationContext opContext = new OperationContext();
             try
             {
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
                 Assert.Fail();
             }
             catch (Exception)
             {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, new string[] { "99:One of the request inputs is not valid." }, false);
+                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidDuplicateRow" }, new string[] { "99:The batch request contains multiple changes with same row key. An entity can appear only once in a batch request." }, false);
             }
         }
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Ensure that a batch with entity over 1 MB will throw")]
         [TestCategory(ComponentCategory.Table)]
@@ -1361,6 +1508,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             DynamicTableEntity ent = GenerateRandomEntity(pk);
             ent.Properties.Add("binary", EntityProperty.GeneratePropertyForByteArray(new byte[1024 * 1024]));
+
             batch.Insert(ent);
 
             OperationContext opContext = new OperationContext();
@@ -1400,6 +1548,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 DynamicTableEntity ent = GenerateRandomEntity(pk);
 
                 // Maximum Entity size is 64KB
+
                 ent.Properties.Add("binary", EntityProperty.GeneratePropertyForByteArray(new byte[64 * 1024]));
                 batch.Insert(ent);
             }
@@ -1415,6 +1564,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.RequestEntityTooLarge, new string[] { "RequestBodyTooLarge" }, "The request body is too large and exceeds the maximum permissible limit.");
             }
         }
+#endif
 
         [TestMethod]
         [Description("Ensure that a query and one more operation will throw")]
@@ -1503,9 +1653,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public async Task TableBatchEmptyBatchShouldThrowAsync()
         {
             TableBatchOperation batch = new TableBatchOperation();
+#if !FACADE_NETCORE
             await TestHelper.ExpectedExceptionAsync<InvalidOperationException>(
                 async () => await currentTable.ExecuteBatchAsync(batch),
                 "Empty batch operation should fail");
+#else
+            await TestHelper.ExpectedExceptionAsync<InvalidOperationException>(
+                async () => await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None),
+                "Empty batch operation should fail");
+#endif
         }
 
         [TestMethod]
@@ -1523,8 +1679,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 {
                     batch.Insert(GenerateRandomEntity("testpk"), true);
                 }
-
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, null, CancellationToken.None);
+#endif
 
                 Assert.Fail("Batch commands with more than 101 operations should fail.");
             }
@@ -1606,7 +1765,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             OperationContext opContext = new OperationContext();
             try
             {
+#if !FACADE_NETCORE
                 await currentTable.ExecuteBatchAsync(batch, null, opContext);
+#else
+                await currentTable.ExecuteBatchAsync(batch, null, opContext, CancellationToken.None);
+#endif
+
                 Assert.Fail();
             }
 
@@ -1616,9 +1780,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Helpers
+#region Helpers
 
         private static void AddInsertToBatch(string pk, TableBatchOperation batch)
         {
@@ -1634,6 +1798,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ent.RowKey = Guid.NewGuid().ToString();
             return ent;
         }
-        #endregion
+#endregion
     }
 }
+

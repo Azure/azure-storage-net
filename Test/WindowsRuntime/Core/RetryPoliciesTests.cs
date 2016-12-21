@@ -28,6 +28,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
     [TestClass]
     public class RetryPoliciesTests : TestBase
     {
+
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Test to ensure that the time when we wait for a retry is cancellable")]
         [TestCategory(ComponentCategory.Core)]
@@ -67,6 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(10), stopwatch.Elapsed.ToString());
             Assert.AreEqual(1, context.RequestResults.Count);
         }
+#endif
 
         [TestMethod]
         [Description("Setting retry policy to null should not throw an exception")]

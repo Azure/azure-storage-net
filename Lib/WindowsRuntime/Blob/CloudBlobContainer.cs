@@ -89,6 +89,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task CreateAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.CreateContainerImpl(modifiedOptions, accessType),
@@ -101,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Creates the container if it does not already exist.
         /// </summary>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise, <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -114,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobRequestOptions options, OperationContext operationContext)
         {
@@ -128,7 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext)
         {
@@ -143,22 +148,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            if (accessType == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-
-                if (exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await this.CreateAsync(accessType, modifiedOptions, operationContext, cancellationToken);
@@ -269,11 +272,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-
-                if (!exists)
+                try
                 {
-                    return false;
+                    bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
+                    if (!exists)
+                    {
+                        return false;
+                    }
+                }
+                catch (StorageException e)
+                {
+                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                    {
+                        throw;
+                    }
                 }
 
                 try
@@ -540,6 +552,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the container exists.</returns>
+        [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.ExistsAsync(false, options, operationContext, cancellationToken);
@@ -644,7 +657,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not <c>null</c>, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <returns>The ID of the acquired lease.</returns>
         [DoesServiceRequest]
@@ -658,7 +671,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -675,7 +688,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -881,7 +894,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not <c>null</c>, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the container. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. This parameter must not be <c>null</c>.</param>
@@ -891,7 +904,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int leaseDuration = -1;
             if (leaseTime.HasValue)
             {
-                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(1), TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(Constants.MinimumLeaseDuration), TimeSpan.FromSeconds(Constants.MaximumLeaseDuration));
                 leaseDuration = (int)leaseTime.Value.TotalSeconds;
             }
 
@@ -1010,7 +1023,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int? breakSeconds = null;
             if (breakPeriod.HasValue)
             {
-                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.Zero, TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.FromSeconds(Constants.MinimumBreakLeasePeriod), TimeSpan.FromSeconds(Constants.MaximumBreakLeasePeriod));
                 breakSeconds = (int)breakPeriod.Value.TotalSeconds;
             }
 
@@ -1058,6 +1071,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 this.Properties = ContainerHttpResponseParsers.GetProperties(resp);
                 this.Metadata = ContainerHttpResponseParsers.GetMetadata(resp);
+                this.Properties.PublicAccess = accessType;
+
                 return NullType.Value;
             };
 
@@ -1170,6 +1185,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that sets the permissions.</returns>
         private RESTCommand<NullType> SetPermissionsImpl(BlobContainerPermissions acl, AccessCondition accessCondition, BlobRequestOptions options)
         {
+            if (acl.PublicAccess == BlobContainerPublicAccessType.Unknown)
+            {
+                throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
+            }
+
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
             BlobRequest.WriteSharedAccessIdentifiers(acl.SharedAccessPolicies, memoryStream);
 
@@ -1183,6 +1203,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.UpdateETagAndLastModified(resp);
+                this.Properties.PublicAccess = acl.PublicAccess;
                 return NullType.Value;
             };
 
@@ -1220,6 +1241,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return Task.Factory.StartNew(() =>
                 {
                     ContainerHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, containerAcl);
+                    this.Properties.PublicAccess = containerAcl.PublicAccess;
                     return containerAcl;
                 });
             };

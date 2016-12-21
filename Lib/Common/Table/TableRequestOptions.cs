@@ -36,6 +36,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         private TimeSpan? maximumExecutionTime;
 
+#if !(WINDOWS_RT || NETCORE)
+        /// <summary>
+        /// If this is set, encryption has been explicitly cleared.
+        /// Thus, do not copy the value when applying defaults.
+        /// </summary>
+        private bool encryptionCleared = false;
+#endif
+
         /// <summary>
         /// Defines the absolute default option values, should neither the user nor client specify anything.
         /// </summary>
@@ -132,32 +140,47 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 ?? BaseDefaultRequestOptions.ProjectSystemProperties;
 
 #if !(WINDOWS_RT || NETCORE)
-            modifiedOptions.EncryptionPolicy = 
-                modifiedOptions.EncryptionPolicy 
-                ?? serviceClient.DefaultRequestOptions.EncryptionPolicy 
-                ?? BaseDefaultRequestOptions.EncryptionPolicy;
+            if (requestOptions != null && requestOptions.encryptionCleared)
+            {
+                modifiedOptions.encryptionCleared = true;
+            }
+            else
+            {
+                modifiedOptions.EncryptionPolicy =
+                    modifiedOptions.EncryptionPolicy
+                    ?? serviceClient.DefaultRequestOptions.EncryptionPolicy
+                    ?? BaseDefaultRequestOptions.EncryptionPolicy;
 
-            modifiedOptions.RequireEncryption = 
-                modifiedOptions.RequireEncryption 
-                ?? serviceClient.DefaultRequestOptions.RequireEncryption 
-                ?? BaseDefaultRequestOptions.RequireEncryption;
+                modifiedOptions.RequireEncryption =
+                    modifiedOptions.RequireEncryption
+                    ?? serviceClient.DefaultRequestOptions.RequireEncryption
+                    ?? BaseDefaultRequestOptions.RequireEncryption;
 
-            modifiedOptions.EncryptionResolver = 
-                modifiedOptions.EncryptionResolver 
-                ?? serviceClient.DefaultRequestOptions.EncryptionResolver 
-                ?? BaseDefaultRequestOptions.EncryptionResolver;
+                modifiedOptions.EncryptionResolver =
+                    modifiedOptions.EncryptionResolver
+                    ?? serviceClient.DefaultRequestOptions.EncryptionResolver
+                    ?? BaseDefaultRequestOptions.EncryptionResolver;
+            }
 #endif
 
             return modifiedOptions;
         }
 
+#if !(WINDOWS_RT || NETCORE)
+        internal void ClearEncryption()
+        {
+            this.RequireEncryption = false;
+            this.EncryptionPolicy = null;
+            this.EncryptionResolver = null;
+            this.encryptionCleared = true;
+        }
+#endif
+
         internal static TableRequestOptions ApplyDefaultsAndClearEncryption(TableRequestOptions requestOptions, CloudTableClient serviceClient)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, serviceClient);
 #if !(WINDOWS_RT || NETCORE)
-            modifiedOptions.RequireEncryption = false;
-            modifiedOptions.EncryptionPolicy = null;
-            modifiedOptions.EncryptionResolver = null;
+            modifiedOptions.ClearEncryption();
 #endif
             return modifiedOptions;
         }
