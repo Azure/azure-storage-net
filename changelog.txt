@@ -1,7 +1,7 @@
 Changes in 8.0.0 :
 
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
-- All: (Desktop) Updated the desktop library to target .Net 4.5.2.
+- All: (Desktop) Updated the desktop library to target .Net 4.5.0.
 - All: Added a new Netstandard 1.0 Target Framework (facade) as PCL support.
 - Blobs: Added large block blob upload support. The supported Blocks can now support sizes up to 100 MB.
 - Blobs: Added a new, memory-optimized upload algorithm for UploadFrom* APIs. This strategy only applies for blocks greater than 4MB and when StoreBlobContentMD5 and Client-Side Encryption are disabled.
