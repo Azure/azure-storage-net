@@ -139,7 +139,23 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request for performing the operation.</returns>
         public static HttpWebRequest GetProperties(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return FileHttpWebRequestFactory.GetProperties(uri, timeout, null /* shareSnapshot */, accessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return the file's system properties.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        internal static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
+            FileHttpWebRequestFactory.AddShareSnapshot(builder, shareSnapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, builder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -157,7 +173,23 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request for performing the operation.</returns>
         public static HttpWebRequest GetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return FileHttpWebRequestFactory.GetMetadata(uri, timeout, null /* shareSnapshot */, accessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return the user-defined metadata for the file.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
+            FileHttpWebRequestFactory.AddShareSnapshot(builder, shareSnapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, builder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -242,12 +274,30 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest ListRanges(Uri uri, int? timeout, long? offset, long? count, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return FileHttpWebRequestFactory.ListRanges(uri, timeout, offset, count, null /* shareSnapshot */, accessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return the list of valid ranges for a file.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="offset">The starting offset of the data range over which to list file ranges, in bytes.</param>
+        /// <param name="count">The length of the data range over which to list file ranges, in bytes.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        internal static HttpWebRequest ListRanges(Uri uri, int? timeout, long? offset, long? count, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             if (offset.HasValue)
             {
                 CommonUtility.AssertNotNull("count", count);
             }
 
             UriQueryBuilder builder = new UriQueryBuilder();
+            FileHttpWebRequestFactory.AddShareSnapshot(builder, shareSnapshot);
             builder.Add(Constants.QueryConstants.Component, "rangelist");
 
             HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
@@ -323,7 +373,23 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request for performing the operation.</returns>
         public static HttpWebRequest Get(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return FileHttpWebRequestFactory.Get(uri, timeout, null /* shareSnapshot */, accessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to get the file's content, properties, and metadata.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        internal static HttpWebRequest Get(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             UriQueryBuilder builder = new UriQueryBuilder();
+            FileHttpWebRequestFactory.AddShareSnapshot(builder, shareSnapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Get, uri, timeout, builder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -360,6 +426,24 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static HttpWebRequest Get(Uri uri, int? timeout, long? offset, long? count, bool rangeContentMD5, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return FileHttpWebRequestFactory.Get(uri, timeout, offset, count, rangeContentMD5, null /* shareSnapshot */, accessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to return a specified range of the file's content, together with its properties and metadata.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or null to return all bytes through the end of the file.</param>
+        /// <param name="rangeContentMD5">If set to <c>true</c>, request an MD5 header for the specified range.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        internal static HttpWebRequest Get(Uri uri, int? timeout, long? offset, long? count, bool rangeContentMD5, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             if (offset.HasValue && offset.Value < 0)
             {
                 CommonUtility.ArgumentOutOfRange("offset", offset);
@@ -368,10 +452,10 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             if (offset.HasValue && rangeContentMD5)
             {
                 CommonUtility.AssertNotNull("count", count);
-                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxBlockSize);
+                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxRangeGetContentMD5Size);
             }
 
-            HttpWebRequest request = Get(uri, timeout, accessCondition, useVersionHeader, operationContext);
+            HttpWebRequest request = Get(uri, timeout, shareSnapshot, accessCondition, useVersionHeader, operationContext);
             AddRange(request, offset, count);
 
             if (offset.HasValue && rangeContentMD5)
@@ -455,6 +539,19 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             request.ApplyAccessCondition(accessCondition);
 
             return request;
+        }
+
+        /// <summary>
+        /// Adds the share snapshot.
+        /// </summary>
+        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/> that contains additional parameters to add to the URI query string.</param>
+        /// <param name="snapshot">The snapshot version, if the share is a snapshot.</param>
+        private static void AddShareSnapshot(UriQueryBuilder builder, DateTimeOffset? snapshot)
+        {
+            if (snapshot.HasValue)
+            {
+                builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
+            }
         }
     }
 }

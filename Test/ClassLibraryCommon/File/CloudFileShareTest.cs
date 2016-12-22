@@ -241,6 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public void CloudFileShareCreateIfNotExistsAPM()
         {
             CloudFileShare share = GetRandomShareReference();
+            CloudFileShare share2 = GetRandomShareReference();
             try
             {
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
@@ -255,11 +256,29 @@ namespace Microsoft.WindowsAzure.Storage.File
                         null);
                     waitHandle.WaitOne();
                     Assert.IsFalse(share.EndCreateIfNotExists(result));
+
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = share2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(share2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = share2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(share2.EndCreateIfNotExists(result));
                 }
             }
             finally
             {
                 share.DeleteIfExists();
+                share2.DeleteIfExists();
             }
         }
 
@@ -488,6 +507,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 Assert.IsTrue(share2.Properties.LastModified.Value.AddHours(1) > DateTimeOffset.Now);
                 Assert.IsNotNull(share2.Properties.ETag);
+
+                CloudFileShare share3 = share.ServiceClient.GetShareReference(share.Name);
+                share3.Exists();
+                Assert.AreEqual(1, share3.Metadata.Count);
+                Assert.AreEqual("value1", share3.Metadata["key1"]);
             }
             finally
             {
@@ -730,16 +754,18 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Permissions = SharedAccessFilePermissions.List,
                 });
                 share.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
-                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                permissions = share2.GetPermissions();
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                    permissions = share2.GetPermissions();
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -777,16 +803,18 @@ namespace Microsoft.WindowsAzure.Storage.File
                 });
                 permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
                 share.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
-                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                permissions = share2.GetPermissions();
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                    permissions = share2.GetPermissions();
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -828,18 +856,20 @@ namespace Microsoft.WindowsAzure.Storage.File
                     IAsyncResult result = share.BeginSetPermissions(permissions, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     share.EndSetPermissions(result);
-                    Thread.Sleep(30 * 1000);
 
-                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                    result = share.BeginGetPermissions(ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    permissions = share.EndGetPermissions(result);
-                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                    {
+                        CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                        result = share.BeginGetPermissions(ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        permissions = share.EndGetPermissions(result);
+                        Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                        Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                        Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                        Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    });
                 }
             }
             finally
@@ -882,18 +912,20 @@ namespace Microsoft.WindowsAzure.Storage.File
                     IAsyncResult result = share.BeginSetPermissions(permissions, null, null, null, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     share.EndSetPermissions(result);
-                    Thread.Sleep(30 * 1000);
 
-                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                    result = share.BeginGetPermissions(null, null, null, ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    permissions = share.EndGetPermissions(result);
-                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                    {
+                        CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                        result = share.BeginGetPermissions(null, null, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        permissions = share.EndGetPermissions(result);
+                        Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                        Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                        Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                        Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                        Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                    });
                 }
             }
             finally
@@ -932,16 +964,18 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Permissions = SharedAccessFilePermissions.List,
                 });
                 share.SetPermissionsAsync(permissions).Wait();
-                Thread.Sleep(30 * 1000);
 
-                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                permissions = share2.GetPermissionsAsync().Result;
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                    permissions = share2.GetPermissionsAsync().Result;
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -979,16 +1013,18 @@ namespace Microsoft.WindowsAzure.Storage.File
                 });
                 permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
                 share.SetPermissionsAsync(permissions).Wait();
-                Thread.Sleep(30 * 1000);
 
-                CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                permissions = share2.GetPermissionsAsync().Result;
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
+                    permissions = share2.GetPermissionsAsync().Result;
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessFilePermissions.List, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -1415,7 +1451,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 share.Create();
-                List<string> fileNames = CreateFiles(share, 6000);
+                List<string> fileNames = CreateFilesTask(share, 6000);
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
 
                 int count = 0;
@@ -2006,7 +2042,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             int megabyteInBytes = 1024 * 1024;
             CloudFileShare share = GetRandomShareReference();
-            
+
             try
             {
                 share.CreateAsync().Wait();
@@ -2059,7 +2095,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 CloudFileShare share2 = client.GetShareReference(shareName);
                 share2.FetchAttributes();
-                Assert.AreEqual(8, share2.Properties.Quota); 
+                Assert.AreEqual(8, share2.Properties.Quota);
             }
             finally
             {
@@ -2111,7 +2147,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     waitHandle.WaitOne();
                     share2.EndFetchAttributes(result);
 
-                    Assert.AreEqual(8, share2.Properties.Quota); 
+                    Assert.AreEqual(8, share2.Properties.Quota);
                 }
                 finally
                 {
@@ -2157,6 +2193,120 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 #endif
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareCreateAndDeleteWithWriteOnlyPermissionsSync()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            try
+            {
+                Assert.IsFalse(fileShareWithSAS.DeleteIfExists());
+                Assert.IsTrue(fileShareWithSAS.CreateIfNotExists());
+                Assert.IsFalse(fileShareWithSAS.CreateIfNotExists());
+                Assert.IsTrue(fileShareWithSAS.DeleteIfExists());
+                // Design mechanic, delete takes time to propagate on the service.
+                Assert.IsTrue(fileShareWithSAS.DeleteIfExists());
+            }
+            finally
+            {
+                fileShareWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - APM ")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareCreateAndDeleteWithWriteOnlyPermissionsAPM()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    result = fileShareWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileShareWithSAS.EndDeleteIfExists(result));
+
+                    result = fileShareWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(fileShareWithSAS.EndCreateIfNotExists(result));
+
+                    result = fileShareWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(fileShareWithSAS.EndCreateIfNotExists(result));
+
+                    result = fileShareWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(fileShareWithSAS.EndDeleteIfExists(result));
+
+                    result = fileShareWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(fileShareWithSAS.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                fileShareWithSAS.DeleteIfExists();
+            }
+
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareCreateAndDeleteWithWriteOnlyPermissionsTask()
+        {
+            CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
+            try
+            {
+                Assert.IsFalse(fileShareWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(fileShareWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(fileShareWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(fileShareWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(fileShareWithSAS.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                fileShareWithSAS.DeleteIfExists();
+            }
+        }
+#endif
+
+        private CloudFileShare GenerateRandomWriteOnlyFileShare() {
+            string fileName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.File,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+            };
+
+            CloudFileClient fileClient = GenerateCloudFileClient();
+            CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = fileClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
+            CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
+            CloudFileShare fileShareWithSAS = fileClientWithSAS.GetShareReference(fileName);
+            return fileShareWithSAS;
+        }
 
         /*
         [TestMethod]

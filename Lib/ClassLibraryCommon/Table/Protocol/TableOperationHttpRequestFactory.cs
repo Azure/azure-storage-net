@@ -26,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Threading;
 
     internal static class TableOperationHttpWebRequestFactory
     {
@@ -49,6 +50,16 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return msg;
         }
 
+        internal static DynamicTableEntity GetInnerMergeOperationForKeyRotationOperation(TableOperation operation, TableRequestOptions options)
+        {
+            DynamicTableEntity innerDTE = new DynamicTableEntity();
+            innerDTE.PartitionKey = operation.PartitionKey;
+            innerDTE.RowKey = operation.RowKey;
+            innerDTE.ETag = operation.keyRotationEntity.ETag;
+            innerDTE[Constants.EncryptionConstants.TableEncryptionKeyDetails] = new EntityProperty(CommonUtility.RunWithoutSynchronizationContext(() => TableEncryptionPolicy.RotateEncryptionHelper(operation.keyRotationEntity, options, CancellationToken.None).Result));
+            return innerDTE;
+        }
+
         internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableOperation(Uri uri, UriQueryBuilder builder, IBufferManager bufferManager, int? timeout, TableOperation operation, bool useVersionHeader, OperationContext ctx, TableRequestOptions options, string accountName)
         {
             HttpWebRequest msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, useVersionHeader, ctx);
@@ -66,20 +77,30 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             if (operation.OperationType == TableOperationType.InsertOrMerge || operation.OperationType == TableOperationType.Merge)
             {
+                // Client-side encryption is not supported on merge requests.
+                // This is because we maintain the list of encrypted properties as a property on the entity, and we can't update this 
+                // properly for merge operations.
                 options.AssertNoEncryptionPolicyOrStrictMode();
 
                 // post tunnelling
                 msg.Headers.Add("X-HTTP-Method", "MERGE");
             }
 
+            if (operation.OperationType == TableOperationType.RotateEncryptionKey)
+            {
+                // post tunnelling
+                msg.Headers.Add("X-HTTP-Method", "MERGE");
+            }
+            
             // etag
             if (operation.OperationType == TableOperationType.Delete ||
                 operation.OperationType == TableOperationType.Replace ||
-                operation.OperationType == TableOperationType.Merge)
+                operation.OperationType == TableOperationType.Merge ||
+                operation.OperationType == TableOperationType.RotateEncryptionKey)
             {
-                if (operation.Entity.ETag != null)
+                if (operation.ETag != null)
                 {
-                    msg.Headers.Add("If-Match", operation.Entity.ETag);
+                    msg.Headers.Add("If-Match", operation.ETag);
                 }
             }
 
@@ -93,7 +114,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 operation.OperationType == TableOperationType.Merge ||
                 operation.OperationType == TableOperationType.InsertOrMerge ||
                 operation.OperationType == TableOperationType.InsertOrReplace ||
-                operation.OperationType == TableOperationType.Replace)
+                operation.OperationType == TableOperationType.Replace ||
+                operation.OperationType == TableOperationType.RotateEncryptionKey)
             {
                 // create the writer, indent for readability of the examples.  
                 ODataMessageWriterSettings writerSettings = new ODataMessageWriterSettings()
@@ -110,7 +132,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 
                 ODataMessageWriter odataWriter = new ODataMessageWriter(adapterMsg, writerSettings, new TableStorageModel(accountName));
                 ODataWriter writer = odataWriter.CreateODataEntryWriter();
-                WriteOdataEntity(operation.Entity, operation.OperationType, ctx, writer, options);
+                ITableEntity entityToWrite = (operation.OperationType == TableOperationType.RotateEncryptionKey) ? GetInnerMergeOperationForKeyRotationOperation(operation, options) : operation.Entity;
+                WriteOdataEntity(entityToWrite, operation.OperationType, ctx, writer, options, operation.OperationType == TableOperationType.RotateEncryptionKey);
 
                 return new Tuple<HttpWebRequest, Stream>(adapterMsg.GetPopulatedMessage(), adapterMsg.GetStream());
             }
@@ -157,15 +180,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     httpMethod = "MERGE";
                 }
 
+                if (operation.OperationType == TableOperationType.RotateEncryptionKey)
+                {
+                    httpMethod = "MERGE";
+                }
+
                 ODataBatchOperationRequestMessage mimePartMsg = batchWriter.CreateOperationRequestMessage(httpMethod, operation.GenerateRequestURI(uri, tableName));
                 SetAcceptAndContentTypeForODataBatchMessage(mimePartMsg, payloadFormat);
 
                 // etag
                 if (operation.OperationType == TableOperationType.Delete ||
                     operation.OperationType == TableOperationType.Replace ||
-                    operation.OperationType == TableOperationType.Merge)
+                    operation.OperationType == TableOperationType.Merge || 
+                    operation.OperationType == TableOperationType.RotateEncryptionKey)
                 {
-                    mimePartMsg.SetHeader("If-Match", operation.Entity.ETag);
+                    mimePartMsg.SetHeader("If-Match", operation.ETag);
                 }
 
                 // Prefer header
@@ -180,7 +209,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     {
                         // Write entity
                         ODataWriter entryWriter = batchEntryWriter.CreateODataEntryWriter();
-                        WriteOdataEntity(operation.Entity, operation.OperationType, ctx, entryWriter, options);
+
+                        ITableEntity entityToWrite = (operation.OperationType == TableOperationType.RotateEncryptionKey) ? GetInnerMergeOperationForKeyRotationOperation(operation, options) : operation.Entity;
+                        WriteOdataEntity(entityToWrite, operation.OperationType, ctx, entryWriter, options, operation.OperationType == TableOperationType.RotateEncryptionKey);
+
                     }
                 }
             }
@@ -198,11 +230,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return new Tuple<HttpWebRequest, Stream>(adapterMsg.GetPopulatedMessage(), adapterMsg.GetStream());
         }
 
-        private static void WriteOdataEntity(ITableEntity entity, TableOperationType operationType, OperationContext ctx, ODataWriter writer, TableRequestOptions options)
+        private static void WriteOdataEntity(ITableEntity entity, TableOperationType operationType, OperationContext ctx, ODataWriter writer, TableRequestOptions options, bool ignoreEncryption)
         {
             ODataEntry entry = new ODataEntry()
             {
-                Properties = GetPropertiesWithKeys(entity, ctx, operationType, options),
+                Properties = GetPropertiesWithKeys(entity, ctx, operationType, options, ignoreEncryption),
                 TypeName = "account.sometype"
             };
 
@@ -214,14 +246,14 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         #region TableEntity Serialization Helpers
 
-        internal static IEnumerable<ODataProperty> GetPropertiesFromDictionary(IDictionary<string, EntityProperty> properties, TableRequestOptions options, string partitionKey, string rowKey)
+        internal static IEnumerable<ODataProperty> GetPropertiesFromDictionary(IDictionary<string, EntityProperty> properties, TableRequestOptions options, string partitionKey, string rowKey, bool ignoreEncryption)
         {
             // Check if encryption policy is set and invoke EncryptEnity if it is set.
             if (options != null)
             {
                 options.AssertPolicyIfRequired();
 
-                if (options.EncryptionPolicy != null)
+                if (options.EncryptionPolicy != null && !ignoreEncryption)
                 {
                     properties = options.EncryptionPolicy.EncryptEntity(properties, partitionKey, rowKey, options.EncryptionResolver);
                 }
@@ -230,7 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return properties.Select(kvp => new ODataProperty() { Name = kvp.Key, Value = kvp.Value.PropertyAsObject });
         }
 
-        internal static IEnumerable<ODataProperty> GetPropertiesWithKeys(ITableEntity entity, OperationContext operationContext, TableOperationType operationType, TableRequestOptions options)
+        internal static IEnumerable<ODataProperty> GetPropertiesWithKeys(ITableEntity entity, OperationContext operationContext, TableOperationType operationType, TableRequestOptions options, bool ignoreEncryption)
         {
             if (operationType == TableOperationType.Insert)
             {
@@ -245,7 +277,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
             }
 
-            foreach (ODataProperty property in GetPropertiesFromDictionary(entity.WriteEntity(operationContext), options, entity.PartitionKey, entity.RowKey))
+            foreach (ODataProperty property in GetPropertiesFromDictionary(entity.WriteEntity(operationContext), options, entity.PartitionKey, entity.RowKey, ignoreEncryption))
             {
                 yield return property;
             }

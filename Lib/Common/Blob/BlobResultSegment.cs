@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// <summary>
     /// Represents a segment of <see cref="IListBlobItem"/> results, with continuation information for pagination scenarios.
     /// </summary>
-    public sealed class BlobResultSegment
+    public class BlobResultSegment
     {
         internal BlobResultSegment(IEnumerable<IListBlobItem> blobs, BlobContinuationToken continuationToken)
         {

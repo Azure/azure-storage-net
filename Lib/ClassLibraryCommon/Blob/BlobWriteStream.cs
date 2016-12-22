@@ -147,15 +147,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
             }
 
-            if (this.blobMD5 != null)
-            {
-                this.blobMD5.UpdateHash(buffer, offset, count);
-            }
-
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
             StorageAsyncResult<NullType> currentAsyncResult = storageAsyncResult;
 
             this.currentOffset += count;
+            int initialOffset = offset;
+            int initialCount = count;
             bool dispatched = false;
             if (this.lastException == null)
             {
@@ -184,6 +181,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         currentAsyncResult = null;
                     }
                 }
+            }
+
+            // Update transactional, then update full blob, in that order.
+            // This way, if there's any bit corruption that happens in between the two, we detect it at PutBlock on the service, 
+            // rather than GetBlob + validate on the client
+            if (this.blobMD5 != null)
+            {
+                this.blobMD5.UpdateHash(buffer, initialOffset, initialCount);
             }
 
             if (!dispatched)

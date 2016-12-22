@@ -47,14 +47,24 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int DefaultWriteBlockSizeBytes = (int)(4 * Constants.MB);
 
         /// <summary>
-        /// The maximum size of a blob before it must be separated into blocks.
+        /// Default read buffer size used by the SubStream class for Large Block Blob uploads.
         /// </summary>
-        public const long MaxSingleUploadBlobSize = 64 * MB;
+        public const int DefaultSubStreamBufferSize = (int)(4 * Constants.MB);
 
         /// <summary>
-        /// The maximum size of a single block.
+        /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
-        public const int MaxBlockSize = (int)(4 * Constants.MB);
+        public const long MaxSingleUploadBlobSize = 256 * MB;
+
+        /// <summary>
+        /// The maximum size of a single block for Block Blobs.
+        /// </summary>
+        public const int MaxBlockSize = (int)(100 * Constants.MB);
+
+        /// <summary>
+        /// The maximum size of a single block for Append Blobs.
+        /// </summary>
+        public const int MaxAppendBlockSize = (int)(4 * Constants.MB);
 
         /// <summary>
         /// The maximum size of a range get operation that returns content MD5.
@@ -70,6 +80,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// The maximum size of a blob with blocks.
         /// </summary>
         public const long MaxBlobSize = MaxBlockNumber * MaxBlockSize;
+
+        /// <summary>
+        /// The minimum size of a block for the large block upload strategy to be employed.
+        /// </summary>
+        public const int MinLargeBlockSize = (int)(4 * Constants.MB) + 1;
 
         /// <summary>
         /// Constant for the max value of MaximumExecutionTime.
@@ -118,7 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const long MB = 1024 * KB;
 
         /// <summary>
-        /// A constant representing a megabyte (Non-SI version).
+        /// A constant representing a gigabyte (Non-SI version).
         /// </summary>
         public const long GB = 1024 * MB;
 
@@ -368,6 +383,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string CopyStatusDescriptionElement = "CopyStatusDescription";
 
         /// <summary>
+        /// XML element for incremental copy.
+        /// </summary>
+        public const string IncrementalCopy = "IncrementalCopy";
+
+        /// <summary>
+        /// XML element for destination snapshot time.
+        /// </summary>
+        public const string CopyDestinationSnapshotElement = "CopyDestinationSnapshot";
+
+        /// <summary>
         /// Constant signaling a page blob.
         /// </summary>
         public const string PageBlobValue = "PageBlob";
@@ -426,6 +451,26 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constant signaling the resource's lease is fixed (finite).
         /// </summary>
         public const string LeaseFixedValue = "fixed";
+        
+        /// <summary>
+        /// Constant for the minimum period of time that a lease can be broken in. 
+        /// </summary>
+        public const int MinimumBreakLeasePeriod = 0;
+
+        /// <summary>
+        /// Constant for the maximum period of time that a lease can be broken in.
+        /// </summary>
+        public const int MaximumBreakLeasePeriod = 60;
+
+        /// <summary>
+        /// Constant for the minimum duration of a lease.
+        /// </summary>
+        public const int MinimumLeaseDuration = 15;
+
+        /// <summary>
+        /// Constant for the maximum non-infinite duration of a lease.
+        /// </summary>
+        public const int MaximumLeaseDuration = 60;
 
         /// <summary>
         /// Constant for a pending copy.
@@ -481,6 +526,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for the lease status.
         /// </summary>
         public const string LeaseDurationElement = "LeaseDuration";
+
+        /// <summary>
+        /// XML element for the public access value.
+        /// </summary>
+        public const string PublicAccessElement = "PublicAccess";
 
         /// <summary>
         /// XML element for snapshots.
@@ -774,7 +824,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "7.2.1";
+            public const string UserAgentProductVersion = "8.0.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -1065,7 +1115,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2015-12-11";
+            public const string TargetStorageVersion = "2016-05-31";
 
             /// <summary>
             /// Specifies the file type.
@@ -1179,9 +1229,24 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string CopyActionHeader = PrefixForStorageHeader + "copy-action";
 
             /// <summary>
+            /// Header that specifies the copy type.
+            /// </summary>
+            public const string CopyTypeHeader = PrefixForStorageHeader + "copy-type";
+
+            /// <summary>
             /// The value of the copy action header that signifies an abort operation.
             /// </summary>
             public const string CopyActionAbort = "abort";
+
+            /// <summary>
+            /// Header that specifies an incremental copy.
+            /// </summary>
+            public const string IncrementalCopyHeader = PrefixForStorageHeader + "incremental-copy";
+
+            /// <summary>
+            /// Header that specifies the snapshot time of the last successful incremental copy snapshot.
+            /// </summary>
+            public const string CopyDestinationSnapshotHeader = PrefixForStorageHeader + "copy-destination-snapshot";
 
             /// <summary>
             /// Header that specifies the share size, in gigabytes.
@@ -1214,6 +1279,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Query component for snapshot time.
             /// </summary>
             public const string Snapshot = "snapshot";
+
+            /// <summary>
+            /// Query component for share snapshot time.
+            /// </summary>
+            public const string ShareSnapshot = "sharesnapshot";
 
             /// <summary>
             /// Query component for the signed SAS start time.

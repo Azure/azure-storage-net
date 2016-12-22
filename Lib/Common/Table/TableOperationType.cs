@@ -56,6 +56,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Represents a retrieve operation.
         /// </summary>
-        Retrieve
+        Retrieve,
+
+        /// <summary>
+        /// Represents an operation to rotate the encryption key.
+        /// </summary>
+        RotateEncryptionKey
     }
 }

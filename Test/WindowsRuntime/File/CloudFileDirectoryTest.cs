@@ -250,7 +250,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 if (await CloudFileDirectorySetupAsync(share))
                 {
                     CloudFileDirectory topDir1 = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1");
-                    IEnumerable<IListFileItem> list1 = await ListFilesAndDirectoriesAsync(topDir1, null, null, null);
+                    IEnumerable<IListFileItem> list1 = await ListFilesAndDirectoriesAsync(topDir1, null, null, null, null);
 
                     List<IListFileItem> simpleList1 = list1.ToList();
                     ////Check if for 3 because if there were more than 3, the previous assert would have failed.
@@ -270,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     CloudFileDirectory midDir2 = (CloudFileDirectory)item13;
                     Assert.AreEqual("MidDir2", ((CloudFileDirectory)item13).Name);
 
-                    IEnumerable<IListFileItem> list2 = await ListFilesAndDirectoriesAsync(midDir2, null, null, null);
+                    IEnumerable<IListFileItem> list2 = await ListFilesAndDirectoriesAsync(midDir2, null, null, null, null);
 
                     List<IListFileItem> simpleList2 = list2.ToList();
                     Assert.IsTrue(simpleList2.Count == 2);
@@ -282,6 +282,66 @@ namespace Microsoft.WindowsAzure.Storage.File
                     IListFileItem item22 = simpleList2.ElementAt(1);
                     Assert.IsTrue(item22.Uri.Equals(share.Uri + "/TopDir1/MidDir2/EndDir2"));
                     Assert.AreEqual("EndDir2", ((CloudFileDirectory)item22).Name);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("CloudFileDirectory listing with prefix")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryListFilesAndDirectoriesWithPrefixAsync()
+        {
+            CloudFileClient client = GenerateCloudFileClient();
+            string name = GetRandomShareName();
+            CloudFileShare share = client.GetShareReference(name);
+
+            try
+            {
+                await share.CreateAsync();
+                if (await CloudFileDirectorySetupAsync(share))
+                {
+                    CloudFileDirectory topDir1 = share.GetRootDirectoryReference().GetDirectoryReference("TopDir1");
+
+                    IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(topDir1, "file");
+                    List<IListFileItem> list = results.ToList();
+                    Assert.IsTrue(list.Count == 1);
+                    IListFileItem item = list.ElementAt(0);
+                    Assert.IsTrue(item.Uri.Equals(share.Uri + "/TopDir1/File1"));
+                    Assert.AreEqual("File1", ((CloudFile)item).Name);
+
+                    results = await ListFilesAndDirectoriesAsync( topDir1, "mid");
+                    list = results.ToList(); 
+                    Assert.IsTrue(list.Count == 2);
+                    IListFileItem item1 = list.ElementAt(0);
+                    IListFileItem item2 = list.ElementAt(1);
+                    Assert.IsTrue(item1.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item1).Name);
+                    Assert.IsTrue(item2.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item2).Name);
+
+                    results = await ListFilesAndDirectoriesAsync( 
+                        topDir1 /* directory */,
+                        "mid" /* prefix */,
+                        1 /* maxCount */,
+                        null /* options */,
+                        null /* operationContext */);
+                    
+                    list = results.ToList(); 
+                    Assert.IsTrue(list.Count() == 2);
+                    item1 = list.ElementAt(0);
+                    item2 = list.ElementAt(1);
+
+                    Assert.IsTrue(item1.Uri.Equals(share.Uri + "/TopDir1/MidDir1"));
+                    Assert.AreEqual("MidDir1", ((CloudFileDirectory)item1).Name);
+                    Assert.IsTrue(item2.Uri.Equals(share.Uri + "/TopDir1/MidDir2"));
+                    Assert.AreEqual("MidDir2", ((CloudFileDirectory)item2).Name);
                 }
             }
             finally

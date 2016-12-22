@@ -18,7 +18,6 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-    using Microsoft.Data.OData;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
@@ -91,10 +90,10 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 return null;
             }
-            
+
             StorageExtendedErrorInformation extendedErrorInfo = new StorageExtendedErrorInformation();
             try
-            {               
+            {
                 using (XmlReader reader = XmlReader.Create(inputStream))
                 {
                     reader.Read();
@@ -110,100 +109,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
 
-        /// <summary>
-        /// Gets the error details from the stream using OData library.
-        /// </summary>
-        /// <param name="inputStream">The input stream.</param>
-        /// <param name="response">The web response.</param>
-        /// <param name="contentType">The response Content-Type.</param>
-        /// <returns>The error details.</returns>
-#if WINDOWS_RT || NETCORE
-        public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpResponseMessage response, string contentType)
-#else
-        public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpWebResponse response, string contentType)
-#endif
-        {
-            CommonUtility.AssertNotNull("inputStream", inputStream);
-            CommonUtility.AssertNotNull("response", response);
-
-            if (inputStream.CanSeek && inputStream.Length <= 0)
-            {
-                return null;
-            }
-
-            HttpResponseAdapterMessage responseMessage = new HttpResponseAdapterMessage(response, new NonCloseableStream(inputStream), contentType);
-            return ReadAndParseExtendedError(responseMessage);
-        }
-
-        /// <summary>
-        /// Gets the error details from the stream using OData library.
-        /// </summary>
-        /// <param name="inputStream">The input stream.</param>
-        /// <param name="responseHeaders">The web response headers.</param>
-        /// <param name="contentType">The response Content-Type.</param>
-        /// <returns>The error details.</returns>
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        public static StorageExtendedErrorInformation ReadDataServiceResponseFromStream(Stream inputStream, IDictionary<string, string> responseHeaders, string contentType)
-        {
-            CommonUtility.AssertNotNull("inputStream", inputStream);
-
-            if (inputStream.CanSeek && inputStream.Length <= 0)
-            {
-                return null;
-            }
-
-            DataServicesResponseAdapterMessage responseMessage = new DataServicesResponseAdapterMessage(responseHeaders, inputStream, contentType);
-            return ReadAndParseExtendedError(responseMessage);
-        }
-#endif
-
-        /// <summary>
-        /// Parses the error details from the stream using OData library.
-        /// </summary>
-        /// <param name="responseMessage">The IODataResponseMessage to parse.</param>
-        /// <returns>The error details.</returns>
-        public static StorageExtendedErrorInformation ReadAndParseExtendedError(IODataResponseMessage responseMessage)
-        {
-            StorageExtendedErrorInformation storageExtendedError = null;
-            using (ODataMessageReader reader = new ODataMessageReader(responseMessage))
-            {
-                try
-                {
-                    ODataError error = reader.ReadError();
-                    if (error != null)
-                    {
-                        storageExtendedError = new StorageExtendedErrorInformation();
-                        storageExtendedError.AdditionalDetails = new Dictionary<string, string>();
-                        storageExtendedError.ErrorCode = error.ErrorCode;
-                        storageExtendedError.ErrorMessage = error.Message;
-                        if (error.InnerError != null)
-                        {
-                            storageExtendedError.AdditionalDetails[Constants.ErrorExceptionMessage] = error.InnerError.Message;
-                            storageExtendedError.AdditionalDetails[Constants.ErrorExceptionStackTrace] = error.InnerError.StackTrace;
-                        }
-
-#if !(WINDOWS_PHONE && WINDOWS_DESKTOP)
-                        if (error.InstanceAnnotations.Count > 0)
-                        {
-                            foreach (ODataInstanceAnnotation annotation in error.InstanceAnnotations)
-                            {
-                                storageExtendedError.AdditionalDetails[annotation.Name] = annotation.Value.GetAnnotation<string>();
-                            }
-                        }
-#endif
-                    }
-                }
-                catch (Exception)
-                {
-                    // Error cannot be parsed. 
-                    return null;
-                }
-            }
-
-            return storageExtendedError;
-        }
-
-#region IXmlSerializable
+        #region IXmlSerializable
 
         /// <summary>
         /// Generates a serializable <see cref="StorageExtendedErrorInformation"/> object from its XML representation.
@@ -214,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage
 #else
         public
 #endif
-        void ReadXml(XmlReader reader)
+ void ReadXml(XmlReader reader)
         {
             CommonUtility.AssertNotNull("reader", reader);
 
@@ -285,7 +191,7 @@ namespace Microsoft.WindowsAzure.Storage
 #else
         public
 #endif
-        void WriteXml(XmlWriter writer)
+ void WriteXml(XmlWriter writer)
         {
             CommonUtility.AssertNotNull("writer", writer);
 
@@ -302,6 +208,6 @@ namespace Microsoft.WindowsAzure.Storage
             writer.WriteEndElement();
         }
 
-#endregion
+        #endregion
     }
 }

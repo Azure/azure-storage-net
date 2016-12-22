@@ -24,6 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 {
     public partial class TestLogListener : EventListener
     {
+
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
         {
             Debug.WriteLine(eventData.Payload[0]);
@@ -33,12 +34,14 @@ namespace Microsoft.WindowsAzure.Storage.Core
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
             base.OnEventSourceCreated(eventSource);
-
+#if !FACADE_NETCORE
             if (eventSource.Name.Equals(Constants.LogSourceName))
             {
                 this.EnableEvents(eventSource, EventLevel.Verbose);
             }
+#endif
         }
+
 
         private static LogLevel MapLogLevel(EventLevel level)
         {

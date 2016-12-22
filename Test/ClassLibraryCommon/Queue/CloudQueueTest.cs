@@ -265,9 +265,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueCreateIfNotExistsAPM()
         {
-            string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
-            CloudQueue queue = client.GetQueueReference(name);
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+            CloudQueue queue2 = client.GetQueueReference(GenerateNewQueueName());
 
             try
             {
@@ -280,11 +280,30 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     result = queue.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     Assert.IsFalse(queue.EndCreateIfNotExists(result));
+
+                    // Test the case where the callback is null.
+                    // There is a race condition (inherent in the APM pattern) about what will happen if an exception is thrown in the callback
+                    // This is why we need the sleep - to ensure that if our code nullref's in the null-callback case, the exception has time 
+                    // to get processed before the End call.
+                    OperationContext context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = queue2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsTrue(queue2.EndCreateIfNotExists(result));
+                    context = new OperationContext();
+                    context.RequestCompleted += (sender, e) => waitHandle.Set();
+                    result = queue2.BeginCreateIfNotExists(null, context, null, null);
+                    waitHandle.WaitOne();
+                    Thread.Sleep(2000);
+                    Assert.IsFalse(queue2.EndCreateIfNotExists(result));
+
                 }
             }
             finally
             {
-                queue.Delete();
+                queue.DeleteIfExists();
+                queue2.DeleteIfExists();
             }
         }
 
@@ -522,12 +541,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                         });
 
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
-                CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
-                QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissions();
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+                    QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissions();
 
-                AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                    AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                });
             }
             finally
             {
@@ -574,15 +595,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     waitHandle.WaitOne();
                     queue.EndSetPermissions(result);
 
-                    Thread.Sleep(30 * 1000);
+                    TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                    {
+                        CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
 
-                    CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+                        result = queueToRetrieve.BeginGetPermissions(ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        QueuePermissions permissionsToRetrieve = queueToRetrieve.EndGetPermissions(result);
 
-                    result = queueToRetrieve.BeginGetPermissions(ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    QueuePermissions permissionsToRetrieve = queueToRetrieve.EndGetPermissions(result);
-
-                    AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                        AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                    });
                 }
             }
             finally
@@ -627,12 +649,14 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                         });
 
                 queue.SetPermissionsAsync(permissions).Wait();
-                Thread.Sleep(30 * 1000);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
 
-                CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
-                QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissionsAsync(null, null).Result;
+                    CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+                    QueuePermissions permissionsToRetrieve = queueToRetrieve.GetPermissionsAsync(null, null).Result;
 
-                AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                    AssertPermissionsEqual(permissions, permissionsToRetrieve);
+                });
             }
             finally
             {
@@ -816,7 +840,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 });
 
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
                 string sasTokenFromId = queue.GetSharedAccessSignature(null, id);
                 StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
@@ -825,22 +848,34 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 CloudQueueClient sasClient = sasAcc.CreateCloudQueueClient();
 
                 CloudQueue sasQueueFromSasUri = new CloudQueue(sasClient.Credentials.TransformUri(queue.Uri));
-                CloudQueueMessage receivedMessage = sasQueueFromSasUri.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage = sasQueueFromSasUri.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage.AsString);
+                });
 
                 CloudQueue sasQueueFromSasUri1 = new CloudQueue(new Uri(queue.Uri.ToString() + sasTokenFromId));
-                CloudQueueMessage receivedMessage1 = sasQueueFromSasUri1.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage1 = sasQueueFromSasUri1.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                });
 
                 CloudQueue sasQueueFromId = new CloudQueue(queue.Uri, sasCredsFromId);
-                CloudQueueMessage receivedMessage2 = sasQueueFromId.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage2 = sasQueueFromId.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                });
 
                 string sasTokenFromPolicy = queue.GetSharedAccessSignature(permissions.SharedAccessPolicies[id], null);
                 StorageCredentials sasCredsFromPolicy = new StorageCredentials(sasTokenFromPolicy);
                 CloudQueue sasQueueFromPolicy = new CloudQueue(queue.Uri, sasCredsFromPolicy);
-                CloudQueueMessage receivedMessage3 = sasQueueFromPolicy.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage3.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage3 = sasQueueFromPolicy.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage3.AsString);
+                });
             }
             finally
             {
@@ -883,19 +918,24 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 });
 
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
                 string sasTokenFromId = queue.GetSharedAccessSignature(null, id);
                 StorageCredentials sasCredsFromId = new StorageCredentials(sasTokenFromId);
                 CloudQueue sasQueueFromId = new CloudQueue(queue.Uri, sasCredsFromId);
-                CloudQueueMessage receivedMessage1 = sasQueueFromId.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage1 = sasQueueFromId.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage1.AsString);
+                });
 
                 string sasTokenFromPolicy = queue.GetSharedAccessSignature(permissions.SharedAccessPolicies[id], null);
                 StorageCredentials sasCredsFromPolicy = new StorageCredentials(sasTokenFromPolicy);
                 CloudQueue sasQueueFromPolicy = new CloudQueue(queue.Uri, sasCredsFromPolicy);
-                CloudQueueMessage receivedMessage2 = sasQueueFromPolicy.PeekMessage();
-                Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueueMessage receivedMessage2 = sasQueueFromPolicy.PeekMessage();
+                    Assert.AreEqual(messageContent, receivedMessage2.AsString);
+                });
             }
             finally
             {
@@ -935,16 +975,18 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 });
                 permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
                 queue.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
-                CloudQueue queue2 = queue.ServiceClient.GetQueueReference(queue.Name);
-                permissions = queue2.GetPermissions();
-                Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
-                Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
-                Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
-                Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
-                Assert.AreEqual(SharedAccessQueuePermissions.Read, permissions.SharedAccessPolicies["key1"].Permissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    CloudQueue queue2 = queue.ServiceClient.GetQueueReference(queue.Name);
+                    permissions = queue2.GetPermissions();
+                    Assert.AreEqual(1, permissions.SharedAccessPolicies.Count);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.HasValue);
+                    Assert.AreEqual(start, permissions.SharedAccessPolicies["key1"].SharedAccessStartTime.Value.UtcDateTime);
+                    Assert.IsTrue(permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.HasValue);
+                    Assert.AreEqual(expiry, permissions.SharedAccessPolicies["key1"].SharedAccessExpiryTime.Value.UtcDateTime);
+                    Assert.AreEqual(SharedAccessQueuePermissions.Read, permissions.SharedAccessPolicies["key1"].Permissions);
+                });
             }
             finally
             {
@@ -1652,6 +1694,124 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 queue.DeleteIfExists();
             }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsSync()
+        {
+            CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
+            try
+            {
+                Assert.IsFalse(queueWithSAS.DeleteIfExists());
+                Assert.IsTrue(queueWithSAS.CreateIfNotExists());
+                Assert.IsFalse(queueWithSAS.CreateIfNotExists());
+                Assert.IsTrue(queueWithSAS.DeleteIfExists());
+                Assert.IsTrue(queueWithSAS.DeleteIfExists());
+            }
+            finally
+            {
+                queueWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - APM ")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsAPM()
+        {
+            CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
+            try
+            {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(queueWithSAS.EndDeleteIfExists(result));
+
+                    result = queueWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(queueWithSAS.EndCreateIfNotExists(result));
+
+                    result = queueWithSAS.BeginCreateIfNotExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(queueWithSAS.EndCreateIfNotExists(result));
+
+                    result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(queueWithSAS.EndDeleteIfExists(result));
+
+                    result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(queueWithSAS.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                queueWithSAS.DeleteIfExists();
+            }
+
+        }
+
+#if TASK
+         [TestMethod]
+        [Description("Test to ensure CreateIfNotExists/DeleteIfNotExists succeeds with write-only Account SAS permissions - TASK ")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsTask()
+        {
+            CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
+            try
+            {
+                Assert.IsFalse(queueWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsTrue(queueWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsFalse(queueWithSAS.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(queueWithSAS.DeleteIfExistsAsync().Result);
+                // Design mechanic, delete takes time to propagate on the service.
+                Assert.IsTrue(queueWithSAS.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                queueWithSAS.DeleteIfExists();
+            }
+
+        }
+#endif
+
+        private CloudQueue GenerateRandomWriteOnlyQueue()
+        {
+            string queueName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.Queue,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+
+            };
+
+            CloudQueueClient queueClient = GenerateCloudQueueClient();
+            CloudStorageAccount account = new CloudStorageAccount(queueClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = queueClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, queueClient.StorageUri, null, null);
+            CloudQueueClient queueClientWithSAS = accountWithSAS.CreateCloudQueueClient();
+            CloudQueue queueWithSAS = queueClientWithSAS.GetQueueReference(queueName);
+
+            return queueWithSAS;
         }
 
         #region Test Helpers

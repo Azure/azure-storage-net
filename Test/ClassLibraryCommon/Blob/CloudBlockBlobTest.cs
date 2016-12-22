@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,6 +26,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -342,6 +344,98 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
+        [Description("Try to delete a non-existing block blob with write-only Account SAS permissions - SYNC")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsSync()
+        {
+            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                Assert.IsFalse(blob.DeleteIfExists());
+                CreateForTest(blob, 0, 0, false);
+                Assert.IsTrue(blob.DeleteIfExists());
+                Assert.IsFalse(blob.DeleteIfExists());
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Try to delete a non-existing block blob with write-only Account SAS permissions - APM")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsAPM()
+        {
+            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            try
+            {
+                container.Create();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                    IAsyncResult result = blob.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(blob.EndDeleteIfExists(result));
+                    CreateForTest(blob, 0, 0, true);
+                    result = blob.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsTrue(blob.EndDeleteIfExists(result));
+                    result = blob.BeginDeleteIfExists(
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Assert.IsFalse(blob.EndDeleteIfExists(result));
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Try to delete a non-existing block blob with write-only Account SAS permissions - TASK")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsTask()
+        {
+            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
+                blob.PutBlockListAsync(new List<string>()).Wait();
+                Assert.IsTrue(blob.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
         [Description("Check a blob's existence")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -597,6 +691,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsNull(blob2.Properties.ContentMD5);
                 Assert.AreEqual(LeaseStatus.Unlocked, blob2.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.BlockBlob, blob2.Properties.BlobType);
+
+                CloudBlockBlob blob3 = container.GetBlockBlobReference("blob1");
+                Assert.IsNull(blob3.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                BlobRequestOptions options2 = new BlobRequestOptions();
+                options2.UseTransactionalMD5 = true;
+                blob3.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                blob3.DownloadRangeToByteArray(target, 0, 0, 4, options: options2);
+                Assert.IsNull(blob3.Properties.ContentMD5);
             }
             finally
             {
@@ -657,6 +760,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob blob4 = (CloudBlockBlob)container.ListBlobs().First();
                 AssertAreEqual(blob2.Properties, blob4.Properties);
+
+                CloudBlockBlob blob5 = container.GetBlockBlobReference("blob1");
+                Assert.IsNull(blob5.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                blob5.DownloadRangeToByteArray(target, 0, 0, 4);
+                Assert.AreEqual("MDAwMDAwMDA=", blob5.Properties.ContentMD5);
+
+                CloudBlockBlob blob6 = container.GetBlockBlobReference("blob1");
+                Assert.IsNull(blob6.Properties.ContentMD5);
+                target = new byte[4];
+                BlobRequestOptions options2 = new BlobRequestOptions();
+                options2.UseTransactionalMD5 = true;
+                blob6.DownloadRangeToByteArray(target, 0, 0, 4, options: options2);
+                Assert.AreEqual("MDAwMDAwMDA=", blob6.Properties.ContentMD5);
             }
             finally
             {
@@ -1536,7 +1653,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDownloadToStream()
         {
-            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(1 * Constants.MB);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
@@ -1568,7 +1685,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDownloadToStreamAPM()
         {
-            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(1 * Constants.MB);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
@@ -1611,7 +1728,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDownloadToStreamAPMOverload()
         {
-            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(1 * Constants.MB);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
@@ -1658,7 +1775,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDownloadToStreamTask()
         {
-            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(1 * Constants.MB);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
@@ -1690,7 +1807,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDownloadToStreamOverloadTask()
         {
-            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(1 * Constants.MB);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
@@ -1830,35 +1947,35 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, false, true);
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 CreateForTest(blob, 1, 1024, false);
                 blob.FetchAttributes();
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 TestHelper.ExpectedException(
-                    () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, false, true),
+                    () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, false, true),
                     "Uploading a blob on top of an existing blob should fail if the ETag matches",
                     HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, false, true);
 
                 blob = container.GetBlockBlobReference("blob3");
                 CreateForTest(blob, 1, 1024, false);
                 blob.FetchAttributes();
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
                 TestHelper.ExpectedException(
-                    () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, false, true),
+                    () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, false, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
                     HttpStatusCode.PreconditionFailed);
                 TestHelper.ExpectedException(
-                    () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, false, true),
+                    () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, false, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, false, true);
             }
             finally
             {
@@ -1879,36 +1996,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("\"*\"");
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, true, true);
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 CreateForTest(blob, 1, 1024, false);
                 blob.FetchAttributes();
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 TestHelper.ExpectedException(
-                    () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, true, true),
+                    () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, true, true),
                     "Uploading a blob on top of an existing blob should fail if the ETag matches",
                     HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, true, true);
 
                 blob = container.GetBlockBlobReference("blob3");
                 CreateForTest(blob, 1, 1024, false);
                 blob.FetchAttributes();
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
                 TestHelper.ExpectedException(
-                   () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, true, true),
+                   () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, true, true),
                    "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
                    HttpStatusCode.PreconditionFailed);
                 TestHelper.ExpectedException(
-                    () => this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, true, true),
+                    () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, true, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.PreconditionFailed);
 
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, true, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 2 * 1024 * 1024, null, accessCondition, true, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, true, true);
             }
             finally
             {
@@ -1928,10 +2045,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             container.Create();
             try
             {
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, true, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, true, 1024, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, false, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, false, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, true, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, false, 1024, false, true);
             }
             finally
             {
@@ -1951,10 +2068,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             container.Create();
             try
             {
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, true, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, true, 1024, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, false, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, false, false, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, true, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, false, false, 1024, true, true);
             }
             finally
             {
@@ -1974,10 +2091,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             container.Create();
             try
             {
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, true, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, true, 1024, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, false, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, false, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, true, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, false, 1024, false, true);
             }
             finally
             {
@@ -1997,10 +2114,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             container.Create();
             try
             {
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, true, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, true, 1024, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, false, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, null, null, true, false, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, true, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, null, null, true, false, 1024, true, true);
             }
             finally
             {
@@ -2021,22 +2138,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 // Upload 2MB of a 5MB stream
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, true, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, true, 1024, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, false, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, false, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, true, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, false, 1024, false, true);
 
                 // Exclude last byte
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, true, true, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, true, true, 1024, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, true, false, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, true, false, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB - 1, null, true, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB - 1, null, true, true, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB - 1, null, true, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB - 1, null, true, false, 1024, false, true);
 
                 // Upload exact amount
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, true, true, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, true, true, 1024, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, true, false, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, true, false, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB, null, true, true, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB, null, true, true, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB, null, true, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB, null, true, false, 1024, false, true);
             }
             finally
             {
@@ -2057,22 +2174,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             try
             {
                 // Upload 2MB of a 5MB stream
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, true, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, true, 1024, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, false, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, false, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, true, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 2 * Constants.MB, null, true, false, 1024, true, true);
 
                 // Exclude last byte
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, true, true, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, true, true, 1024, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, true, false, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, true, false, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB - 1, null, true, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB - 1, null, true, true, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB - 1, null, true, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB - 1, null, true, false, 1024, true, true);
 
                 // Upload exact amount
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, true, true, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, true, true, 1024, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, true, false, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, true, false, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB, null, true, true, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB, null, true, true, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 5 * Constants.MB, null, true, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 5 * Constants.MB, 4 * Constants.MB, null, true, false, 1024, true, true);
             }
             finally
             {
@@ -2095,49 +2212,49 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, true, true, 0, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, true, true, 0, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, true, true, 1024, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, true, true, 1024, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, false, true, 0, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, false, true, 0, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, false, true, 1024, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, false, true, 1024, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, true, false, 0, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, true, false, 0, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, true, false, 1024, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, true, false, 1024, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, false, false, 0, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, false, false, 0, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, false, false, 1024, false, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, false, false, 1024, false, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
@@ -2161,49 +2278,49 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, true, true, 0, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, true, true, 0, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, true, true, 1024, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, true, true, 1024, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, false, true, 0, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, false, true, 0, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, false, true, 1024, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, false, true, 1024, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, true, false, 0, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, true, false, 0, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, true, false, 1024, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, true, false, 1024, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, false, false, 0, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB + 1, null, false, false, 0, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
                 TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                     () =>
                     this.CloudBlockBlobUploadFromStream(
-                        container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, false, false, 1024, true, false),
+                        container, 2 * Constants.MB, 2 * Constants.MB - 1023, null, false, false, 1024, true, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
@@ -2225,8 +2342,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             container.Create();
             try
             {
-                this.CloudBlockBlobUploadFromStream(container, 16 * 1024 * 1024, null, null, true, false, 0, false, true);
-                this.CloudBlockBlobUploadFromStream(container, 16 * 1024 * 1024, null, null, true, false, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 16 * Constants.MB, null, null, true, false, 0, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 16 * Constants.MB, null, null, true, false, 1024, false, true);
+                this.CloudBlockBlobUploadFromStream(container, 25 * Constants.MB, null, null, true, false, 0, false, false, 5 * Constants.MB, 4);
+                this.CloudBlockBlobUploadFromStream(container, 25 * Constants.MB, null, null, true, false, 1024, false, false, 5 * Constants.MB, 4);
+                this.CloudBlockBlobUploadFromStream(container, 32 * Constants.MB, null, null, true, false, 0, false, false, 10 * Constants.MB, 3);
+                this.CloudBlockBlobUploadFromStream(container, 32 * Constants.MB, null, null, true, false, 1024, false, false, 10 * Constants.MB, 3);
             }
             finally
             {
@@ -2240,19 +2361,49 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobParallelUploadFromStreamAPM()
+        public void CloudBlockBlobParallelUploadFromStreamApm()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 8;
             container.Create();
             try
             {
-                this.CloudBlockBlobUploadFromStream(container, 16 * 1024 * 1024, null, null, true, false, 0, true, true);
-                this.CloudBlockBlobUploadFromStream(container, 16 * 1024 * 1024, null, null, true, false, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 16 * Constants.MB, null, null, true, false, 0, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 16 * Constants.MB, null, null, true, false, 1024, true, true);
+                this.CloudBlockBlobUploadFromStream(container, 25 * Constants.MB, null, null, true, false, 0, true, false, 5 * Constants.MB, 4);
+                this.CloudBlockBlobUploadFromStream(container, 25 * Constants.MB, null, null, true, false, 1024, true, false, 5 * Constants.MB, 4);
+                this.CloudBlockBlobUploadFromStream(container, 32 * Constants.MB, null, null, true, false, 0, true, false, 10 * Constants.MB, 3);
+                this.CloudBlockBlobUploadFromStream(container, 32 * Constants.MB, null, null, true, false, 1024, true, false, 10 * Constants.MB, 3);
             }
             finally
             {
                 container.Delete();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload blob using multiple threads and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobParallelUploadFromStreamAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 8;
+            container.Create();
+            try
+            {
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * Constants.MB, null, null, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * Constants.MB, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 25 * Constants.MB, null, null, true, false, 0, false, 5 * Constants.MB, 4);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 25 * Constants.MB, null, null, true, false, 1024, false, 5 * Constants.MB, 4);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 32 * Constants.MB, null, null, true, false, 0, false, 10 * Constants.MB, 3);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 32 * Constants.MB, null, null, true, false, 1024, false, 10 * Constants.MB, 3);
+            }
+            finally
+            {
+                container.DeleteAsync().Wait();
             }
         }
 
@@ -2271,17 +2422,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             try
             {
-                const int Size = 20 * 1024 * 1024;
+                const long Size = 20 * Constants.MB;
                 byte[] buffer = GetRandomBuffer(Size);
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-                blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+                blob.StreamWriteSizeInBytes = (int)(1 * Constants.MB);
 
                 CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
-                blob2.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+                blob2.StreamWriteSizeInBytes = (int)(1 * Constants.MB);
 
                 CloudBlockBlob blob3 = container.GetBlockBlobReference("blob3");
-                blob3.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+                blob3.StreamWriteSizeInBytes = (int)(1 * Constants.MB);
+
+                CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
+                blob4.StreamWriteSizeInBytes = (int)(5 * Constants.MB);
+
+                CloudBlockBlob blob5 = container.GetBlockBlobReference("blob5");
+                blob5.StreamWriteSizeInBytes = (int)(7 * Constants.MB);
 
                 using (MemoryStream originalBlobStream = new MemoryStream())
                 {
@@ -2301,7 +2458,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         OperationContext context = new OperationContext();
                         blob.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
+                        // Number of requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
                         Assert.IsTrue(context.RequestResults.Count >= 21);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
@@ -2314,7 +2471,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         context = new OperationContext();
                         blob2.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
+                        // Number of requests should be at least 21 since StreamWriteSizeInBytes is 1 MB
                         Assert.IsTrue(context.RequestResults.Count >= 21);
 
                         sourceStream.Seek(0, SeekOrigin.Begin);
@@ -2327,8 +2484,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         context = new OperationContext();
                         blob3.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
 
-                        // Number or requests should 1, or 2 if there is a retry
+                        // Number of requests should 1, or 2 if there is a retry
                         Assert.IsTrue(context.RequestResults.Count <= 2);
+
+                        sourceStream.Seek(0, SeekOrigin.Begin);
+                        options = new BlobRequestOptions()
+                        {
+                            StoreBlobContentMD5 = false,
+                            SingleBlobUploadThresholdInBytes = Size,
+                            ParallelOperationThreadCount = 3
+                        };
+                        context = new OperationContext();
+                        blob4.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
+
+                        // Number of requests should be at least 5 since StreamWriteSizeInBytes is 5 MB
+                        Assert.IsTrue(context.RequestResults.Count >= 5);
+
+                        sourceStream.Seek(0, SeekOrigin.Begin);
+                        context = new OperationContext();
+                        blob5.UploadFromStream(sourceStream, null /* accessCondition */, options, context);
+
+                        // Number of requests should be at least 4 since StreamWriteSizeInBytes is 7 MB
+                        Assert.IsTrue(context.RequestResults.Count >= 4);
                     }
                 }
             }
@@ -2338,7 +2515,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private void CloudBlockBlobUploadFromStream(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool isAsync, bool testMd5)
+        private void CloudBlockBlobUploadFromStream(CloudBlobContainer container, long size, long? copyLength, AccessCondition accessCondition, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool isAsync, bool testMd5, long streamWriteSize = Constants.DefaultWriteBlockSizeBytes, int? parallelOperations = null)
         {
             byte[] buffer = GetRandomBuffer(size);
 
@@ -2352,7 +2529,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
             blob.ServiceClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = allowSinglePut ? buffer.Length : buffer.Length / 2;
-            blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
+            blob.StreamWriteSizeInBytes = (int)streamWriteSize;
+
+            BlobRequestOptions options = new BlobRequestOptions()
+            {
+                StoreBlobContentMD5 = testMd5
+            };
+
+            if (parallelOperations.HasValue)
+            {
+                options.ParallelOperationThreadCount = parallelOperations;
+            }
 
             using (MemoryStream originalBlobStream = new MemoryStream())
             {
@@ -2374,29 +2561,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (sourceStream)
                 {
-                    BlobRequestOptions options = new BlobRequestOptions()
-                    {
-                        StoreBlobContentMD5 = true,
-                    };
                     if (isAsync)
-                    {
-                        using (ManualResetEvent waitHandle = new ManualResetEvent(false))
-                        {
-                            if (copyLength.HasValue)
+                    {                    
+                            using (ManualResetEvent waitHandle = new ManualResetEvent(false))
                             {
-                                ICancellableAsyncResult result = blob.BeginUploadFromStream(
-                                    sourceStream, copyLength.Value, accessCondition, options, null, ar => waitHandle.Set(), null);
-                                waitHandle.WaitOne();
-                                blob.EndUploadFromStream(result);
-                            }
-                            else
-                            {
-                                ICancellableAsyncResult result = blob.BeginUploadFromStream(
-                                    sourceStream, accessCondition, options, null, ar => waitHandle.Set(), null);
-                                waitHandle.WaitOne();
-                                blob.EndUploadFromStream(result);
-                            }
-                        }
+                                if (copyLength.HasValue)
+                                {
+                                    ICancellableAsyncResult result = blob.BeginUploadFromStream(
+                                        sourceStream, copyLength.Value, accessCondition, options, null,
+                                        ar => waitHandle.Set(), null);
+                                    waitHandle.WaitOne();
+                                    blob.EndUploadFromStream(result);
+                                }
+                                else
+                                {
+                                    ICancellableAsyncResult result = blob.BeginUploadFromStream(
+                                        sourceStream, accessCondition, options, null, ar => waitHandle.Set(), null);
+                                    waitHandle.WaitOne();
+                                    blob.EndUploadFromStream(result);
+                                }
+                            }     
                     }
                     else
                     {
@@ -2446,6 +2630,82 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             blob.Delete();
+        }
+
+        private async Task CloudBlockBlobUploadFromStreamAsync(CloudBlobContainer container, long size, long? copyLength, AccessCondition accessCondition, bool seekableSourceStream, bool allowSinglePut, int startOffset,  bool testMd5, long streamWriteSize = Constants.DefaultWriteBlockSizeBytes, int? parallelOperations = null)
+        {
+            byte[] buffer = GetRandomBuffer(size);
+            string md5 = string.Empty;
+            if (testMd5)
+            {
+                MD5 hasher = MD5.Create();
+                md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
+            }
+          
+            CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+            blob.ServiceClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = allowSinglePut ? buffer.Length : buffer.Length / 2;
+            BlobRequestOptions options = new BlobRequestOptions()
+            {
+                StoreBlobContentMD5 = testMd5
+            };
+
+            OperationContext operationContext = new OperationContext();
+
+            if (parallelOperations.HasValue)
+            {
+                options.ParallelOperationThreadCount = parallelOperations;
+            }
+
+            blob.StreamWriteSizeInBytes = (int) streamWriteSize;
+
+            using (MemoryStream originalBlobStream = new MemoryStream())
+            {
+                originalBlobStream.Write(buffer, startOffset, buffer.Length - startOffset);
+
+                Stream sourceStream;
+                if (seekableSourceStream)
+                {
+                    MemoryStream stream = new MemoryStream(buffer);
+                    stream.Seek(startOffset, SeekOrigin.Begin);
+                    sourceStream = stream;
+                }
+                else
+                {
+                    NonSeekableMemoryStream stream = new NonSeekableMemoryStream(buffer);
+                    stream.ForceSeek(startOffset, SeekOrigin.Begin);
+                    sourceStream = stream;
+                }
+
+                using (sourceStream)
+                {
+                    if (copyLength.HasValue)
+                    {
+                        await blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, operationContext);
+                    }
+                    else
+                    {
+                        await blob.UploadFromStreamAsync(sourceStream, accessCondition, options, operationContext);
+                    }
+                }
+
+                await blob.FetchAttributesAsync();
+                if (testMd5)
+                {
+                    Assert.AreEqual(md5, blob.Properties.ContentMD5);
+                }
+
+                using (MemoryStream downloadedBlobStream = new MemoryStream())
+                {
+                    await blob.DownloadToStreamAsync(downloadedBlobStream);
+                    Assert.AreEqual(copyLength ?? originalBlobStream.Length, downloadedBlobStream.Length);
+                    TestHelper.AssertStreamsAreEqualAtIndex(
+                        originalBlobStream,
+                        downloadedBlobStream,
+                        0,
+                        0,
+                        copyLength.HasValue ? (int)copyLength : (int)originalBlobStream.Length);
+                }
+            }
         }
 
         [TestMethod]
@@ -3005,18 +3265,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     blob.PutBlock(blockId, stream, null);
                 }
 
-                buffer = new byte[4 * 1024 * 1024];
+                buffer = new byte[100 * Constants.MB];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     blob.PutBlock(blockId, stream, null);
                 }
 
-                buffer = new byte[4 * 1024 * 1024 + 1];
+                buffer = new byte[100 * Constants.MB + 1];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     TestHelper.ExpectedException(
                         () => blob.PutBlock(blockId, stream, null),
-                        "Trying to upload a block with more than 4MB should fail",
+                        "Trying to upload a block with more than 100MB should fail",
                         HttpStatusCode.RequestEntityTooLarge);
                 }
             }
@@ -3068,7 +3328,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         blob.EndPutBlock(result);
                     }
 
-                    buffer = new byte[4 * 1024 * 1024];
+                    buffer = new byte[100 * Constants.MB];
                     using (MemoryStream stream = new MemoryStream(buffer))
                     {
                         result = blob.BeginPutBlock(blockId, stream, null,
@@ -3078,7 +3338,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         blob.EndPutBlock(result);
                     }
 
-                    buffer = new byte[4 * 1024 * 1024 + 1];
+                    buffer = new byte[100 * Constants.MB + 1];
                     using (MemoryStream stream = new MemoryStream(buffer))
                     {
                         result = blob.BeginPutBlock(blockId, stream, null,
@@ -3087,7 +3347,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         waitHandle.WaitOne();
                         TestHelper.ExpectedException(
                             () => blob.EndPutBlock(result),
-                            "Trying to upload a block with more than 4MB should fail",
+                            "Trying to upload a block with more than 100MB should fail",
                             HttpStatusCode.RequestEntityTooLarge);
                     }
                 }
@@ -3130,18 +3390,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     blob.PutBlockAsync(blockId, stream, null).Wait();
                 }
 
-                buffer = new byte[4 * 1024 * 1024];
+                buffer = new byte[100 * Constants.MB];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     blob.PutBlockAsync(blockId, stream, null).Wait();
                 }
 
-                buffer = new byte[4 * 1024 * 1024 + 1];
+                buffer = new byte[100 * Constants.MB + 1];
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     TestHelper.ExpectedExceptionTask(
                         blob.PutBlockAsync(blockId, stream, null),
-                        "Trying to upload a block with more than 4MB should fail",
+                        "Trying to upload a block with more than 100MB should fail",
                         HttpStatusCode.RequestEntityTooLarge);
                 }
             }
@@ -3160,7 +3420,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobPutBlock()
         {
-            byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(4 * Constants.MB);
             MD5 md5 = MD5.Create();
             string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
 
@@ -3218,7 +3478,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobPutBlockAPM()
         {
-            byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(4 * Constants.MB);
             MD5 md5 = MD5.Create();
             string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
 
@@ -3291,14 +3551,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobMethodsOnPageBlob()
+        public async Task CloudBlockBlobMethodsOnPageBlob()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
 
-                List<string> blobs = CreateBlobs(container, 1, BlobType.PageBlob);
+                List<string> blobs = await CreateBlobs(container, 1, BlobType.PageBlob);
                 CloudBlockBlob blob = container.GetBlockBlobReference(blobs.First());
                 List<string> blockList = GetBlockIdList(1);
 
@@ -3633,6 +3893,391 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
+        [TestMethod]
+        [Description("Test for ensuring read failures are tolerated within Upload/OpenWrite operations with write-only Account SAS permissions.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobUploadTestUploadWithWriteOnlyAccountSAS()
+        {
+            string blobName = "n" + Guid.NewGuid().ToString("N");
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            containerWithSAS.CreateIfNotExists();
+            CloudBlockBlob blockBlobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
+            int bufferSize = (int)(24 * Constants.MB);
+            byte[] buffer = GetRandomBuffer(bufferSize);
+            MemoryStream streamBuffer = new MemoryStream(buffer);
+
+            try
+            {
+                blockBlobWithSAS.UploadText("Initializing Block Blob");
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("etag")),
+                    "Should fail as Match Condition is not met.",
+                    HttpStatusCode.PreconditionFailed);
+
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("abcd"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("abcd")),
+                    "Should fail as Match Condition is not met.",
+                HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                containerWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to verify the correct functionality of OpenWrite with write-only Account SAS permissions.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobUploadTestOpenWriteWithWriteOnlyAccountSAS()
+        {
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            containerWithSAS.CreateIfNotExists();
+
+             try 
+             {
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudBlockBlob existingBlob = containerWithSAS.GetBlockBlobReference("blob");
+                    existingBlob.PutBlockList(new List<string>());
+                    CloudBlockBlob blob = containerWithSAS.GetBlockBlobReference("blob2");
+                   
+                    //Should normally fail with Read Permissions
+                    AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    IAsyncResult result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob.EndOpenWrite(result);
+                 
+                    blob = containerWithSAS.GetBlockBlobReference("blob3");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    Stream blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob4");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob5");
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob6");
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = blob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with Read Permissions.
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with read permissions
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+                   
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.Conflict);
+
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with read permissions
+                    accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+                   
+
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream.Dispose();
+
+                    //Should normally fail with read permissions
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    existingBlob.EndOpenWrite(result);
+
+                    accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    existingBlob.SetProperties();
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob7");
+                    accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+                    blob.PutBlockList(new List<string>());
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.Conflict);
+
+                    blob = containerWithSAS.GetBlockBlobReference("blob8");
+                    accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value);
+                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blobStream = existingBlob.EndOpenWrite(result);
+
+                    // Wait 1 second so that the last modified time of the blob is in the past
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+
+                    existingBlob.SetProperties();
+                    TestHelper.ExpectedException(
+                        () => blobStream.Dispose(),
+                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        HttpStatusCode.PreconditionFailed);
+                }
+            }
+            finally
+            {
+                containerWithSAS.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test for ensuring read failures are tolerated within Upload/OpenWrite operations with write-only Service SAS permissions.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockUplodadTestUploadWithWriteOnlyServiceSAS()
+        {
+            string containerName = "c" + Guid.NewGuid().ToString("N");
+            string blobName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessBlobPermissions.Delete | SharedAccessBlobPermissions.Write,
+            };
+
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer blobContainer = blobClient.GetContainerReference(containerName);
+            blobContainer.CreateIfNotExists();
+            CloudBlockBlob blockBlob = blobContainer.GetBlockBlobReference(blobName);
+            blockBlob.UploadText("Initializing Block Blob");
+            string sasBlobToken = blockBlob.GetSharedAccessSignature(policy);
+            string blockBlobSAS = blockBlob.Uri + sasBlobToken;
+            CloudBlockBlob blockBlobWithSAS = new CloudBlockBlob(new Uri(blockBlobSAS));
+
+            int bufferSize = (int)(24 * Constants.MB);
+            byte[] buffer = GetRandomBuffer(bufferSize);
+            MemoryStream streamBuffer = new MemoryStream(buffer);
+
+            try
+            {
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("etag")),
+                    "Should fail as Match Condition is not met.",
+                    HttpStatusCode.PreconditionFailed);
+
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNotExistsCondition()),
+                    "Should fail as specified blob already exists.",
+                    HttpStatusCode.Conflict);
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfExistsCondition());
+
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                TestHelper.ExpectedException(
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("etag")),
+                    "Should fail as Match Condition is not met.",
+                    HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                blobContainer.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Tests if exceptions are propagated up from UploadFromMultiStreamAsync")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobTestExceptionUploadFromMultiStreamAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.Create();
+            try
+            {
+                CloudBlockBlob blob = container.GetBlockBlobReference("test1");
+                List<Stream> uploadList = new List<Stream>();
+                OperationContext operationContext = new OperationContext();
+                long blockSize = 4 * Constants.MB + 1;
+                int blockNum = 0;
+                Object thisLock = new Object();
+                BlobRequestOptions options = new BlobRequestOptions()
+                {
+                    StoreBlobContentMD5 = false,
+                    ParallelOperationThreadCount = 2,
+                };
+
+                operationContext.SendingRequest += (sender, e) =>
+                {
+                    lock (thisLock)
+                    {
+                        if (++blockNum >= 3)
+                        {
+                            e.Request.ContentLength = 32;
+                        }
+                    }
+                };
+
+                for (int i = 0; i < 6; i++)
+                {
+                    uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
+                }
+
+                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
+
+                uploadList.Clear();
+                blockNum = 0;
+                operationContext.SendingRequest += (sender, e) =>
+                {
+                    lock (thisLock)
+                    {
+                        if (++blockNum >= 3)
+                        {
+                            e.Request.ContentLength = blockSize * 2;
+                        }
+                    }
+                };
+
+                for (int i = 0; i < 6; i++)
+                {
+                    uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
+                }
+
+                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
+
+                blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB + 1);
+                using (MemoryStream ms = new MemoryStream(GetRandomBuffer(20 * 1024 * 1024)))
+                {
+                    blockNum = 0;
+                    TestHelper.ExpectedException<StorageException>(() => blob.UploadFromStream(ms, null, options, operationContext), "UploadfromStream", "abc");
+                    ms.Seek(0, SeekOrigin.Begin);
+
+                    blockNum = 0;
+                    Task uploadTask = blob.UploadFromStreamAsync(ms, null, options, operationContext);
+                    TestHelper.ExpectedExceptionTask<StorageException>(uploadTask, "UploadFromStreamAsync");
+                    ms.Seek(0, SeekOrigin.Begin);
+
+                    await blob.UploadFromStreamAsync(ms, null, options, null);
+                }
+            }
+            finally
+            {
+                container.DeleteAsync().Wait();
+            }
+        }
+
         private void DoTextUploadDownload(string text, bool checkDifferentEncoding, bool isAsync)
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -3775,6 +4420,32 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(opContext.RequestResults.Count > 1);
                 Assert.AreEqual(StorageLocation.Secondary, opContext.LastResult.TargetLocation);
             }
+        }
+
+        private CloudBlobContainer GenerateRandomWriteOnlyContainer() 
+        {
+            string containerName = "c" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+
+            };
+
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = blobClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
+            CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
+            CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
+
+            return containerWithSAS;
         }
     }
 }

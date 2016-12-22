@@ -235,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 return Task.Factory.StartNew(() =>
                     {
                         ListSharesResponse listSharesResponse = new ListSharesResponse(cmd.ResponseStream);
-                        List<CloudFileShare> sharesList = listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, this)).ToList();
+                        List<CloudFileShare> sharesList = listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, item.SnapshotTime, this)).ToList();
                         FileContinuationToken continuationToken = null;
                         if (listSharesResponse.NextMarker != null)
                         {
