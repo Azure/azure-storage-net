@@ -28,6 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     {
         private HttpWebResponse resp = null;
         private Stream str = null;
+        private Task<Stream> strAsCachedTask = null;
         private string responseContentType = null;
 
         public HttpResponseAdapterMessage(HttpWebResponse resp, Stream str)
@@ -39,12 +40,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         {
             this.resp = resp;
             this.str = str;
+            this.strAsCachedTask = Task.FromResult(str);
             this.responseContentType = responseContentType;
         }
 
         public Task<Stream> GetStreamAsync()
         {
-            return Task.Factory.StartNew(() => this.str);
+            return strAsCachedTask;
         }
 
         public string GetHeader(string headerName)
