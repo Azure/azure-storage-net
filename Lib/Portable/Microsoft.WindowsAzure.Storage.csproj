@@ -589,6 +589,9 @@
     <Compile Include="..\Common\Table\TableEntity.cs">
       <Link>Table\TableEntity.cs</Link>
     </Compile>
+    <Compile Include="..\Common\Table\GenericTableEntity.cs">
+      <Link>Table\GenericTableEntity.cs</Link>
+    </Compile>
     <Compile Include="..\Common\Table\TableOperation.Common.cs">
       <Link>Table\TableOperation.Common.cs</Link>
     </Compile>
