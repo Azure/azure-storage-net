@@ -330,7 +330,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.</returns>
         /// <remarks>The entity type can be a simple object with a flat structure or a complex object with complex properties and multiple levels of object hierarchy.
-        /// Generic ReadUserObject method can recompose the original entity using the output of this method.</remarks>
+        /// Generic ConvertBack method can recompose the original entity using the output of this method.</remarks>
         public static IDictionary<string, EntityProperty> Flatten(object entity, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("entity", entity);
@@ -346,7 +346,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IDictionary{TKey,TValue}"/> of <see cref="EntityProperty"/> objects for all the properties of the specified entity object.</returns>
         /// <remarks>The entity type can be a simple object with a flat structure or a complex object with complex properties and multiple levels of object hierarchy.
-        /// Generic ReadUserObject method can be used to recompose the original entity passing.</remarks>
+        /// Generic ConvertBack method can be used to recompose the original entity passing.</remarks>
         public static IDictionary<string, EntityProperty> Flatten(object entity, EntityPropertyConverterOptions entityPropertyConverterOptions, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("entity", entity);
