@@ -237,6 +237,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Server timeout query parameter")]
         [TestCategory(ComponentCategory.Queue)]
@@ -282,5 +283,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             await client.GetServicePropertiesAsync(options, context);
             Assert.IsNull(timeout);
         }
+#endif
     }
 }

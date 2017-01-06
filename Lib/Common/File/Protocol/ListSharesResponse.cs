@@ -172,6 +172,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         private FileShareEntry ParseShareEntry(Uri baseUri)
         {
             string name = null;
+            DateTimeOffset? snapshotTime = null;
             IDictionary<string, string> metadata = null;
             FileShareProperties shareProperties = new FileShareProperties();
 
@@ -188,6 +189,10 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                     {
                         case Constants.NameElement:
                             name = this.reader.ReadElementContentAsString();
+                            break;
+
+                        case Constants.SnapshotElement:
+                            snapshotTime = this.reader.ReadElementContentAsString().ToUTCTime();
                             break;
 
                         case Constants.PropertiesElement:
@@ -248,6 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 Name = name,
                 Uri = NavigationHelper.AppendPathToSingleUri(baseUri, name),
                 Metadata = metadata,
+                SnapshotTime = snapshotTime,
             };
         }
 

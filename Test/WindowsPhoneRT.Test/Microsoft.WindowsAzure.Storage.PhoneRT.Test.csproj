@@ -129,7 +129,7 @@
     </Content>
     <Content Include="..\Common\TestConfigurationsTemplate.xml">
       <Link>TestConfigurationsTemplate.xml</Link>
-    </Content>	
+    </Content>
   </ItemGroup>
   <ItemGroup Condition="Exists('..\Common\TestConfigurations.xml')">
     <Content Include="..\Common\TestConfigurations.xml">
@@ -147,9 +147,9 @@
     <Content Include="Assets\WideLogo.scale-240.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lib\WindowsPhoneRT\Microsoft.WindowsAzure.Storage.csproj">
+    <ProjectReference Include="..\..\Lib\WindowsPhoneRT\Microsoft.WindowsAzure.Storage.WindowsPhoneRuntime.csproj">
       <Project>{008d78b8-5c78-4bd7-9779-d2a6b2d35091}</Project>
-      <Name>Microsoft.WindowsAzure.Storage</Name>
+      <Name>Microsoft.WindowsAzure.Storage.WindowsPhoneRuntime</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

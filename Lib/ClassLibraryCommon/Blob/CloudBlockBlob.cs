@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
+
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
@@ -50,7 +51,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributes(AccessCondition, BlobRequestOptions, OperationContext)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
@@ -68,14 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 catch (StorageException e)
                 {
-                    if ((e.RequestInformation != null) &&
-                        (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                        string.IsNullOrEmpty(accessCondition.IfMatchETag))
-                    {
-                        // If we got a 404 and the condition was not an If-Match,
-                        // we should continue with the operation.
-                    }
-                    else
+                    if (!CloudBlockBlob.ContinueOpenWriteOnFailure(e, accessCondition))
                     {
                         throw;
                     }
@@ -107,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="BeginOpenWrite(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/>.</para>
         /// </remarks>
         [DoesServiceRequest]
@@ -128,11 +122,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenWrite(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.attributes.AssertNoSnapshot();
@@ -173,14 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         }
                         catch (StorageException e)
                         {
-                            if ((e.RequestInformation != null) &&
-                                (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                                string.IsNullOrEmpty(accessCondition.IfMatchETag))
-                            {
-                                // If we got a 404 and the condition was not an If-Match,
-                                // we should continue with the operation.
-                            }
-                            else
+                            if (!CloudBlockBlob.ContinueOpenWriteOnFailure(e, accessCondition))
                             {
                                 storageAsyncResult.OnComplete(e);
                                 return;
@@ -226,7 +213,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="OpenWriteAsync(AccessCondition, BlobRequestOptions, OperationContext)"/>.</para>        
         /// </remarks>
         [DoesServiceRequest]
@@ -243,7 +230,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, see <see cref="OpenWriteAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.</para>                
         /// </remarks>
         [DoesServiceRequest]
@@ -262,7 +249,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
@@ -283,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>
         /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributesAsync(AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/> method under the covers.</para>
         /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
-        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// ranging from between 16 KB and 100 MB inclusive.</para>
         /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
         /// </remarks>
@@ -345,6 +332,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
+            this.CheckAdjustBlockSize(length ?? (source.CanSeek ? (source.Length - source.Position) : length));
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
@@ -414,13 +402,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                using (CloudBlobStream blobStream = this.OpenWrite(accessCondition, modifiedOptions, operationContext))
+                bool useOpenWrite = modifiedOptions.EncryptionPolicy != null
+                       || !source.CanSeek
+                       || this.streamWriteSizeInBytes < Constants.MinLargeBlockSize
+                       || (modifiedOptions.StoreBlobContentMD5.HasValue && modifiedOptions.StoreBlobContentMD5.Value);
+
+                if (useOpenWrite)
                 {
-                    using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+                    using (CloudBlobStream blobStream = this.OpenWrite(accessCondition, modifiedOptions, operationContext))
                     {
-                        source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
-                        blobStream.Commit();
+                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+                        {
+                            source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
+                            blobStream.Commit();
+                        }
                     }
+                }
+                else
+                {
+                    // Synchronization mutex required to ensure thread-safe, concurrent operations on related SubStream instances.
+                    SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
+                    CommonUtility.RunWithoutSynchronizationContext(
+                        () => this.UploadFromMultiStreamAsync(
+                            this.OpenMultiSubStream(source, length,streamReadThrottler), 
+                            accessCondition, 
+                            modifiedOptions, 
+                            operationContext, 
+                            CancellationToken.None).Wait());
                 }
             }
         }
@@ -506,12 +514,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 CommonUtility.AssertInBounds("length", length.Value, 1);
 
-                if (source.CanSeek && length > source.Length - source.Position)
+                if (source.CanSeek && length > (source.Length - source.Position))
                 {
                     throw new ArgumentOutOfRangeException("length", SR.StreamLengthShortError);
                 }
             }
 
+            this.CheckAdjustBlockSize(length ?? (source.CanSeek ? (source.Length - source.Position) : length));
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
 
@@ -520,7 +529,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             bool lessThanSingleBlobThreshold = CloudBlockBlob.IsLessThanSingleBlobThreshold(source, length, modifiedOptions, false);
             modifiedOptions.AssertPolicyIfRequired();
-            
+
             if (modifiedOptions.ParallelOperationThreadCount.Value == 1 && lessThanSingleBlobThreshold)
             {
                 // Because we may or may not want to calculate the MD5, and we may or may not want to encrypt, rather than have four branching code
@@ -546,7 +555,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                             operationContext,
                                             modifiedOptions,
                                             storageAsyncResult);
-
                     };
                 actionToRun = uploadAction;
 
@@ -644,59 +652,76 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                ICancellableAsyncResult result = this.BeginOpenWrite(
-                    accessCondition,
-                    modifiedOptions,
-                    operationContext,
-                    ar =>
-                    {
-                        ContinueAsyncOperation(storageAsyncResult, ar, () =>
-                            {
-                                CloudBlobStream blobStream = this.EndOpenWrite(ar);
-                                storageAsyncResult.OperationState = blobStream;
+                bool useOpenWrite = modifiedOptions.EncryptionPolicy != null
+                   || !source.CanSeek
+                   || this.streamWriteSizeInBytes < Constants.MinLargeBlockSize
+                   || (modifiedOptions.StoreBlobContentMD5.HasValue && modifiedOptions.StoreBlobContentMD5.Value);
 
-                                source.WriteToAsync(
-                                    blobStream,
-                                    length,
-                                    null /* maxLength */,
-                                    false,
-                                    tempExecutionState,
-                                    null /* streamCopyState */,
-                                    completedState =>
-                                    {
-                                        ContinueAsyncOperation(storageAsyncResult, completedState, () =>
-                                        {
-                                            if (completedState.ExceptionRef != null)
-                                            {
-                                                storageAsyncResult.OnComplete(completedState.ExceptionRef);
-                                            }
-                                            else
-                                            {
-                                                ICancellableAsyncResult commitResult = blobStream.BeginCommit(
-                                                        CloudBlob.BlobOutputStreamCommitCallback,
-                                                        storageAsyncResult);
-
-                                                storageAsyncResult.CancelDelegate = commitResult.Cancel;
-                                                if (storageAsyncResult.CancelRequested)
-                                                {
-                                                    storageAsyncResult.Cancel();
-                                                }
-                                            }
-                                        });
-                                    });
-
-                                storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
-                                if (storageAsyncResult.CancelRequested)
+                if (useOpenWrite)
+                {
+                    ICancellableAsyncResult result = this.BeginOpenWrite(
+                        accessCondition,
+                        modifiedOptions,
+                        operationContext,
+                        ar =>
+                        {
+                            ContinueAsyncOperation(storageAsyncResult, ar, () =>
                                 {
-                                    storageAsyncResult.Cancel();
-                                }
-                            });
-                    },
-                    null /* state */);
+                                    CloudBlobStream blobStream = this.EndOpenWrite(ar);
+                                    storageAsyncResult.OperationState = blobStream;
 
-                // We do not need to do this inside a lock, as storageAsyncResult is
-                // not returned to the user yet.
-                storageAsyncResult.CancelDelegate = result.Cancel;
+                                    source.WriteToAsync(
+                                        blobStream,
+                                        length,
+                                        null /* maxLength */,
+                                        false,
+                                        tempExecutionState,
+                                        null /* streamCopyState */,
+                                        completedState =>
+                                        {
+                                            ContinueAsyncOperation(storageAsyncResult, completedState, () =>
+                                            {
+                                                if (completedState.ExceptionRef != null)
+                                                {
+                                                    storageAsyncResult.OnComplete(completedState.ExceptionRef);
+                                                }
+                                                else
+                                                {
+                                                    ICancellableAsyncResult commitResult = blobStream.BeginCommit(
+                                                            CloudBlob.BlobOutputStreamCommitCallback,
+                                                            storageAsyncResult);
+
+                                                    storageAsyncResult.CancelDelegate = commitResult.Cancel;
+                                                    if (storageAsyncResult.CancelRequested)
+                                                    {
+                                                        storageAsyncResult.Cancel();
+                                                    }
+                                                }
+                                            });
+                                        });
+
+                                    storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
+                                    if (storageAsyncResult.CancelRequested)
+                                    {
+                                        storageAsyncResult.Cancel();
+                                    }
+                                });
+                        },
+                        null /* state */);
+
+                    // We do not need to do this inside a lock, as storageAsyncResult is
+                    // not returned to the user yet.
+                    storageAsyncResult.CancelDelegate = result.Cancel;
+                }
+                else
+                {
+                    // Synchronization mutex required to ensure thread-safe, concurrent operations on related SubStream instances.
+                    SemaphoreSlim streamReadThrottler = new SemaphoreSlim(1);
+                    return new CancellableAsyncResultTaskWrapper(
+                        (cancellationToken) => this.UploadFromMultiStreamAsync(this.OpenMultiSubStream(source, length, streamReadThrottler), accessCondition, modifiedOptions, operationContext, cancellationToken),
+                        callback,
+                        state);
+                }
             }
 
             return storageAsyncResult;
@@ -738,8 +763,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUploadFromStream(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
-            storageAsyncResult.End();
+            if (asyncResult is CancellableAsyncResultTaskWrapper)
+            {
+                CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
+                cancellableAsyncResult.Wait();
+            }
+            else
+            {
+                StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
+                storageAsyncResult.End();
+            }
         }
 
 #if TASK
@@ -864,10 +897,30 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual void UploadFromFile(string path, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("path", path);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
 
-            using (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
+            // Determines whether to use the normal, single-stream upload approach or the new parallel, multi-stream strategy.
+            bool useSingleStream = (modifiedOptions.StoreBlobContentMD5.HasValue && modifiedOptions.StoreBlobContentMD5.Value)
+                || modifiedOptions.EncryptionPolicy != null
+                || this.streamWriteSizeInBytes < Constants.MinLargeBlockSize;
+
+            if (useSingleStream)
             {
-                this.UploadFromStream(fileStream, accessCondition, options, operationContext);
+                using (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    this.UploadFromStream(fileStream, accessCondition, modifiedOptions, operationContext);
+                }
+            }
+            else
+            {
+                this.CheckAdjustBlockSize(new FileInfo(path).Length);
+                CommonUtility.RunWithoutSynchronizationContext(
+                    () => this.UploadFromMultiStreamAsync(
+                        this.OpenMultiFileStream(path),
+                        accessCondition,
+                        modifiedOptions,
+                        operationContext,
+                        CancellationToken.None).Wait());
             }
         }
 #endif
@@ -899,23 +952,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual ICancellableAsyncResult BeginUploadFromFile(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             CommonUtility.AssertNotNull("path", path);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
 
-            FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state)
-            {
-                OperationState = fileStream
-            };
+            bool useOpenWrite = this.streamWriteSizeInBytes < Constants.MinLargeBlockSize
+                || modifiedOptions.EncryptionPolicy != null
+                || (modifiedOptions.StoreBlobContentMD5.HasValue && modifiedOptions.StoreBlobContentMD5.Value);
 
-            try
+            if (useOpenWrite)
             {
-                ICancellableAsyncResult asyncResult = this.BeginUploadFromStream(fileStream, accessCondition, options, operationContext, this.UploadFromFileCallback, storageAsyncResult);
-                storageAsyncResult.CancelDelegate = asyncResult.Cancel;
-                return storageAsyncResult;
+                FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state)
+                {
+                    OperationState = fileStream
+                };
+
+                try
+                {
+                    ICancellableAsyncResult asyncResult = this.BeginUploadFromStream(fileStream, accessCondition, modifiedOptions, operationContext, this.UploadFromFileCallback, storageAsyncResult);
+                    storageAsyncResult.CancelDelegate = asyncResult.Cancel;
+                    return storageAsyncResult;
+                }
+                catch (Exception)
+                {
+                    fileStream.Dispose();
+                    throw;
+                }
             }
-            catch (Exception)
+            else
             {
-                fileStream.Dispose();
-                throw;
+                CheckAdjustBlockSize(new FileInfo(path).Length);
+                return new CancellableAsyncResultTaskWrapper((token) => this.UploadFromMultiStreamAsync(
+                    this.OpenMultiFileStream(path),
+                    accessCondition,
+                    modifiedOptions,
+                    operationContext,
+                    token), callback, state);
             }
         }
 
@@ -958,8 +1029,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUploadFromFile(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<NullType> res = (StorageAsyncResult<NullType>)asyncResult;
-            res.End();
+            if (asyncResult is CancellableAsyncResultTaskWrapper)
+            {
+                CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
+                cancellableAsyncResult.Wait();
+            }
+            else
+            {
+                StorageAsyncResult<NullType> res = (StorageAsyncResult<NullType>)asyncResult;
+                res.End();
+            }
         }
 
 #if TASK
@@ -1271,7 +1350,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>The contents of the blob, as a string.</returns>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual string DownloadText(Encoding encoding = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             using (SyncMemoryStream stream = new SyncMemoryStream())
@@ -1289,7 +1368,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadText(AsyncCallback callback, object state)
         {
             return this.BeginDownloadText(null /* encoding */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
@@ -1305,7 +1384,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]        
+        [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadText(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             SyncMemoryStream stream = new SyncMemoryStream();
@@ -1756,7 +1835,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
-
 
 #if SYNC
         /// <summary>
@@ -2509,7 +2587,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return false;
             }
 
-            length = length ?? source.Length - source.Position;
+            length = length ?? (source.Length - source.Position);
 
             if (modifiedOptions.EncryptionPolicy != null)
             {
@@ -2534,6 +2612,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 storageAsyncResult.OnComplete(e);
             }
+        }
+
+        /// <summary>
+        /// Helper method to determine whether we should continue with an OpenWrite operation.
+        /// 
+        /// When we are opening a stream for writing, if there is an access condition, we first try a FetchAttributes on the blob.
+        /// The purpose of this is to fail fast in the case where the access condition would fail the request at the very end.  (Access
+        /// conditions aren't checked for PutBlock, only PutBlockList.)
+        /// 
+        /// If the FetchAttributes call succeeded, we should continue with the OpenWrite operation.  If the FetchAttributes call failed,
+        /// we need to check if the failure is one of the allowed failure modes.  This method does that check.
+        /// </summary>
+        /// <param name="exception">The exception received from the FetchAttributes call.</param>
+        /// <param name="accessCondition">The access condition used on the FetchAttributes call.</param>
+        /// <returns>True if the operation should continue, false if the exception should be re-thrown.</returns>
+        private static bool ContinueOpenWriteOnFailure(StorageException exception, AccessCondition accessCondition)
+        {
+            // If we don't have any request information, don't continue.
+            if (exception.RequestInformation == null) return false;
+
+            // If we got a 404 and the access condition was not an If-Match, continue.  (We don't want an if-none-match to interfere with the case where the blob doesn't exist)
+            if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) && string.IsNullOrEmpty(accessCondition.IfMatchETag)) return true;
+
+            // If we got a 400 and the access condition was If-None-Match-*, continue.  (There is a special case:  If-None-Match-*, on a blob that doesn't exist, will return a 400 on a read operation, because it's an impossible condition.
+            if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.BadRequest) && !string.IsNullOrEmpty(accessCondition.IfNoneMatchETag) && (accessCondition.IfNoneMatchETag == "*")) return true;
+
+            // If we got a 403, continue.  This is to account for the case where our credentials give write, but not read permission.
+            if (exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden) return true;
+
+            return false;
         }
     }
 }

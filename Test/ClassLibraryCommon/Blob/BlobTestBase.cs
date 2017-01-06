@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -49,10 +50,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        public static List<string> CreateBlobs(CloudBlobContainer container, int count, BlobType type)
+        public static async Task<List<string>> CreateBlobs(CloudBlobContainer container, int count, BlobType type)
         {
             string name;
             List<string> blobs = new List<string>();
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < count; i++)
             {
                 switch (type)
@@ -60,25 +62,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     case BlobType.BlockBlob:
                         name = "bb" + Guid.NewGuid().ToString();
                         CloudBlockBlob blockBlob = container.GetBlockBlobReference(name);
-                        blockBlob.PutBlockList(new string[] { });
+                        tasks.Add(Task.Run(() => blockBlob.PutBlockList(new string[] { })));
                         blobs.Add(name);
                         break;
 
                     case BlobType.PageBlob:
                         name = "pb" + Guid.NewGuid().ToString();
                         CloudPageBlob pageBlob = container.GetPageBlobReference(name);
-                        pageBlob.Create(0);
+                        tasks.Add(Task.Run(() => pageBlob.Create(0)));
                         blobs.Add(name);
                         break;
 
                     case BlobType.AppendBlob:
                         name = "ab" + Guid.NewGuid().ToString();
                         CloudAppendBlob appendBlob = container.GetAppendBlobReference(name);
-                        appendBlob.CreateOrReplace();
+                        tasks.Add(Task.Run(() => appendBlob.CreateOrReplace()));
                         blobs.Add(name);
                         break;
                 }
             }
+            await Task.WhenAll(tasks);
             return blobs;
         }
 
@@ -132,7 +135,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         stream.Write(padding, 0, padding.Length);
                     }
                 }
-                
+
 
                 stream.Seek(0, SeekOrigin.Begin);
                 blob.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;

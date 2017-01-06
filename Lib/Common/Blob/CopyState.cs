@@ -93,5 +93,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             get;
             internal set;
         }
+
+        /// <summary>
+        /// Gets the incremental destination snapshot time for the latest incremental copy, if present.
+        /// </summary>
+        /// <value>A <see cref="DateTimeOffset"/> containing the destination snapshot time for the latest
+        /// incremental copy, or <c>null</c>.</value>
+        public DateTimeOffset? DestinationSnapshotTime
+        {
+            get;
+            internal set;
+        }
     }
 }

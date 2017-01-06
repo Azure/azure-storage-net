@@ -329,6 +329,242 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
+        /// Rotates the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual void RotateEncryptionKey(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+
+            WrappedKeyData wrappedKey = CommonUtility.RunWithoutSynchronizationContext(() => this.RotateEncryptionHelper(accessCondition, modifiedOptions, CancellationToken.None).Result);
+            BlobEncryptionData encryptionData = wrappedKey.encryptionData;
+
+            // Update the encryption metadata with the newly wrapped CEK and call SetMetadata.
+            encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.encryptedKey, wrappedKey.algorithm);
+
+            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData);
+
+            if (accessCondition == null)
+            {
+                accessCondition = new AccessCondition();
+            }
+
+            accessCondition.IfMatchETag = this.Properties.ETag;
+            try
+            {
+                this.SetMetadata(accessCondition, modifiedOptions, operationContext);
+            }
+            // This bit is to improve the error handling case.
+            // If the set-metadata fails, we check if it failed with a Precondition Failure.  If so, we wrap the failure with a 
+            // new StorageException that contains a better error message.
+            // This is important because the library is internally adding an AccessCondition, which may be difficult for users to realize / debug.
+            catch (StorageException e)
+            {
+                // Check to see if our new If-Match condition failed, and if so, give a more helpful exception message.
+                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
+                {
+                    StorageException wrapperException = new StorageException(e.RequestInformation, SR.KeyRotationPreconditionFailed, e);
+                    throw wrapperException;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginRotateEncryptionKey(AsyncCallback callback, object state)
+        {
+            return this.BeginRotateEncryptionKey(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginRotateEncryptionKey(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return new CancellableAsyncResultTaskWrapper(token => RotateEncryptionKeyAsync(accessCondition, options, operationContext, token), callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to rotate the encryption key on this blob.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public virtual void EndRotateEncryptionKey(IAsyncResult asyncResult)
+        {
+            ((CancellableAsyncResultTaskWrapper)asyncResult).Wait();
+        }
+
+#if TASK
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task RotateEncryptionKeyAsync()
+        {
+            return this.RotateEncryptionKeyAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task RotateEncryptionKeyAsync(CancellationToken cancellationToken)
+        {
+            return this.RotateEncryptionKeyAsync(null /* accessCondition */, null /* options */, null /* operationContext */, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task RotateEncryptionKeyAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.RotateEncryptionKeyAsync(accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to rotate the encryption key on this blob.
+        /// This method rotates only the KEK, not the CEK.  For more information, visit https://azure.microsoft.com/en-us/documentation/articles/storage-client-side-encryption/
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns> 
+        /// <remarks>
+        /// This method has a number of prerequisites:
+        /// 1. The blob must be encrypted on the service using client-side encryption (not service-side encryption.)
+        /// 2. The local object must have the latest attributes from the blob on the service.  This can be done by calling FetchAttributes() on the blob, or by listing blobs in the container with metadata.
+        /// 3. The Encryption Policy on the default BlobRequestOptions must contain an IKeyResolver capable of resolving the old encryption key.
+        /// 4. The Encryption Policy on the default BlobRequestOptions must contain an IKey with the new encryption key.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual async Task RotateEncryptionKeyAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+
+            WrappedKeyData wrappedKey = await this.RotateEncryptionHelper(accessCondition, modifiedOptions, cancellationToken).ConfigureAwait(false);
+
+            BlobEncryptionData encryptionData = wrappedKey.encryptionData;
+
+            encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.encryptedKey, wrappedKey.algorithm);
+
+            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData);
+
+            if (accessCondition == null)
+            {
+                accessCondition = new AccessCondition();
+            }
+
+            accessCondition.IfMatchETag = this.Properties.ETag;
+
+            try
+            {
+                await this.SetMetadataAsync(accessCondition, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+            }
+            catch (StorageException ex)
+            {
+                // This bit is to improve the error handling case.
+                // If the set-metadata fails, we check if it failed with a Precondition Failure.  If so, we wrap the failure with a 
+                // new StorageException that contains a better error message.
+                // This is important because the library is internally adding an AccessCondition, which may be difficult for users to realize / debug.
+                if (ex.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
+                {
+                    throw new StorageException(ex.RequestInformation, SR.KeyRotationPreconditionFailed, ex);
+                }
+            }
+        }
+#endif
+
+#if SYNC
+        /// <summary>
         /// Downloads the contents of a blob to a file.
         /// </summary>
         /// <param name="path">A string containing the path to the target file.</param>
@@ -340,7 +576,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual void DownloadToFile(string path, FileMode mode, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("path", path);
-            FileStream fileStream = new FileStream(path, mode, FileAccess.Write);
+            FileStream fileStream = new FileStream(path, mode, FileAccess.Write, FileShare.None);
 
             try
             {
@@ -399,7 +635,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("path", path);
 
-            FileStream fileStream = new FileStream(path, mode, FileAccess.Write);
+            FileStream fileStream = new FileStream(path, mode, FileAccess.Write, FileShare.None);
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state)
             {
                 OperationState = Tuple.Create<FileStream, FileMode>(fileStream, mode)
@@ -1559,13 +1795,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-
-            bool exists = this.Exists(true, modifiedOptions, operationContext);
-            if (!exists)
-            {
-                return false;
-            }
-
+           
             try
             {
                 this.Delete(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext);
@@ -1576,7 +1806,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
                     if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
                     {
                         return false;
                     }
@@ -1633,85 +1864,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private void DeleteIfExistsHandler(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                true,
+            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
+                deleteSnapshotsOption,
+                accessCondition,
                 options,
                 operationContext,
-                existsResult =>
+                deleteResult =>
                 {
-                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                    lock (storageAsyncResult.CancellationLockerObject)
+                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
+                    storageAsyncResult.CancelDelegate = null;
+                    try
                     {
-                        storageAsyncResult.CancelDelegate = null;
-                        try
+                        this.EndDelete(deleteResult);
+                        storageAsyncResult.Result = true;
+                        storageAsyncResult.OnComplete();
+                    }
+                    catch (StorageException e)
+                    {
+                        if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
+                            ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
+                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound)))
                         {
-                            bool exists = this.EndExists(existsResult);
-                            if (!exists)
-                            {
-                                storageAsyncResult.Result = false;
-                                storageAsyncResult.OnComplete();
-                                return;
-                            }
-
-                            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                                deleteSnapshotsOption,
-                                accessCondition,
-                                options,
-                                operationContext,
-                                deleteResult =>
-                                {
-                                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                                    storageAsyncResult.CancelDelegate = null;
-                                    try
-                                    {
-                                        this.EndDelete(deleteResult);
-                                        storageAsyncResult.Result = true;
-                                        storageAsyncResult.OnComplete();
-                                    }
-                                    catch (StorageException e)
-                                    {
-                                        if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                                        {
-                                            if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                                (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound))
-                                            {
-                                                storageAsyncResult.Result = false;
-                                                storageAsyncResult.OnComplete();
-                                            }
-                                            else
-                                            {
-                                                storageAsyncResult.OnComplete(e);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                },
-                                null /* state */);
-
-                            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
-                            if (storageAsyncResult.CancelRequested)
-                            {
-                                storageAsyncResult.Cancel();
-                            }
+                            storageAsyncResult.Result = false;
+                            storageAsyncResult.OnComplete();
                         }
-                        catch (Exception e)
+                        else
                         {
                             storageAsyncResult.OnComplete(e);
                         }
                     }
+                    catch (Exception e)
+                    {
+                        storageAsyncResult.OnComplete(e);
+                    }
                 },
                 null /* state */);
 
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
+            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
         }
 
         /// <summary>
@@ -1722,6 +1912,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual bool EndDeleteIfExists(IAsyncResult asyncResult)
         {
             StorageAsyncResult<bool> res = (StorageAsyncResult<bool>)asyncResult;
+            if (res.CancelRequested)
+            {
+                res.Cancel();
+            }
+
             res.End();
             return res.Result;
         }
@@ -1784,7 +1979,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
@@ -1806,7 +2001,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="callback">An optional callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
@@ -1822,7 +2017,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
@@ -1858,7 +2053,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1872,7 +2067,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
@@ -1887,7 +2082,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -1904,7 +2099,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -2420,7 +2615,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, source, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2457,7 +2652,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.StartCopyImpl(this.attributes, source, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -2902,7 +3097,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 if (!arePropertiesPopulated)
                 {
-                    CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp, isRangeGet);
+                    CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
                     storedMD5 = resp.Headers[HttpResponseHeader.ContentMd5];
 
                     if (options.EncryptionPolicy != null)
@@ -3002,7 +3197,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
                 return NullType.Value;
             };
 
@@ -3034,7 +3229,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
-                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp, false);
+                CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
                 return true;
             };
 
@@ -3124,7 +3319,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAttributes">The attributes.</param>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If null, an infinite lease will be acquired. If not null, this must be
-        /// greater than zero.</param>
+        /// greater than 15 and less than 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -3136,7 +3331,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int leaseDuration = -1;
             if (leaseTime.HasValue)
             {
-                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(1), TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("leaseTime", leaseTime.Value, TimeSpan.FromSeconds(Constants.MinimumLeaseDuration), TimeSpan.FromSeconds(Constants.MaximumLeaseDuration));
                 leaseDuration = (int)leaseTime.Value.TotalSeconds;
             }
 
@@ -3272,7 +3467,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int? breakSeconds = null;
             if (breakPeriod.HasValue)
             {
-                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.Zero, TimeSpan.MaxValue);
+                CommonUtility.AssertInBounds("breakPeriod", breakPeriod.Value, TimeSpan.FromSeconds(Constants.MinimumBreakLeasePeriod), TimeSpan.FromSeconds(Constants.MaximumBreakLeasePeriod));
                 breakSeconds = (int)breakPeriod.Value.TotalSeconds;
             }
 
@@ -3304,6 +3499,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobAttributes">The attributes.</param>
         /// <param name="source">The URI of the source blob.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -3311,7 +3507,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// A <see cref="RESTCommand{T}"/> that starts to copy.
         /// </returns>
         /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-        private RESTCommand<string> StartCopyImpl(BlobAttributes blobAttributes, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes blobAttributes, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -3321,7 +3517,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, incrementalCopy, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, blobAttributes.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -3399,6 +3595,90 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Validates that the AccessCondition and the RequestOptions passed into a KeyRotation operation are correct.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="encryptionMetadataAvailable">If the encryption metadata is available on the local blob.</param>
+        private void ValidateKeyRotationArguments(AccessCondition accessCondition, BlobRequestOptions options, bool encryptionMetadataAvailable)
+        {
+            if (accessCondition != null && accessCondition.IsConditional)
+            {
+                throw new ArgumentException(SR.KeyRotationInvalidAccessCondition, "accessCondition");
+            }
+            if (options.EncryptionPolicy == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionPolicy, "options.EncryptionPolicy");
+            }
+            if (options.EncryptionPolicy.Key == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionKey, "options.EncryptionPolicy.Key");
+            }
+            if (options.EncryptionPolicy.KeyResolver == null)
+            {
+                throw new ArgumentException(SR.KeyRotationNoEncryptionKeyResolver, "options.EncryptionPolicy.KeyResolver");
+            }
+            if (this.Properties.ETag == null)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoEtag);
+            }
+            if (!encryptionMetadataAvailable)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoEncryptionMetadata);
+            }
+        }
+
+        private struct WrappedKeyData
+        {
+            public byte[] encryptedKey;
+            public string algorithm;
+            public BlobEncryptionData encryptionData;
+        }
+
+        /// <summary>
+        /// Run the elements of key rotation that are common to both the sync and async cases.
+        /// Because KV only offers us async operations, our sync codepath needs to wrap the async version, and we can reuse some of the code.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
+        /// For this operation, there must not be an <see cref="AccessCondition.IfMatchETag"/>, <see cref="AccessCondition.IfNoneMatchETag"/>, 
+        /// <see cref="AccessCondition.IfModifiedSinceTime"/>, or <see cref="AccessCondition.IfNotModifiedSinceTime"/> condition.  
+        /// An <see cref="AccessCondition.IfMatchETag"/> condition will be added internally.</param>
+        /// <param name="modifiedOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. Must have already been processed with Apply Defaults.</param>
+        /// <param name="cancellationToken">The cancellation token to use for the async requests.</param>
+        /// <returns>The Task that generates the wrappped key.</returns>
+        private async Task<WrappedKeyData> RotateEncryptionHelper(AccessCondition accessCondition, BlobRequestOptions modifiedOptions, CancellationToken cancellationToken)
+        {
+            // Validate arguments:
+            String encryptionDataString;
+            bool encryptionMetadataAvailable = this.Metadata.TryGetValue(Constants.EncryptionConstants.BlobEncryptionData, out encryptionDataString);
+            this.ValidateKeyRotationArguments(accessCondition, modifiedOptions, encryptionMetadataAvailable);
+
+            // Deserialize the old encryption data and validate:
+            BlobEncryptionData encryptionData = Newtonsoft.Json.JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString);
+            if (encryptionData.WrappedContentKey.EncryptedKey == null)
+            {
+                throw new InvalidOperationException(SR.KeyRotationNoKeyID);
+            }
+
+            // Use the key resolver to resolve the old KEK.
+            Azure.KeyVault.Core.IKey oldKey = await modifiedOptions.EncryptionPolicy.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, cancellationToken).ConfigureAwait(false);
+            if (oldKey == null)
+            {
+                throw new ArgumentException(SR.KeyResolverCannotResolveExistingKey);
+            }
+
+            // Use the old KEK to unwrap the CEK.
+            byte[] unwrappedOldKey = await oldKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, cancellationToken).ConfigureAwait(false);
+
+            // Use the new KEK to re-wrap the CEK.
+            Tuple<byte[], string> wrappedNewKey = await modifiedOptions.EncryptionPolicy.Key.WrapKeyAsync(unwrappedOldKey, null /* algorithm */, cancellationToken).ConfigureAwait(false);
+            return new WrappedKeyData() { encryptedKey = wrappedNewKey.Item1, algorithm = wrappedNewKey.Item2, encryptionData = encryptionData };
+        }
+
+        /// <summary>
         /// Called when the asynchronous operation to commit the blob started by UploadFromStream finishes.
         /// </summary>
         /// <param name="result">The result of the asynchronous operation.</param>
@@ -3425,9 +3705,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobAttributes">The new attributes.</param>
         /// <param name="response">The response.</param>
-        /// <param name="ignoreMD5">if set to <c>true</c>, blob's MD5 will not be updated.</param>
         /// <exception cref="System.InvalidOperationException"></exception>
-        internal static void UpdateAfterFetchAttributes(BlobAttributes blobAttributes, HttpWebResponse response, bool ignoreMD5)
+        internal static void UpdateAfterFetchAttributes(BlobAttributes blobAttributes, HttpWebResponse response)
         {
             BlobProperties properties = BlobHttpResponseParsers.GetProperties(response);
 
@@ -3436,11 +3715,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if (blobAttributes.Properties.BlobType != BlobType.Unspecified && blobAttributes.Properties.BlobType != properties.BlobType)
             {
                 throw new InvalidOperationException(SR.BlobTypeMismatch);
-            }
-
-            if (ignoreMD5)
-            {
-                properties.ContentMD5 = blobAttributes.Properties.ContentMD5;
             }
 
             blobAttributes.Properties = properties;
@@ -3461,6 +3735,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             blobAttributes.Properties.LastModified = parsedProperties.LastModified ?? blobAttributes.Properties.LastModified;
             blobAttributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? blobAttributes.Properties.PageBlobSequenceNumber;
             blobAttributes.Properties.AppendBlobCommittedBlockCount = parsedProperties.AppendBlobCommittedBlockCount ?? blobAttributes.Properties.AppendBlobCommittedBlockCount;
+            blobAttributes.Properties.IsIncrementalCopy = parsedProperties.IsIncrementalCopy;
 
             if (updateLength)
             {

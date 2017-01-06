@@ -26,7 +26,6 @@ using System.Linq;
 using System.Threading.Tasks;
 
 #if NETCORE
-using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Threading;
 #else
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -289,6 +288,87 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Create a container with public access. Check public access is populated for Exists")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientCreateBlobAndCheckExistsWithPublicAccessAsync()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                string name = GetRandomContainerName();
+                CloudBlobContainer container = blobClient.GetContainerReference(name);
+                await container.CreateAsync(access, null, null);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                BlobContainerPermissions containerAccess = await container2.GetPermissionsAsync();
+                Assert.AreEqual(access, containerAccess.PublicAccess);
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                await container3.ExistsAsync();
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                await container.DeleteAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("List containers with public access")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientListContainersWithPublicAccessAsync()
+        {
+            string name = GetRandomContainerName();
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(name);
+            await container.CreateAsync();
+
+            BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                permissions.PublicAccess = access;
+                await container.SetPermissionsAsync(permissions);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                Assert.IsFalse(container2.Properties.PublicAccess.HasValue);
+                await container2.FetchAttributesAsync();
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                BlobContainerPermissions containerAccess = await container3.GetPermissionsAsync();
+                Assert.AreEqual(access, containerAccess.PublicAccess);
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                List<CloudBlobContainer> listedContainers = new List<CloudBlobContainer>();
+                BlobContinuationToken token = null;
+                do
+                {
+                    ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
+                    foreach (CloudBlobContainer returnedContainer in resultSegment.Results)
+                    {
+                        listedContainers.Add(returnedContainer);
+                    }
+                }
+                while (token != null);
+
+                Assert.AreEqual(1, listedContainers.Count());
+                Assert.AreEqual(access, listedContainers.First().Properties.PublicAccess);
+            }
+
+            await container.DeleteAsync();
+        }
+
+        [TestMethod]
         [Description("Test Create Container with Shared Key Lite")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -337,7 +417,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     catch (AggregateException ex)
                     {
+#if !FACADE_NETCORE
                         Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).ExceptionInfo.Message);
+#else
+                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).Exception.Message);
+#endif
                     }
                     catch (TaskCanceledException)
                     {
@@ -355,7 +439,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     catch (AggregateException ex)
                     {
+#if !FACADE_NETCORE
                         Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).ExceptionInfo.Message);
+#else
+                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).Exception.Message);
+#endif
                     }
                     catch (TaskCanceledException)
                     {
@@ -369,6 +457,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Make sure MaxExecutionTime is not enforced when using streams")]
         [TestCategory(ComponentCategory.Blob)]
@@ -492,6 +581,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
 
         [TestMethod]
         [Description("Get service stats")]
@@ -528,7 +618,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
             }
         }
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Server timeout query parameter")]
         [TestCategory(ComponentCategory.Blob)]
@@ -574,5 +664,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await client.GetServicePropertiesAsync(options, context);
             Assert.IsNull(timeout);
         }
+#endif
     }
 }

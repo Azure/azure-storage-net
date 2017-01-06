@@ -25,7 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Security.Cryptography;
 
     /// <summary>
-    /// The class is provides the helper functions to do FISMA compliant MD5.
+    /// The class provides the helper functions to do FISMA compliant MD5.
     /// </summary>
     internal sealed class NativeMD5 : MD5
     {

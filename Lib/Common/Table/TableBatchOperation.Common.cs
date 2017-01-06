@@ -188,7 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CommonUtility.AssertNotNull("item", item);
             this.CheckSingleQueryPerBatch(item);
-            this.LockToPartitionKey(item.OperationType == TableOperationType.Retrieve ? item.RetrievePartitionKey : item.Entity.PartitionKey);
+            this.LockToPartitionKey(item.PartitionKey);
             CheckPartitionKeyRowKeyPresent(item);
 
             this.operations.Insert(index, item);
@@ -235,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             CommonUtility.AssertNotNull("item", item);
             this.CheckSingleQueryPerBatch(item);
-            this.LockToPartitionKey(item.OperationType == TableOperationType.Retrieve ? item.RetrievePartitionKey : item.Entity.PartitionKey);
+            this.LockToPartitionKey(item.PartitionKey);
             CheckPartitionKeyRowKeyPresent(item);
 
             this.operations.Add(item);
@@ -373,7 +373,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 return;
             }
 
-            if (item.Entity.PartitionKey == null || item.Entity.RowKey == null)
+            if (item.PartitionKey == null || item.RowKey == null)
             {
                 throw new ArgumentNullException("item", SR.BatchOperationRequiresPartitionKeyRowKey);
             }

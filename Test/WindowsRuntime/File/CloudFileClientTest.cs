@@ -261,7 +261,11 @@ namespace Microsoft.WindowsAzure.Storage.File
                     }
                     catch (AggregateException ex)
                     {
+#if !FACADE_NETCORE
                         Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).ExceptionInfo.Message);
+#else
+                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).Exception.Message);
+#endif
                     }
                     catch (TaskCanceledException)
                     {
@@ -274,7 +278,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Make sure MaxExecutionTime is not enforced when using streams")]
         [TestCategory(ComponentCategory.File)]
@@ -399,5 +403,6 @@ namespace Microsoft.WindowsAzure.Storage.File
             await share.ExistsAsync(options, context);
             Assert.IsNull(timeout);
         }
+#endif
     }
 }

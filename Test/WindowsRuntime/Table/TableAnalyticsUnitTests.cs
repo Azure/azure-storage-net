@@ -680,11 +680,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.Version = "1.0";
-
+#if !FACADE_NETCORE
             props.Cors.CorsRules = new List<CorsRule>();
-
+#endif
             return props;
         }
-        #endregion
+#endregion
     }
 }

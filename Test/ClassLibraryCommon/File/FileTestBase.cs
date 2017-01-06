@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
@@ -64,21 +65,21 @@ namespace Microsoft.WindowsAzure.Storage.File
             return files;
         }
 
-#if TASK
         public static List<string> CreateFilesTask(CloudFileShare share, int count)
         {
             string name;
             List<string> files = new List<string>();
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < count; i++)
             {
                 name = "ff" + Guid.NewGuid().ToString();
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference(name);
-                file.CreateAsync(0).Wait();
+                tasks.Add(file.CreateAsync(0));
                 files.Add(name);
             }
+            Task.WaitAll(tasks.ToArray());
             return files;
         }
-#endif
 
         public static void UploadText(CloudFile file, string text, Encoding encoding, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {

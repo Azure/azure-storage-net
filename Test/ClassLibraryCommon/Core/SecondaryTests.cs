@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
-
+    using System.Threading.Tasks;
     [TestClass]
     public class SecondaryTests : TestBase
     {
@@ -137,7 +137,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         private void TestPrimaryOnlyCommand<T>(Action<T, OperationContext> command, T options)
-            where T: IRequestOptions
+            where T : IRequestOptions
         {
             OperationContext context = new OperationContext();
             options.LocationMode = LocationMode.PrimaryOnly;
@@ -163,108 +163,111 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         [TestMethod]
-        [Description("Blob requests should be sent to the correct location")]
+        [Description("Requests for all services should be sent to the correct location")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobMultiLocationRetries()
+        public void AllServiceMultiLocationRetries()
         {
-            MultiLocationRetries(SecondaryTests.TestContainerFetchAttributes);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(MultiLocationRetries(SecondaryTests.TestContainerFetchAttributes));
+            tasks.Add(MultiLocationRetries(SecondaryTests.TestQueueFetchAttributes));
+            tasks.Add(MultiLocationRetries(SecondaryTests.TestTableRetrieve));
+            Task.WaitAll(tasks.ToArray());
         }
 
-        [TestMethod]
-        [Description("Queue requests should be sent to the correct location")]
-        [TestCategory(ComponentCategory.Queue)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void QueueMultiLocationRetries()
-        {
-            MultiLocationRetries(SecondaryTests.TestQueueFetchAttributes);
-        }
-
-        [TestMethod]
-        [Description("Table requests should be sent to the correct location")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableMultiLocationRetries()
-        {
-            MultiLocationRetries(SecondaryTests.TestTableRetrieve);
-        }
-
-        private static void MultiLocationRetries(Action<LocationMode?, LocationMode, StorageLocation, IList<RetryContext>, IList<RetryInfo>> testMethod)
+        private static async Task MultiLocationRetries(Action<LocationMode?, LocationMode, StorageLocation, IList<RetryContext>, IList<RetryInfo>> testMethod)
         {
             AssertSecondaryEndpoint();
 
-            List<RetryInfo> retryInfoList = new List<RetryInfo>();
-            List<RetryContext> retryContextList = new List<RetryContext>();
+            {
+                List<RetryInfo> retryInfoList = new List<RetryInfo>();
+                List<RetryContext> retryContextList = new List<RetryContext>();
 
-            retryContextList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
-            testMethod(LocationMode.PrimaryOnly, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
+                retryContextList.Clear();
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
+                testMethod(LocationMode.PrimaryOnly, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
+                testMethod(null, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
 
-            retryContextList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
-            testMethod(LocationMode.SecondaryOnly, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.SecondaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
+                retryContextList.Clear();
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
+                testMethod(LocationMode.SecondaryOnly, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
+                testMethod(null, LocationMode.SecondaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
 
-            retryContextList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.PrimaryThenSecondary));
-            testMethod(LocationMode.PrimaryThenSecondary, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.PrimaryThenSecondary, StorageLocation.Primary, retryContextList, retryInfoList);
+                retryContextList.Clear();
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.PrimaryThenSecondary));
+                testMethod(LocationMode.PrimaryThenSecondary, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
+                testMethod(null, LocationMode.PrimaryThenSecondary, StorageLocation.Primary, retryContextList, retryInfoList);
 
-            retryContextList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.SecondaryThenPrimary));
-            testMethod(LocationMode.SecondaryThenPrimary, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.SecondaryThenPrimary, StorageLocation.Secondary, retryContextList, retryInfoList);
+                retryContextList.Clear();
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.SecondaryThenPrimary));
+                testMethod(LocationMode.SecondaryThenPrimary, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
+                testMethod(null, LocationMode.SecondaryThenPrimary, StorageLocation.Secondary, retryContextList, retryInfoList);
+            }
 
-            retryContextList.Clear();
-            retryInfoList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(6) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(1) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
-            AddUpdatedLocationModes(retryContextList, retryInfoList);
-            testMethod(LocationMode.PrimaryOnly, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
+            // Many of these tests require a sleep, so here we parallelize to improve test runtime.
+            List<Task> tasks = new List<Task>();
 
-            retryContextList.Clear();
-            retryInfoList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(6) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(1) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
-            AddUpdatedLocationModes(retryContextList, retryInfoList);
-            testMethod(LocationMode.SecondaryOnly, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.SecondaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
+            Action<Action<List<RetryInfo>, List<RetryContext>>, Action<List<RetryInfo>, List<RetryContext>>> runTest = (prep, invoke) =>
+          {
+              List<RetryInfo> retryInfoList = new List<RetryInfo>();
+              List<RetryContext> retryContextList = new List<RetryContext>();
+              prep(retryInfoList, retryContextList);
+              invoke(retryInfoList, retryContextList);
+          };
 
-            retryContextList.Clear();
-            retryInfoList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.PrimaryThenSecondary));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(6) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryThenSecondary));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(1) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.PrimaryThenSecondary));
-            AddUpdatedLocationModes(retryContextList, retryInfoList);
-            testMethod(LocationMode.PrimaryThenSecondary, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.PrimaryThenSecondary, StorageLocation.Primary, retryContextList, retryInfoList);
+            Action<List<RetryInfo>, List<RetryContext>> prepareRetryLists1 = (retryInfoList, retryContextList) =>
+            {
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(6) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(1) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryOnly));
+                AddUpdatedLocationModes(retryContextList, retryInfoList);
+            };
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists1, (retryInfoList, retryContextList) => testMethod(LocationMode.PrimaryOnly, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList))));
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists1, (retryInfoList, retryContextList) => testMethod(null, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList))));
 
-            retryContextList.Clear();
-            retryInfoList.Clear();
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.SecondaryThenPrimary));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(6) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryThenPrimary));
-            retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(1) });
-            retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.SecondaryThenPrimary));
-            AddUpdatedLocationModes(retryContextList, retryInfoList);
-            testMethod(LocationMode.SecondaryThenPrimary, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList);
-            testMethod(null, LocationMode.SecondaryThenPrimary, StorageLocation.Secondary, retryContextList, retryInfoList);
+
+            Action<List<RetryInfo>, List<RetryContext>> prepareRetryLists2 = (retryInfoList, retryContextList) =>
+            {
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(6) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(1) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryOnly));
+                AddUpdatedLocationModes(retryContextList, retryInfoList);
+            };
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists2, (retryInfoList, retryContextList) => testMethod(LocationMode.SecondaryOnly, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList))));
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists2, (retryInfoList, retryContextList) => testMethod(null, LocationMode.SecondaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList))));
+
+
+            Action<List<RetryInfo>, List<RetryContext>> prepareRetryLists3 = (retryInfoList, retryContextList) =>
+            {
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.PrimaryThenSecondary));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(6) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.PrimaryThenSecondary));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(1) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.PrimaryThenSecondary));
+                AddUpdatedLocationModes(retryContextList, retryInfoList);
+            };
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists3, (retryInfoList, retryContextList) => testMethod(LocationMode.PrimaryThenSecondary, LocationMode.PrimaryOnly, StorageLocation.Primary, retryContextList, retryInfoList))));
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists3, (retryInfoList, retryContextList) => testMethod(null, LocationMode.PrimaryThenSecondary, StorageLocation.Primary, retryContextList, retryInfoList))));
+
+            Action<List<RetryInfo>, List<RetryContext>> prepareRetryLists4 = (retryInfoList, retryContextList) =>
+            {
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.SecondaryThenPrimary));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(6) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Secondary, LocationMode.SecondaryThenPrimary));
+                retryInfoList.Add(new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(1) });
+                retryContextList.Add(new RetryContext(0, null, StorageLocation.Primary, LocationMode.SecondaryThenPrimary));
+                AddUpdatedLocationModes(retryContextList, retryInfoList);
+            };
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists4, (retryInfoList, retryContextList) => testMethod(LocationMode.SecondaryThenPrimary, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList))));
+            tasks.Add(Task.Run(() => runTest(prepareRetryLists4, (retryInfoList, retryContextList) => testMethod(LocationMode.SecondaryThenPrimary, LocationMode.PrimaryOnly, StorageLocation.Secondary, retryContextList, retryInfoList))));
+
+            await Task.WhenAll(tasks);
         }
 
         private static void AddUpdatedLocationModes(IList<RetryContext> retryContextList, IList<RetryInfo> retryInfoList)

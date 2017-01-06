@@ -990,7 +990,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, OperationContext operationContext)
         {
-            return BlobHttpWebRequestFactory.CopyFrom(uri, timeout, source, sourceAccessCondition, destAccessCondition, true /* useVersionHeader */, operationContext);
+            return BlobHttpWebRequestFactory.CopyFrom(uri, timeout, source, false /* incrementalCopy */, sourceAccessCondition, destAccessCondition, true /* useVersionHeader */, operationContext);
         }
 
         /// <summary>
@@ -1006,11 +1006,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return BlobHttpWebRequestFactory.CopyFrom(uri, timeout, source, false, sourceAccessCondition, destAccessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to copy a blob or file to another blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the destination blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="source">A <see cref="System.Uri"/> specifying the absolute URI to the source object, including any necessary authentication parameters.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the source object in order for the request to proceed.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the destination blob in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             CommonUtility.AssertNotNull("source", source);
 
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, null /* builder */, useVersionHeader, operationContext);
+            UriQueryBuilder builder = null;
+            if (incrementalCopy)
+            {
+                builder = new UriQueryBuilder();
+                builder.Add(Constants.QueryConstants.Component, "incrementalcopy");
+            }
+
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
 
             request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
+
             request.ApplyAccessCondition(destAccessCondition);
             request.ApplyAccessConditionToSource(sourceAccessCondition);
 
@@ -1136,7 +1161,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             if (offset.HasValue && rangeContentMD5)
             {
                 CommonUtility.AssertNotNull("count", count);
-                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxBlockSize);
+                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxRangeGetContentMD5Size);
             }
 
             HttpWebRequest request = Get(uri, timeout, snapshot, accessCondition, useVersionHeader, operationContext);

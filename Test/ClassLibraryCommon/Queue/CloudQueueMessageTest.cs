@@ -21,8 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
@@ -103,6 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
             queue.AddMessage(message);
+            VerifyAddMessageResult(message);
 
             CloudQueueMessage receivedMessage1 = queue.GetMessage();
 
@@ -114,6 +117,51 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             queue.DeleteMessage(receivedMessage1);
 
+            queue.Delete();
+        }
+
+        [TestMethod]
+        [Description("Test that add message does not alter content.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueAddMessageVerifyContent()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            string name = GenerateNewQueueName();
+            CloudQueue queue = client.GetQueueReference(name);
+            queue.Create();
+
+            string msgContent = Guid.NewGuid().ToString("N");
+            CloudQueueMessage message = new CloudQueueMessage(msgContent);
+            queue.AddMessage(message);
+            VerifyAddMessageResult(message);
+            Assert.IsTrue(message.AsString == msgContent);
+
+            queue.Delete();
+        }
+
+        [TestMethod]
+        [Description("Test that the pop receipt returned by add message works for deleting a message.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueDeleteMessageWithAddMessagePopReceipt()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            string name = GenerateNewQueueName();
+            CloudQueue queue = client.GetQueueReference(name);
+            queue.Create();
+
+            string msgContent = Guid.NewGuid().ToString("N");
+            CloudQueueMessage message = new CloudQueueMessage(msgContent);
+            queue.AddMessage(message);
+            VerifyAddMessageResult(message);
+            queue.DeleteMessage(message.Id, message.PopReceipt);
+
+            Assert.IsNull(queue.GetMessage());
             queue.Delete();
         }
 
@@ -138,6 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 OperationContext opContext = new OperationContext();
                 queue.AddMessage(message, null, null, new QueueRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() }, opContext);
+                VerifyAddMessageResult(message);
                 return opContext.LastResult;
             });
 
@@ -167,6 +216,57 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         [TestMethod]
+        [Description("Test whether we can add multiple messages with APM.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueAddMessageRepeatAPM()
+        {
+            int oldConnectionLimit = ServicePointManager.DefaultConnectionLimit;
+            CloudQueueClient client = GenerateCloudQueueClient();
+            string name = GenerateNewQueueName();
+            CloudQueue queue = client.GetQueueReference(name);
+            try
+            {
+                ServicePointManager.DefaultConnectionLimit = 5;
+                queue.Create();
+
+                string msgContent = Guid.NewGuid().ToString("N");
+                CloudQueueMessage message = new CloudQueueMessage(msgContent);
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = null;
+                    // Add Messages.  This test is testing the case where the number of messages is greater than the default 
+                    // connection limit (ie, that the commections are getting closed properly.)
+                    for (int i = 0; i < 10; i++)
+                    {
+                        result = queue.BeginAddMessage(message,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        queue.EndAddMessage(result);
+                    }
+
+                    // Get message and test that it is correct
+                    result = queue.BeginGetMessages(10, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    List<CloudQueueMessage> receivedMessages = queue.EndGetMessages(result).ToList();
+                    Assert.IsTrue(receivedMessages.Count == 10);
+                }
+            }
+            finally
+            {
+                ServicePointManager.DefaultConnectionLimit = oldConnectionLimit;
+                if (queue != null)
+                {
+                    queue.Delete();
+                }
+            }
+        }
+
+        [TestMethod]
         [Description("Test whether we can add message with APM.")]
         [TestCategory(ComponentCategory.Queue)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -190,6 +290,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     null);
                 waitHandle.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(message);
 
                 // Get message and test that it is correct
                 result = queue.BeginGetMessage(ar => waitHandle.Set(), null);
@@ -264,6 +365,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             byte[] testData = new byte[20];
             CloudQueueMessage message = new CloudQueueMessage(testData);
             queue.AddMessage(message);
+            VerifyAddMessageResult(message);
 
             CloudQueueMessage receivedMessage1 = queue.GetMessage();
 
@@ -301,6 +403,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 IAsyncResult result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                 waitHandle.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(message);
 
                 // Test that message is correct
                 CloudQueueMessage receivedMessage1 = queue.GetMessage();
@@ -382,6 +485,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
             queue.AddMessage(message);
+            VerifyAddMessageResult(message);
+
             CloudQueueMessage receivedMessage1 = queue.GetMessage();
 
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
@@ -418,6 +523,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                 waitHandle.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(message);
 
                 // Get New Message
                 result = queue.BeginGetMessage(ar => waitHandle.Set(), null);
@@ -454,6 +560,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 string messageContent = i.ToString();
                 CloudQueueMessage message = new CloudQueueMessage(messageContent);
                 queue.AddMessage(message);
+                VerifyAddMessageResult(message);
                 messageContentList.Add(messageContent);
             }
 
@@ -505,6 +612,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     queue.EndAddMessage(result);
+                    VerifyAddMessageResult(message);
 
                     // Add message to list to compare
                     messageContentList.Add(messageContent);
@@ -556,6 +664,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     queue.EndAddMessage(result);
+                    VerifyAddMessageResult(message);
 
                     // Add message to list to compare
                     messageContentList.Add(messageContent);
@@ -625,6 +734,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     queue.EndAddMessage(result);
+                    VerifyAddMessageResult(message);
 
                     // Add message to list to compare
                     messageContentList.Add(messageContent);
@@ -768,21 +878,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageSmallBoundaryTest()
         {
-            CloudQueueClient client = GenerateCloudQueueClient();
-            string name = GenerateNewQueueName();
-            CloudQueue queue = client.GetQueueReference(name);
-            queue.Create();
-
-            CloudQueue queueRefWithoutBase64Encoding = client.GetQueueReference(name);
-            queueRefWithoutBase64Encoding.EncodeMessage = false;
-
             // boundary value 0 and 1
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 0);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(0);
+            CloudQueueMessageBase64EncodingBoundaryTest(1);
 
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 1024);
-
-            queue.Delete();
+            CloudQueueMessageBase64EncodingBoundaryTest(1024);
         }
 
         [TestMethod]
@@ -793,26 +893,16 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageNormalBoundaryTest()
         {
-            CloudQueueClient client = GenerateCloudQueueClient();
-            string name = GenerateNewQueueName();
-            CloudQueue queue = client.GetQueueReference(name);
-            queue.Create();
-
-            CloudQueue queueRefWithoutBase64Encoding = client.GetQueueReference(name);
-            queueRefWithoutBase64Encoding.EncodeMessage = false;
-
             // a string with ascii chars of length 8*6144 will have Base64-encoded length 8*8192 (64kB)
             // the following three test strings with length 8*6144-1, 8*6144, and 8*6144+1
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 6144 - 1);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 6144);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 6144 + 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144 - 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144 + 1);
 
             // boundary value 8*8192-1, 8*8192, 8*8192+1
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 8192 - 1);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 8192);
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 8192 + 1);
-
-            queue.Delete();
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 - 1);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192);
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 + 1);
         }
 
 
@@ -824,6 +914,48 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageOverBoundaryTest()
         {
+            // excessive message size
+            CloudQueueMessageBase64EncodingBoundaryTest(8 * 12288);
+        }
+
+        /// <summary>
+        /// Perform a set of Queue message tests given the message length.
+        /// </summary>
+        private void CloudQueueMessageBase64EncodingBoundaryTest(int messageLength)
+        {
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, false, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, false, true, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, true, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(true, true, true, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, false, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, false, true, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, true, false, messageLength)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(false, true, true, messageLength)));
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        /// <summary>
+        /// Perform a set of Queue message tests with different chars.
+        /// </summary>
+        private void QueueBase64EncodingTest(bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength)
+        {
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, 'a')));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x21)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x7f)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0xd7ff)));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, '<')));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x19, '>')));
+            tasks.Add(Task.Run(() => QueueBase64EncodingTest(useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0xfffe, '&')));
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        /// <summary>
+        /// Perform a PUT and GET queue message test customized by a few parameters.
+        /// </summary>
+        private void QueueBase64EncodingTest(bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength, char invalidXmlChar, char validXmlChar)
+        {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
@@ -832,98 +964,67 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueue queueRefWithoutBase64Encoding = client.GetQueueReference(name);
             queueRefWithoutBase64Encoding.EncodeMessage = false;
 
-            // excessive message size
-            CloudQueueMessageBase64EncodingBoundaryTest(queue, queueRefWithoutBase64Encoding, 8 * 12288);
-
-            queue.Delete();
-        }
-
-        /// <summary>
-        /// Perform a set of Queue message tests given the message length.
-        /// </summary>
-        private void CloudQueueMessageBase64EncodingBoundaryTest(CloudQueue queue, CloudQueue queueRefWithoutBase64Encoding, int messageLength)
-        {
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, false, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, false, true, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, true, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, true, true, true, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, false, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, false, true, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, true, false, messageLength);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, false, true, true, messageLength);
-        }
-
-        /// <summary>
-        /// Perform a set of Queue message tests with different chars.
-        /// </summary>
-        private void QueueBase64EncodingTest(CloudQueue queue, CloudQueue queueRefWithoutBase64Encoding, bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength)
-        {
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, 'a');
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x21);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0x7f);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, (char)0xd7ff);
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x0b, '<');
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0x19, '>');
-            QueueBase64EncodingTest(queue, queueRefWithoutBase64Encoding, useBase64Encoding, useString, hasInvalidCharacter, messageLength, (char)0xfffe, '&');
-        }
-
-        /// <summary>
-        /// Perform a PUT and GET queue message test customized by a few parameters.
-        /// </summary>
-        private void QueueBase64EncodingTest(CloudQueue queue, CloudQueue queueRefWithoutBase64Encoding, bool useBase64Encoding, bool useString, bool hasInvalidCharacter, int messageLength, char invalidXmlChar, char validXmlChar)
-        {
-            queue.EncodeMessage = useBase64Encoding;
-            CloudQueueMessage originalMessage = null;
-            bool expectedExceptionThrown = false;
-
-            if (!useString)
+            try
             {
-                // hasInvalidCharacter is ignored
-                byte[] data = new byte[messageLength];
-                Random random = new Random();
-                random.NextBytes(data);
-                originalMessage = new CloudQueueMessage(data);
-            }
-            else
-            {
-                string message = CreateMessageString(messageLength, hasInvalidCharacter, invalidXmlChar, validXmlChar);
-                originalMessage = new CloudQueueMessage(message);
-            }
+                queue.EncodeMessage = useBase64Encoding;
+                CloudQueueMessage originalMessage = null;
+                bool expectedExceptionThrown = false;
 
-            // check invalid use case and length validation
-            if (!useString && !queue.EncodeMessage)
-            {
-                TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Binary data must be Base64 encoded");
-                expectedExceptionThrown = true;
-            }
-            else
-            {
-                expectedExceptionThrown = QueueBase64EncodingTestVerifyLength(queue, originalMessage);
-            }
-
-            if (!expectedExceptionThrown)
-            {
-                // check invalid XML characters validation
-                if (!queue.EncodeMessage && hasInvalidCharacter && messageLength > 0)
+                if (!useString)
                 {
-                    TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Invalid characters should throw if Base64 encoding is not used");
+                    // hasInvalidCharacter is ignored
+                    byte[] data = new byte[messageLength];
+                    Random random = new Random();
+                    random.NextBytes(data);
+                    originalMessage = new CloudQueueMessage(data);
+                }
+                else
+                {
+                    string message = CreateMessageString(messageLength, hasInvalidCharacter, invalidXmlChar, validXmlChar);
+                    originalMessage = new CloudQueueMessage(message);
+                }
+
+                // check invalid use case and length validation
+                if (!useString && !queue.EncodeMessage)
+                {
+                    TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Binary data must be Base64 encoded");
                     expectedExceptionThrown = true;
                 }
                 else
                 {
-                    // good to send messages
-                    queue.AddMessage(originalMessage);
-                    queue.AddMessage(originalMessage);
+                    expectedExceptionThrown = QueueBase64EncodingTestVerifyLength(queue, originalMessage);
+                }
 
-                    if (useString)
+                if (!expectedExceptionThrown)
+                {
+                    // check invalid XML characters validation
+                    if (!queue.EncodeMessage && hasInvalidCharacter && messageLength > 0)
                     {
-                        QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsString);
+                        TestHelper.ExpectedException<ArgumentException>(() => { queue.AddMessage(originalMessage); }, "Invalid characters should throw if Base64 encoding is not used");
+                        expectedExceptionThrown = true;
                     }
                     else
                     {
-                        QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsBytes);
+                        // good to send messages
+                        queue.AddMessage(originalMessage);
+                        VerifyAddMessageResult(originalMessage, !useString /* base64Encoded */);
+                        queue.AddMessage(originalMessage);
+                        VerifyAddMessageResult(originalMessage, !useString /* base64Encoded */);
+
+                        if (useString)
+                        {
+                            QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsString);
+                        }
+                        else
+                        {
+                            QueueBase64EncodingTestDownloadMessageAndVerify(queue, queueRefWithoutBase64Encoding, originalMessage.AsBytes);
+                        }
                     }
                 }
+            }
+            finally
+            {
+                queue.Delete();
             }
         }
 
@@ -1166,6 +1267,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
             queue.AddMessage(message);
+            VerifyAddMessageResult(message);
+
             CloudQueueMessage receivedMessage1 = queue.PeekMessage();
 
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
@@ -1202,6 +1305,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                 waitHandle.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(message);
 
                 // Peek Message
                 result = queue.BeginPeekMessage(ar => waitHandle.Set(), null);
@@ -1271,6 +1375,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 string messageContent = i.ToString();
                 CloudQueueMessage message = new CloudQueueMessage(messageContent);
                 queue.AddMessage(message);
+                VerifyAddMessageResult(message);
+
                 messageContentList.Add(messageContent);
             }
 
@@ -1322,6 +1428,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     queue.EndAddMessage(result);
+                    VerifyAddMessageResult(message);
 
                     // Also add to list to compare
                     messageContentList.Add(messageContent);
@@ -1411,6 +1518,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
             queue.AddMessage(message);
+            VerifyAddMessageResult(message);
+
             CloudQueueMessage receivedMessage1 = queue.PeekMessage();
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
             queue.Clear();
@@ -1442,6 +1551,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 IAsyncResult result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                 waitHandle.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(message);
 
                 // Peek message
                 result = queue.BeginPeekMessage(ar => waitHandle.Set(), null);
@@ -1486,6 +1596,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 IAsyncResult result = queue.BeginAddMessage(message, ar => waitHandle.Set(), null);
                 waitHandle.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(message);
 
                 // Peek message
                 result = queue.BeginPeekMessage(ar => waitHandle.Set(), null);
@@ -1647,13 +1758,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueue queue = client.GetQueueReference(name);
             queue.Create();
 
-            queue.AddMessage(futureMessage, null, TimeSpan.FromDays(2));
+            queue.AddMessage(futureMessage, TimeSpan.FromDays(2));
+            VerifyAddMessageResult(futureMessage);
 
             // We should not be able to see the future message yet.
             CloudQueueMessage retrievedMessage = queue.GetMessage();
             Assert.IsNull(retrievedMessage);
 
             queue.AddMessage(presentMessage, null, TimeSpan.Zero);
+            VerifyAddMessageResult(presentMessage);
 
             // We should be able to see the present message.
             retrievedMessage = queue.GetMessage();
@@ -1698,6 +1811,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     futureMessage, null, TimeSpan.FromDays(2), null, null, ar => waitHandler.Set(), null);
                 waitHandler.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(futureMessage);
 
                 // We should not be able to see the future message yet.
                 result = queue.BeginGetMessage(ar => waitHandler.Set(), null);
@@ -1712,6 +1826,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     presentMessage, null, TimeSpan.Zero, null, null, ar => waitHandler.Set(), null);
                 waitHandler.WaitOne();
                 queue.EndAddMessage(result);
+                VerifyAddMessageResult(presentMessage);
 
                 // We should be able to see the present message.
                 result = queue.BeginGetMessage(ar => waitHandler.Set(), null);
@@ -1825,6 +1940,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 // The following call should succeed.
                 queue.AddMessage(longMessageFromString);
+                VerifyAddMessageResult(longMessageFromString);
+
 
                 CloudQueueMessage retrievedMessage = queue.GetMessage();
                 Assert.AreEqual(longMessageFromString.AsString, retrievedMessage.AsString);
@@ -1851,6 +1968,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 // The following call should succeed.
                 queue.AddMessage(longMessageFromByteArray);
+                VerifyAddMessageResult(longMessageFromByteArray, true /* base64Encoded */);
 
                 CloudQueueMessage retrievedMessage = queue.GetMessage();
                 byte[] expectedBytes = longMessageFromByteArray.AsBytes;
@@ -1902,6 +2020,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     IAsyncResult result = queue.BeginAddMessage(longMessageFromString, ar => waitHandler.Set(), null);
                     waitHandler.WaitOne();
                     queue.EndAddMessage(result);
+                    VerifyAddMessageResult(longMessageFromString);
 
                     // Get Message
                     result = queue.BeginGetMessage(ar => waitHandler.Set(), null);
@@ -1939,6 +2058,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                     IAsyncResult result = queue.BeginAddMessage(longMessageFromByteArray, ar => waitHandler.Set(), null);
                     waitHandler.WaitOne();
                     queue.EndAddMessage(result);
+                    VerifyAddMessageResult(longMessageFromByteArray, true /* base64Encoded */);
 
                     // Get Message
                     result = queue.BeginGetMessage(ar => waitHandler.Set(), null);
@@ -2378,5 +2498,17 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             queue.DeleteAsync().Wait();
         }
 #endif
+
+        #region Test Helpers
+        private void VerifyAddMessageResult(CloudQueueMessage originalMessage, bool base64Encoded = false)
+        {
+            Assert.IsFalse(string.IsNullOrEmpty(originalMessage.Id));
+            Assert.IsTrue(originalMessage.InsertionTime.HasValue);
+            Assert.IsTrue(originalMessage.ExpirationTime.HasValue);
+            Assert.IsFalse(string.IsNullOrEmpty(originalMessage.PopReceipt));
+
+            Assert.IsTrue(originalMessage.NextVisibleTime.HasValue);
+        }
+        #endregion
     }
 }

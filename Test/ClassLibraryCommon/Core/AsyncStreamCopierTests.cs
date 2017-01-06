@@ -21,8 +21,10 @@ using Microsoft.WindowsAzure.Storage.Core.Executor;
 using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
@@ -39,49 +41,52 @@ namespace Microsoft.WindowsAzure.Storage.Core
         [TestCategory(TenantTypeCategory.Cloud)]
         public void StreamCopyMaxLengthTest()
         {
+            List<Task> tasks = new List<Task>();
             // Boundary tests
-            TestHelper.ExpectedException<InvalidOperationException>(
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, true, 10, -1, true, 10, -1, null, true),
-                "Stream is longer than the allowed length.");
-            TestHelper.ExpectedException<InvalidOperationException>(
+                "Stream is longer than the allowed length.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, false, 10, -1, true, 10, -1, null, true),
-                "Stream is longer than the allowed length.");
-            TestHelper.ExpectedException<InvalidOperationException>(
+                "Stream is longer than the allowed length.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, true, 10, -1, false, 10, -1, null, true),
-                "Stream is longer than the allowed length.");
-            TestHelper.ExpectedException<InvalidOperationException>(
+                "Stream is longer than the allowed length.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, false, 10, -1, false, 10, -1, null, true),
-                "Stream is longer than the allowed length.");
-            TestHelper.ExpectedException<InvalidOperationException>(
+                "Stream is longer than the allowed length.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, true, 10, -1, true, 10, -1, null, false),
-                "Stream is longer than the allowed length.");
-            TestHelper.ExpectedException<InvalidOperationException>(
+                "Stream is longer than the allowed length.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, false, 10, -1, true, 10, -1, null, false),
-                "Stream is longer than the allowed length.");
-            TestHelper.ExpectedException<InvalidOperationException>(
+                "Stream is longer than the allowed length.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, true, 10, -1, false, 10, -1, null, false),
-                "Stream is longer than the allowed length.");
-            TestHelper.ExpectedException<InvalidOperationException>(
+                "Stream is longer than the allowed length.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<InvalidOperationException>(
                 () => ValidateCopier((16 * 1024 * 1024), null, (16 * 1024 * 1024) - 1, false, 10, -1, false, 10, -1, null, false),
-                "Stream is longer than the allowed length.");
+                "Stream is longer than the allowed length.")));
 
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, false, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, false, 10, -1, null, false);
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, true, 10, -1, false, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, 16 * 1024 * 1024, false, 10, -1, false, 10, -1, null, false)));
 
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, false, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, false, 10, -1, null, false);
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, false, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, false, 10, -1, null, false)));
+
+            Task.WaitAll(tasks.ToArray());
         }
 
         [TestMethod]
@@ -94,59 +99,61 @@ namespace Microsoft.WindowsAzure.Storage.Core
         [TestCategory(TenantTypeCategory.Cloud)]
         public void StreamCopyCopyLengthTest()
         {
+            List<Task> tasks = new List<Task>();
             // Copy half the stream
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, false);
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 8 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, false)));
 
             // Boundary tests
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, false, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, false, 10, -1, null, false);
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, true, 10, -1, false, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) - 1, null, false, 10, -1, false, 10, -1, null, false)));
 
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, true);
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, false);
-            ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, false);
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, true)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, true, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, true, 10, -1, false, 10, -1, null, false)));
+            tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, 16 * 1024 * 1024, null, false, 10, -1, false, 10, -1, null, false)));
 
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, true, 10, -1, true, 10, -1, null, true),
-                "The given stream does not contain the requested number of bytes from its given position.");
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, false, 10, -1, true, 10, -1, null, true),
-                "The given stream does not contain the requested number of bytes from its given position.");
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, true, 10, -1, false, 10, -1, null, true),
-                "The given stream does not contain the requested number of bytes from its given position.");
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, false, 10, -1, false, 10, -1, null, true),
-                "The given stream does not contain the requested number of bytes from its given position.");
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, true, 10, -1, true, 10, -1, null, false),
-                "The given stream does not contain the requested number of bytes from its given position.");
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, false, 10, -1, true, 10, -1, null, false),
-                "The given stream does not contain the requested number of bytes from its given position.");
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, true, 10, -1, false, 10, -1, null, false),
-                "The given stream does not contain the requested number of bytes from its given position.");
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, false, 10, -1, false, 10, -1, null, false),
-                "The given stream does not contain the requested number of bytes from its given position.");
+                "The given stream does not contain the requested number of bytes from its given position.")));
+            Task.WaitAll(tasks.ToArray());
         }
 
         [TestMethod]

@@ -27,6 +27,8 @@ using System.Text;
 using System.Threading;
 using System.IO;
 using System.Xml.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -328,8 +330,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerSASCombinations()
+        public async Task CloudBlobContainerSASCombinations()
         {
+            List<Task> tasks = new List<Task>();
             for (int i = 1; i < 0x40; i++)
             {
                 SharedAccessBlobPermissions permissions = (SharedAccessBlobPermissions)i;
@@ -342,14 +345,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 string sasToken = this.testContainer.GetSharedAccessSignature(policy);
 
                 CloudBlockBlob testBlockBlob = this.testContainer.GetBlockBlobReference("blockblob" + i);
-                SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testBlockBlob);
+                tasks.Add(Task.Run(() => SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testBlockBlob)));
 
                 CloudPageBlob testPageBlob = this.testContainer.GetPageBlobReference("pageblob" + i);
-                SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testPageBlob);
+                tasks.Add(Task.Run(() => SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testPageBlob)));
 
                 CloudAppendBlob testAppendBlob = this.testContainer.GetAppendBlobReference("appendblob" + i);
-                SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testAppendBlob);
+                tasks.Add(Task.Run(() => SASTests.TestAccess(sasToken, permissions, null, this.testContainer, testAppendBlob)));
+
+                // Limit the number of parallel tasks to 90
+                while (tasks.Count > 50)
+                {
+                    Task t = await Task.WhenAny(tasks);
+                    await t;
+                    tasks.Remove(t);
+                }
             }
+            Task.WaitAll(tasks.ToArray());
         }
 
         [TestMethod]
@@ -370,17 +382,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             permissions.PublicAccess = BlobContainerPublicAccessType.Container;
             this.testContainer.SetPermissions(permissions);
-            Thread.Sleep(35 * 1000);
-            SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob);
-            SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob);
-            SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testAppendBlob);
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob));
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob));
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(null, SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read, null, this.testContainer, testAppendBlob));
 
             permissions.PublicAccess = BlobContainerPublicAccessType.Blob;
             this.testContainer.SetPermissions(permissions);
-            Thread.Sleep(35 * 1000);
-            SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob);
-            SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob);
-            SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testAppendBlob);
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testBlockBlob));
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testPageBlob));
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(null, SharedAccessBlobPermissions.Read, null, this.testContainer, testAppendBlob));
         }
 
         [TestMethod]
@@ -398,7 +408,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             permissions.PublicAccess = BlobContainerPublicAccessType.Container;
             this.testContainer.SetPermissions(permissions);
-            Thread.Sleep(35 * 1000);
 
             string blobUri = testBlockBlob.ServiceClient.BaseUri.AbsoluteUri;
             string accountString = "BlobEndpoint=" + blobUri;
@@ -406,7 +415,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudStorageAccount acc = CloudStorageAccount.Parse(accountString);
             CloudBlobClient client = acc.CreateCloudBlobClient();
             CloudBlobContainer container = client.GetContainerReference(this.testContainer.Name);
-            container.ListBlobs().ToArray();
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => container.ListBlobs().ToArray());
         }
 
         [TestMethod]
@@ -433,21 +442,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobContainerPermissions permissions = new BlobContainerPermissions();
             permissions.SharedAccessPolicies.Add("testpolicy", policy);
             this.testContainer.SetPermissions(permissions);
-            Thread.Sleep(35 * 1000);
 
             string sasToken = testBlockBlob.GetSharedAccessSignature(null, "testpolicy");
-            SASTests.TestAccess(sasToken, policy.Permissions, null, null, testBlockBlob);
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(sasToken, policy.Permissions, null, null, testBlockBlob));
 
             sasToken = testPageBlob.GetSharedAccessSignature(null, "testpolicy");
-            SASTests.TestAccess(sasToken, policy.Permissions, null, null, testPageBlob);
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(sasToken, policy.Permissions, null, null, testPageBlob));
 
             sasToken = testAppendBlob.GetSharedAccessSignature(null, "testpolicy");
-            SASTests.TestAccess(sasToken, policy.Permissions, null, null, testAppendBlob);
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(sasToken, policy.Permissions, null, null, testAppendBlob));
 
             sasToken = this.testContainer.GetSharedAccessSignature(null, "testpolicy");
-            SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testBlockBlob);
-            SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testPageBlob);
-            SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testAppendBlob);
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testBlockBlob));
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testPageBlob));
+            TestHelper.SpinUpTo30SecondsIgnoringFailures(() => SASTests.TestAccess(sasToken, policy.Permissions, null, this.testContainer, testAppendBlob));
         }
 
         [TestMethod]
@@ -572,7 +580,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestBlobSAS(testBlob, permissions, headers);
             }
         }
-         
+
         [TestMethod]
         [Description("Perform a SAS request and ensure that the api-version query param exists and the x-ms-version header does not.")]
         [TestCategory(ComponentCategory.Blob)]
@@ -692,7 +700,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 byte[] target = new byte[4];
                 OperationContext opContext = new OperationContext();
                 IPAddress actualIP = null;
-                opContext.ResponseReceived += (sender, e) => 
+                opContext.ResponseReceived += (sender, e) =>
                     {
                         Stream stream = e.Response.GetResponseStream();
                         stream.Seek(0, SeekOrigin.Begin);
@@ -837,7 +845,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         new { scheme = Uri.UriSchemeHttp, port = httpPort},
                         new { scheme = Uri.UriSchemeHttps, port = securePort}
                     };
-                    
+
                     foreach (var item in schemesAndPorts)
                     {
                         blockBlobSASUri = TransformSchemeAndPort(blockBlobSASUri, item.scheme, item.port);

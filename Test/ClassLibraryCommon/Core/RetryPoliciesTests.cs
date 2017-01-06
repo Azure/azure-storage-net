@@ -22,11 +22,12 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using Microsoft.WindowsAzure.Storage.Table;
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.Net;
     using System.Threading;
-
+    using System.Threading.Tasks;
     [TestClass]
     public class RetryPoliciesTests : TableTestBase
     {
@@ -68,10 +69,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 Thread.Sleep(10 * 1000);
 
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                
+
                 asyncResult.Cancel();
                 callbackWaitHandle.WaitOne();
-                
+
                 stopwatch.Stop();
 
                 Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(10), stopwatch.Elapsed.ToString());
@@ -144,85 +145,108 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public void VerifyExponentialRetryResults()
         {
             // Both locations return InternalServerError
+            List<Task> tasks = new List<Task>();
 
-            VerifyRetryInfoList(
-                new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
-                HttpStatusCode.InternalServerError,
-                HttpStatusCode.InternalServerError,
-                LocationMode.PrimaryOnly,
-                retryCount => (Math.Pow(2, retryCount) - 1) * 0.2 + 0.1,
-                new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(3) },
-                new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(4) },
-                new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(6) },
-                new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(10) });
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
+new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
+HttpStatusCode.InternalServerError,
+HttpStatusCode.InternalServerError,
+LocationMode.PrimaryOnly,
+retryCount => (Math.Pow(2, retryCount) - 1) * 0.3 + 0.1,
+new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(3) },
+new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(4) },
+new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(6) },
+new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(10) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.InternalServerError,
                 LocationMode.SecondaryOnly,
-                retryCount => (Math.Pow(2, retryCount) - 1) * 0.2 + 0.1,
+                retryCount => (Math.Pow(2, retryCount) - 1) * 0.3 + 0.1,
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(3) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(4) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(6) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(10) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.InternalServerError,
                 LocationMode.PrimaryThenSecondary,
-                retryCount => (Math.Pow(2, retryCount) - 1) * 0.2 + 0.1,
+                retryCount => (Math.Pow(2, retryCount) - 1) * 0.3 + 0.1,
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(0) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(4) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(8) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.InternalServerError,
                 LocationMode.SecondaryThenPrimary,
-                retryCount => (Math.Pow(2, retryCount) - 1) * 0.2 + 0.1,
+                retryCount => (Math.Pow(2, retryCount) - 1) * 0.3 + 0.1,
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(0) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(4) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(8) });
+            }));
 
             // Primary location returns InternalServerError, while secondary location returns NotFound
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.NotFound,
                 LocationMode.SecondaryOnly,
-                retryCount => (Math.Pow(2, retryCount) - 1) * 0.2 + 0.1,
+                retryCount => (Math.Pow(2, retryCount) - 1) * 0.3 + 0.1,
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(3) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(4) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(6) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(10) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.NotFound,
                 LocationMode.PrimaryThenSecondary,
-                retryCount => (Math.Pow(2, retryCount) - 1) * 0.2 + 0.1,
+                retryCount => (Math.Pow(2, retryCount) - 1) * 0.3 + 0.1,
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(0) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(4) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(6) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(10) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new ExponentialRetry(TimeSpan.FromSeconds(1), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.NotFound,
                 LocationMode.SecondaryThenPrimary,
-                retryCount => (Math.Pow(2, retryCount) - 1) * 0.2 + 0.1,
+                retryCount => (Math.Pow(2, retryCount) - 1) * 0.3 + 0.1,
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(0) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(4) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(6) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(10) });
+            }));
+            Task.WaitAll(tasks.ToArray());
         }
 
         [TestMethod]
@@ -235,7 +259,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
         {
             // Both locations return InternalServerError
 
-            VerifyRetryInfoList(
+            List<Task> tasks = new List<Task>();
+
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new LinearRetry(TimeSpan.FromSeconds(2), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.InternalServerError,
@@ -245,8 +273,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new LinearRetry(TimeSpan.FromSeconds(2), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.InternalServerError,
@@ -256,8 +287,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(2) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new LinearRetry(TimeSpan.FromSeconds(2), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.InternalServerError,
@@ -267,8 +301,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(0) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryThenSecondary, RetryInterval = TimeSpan.FromSeconds(2) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new LinearRetry(TimeSpan.FromSeconds(2), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.InternalServerError,
@@ -278,10 +315,13 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(0) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryThenPrimary, RetryInterval = TimeSpan.FromSeconds(2) });
+            }));
 
             // Primary location returns InternalServerError, while secondary location returns NotFound
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new LinearRetry(TimeSpan.FromSeconds(2), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.NotFound,
@@ -291,8 +331,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Secondary, UpdatedLocationMode = LocationMode.SecondaryOnly, RetryInterval = TimeSpan.FromSeconds(2) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new LinearRetry(TimeSpan.FromSeconds(2), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.NotFound,
@@ -302,8 +345,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) });
+            }));
 
-            VerifyRetryInfoList(
+            tasks.Add(Task.Run(() =>
+            {
+                VerifyRetryInfoList(
                 new LinearRetry(TimeSpan.FromSeconds(2), 4),
                 HttpStatusCode.InternalServerError,
                 HttpStatusCode.NotFound,
@@ -313,6 +359,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) },
                 new RetryInfo() { TargetLocation = StorageLocation.Primary, UpdatedLocationMode = LocationMode.PrimaryOnly, RetryInterval = TimeSpan.FromSeconds(2) });
+            }));
+            Task.WaitAll(tasks.ToArray());
         }
 
         private static StorageLocation GetInitialLocation(LocationMode locationMode)
@@ -377,7 +425,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 Assert.AreEqual(expectedRetryInfoList[i].RetryInterval.TotalSeconds, retryInfo.RetryInterval.TotalSeconds, allowedDelta(i), message);
 
                 Thread.Sleep(retryInfo.RetryInterval);
-                
+
                 requestResult.TargetLocation = retryInfo.TargetLocation;
                 requestResult.HttpStatusCode = retryInfo.TargetLocation == StorageLocation.Primary ? (int)primaryStatusCode : (int)secondaryStatusCode;
                 requestResult.StartTime = DateTime.Now;

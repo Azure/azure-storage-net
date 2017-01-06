@@ -1,0 +1,23 @@
+﻿{
+  "version": "8.0.0.0",
+  "dependencies": {
+  },
+
+  "frameworks": {
+    "wp81": {}
+  },
+  "runtimes": {
+    "win": {},
+    "win-arm": {},
+    "win-x86": {},
+    "win-anycpu": {}
+  },
+
+  "buildOptions": {
+    "allowUnsafe": false,
+    "warningsAsErrors": true,
+    "delaySign": true,
+    "keyFile": "MSSharedLibKey.snk"
+  }
+
+}

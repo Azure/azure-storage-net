@@ -819,6 +819,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     complexEntity.BinaryPrimitive = new byte[] { 0x01, 0x02, (byte)m };
                     complexEntity.Bool = m % 2 == 0 ? true : false;
                     complexEntity.BoolPrimitive = m % 2 == 0 ? true : false;
+                    complexEntity.DateTime = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffset = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffsetN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
                     complexEntity.Double = m + ((double)m / 100);
                     complexEntity.DoubleInteger = m;
                     complexEntity.DoublePrimitive = m + ((double)m / 100);
@@ -836,9 +840,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     {
                         middleRef = dynEnt;
                     }
-
-                    // Add delay to make times unique
-                    Thread.Sleep(100);
                 }
 
                 table.ExecuteBatch(batch);
@@ -964,6 +965,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     complexEntity.BinaryPrimitive = new byte[] { 0x01, 0x02, (byte)m };
                     complexEntity.Bool = m % 2 == 0 ? true : false;
                     complexEntity.BoolPrimitive = m % 2 == 0 ? true : false;
+                    complexEntity.DateTime = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffset = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
+                    complexEntity.DateTimeOffsetN = DateTime.Now + TimeSpan.FromSeconds(m) + TimeSpan.FromMilliseconds(m);
                     complexEntity.Double = m + ((double)m / 100);
                     complexEntity.DoublePrimitive = m + ((double)m / 100);
                     complexEntity.Int32 = m;
@@ -980,9 +985,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     {
                         middleRef = dynEnt;
                     }
-
-                    // Add delay to make times unique
-                    Thread.Sleep(100);
                 }
 
                 table.ExecuteBatch(batch);
@@ -1252,7 +1254,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             catch (StorageException)
             {
-                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "One of the request inputs is not valid.");
+                TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "A binary operator with incompatible types was detected. Found operand types 'Edm.String' and 'Edm.Boolean' for operator kind 'And'.");
             }
         }
 
