@@ -703,7 +703,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not <c>null</c>, this must be
-        /// greater than 15 and less than 60 seconds.</param>
+        /// 15 to 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <returns>The ID of the acquired lease.</returns>
         [DoesServiceRequest]
@@ -717,7 +717,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not <c>null</c>, this must be
-        /// greater than 15 and less than 60 seconds.</param>
+        /// 15 to 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">The options for this operation. If <c>null</c>, default options will be used.</param>
@@ -734,7 +734,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If <c>null</c>, an infinite lease will be acquired. If not <c>null</c>, this must be
-        /// greater than 15 and less than 60 seconds.</param>
+        /// 15 to 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">The options for this operation. If <c>null</c>, default options will be used.</param>
@@ -1318,7 +1318,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="attributes">The blob's attributes.</param>
         /// <param name="leaseTime">A <see cref="TimeSpan"/> representing the span of time for which to acquire the lease, which will be rounded down to seconds. If null, an infinite lease will be acquired.
-        ///  If not null, this must be greater than 15 and less than 60 seconds.</param>
+        ///  If not null, this must be 15 to 60 seconds.</param>
         /// <param name="proposedLeaseId">A string representing the proposed lease ID for the new lease, or <c>null</c> if no lease ID is proposed.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
