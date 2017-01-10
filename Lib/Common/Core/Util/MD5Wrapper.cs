@@ -39,8 +39,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
 #if WINDOWS_RT
         private CryptographicHash hash = null;
-#elif NETCORE
-        private IncrementalHash hash = null;
 
 #elif (WINDOWS_PHONE && WINDOWS_DESKTOP)
 
@@ -60,7 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #elif WINDOWS_PHONE
             throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
 #elif NETCORE
-            this.hash = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
+            this.hash = MD5.Create();
 #else
             this.hash = this.version1MD5 ? MD5.Create() : new NativeMD5();
 #endif
@@ -81,7 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #elif WINDOWS_PHONE && WINDOWS_DESKTOP
                 throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
 #elif NETCORE
-                this.hash.AppendData(input, offset, count);
+                inputStream.Write(input, offset, count);
 #else
                 this.hash.TransformBlock(input, offset, count, null, 0);
 #endif
@@ -100,7 +98,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #elif WINDOWS_PHONE && WINDOWS_DESKTOP
             throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
 #elif NETCORE
-            return Convert.ToBase64String(this.hash.GetHashAndReset());
+            return Convert.ToBase64String(this.hash.ComputeHash(inputStream.ToArray()));
 #else
             this.hash.TransformFinalBlock(new byte[0], 0, 0);
             return Convert.ToBase64String(this.hash.Hash);
