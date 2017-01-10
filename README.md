@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (8.0.0)
+# Microsoft Azure Storage SDK for .NET (8.0.1)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -31,7 +31,7 @@ For the best development experience, developers should use the official Microsof
 
 ## Target Frameworks
 
-- .NET Framework 4.5.0: As of December 2016, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4.5.0 release and above.
+- .NET Framework 4.5: As of December 2016, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4.5.0 release and above.
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
 - Netstandard1.3: Storage Client Libraries for .NET are available to support Netstandard application development including Xamarin/UWP applications. 
