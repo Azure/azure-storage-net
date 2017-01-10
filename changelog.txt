@@ -1,9 +1,13 @@
+Changes in 8.0.1 :
+- (NetStandard/Xamarin) : Fix for a break in Xamarin Apps with Streaming APIs caused by NotImplemented IncrementalHash APIs in Xamarin Runtime.
+
 Changes in 8.0.0 :
 
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
 - All: (Desktop) Updated the desktop library to target .Net 4.5.0.
 - All: Added a new Netstandard 1.0 Target Framework (facade) as PCL support.
 - Blobs: Added large block blob upload support. The supported Blocks can now support sizes up to 100 MB.
+- Blobs: Updated the default value for SingleBlobUploadThresholdInBytes from 32 MB to 128 MB.
 - Blobs: Added a new, memory-optimized upload algorithm for UploadFrom* APIs. This strategy only applies for blocks greater than 4MB and when StoreBlobContentMD5 and Client-Side Encryption are disabled.
 - All: Added Key Rotation support for Client Side Encryption.
 - All: Fixed a race condition where calls to CreateIfNotExistsAsync and DeleteIfExistsAsync might never complete when the operation is canceled.
