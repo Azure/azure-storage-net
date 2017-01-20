@@ -22,9 +22,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
 #if WINDOWS_RT
     using System.Runtime.InteropServices.WindowsRuntime;
+    using Windows.Storage.Streams;
     using Windows.Security.Cryptography;
     using Windows.Security.Cryptography.Core;
-    using Windows.Storage.Streams;
 #else
     using System.Security.Cryptography;
 #endif
@@ -39,6 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
 #if WINDOWS_RT
         private CryptographicHash hash = null;
+
 #elif (WINDOWS_PHONE && WINDOWS_DESKTOP)
 
 #else

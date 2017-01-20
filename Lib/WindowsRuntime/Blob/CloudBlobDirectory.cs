@@ -24,10 +24,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Windows.Foundation;
 #endif
 
-    /// <summary>
-    /// Represents a virtual directory of blobs, designated by a delimiter character.
-    /// </summary>
-    /// <remarks>Containers, which are encapsulated as <see cref="CloudBlobContainer"/> objects, hold directories, and directories hold block blobs and page blobs. Directories can also contain sub-directories.</remarks>
     public partial class CloudBlobDirectory
     {
         /// <summary>

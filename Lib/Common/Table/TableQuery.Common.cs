@@ -33,8 +33,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <summary>
     /// Represents a query against a specified table.
     /// </summary>
-    /// <remarks>The <see cref="TableQuery"/> class aggregates and encodes the query parameters to pass with the request when the query is executed. 
-    /// To execute the query, call the <c>executeQuery</c> or <c>executeQuerySegmented</c> method of the <see cref="CloudTableClient"/> class. </remarks>
     public partial class TableQuery
     {
         #region Filter Generation

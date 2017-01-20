@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Threading.Tasks;
 
     /// <summary>
-    /// This class represents a queue in the Windows Azure Queue service.
+    /// This class represents a queue in the Microsoft Azure Queue service.
     /// </summary>
     public partial class CloudQueue
     {
@@ -2575,7 +2575,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
-                CopyMessage(message, messageResponse.Messages.First());
+                CopyMessage(message, messageResponse.Messages.ToList().First());
                 return NullType.Value;
             };
 

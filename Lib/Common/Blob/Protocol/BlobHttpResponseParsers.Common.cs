@@ -152,6 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="copyProgressString">A string formatted as progressBytes/TotalBytes.</param>
         /// <param name="copyCompletionTimeString">The copy completion time, as a string, or <c>null</c>.</param>
         /// <param name="copyStatusDescription">The copy status description, if any.</param>
+        /// <param name="copyDestinationSnapshotTimeString">The incremental destination snapshot time for the latest incremental copy</param>
         /// <returns>A <see cref="CopyState"/> object populated from the given strings.</returns>
         internal static CopyState GetCopyAttributes(
             string copyStatusString,

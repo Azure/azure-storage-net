@@ -1,10 +1,27 @@
 Tracking Breaking Changes since 7.0
 
+- All: (Desktop) Updated the desktop library to target .Net 4.5.0
 - Queues: Add Message now modifies the PopReceipt, Id, NextVisibleTime, InsertionTime, and ExpirationTime properties of its CloudQueueMessage parameter. The message can then be passed to the UpdateMessage and DeleteMessage APIs.
+- Blobs/Files: Populate content MD5 for range gets on Blobs and Files.
+- Blobs: BlobContainerPublicAccess enum has a new value "Unknown".
 - All: Decoupled StorageExtendedErrorInformation methods using OData to prevent the dependency from loading for Blobs, Queues, and Files.
 - Table: OData methods used to process the Extended Error Information for Table operations have now moved to its own static utility class - ODataErrorHelper. 
 - All: Added logging for the ExtendedErrorInformation 'ErrorMessage' attribute via StorageException ToString() method.
 - Files: Changed Exists() calls on CloudFileDirectory objects to now populate metadata. This was already being done for CloudFiles and CloudFileShares.
+- Blobs: Change boundary checks for lease duration to be in line with those used in the REST endpoints.
+- All: (WinRT) Removed the static CloudStorageAccount.Create method. The instance level consructor should be used instead.
+- Blobs: Removed the IAsyncOperation* overloads for GetPageRangesDiffAsync APIs.
+- Table: (WinRT/NetCore) Unsealed the TableQuery class.
+- All: Added the 'virtual' qualifier to Get*Reference APIs and unsealed Blob/Container/ShareResultSegment classes.
+- All: Added the 'virtual' qualifier to numerous service call APIs.
+- Tables: Updated the access modifiers of "Entity" and "OperationType" properties of the TableOperation class from internal to public.
+- Tables: The ServerTimeout for the table service is enforced by the Table Serivce (previously disregarded).
+- Blobs: Removed the IAsyncOperation* overloads for GetPageRangesDiffAsync APIs.
+- Tables: Numerous changes in Table Service error codes and messages.
+- Blobs: Improved numerous Blob Service error codes and messages.
+- Blobs: Fixed error for AcquireLease on non-existent container.
+- PageBlobs: Fixed error response for GetPageRangesDiff.
+- Blobs: Update in "If-None-Match: *" pre-condition behavior to fail for reads(previously disregarded by the service).
 
 Tracking Breaking Changes since 6.0
 

@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (7.1.4)
+# Microsoft Azure Storage SDK for .NET (8.0.1)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -31,10 +31,17 @@ For the best development experience, developers should use the official Microsof
 
 ## Target Frameworks
 
-- .NET Framework 4.0: As of October 2012, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4 release and above.
+- .NET Framework 4.5: As of December 2016, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4.5.0 release and above.
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
-- CoreCLR RTM: Storage Client Libraries for .NET are available to support CoreCLR application development. This support is currently in preview. 
+- Netstandard1.3: Storage Client Libraries for .NET are available to support Netstandard application development including Xamarin/UWP applications. 
+- Netstandard1.0: Storage Client Libraries support PCL through a Netstandard Façade targeting netstandard1.0.
+
+### Netstandard1.0 (Façade)
+
+As the lowest TFM supported by all our implementations, 1.0 is selected to provide support for maximum platforms. The support is provided through a façade reference assembly targeting netstandard1.0. This assembly consists of a common set of APIs between Win8, Wp8 and Wpa with no API implementations.
+Through the bait and switch technique, the reference assembly enables other portable class libraries to reference Storage Client Library, while the correct implementation assembly will be picked when the package is referenced by the project.json file.
+
 
 ## Requirements
 
@@ -45,7 +52,6 @@ For the best development experience, developers should use the official Microsof
 ## Versioning Information
 
 - The Storage Client Library uses [the semantic versioning scheme.](http://semver.org/)
-- The Storage Client Library currently ships twinned versions -- for each release, the WindowsAzure.Storage Nuget package will have an X.Y.Z version and a matching X.Y.(Z+1)-preview version. The preview version includes support for the target frameworks that are currently in preview (.NETCORE1.0 , PCL/Xamarin).
 
 ## Use with the Azure Storage Emulator
 
@@ -56,7 +62,7 @@ For the best development experience, developers should use the official Microsof
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-This version of the Storage Client Library ships with the storage version 2015-12-11.
+This version of the Storage Client Library ships with the storage version 2016-05-31.
 
 ### Via Git
 
@@ -72,13 +78,15 @@ cd azure-storage-net
 To get the binaries of this library as distributed by Microsoft, ready for use
 within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/WindowsAzure.Storage/).
 
+Please note that the minimum nuget client version requirement has been updated to 2.12 in order to support multiple netstandard targets in the nuget package.
+
 `Install-Package WindowsAzure.Storage`
 
 ## Dependencies
 
 ### OData
 
-This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.6.4) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
+This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.7.0) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
 
 The ODataLib libraries can be downloaded directly or referenced by your code project through NuGet.  
 
@@ -89,7 +97,7 @@ The specific ODataLib packages are:
 - [System.Spatial](http://nuget.org/packages/System.Spatial)
 
 > Note:
-> The ODataLib packages currently do not support "netstandard1.6" or "netcoreapp1.0" frameworks in projects depending on the current relase of Dotnet CoreCLR. Thus, you may encounter failures while trying to restore the ODataLib dependencies for one of the targeted frameworks mentioned above. Until the support is added, if you run into this, you can use the imports statement within the framework node of your project.json file to specify to NuGet that it can restore the packages targeting the framework within the "imports" statement as shown below:
+> The ODataLib packages currently do not support NetStandard/NetCore. Thus, you may encounter failures while trying to restore the ODataLib dependencies for one of the targeted frameworks mentioned above. Until the support is added, if you run into this, you can use the imports statement within the framework node of your project.json file to specify to NuGet that it can restore the packages targeting the framework within the "imports" statement as shown below:
 
 ```
   "imports": [
@@ -131,7 +139,7 @@ Once installed:
 - Copy `FiddlerCore.dll` `\azure-storage-net\Test\FaultInjection\Dependencies\DotNet2`
 - Copy `FiddlerCore4.dll` to `azure-storage-net\Test\FaultInjection\Dependencies\DotNet4`
 
-Tests for the client-side encryption preview support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
+Tests for the client-side encryption support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
 
 - [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 

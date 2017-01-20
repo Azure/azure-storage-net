@@ -14,6 +14,7 @@
 //    limitations under the License.
 // </copyright>
 // -----------------------------------------------------------------------------------------
+
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -22,6 +23,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Linq;
     using System.Net;
+#if FACADE_NETCORE
+    using System.Threading;
+#endif
     using System.Threading.Tasks;
 
 #if NETCORE
@@ -414,7 +418,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream sourceStream = new MemoryStream(buffer))
                 {
                     sourceStream.Seek(startOffset, SeekOrigin.Begin);
+#if !FACADE_NETCORE
                     await blob.AppendBlockAsync(sourceStream, null, accessCondition, null, operationContext);
+#else
+                    await blob.AppendBlockAsync(sourceStream, null, accessCondition, null, operationContext, CancellationToken.None);
+#endif
                 }
 
                 using (MemoryStream downloadedBlobStream = new MemoryStream())
@@ -491,7 +499,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
                 await blob.CreateOrReplaceAsync();
+#if !FACADE_NETCORE
                 await blob.AppendBlockAsync(originalData, null);
+#else
+                await blob.AppendBlockAsync(originalData, string.Empty, null, null, null, CancellationToken.None);
+#endif
                 Assert.IsFalse(blob.IsSnapshot);
                 Assert.IsNull(blob.SnapshotTime, "Root blob has SnapshotTime set");
                 Assert.IsFalse(blob.SnapshotQualifiedUri.Query.Contains("snapshot"));
@@ -853,7 +865,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
                 await blob.CreateOrReplaceAsync();
-
+#if !FACADE_NETCORE
                 long offset = await blob.AppendBlockAsync(new MemoryStream(buffer));
                 Assert.AreEqual(0, offset);
 
@@ -865,6 +877,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 offset = await blob.AppendBlockAsync(new MemoryStream(buffer));
                 Assert.AreEqual(6 * 1024 * 1024, offset);
+#else
+                long offset = await blob.AppendBlockAsync(new MemoryStream(buffer), string.Empty, null, null, null, CancellationToken.None);
+                Assert.AreEqual(0, offset);
+
+                offset = await blob.AppendBlockAsync(new MemoryStream(buffer), string.Empty, null, null, null, CancellationToken.None);
+                Assert.AreEqual(2 * 1024 * 1024, offset);
+
+                offset = await blob.AppendBlockAsync(new MemoryStream(buffer), string.Empty, null, null, null, CancellationToken.None);
+                Assert.AreEqual(4 * 1024 * 1024, offset);
+
+                offset = await blob.AppendBlockAsync(new MemoryStream(buffer), string.Empty, null, null, null, CancellationToken.None);
+                Assert.AreEqual(6 * 1024 * 1024, offset);
+#endif
             }
             finally
             {
@@ -894,6 +919,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream originalBlob = new MemoryStream(buffer))
                 {
+#if !FACADE_NETCORE
                     await blob.AppendBlockAsync(originalBlob, null, AccessCondition.GenerateIfAppendPositionEqualCondition(0), null, null);
 
                     // Seek and upload the 1MB again
@@ -908,6 +934,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     "IfAppendPositionEqual conditional should throw",
                     HttpStatusCode.PreconditionFailed,
                     "AppendPositionConditionNotMet");
+#else
+                    await blob.AppendBlockAsync(originalBlob, null, AccessCondition.GenerateIfAppendPositionEqualCondition(0), null, null, CancellationToken.None);
+
+                    // Seek and upload the 1MB again
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+                    await blob.AppendBlockAsync(originalBlob, null, AccessCondition.GenerateIfAppendPositionEqualCondition(1 * 1024 * 1024), null, null, CancellationToken.None);
+
+                    // Seek and upload the 1MB again. This time it should throw since the append offset does not match
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+                    await TestHelper.ExpectedExceptionAsync(
+                    async () => await blob.AppendBlockAsync(originalBlob, null, AccessCondition.GenerateIfAppendPositionEqualCondition(1 * 1024 * 1024), null, opContext, CancellationToken.None),
+                    opContext,
+                    "IfAppendPositionEqual conditional should throw",
+                    HttpStatusCode.PreconditionFailed,
+                    "AppendPositionConditionNotMet");
+#endif
                 }
             }
             finally
@@ -939,6 +981,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 AccessCondition condition = AccessCondition.GenerateIfMaxSizeLessThanOrEqualCondition(2 * 1024 * 1024);
                 using (MemoryStream originalBlob = new MemoryStream(buffer))
                 {
+#if !FACADE_NETCORE
                     await blob.AppendBlockAsync(originalBlob, null, condition, null, null);
 
                     // Seek and upload the 1MB again
@@ -956,6 +999,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     originalBlob.Seek(0, SeekOrigin.Begin);
                     await blob.AppendBlockAsync(originalBlob, null, AccessCondition.GenerateIfMaxSizeLessThanOrEqualCondition(3 * 1024 * 1024), null, null);
+#else
+                    await blob.AppendBlockAsync(originalBlob, null, condition, null, null, CancellationToken.None);
+
+                    // Seek and upload the 1MB again
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+                    await blob.AppendBlockAsync(originalBlob, null, condition, null, null, CancellationToken.None);
+
+                    // Seek and try to upload the 1MB again. This time it should fail with a Pre-condition failed error.
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+                    await TestHelper.ExpectedExceptionAsync(
+                    async () => await blob.AppendBlockAsync(originalBlob, null, condition, null, opContext, CancellationToken.None),
+                    opContext,
+                    "IfMaxSizeLessThanOrEqual conditional should throw",
+                    HttpStatusCode.PreconditionFailed,
+                    "MaxBlobSizeConditionNotMet");
+
+                    originalBlob.Seek(0, SeekOrigin.Begin);
+                    await blob.AppendBlockAsync(originalBlob, null, AccessCondition.GenerateIfMaxSizeLessThanOrEqualCondition(3 * 1024 * 1024), null, null, CancellationToken.None);
+#endif
                 }
             }
             finally
@@ -984,12 +1046,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream stream = new MemoryStream())
                 {
                     stream.SetLength(512);
+#if !FACADE_NETCORE
                     await TestHelper.ExpectedExceptionAsync(
                         async () => await blob.AppendBlockAsync(stream, null, null, null, operationContext),
                         operationContext,
                         "Append operations should fail on block blobs",
                         HttpStatusCode.Conflict,
                         "InvalidBlobType");
+#else
+                    await TestHelper.ExpectedExceptionAsync(
+                        async () => await blob.AppendBlockAsync(stream, null, null, null, operationContext, CancellationToken.None),
+                        operationContext,
+                        "Append operations should fail on block blobs",
+                        HttpStatusCode.Conflict,
+                        "InvalidBlobType");
+#endif
                 }
             }
             finally

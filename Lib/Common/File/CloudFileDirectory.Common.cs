@@ -121,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Gets the absolute URI to the directory, including query string information if the directory's share is a snapshot.
         /// </summary>
         /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the directory, including snapshot query information if the directory's share is a snapshot.</value>
-        public Uri SnapshotQualifiedUri
+        internal Uri SnapshotQualifiedUri
         {
             get
             {
@@ -143,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>An object of type <see cref="StorageUri"/> containing the directory's URIs for both the primary and secondary locations, 
         /// including snapshot query information if the directory's share is a snapshot.</value>
-        public StorageUri SnapshotQualifiedStorageUri
+        internal StorageUri SnapshotQualifiedStorageUri
         {
             get
             {
@@ -261,7 +261,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="fileName">A <see cref="System.String"/> containing the name of the file.</param>
         /// <returns>A <see cref="CloudFile"/> object.</returns>
-        public CloudFile GetFileReference(string fileName)
+        public virtual CloudFile GetFileReference(string fileName)
         {
             CommonUtility.AssertNotNullOrEmpty("fileName", fileName);
 
@@ -274,7 +274,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="itemName">A <see cref="System.String"/> containing the name of the subdirectory.</param>
         /// <returns>A <see cref="CloudFileDirectory"/> object.</returns>
-        public CloudFileDirectory GetDirectoryReference(string itemName)
+        public virtual CloudFileDirectory GetDirectoryReference(string itemName)
         {
             CommonUtility.AssertNotNullOrEmpty("itemName", itemName);
 

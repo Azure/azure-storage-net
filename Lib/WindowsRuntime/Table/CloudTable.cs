@@ -33,9 +33,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
     using System.Threading.Tasks;
 
-    /// <summary>
-    /// Represents a Windows Azure Table.
-    /// </summary>
     public partial class CloudTable
     {
         #region TableOperation Execute Methods
@@ -72,7 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A <see cref="TableResult"/> containing the result of executing the operation on the table.</returns>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         [DoesServiceRequest]
-        public Task<TableResult> ExecuteAsync(TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<TableResult> ExecuteAsync(TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("operation", operation);
 
@@ -88,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="batch">The <see cref="TableBatchOperation"/> object representing the operations to execute on the table.</param>
         /// <returns>An enumerable collection of <see cref="TableResult"/> objects that contains the results, in order, of each operation in the <see cref="TableBatchOperation"/> on the table.</returns>
         [DoesServiceRequest]
-        public Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch)
+        public virtual Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch)
         {
             return this.ExecuteBatchAsync(batch, null /* RequestOptions */, null /* OperationContext */);
         }
@@ -101,7 +98,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>An enumerable collection of <see cref="TableResult"/> objects that contains the results, in order, of each operation in the <see cref="TableBatchOperation"/> on the table.</returns>
         [DoesServiceRequest]
-        public Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch, TableRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteBatchAsync(batch, requestOptions, operationContext, CancellationToken.None);
         }

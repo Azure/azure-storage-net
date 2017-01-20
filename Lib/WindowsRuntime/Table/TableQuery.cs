@@ -26,9 +26,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
-#if NETCORE
 
-#else
+#if !NETCORE
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Foundation;
 #endif
@@ -37,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// <summary>
     /// Represents a query against a specified table.
     /// </summary>
-    public sealed partial class TableQuery
+    public partial class TableQuery
     {
         #region Impl
         internal IEnumerable<DynamicTableEntity> Execute(CloudTableClient client, string tableName, TableRequestOptions requestOptions, OperationContext operationContext)

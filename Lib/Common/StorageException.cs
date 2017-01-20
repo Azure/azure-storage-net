@@ -445,7 +445,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
         /// <summary>
-        /// Represents an exception thrown by the Windows Azure storage client library. 
+        /// Represents an exception thrown by the Microsoft Azure storage client library. 
         /// </summary>
         /// <returns>A string that represents the exception.</returns>
         public override string ToString()

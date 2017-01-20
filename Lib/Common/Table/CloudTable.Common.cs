@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Globalization;
 
     /// <summary>
-    /// Represents a Windows Azure table.
+    /// Represents a Microsoft Azure table.
     /// </summary>
     public partial class CloudTable
     {

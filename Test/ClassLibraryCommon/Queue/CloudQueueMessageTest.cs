@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -212,6 +213,57 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             queue.DeleteMessage(receivedMessage1);
 
             queue.Delete();
+        }
+
+        [TestMethod]
+        [Description("Test whether we can add multiple messages with APM.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueAddMessageRepeatAPM()
+        {
+            int oldConnectionLimit = ServicePointManager.DefaultConnectionLimit;
+            CloudQueueClient client = GenerateCloudQueueClient();
+            string name = GenerateNewQueueName();
+            CloudQueue queue = client.GetQueueReference(name);
+            try
+            {
+                ServicePointManager.DefaultConnectionLimit = 5;
+                queue.Create();
+
+                string msgContent = Guid.NewGuid().ToString("N");
+                CloudQueueMessage message = new CloudQueueMessage(msgContent);
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result = null;
+                    // Add Messages.  This test is testing the case where the number of messages is greater than the default 
+                    // connection limit (ie, that the commections are getting closed properly.)
+                    for (int i = 0; i < 10; i++)
+                    {
+                        result = queue.BeginAddMessage(message,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        queue.EndAddMessage(result);
+                    }
+
+                    // Get message and test that it is correct
+                    result = queue.BeginGetMessages(10, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    List<CloudQueueMessage> receivedMessages = queue.EndGetMessages(result).ToList();
+                    Assert.IsTrue(receivedMessages.Count == 10);
+                }
+            }
+            finally
+            {
+                ServicePointManager.DefaultConnectionLimit = oldConnectionLimit;
+                if (queue != null)
+                {
+                    queue.Delete();
+                }
+            }
         }
 
         [TestMethod]

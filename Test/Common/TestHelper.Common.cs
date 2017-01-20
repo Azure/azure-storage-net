@@ -461,7 +461,6 @@ namespace Microsoft.WindowsAzure.Storage
                 Assert.AreNotEqual(GeoReplicationStatus.Live, stats.GeoReplication.Status);
             }
         }
-
         internal static void AssertFileServicePropertiesAreEqual(FileServiceProperties propsA, FileServiceProperties propsB)
         {
             if (propsA == null || propsB == null)
@@ -476,7 +475,6 @@ namespace Microsoft.WindowsAzure.Storage
                 AssertServicePropertiesAreEqual(propsA.serviceProperties, propsB.serviceProperties);
             }
         }
-
         private static void AssertPropertiesAreEqual(FileServiceProperties fileProps, ServiceProperties props)
         {
             if (fileProps == null || props == null)

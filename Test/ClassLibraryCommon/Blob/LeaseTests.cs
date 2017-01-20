@@ -1049,20 +1049,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 () => leasedBlob.AcquireLease(TimeSpan.FromSeconds(-1), null /* proposed lease ID */),
                 "acquire a lease with -1 duration");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedBlob.AcquireLease(TimeSpan.FromSeconds(1), null /* proposed lease ID */),
-                "acquire a lease with 1 s duration",
-                HttpStatusCode.BadRequest);
+                "acquire a lease with 1 s duration");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedBlob.AcquireLease(TimeSpan.FromSeconds(14), null /* proposed lease ID */),
-                "acquire a lease that is too short",
-                HttpStatusCode.BadRequest);
+                "acquire a lease that is too short");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedBlob.AcquireLease(TimeSpan.FromSeconds(61), null /* proposed lease ID */),
-                "acquire a lease that is too long",
-                HttpStatusCode.BadRequest);
+                "acquire a lease that is too long");
 
             TestHelper.ExpectedException(
                 () => leasedBlob.AcquireLease(null /* infinite lease */, invalidLeaseId),
@@ -1109,10 +1106,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 () => leasedBlob.BreakLease(TimeSpan.FromSeconds(-1)),
                 "break with negative break time");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedBlob.BreakLease(TimeSpan.FromSeconds(61)),
-                "break with too large break time",
-                HttpStatusCode.BadRequest);
+                "break with too large break time");
         }
 
         [TestMethod]
@@ -5708,20 +5704,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 () => leasedContainer.AcquireLease(TimeSpan.FromSeconds(-1), null /* proposed lease ID */),
                 "acquire a lease with -1 duration");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedContainer.AcquireLease(TimeSpan.FromSeconds(1), null /* proposed lease ID */),
-                "acquire a lease with 1 s duration",
-                HttpStatusCode.BadRequest);
+                "acquire a lease with 1 s duration");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedContainer.AcquireLease(TimeSpan.FromSeconds(14), null /* proposed lease ID */),
-                "acquire a lease that is too short",
-                HttpStatusCode.BadRequest);
+                "acquire a lease that is too short");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedContainer.AcquireLease(TimeSpan.FromSeconds(61), null /* proposed lease ID */),
-                "acquire a lease that is too long",
-                HttpStatusCode.BadRequest);
+                "acquire a lease that is too long");
 
             TestHelper.ExpectedException(
                 () => leasedContainer.AcquireLease(null /* infinite lease */, invalidLeaseId),
@@ -5768,10 +5761,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 () => leasedContainer.BreakLease(TimeSpan.FromSeconds(-1)),
                 "break with negative break time");
 
-            TestHelper.ExpectedException(
+            TestHelper.ExpectedException<ArgumentException>(
                 () => leasedContainer.BreakLease(TimeSpan.FromSeconds(61)),
-                "break with too large break time",
-                HttpStatusCode.BadRequest);
+                "break with too large break time");
 
             this.DeleteAll();
         }

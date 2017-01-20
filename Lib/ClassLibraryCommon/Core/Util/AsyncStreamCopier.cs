@@ -94,13 +94,21 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 }
                 else if (completedStreamCopyTask.IsCanceled)
                 {
-                    bool timedOut = !this.cancellationTokenSourceAbort.IsCancellationRequested;
-                    if (!timedOut)
+                    bool timedOut = false;
+                    try
                     {
-                        // Free up the OS timer as soon as possible.
-                        this.cancellationTokenSourceTimeout.Dispose();
+                        timedOut = !this.cancellationTokenSourceAbort.IsCancellationRequested;
+                        if (!timedOut && this.cancellationTokenSourceTimeout != null)
+                        {
+                            // Free up the OS timer as soon as possible.
+                            this.cancellationTokenSourceTimeout.Dispose();
+                        }
                     }
-                    if (state != null)
+                    catch (Exception)
+                    {
+                        // No-op, we want to propagate the cancellation/timeout exception, not whatever may have happened here.
+                    }
+                    try
                     {
                         if (state.Req != null)
                         {
@@ -119,11 +127,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                                 Logger.LogWarning(state.OperationContext, "Aborting the request failed with exception: {0}", ex);
                             }
                         }
-
-                        this.state.ExceptionRef = timedOut ?
-                            Exceptions.GenerateTimeoutException(state.Cmd != null ? state.Cmd.CurrentResult : null, null) :
-                            Exceptions.GenerateCancellationException(state.Cmd != null ? state.Cmd.CurrentResult : null, null);
                     }
+                    catch (Exception)
+                    {
+                        // No-op, we want to propagate the cancellation/timeout exception, not whatever may have happened here.
+                    }
+
+                    this.state.ExceptionRef = timedOut ?
+                        Exceptions.GenerateTimeoutException(state.Cmd != null ? state.Cmd.CurrentResult : null, null) :
+                        Exceptions.GenerateCancellationException(state.Cmd != null ? state.Cmd.CurrentResult : null, null);
                 }
 
                 try

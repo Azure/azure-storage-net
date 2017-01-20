@@ -27,10 +27,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Diagnostics.CodeAnalysis;
 
     /// <summary>
-    /// Provides a client-side logical representation of the Windows Azure Blob service. This client is used to configure and execute requests against the Blob service.
+    /// Provides a client-side logical representation of Microsoft Azure Blob storage.
     /// </summary>
-    /// <remarks>The service client encapsulates the endpoint or endpoints for the Blob service. If the service client will be used for authenticated access, it also encapsulates 
-    /// the credentials for accessing the storage account.</remarks>
     public partial class CloudBlobClient
     {
         /// <summary>
@@ -176,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>Note that the root container must be explicitly created, if it does not already exist, before
         /// you can read from it or write to it.</remarks>
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Reviewed")]
-        public CloudBlobContainer GetRootContainerReference()
+        public virtual CloudBlobContainer GetRootContainerReference()
         {
             return new CloudBlobContainer(NavigationHelper.RootContainerName, this);
         }
@@ -186,7 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="containerName">A string containing the name of the container.</param>
         /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
-        public CloudBlobContainer GetContainerReference(string containerName)
+        public virtual CloudBlobContainer GetContainerReference(string containerName)
         {
             CommonUtility.AssertNotNullOrEmpty("containerName", containerName);
             return new CloudBlobContainer(containerName, this);

@@ -385,6 +385,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Server timeout query parameter")]
         [TestCategory(ComponentCategory.Table)]
@@ -398,7 +399,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 await DoCloudTableClientServerTimeoutAsync(payloadFormat);
             }
         }
-
         private async Task DoCloudTableClientServerTimeoutAsync(TablePayloadFormat payloadFormat)
         {
             CloudTableClient client = GenerateCloudTableClient();
@@ -439,5 +439,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             await client.GetServicePropertiesAsync(options, context);
             Assert.IsNull(timeout);
         }
+#endif
     }
 }

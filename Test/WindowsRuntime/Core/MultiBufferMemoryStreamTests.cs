@@ -29,6 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     [TestClass]
     public class MultiBufferMemoryStreamTests : TestBase
     {
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Copy between a MemoryStream and a MultiBufferMemoryStream")]
         [TestCategory(ComponentCategory.Core)]
@@ -75,6 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             TestHelper.AssertStreamsAreEqual(stream1, stream5);
         }
+#endif
 
         [TestMethod]
         [Description("Ensure MultiBufferMemoryStream provided by user is not closed after upload.")]

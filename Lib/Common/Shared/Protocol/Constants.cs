@@ -133,7 +133,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const long MB = 1024 * KB;
 
         /// <summary>
-        /// A constant representing a megabyte (Non-SI version).
+        /// A constant representing a gigabyte (Non-SI version).
         /// </summary>
         public const long GB = 1024 * MB;
 
@@ -451,6 +451,26 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constant signaling the resource's lease is fixed (finite).
         /// </summary>
         public const string LeaseFixedValue = "fixed";
+        
+        /// <summary>
+        /// Constant for the minimum period of time that a lease can be broken in. 
+        /// </summary>
+        public const int MinimumBreakLeasePeriod = 0;
+
+        /// <summary>
+        /// Constant for the maximum period of time that a lease can be broken in.
+        /// </summary>
+        public const int MaximumBreakLeasePeriod = 60;
+
+        /// <summary>
+        /// Constant for the minimum duration of a lease.
+        /// </summary>
+        public const int MinimumLeaseDuration = 15;
+
+        /// <summary>
+        /// Constant for the maximum non-infinite duration of a lease.
+        /// </summary>
+        public const int MaximumLeaseDuration = 60;
 
         /// <summary>
         /// Constant for a pending copy.
@@ -804,10 +824,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "8.0.0";
+            public const string UserAgentProductVersion = "8.0.1";
 
             /// <summary>
-            /// Master Windows Azure Storage header prefix.
+            /// Master Microsoft Azure Storage header prefix.
             /// </summary>
             public const string PrefixForStorageHeader = "x-ms-";
 

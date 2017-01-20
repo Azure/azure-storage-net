@@ -26,7 +26,6 @@ using System.Linq;
 using System.Threading.Tasks;
 
 #if NETCORE
-using Microsoft.WindowsAzure.Storage.Test.Extensions;
 using System.Threading;
 #else
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -406,6 +405,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await container.CreateAsync();
                 blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(5);
+                blobClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = 2 * 1024 * 1024;
 
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 blockBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
@@ -418,7 +418,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     catch (AggregateException ex)
                     {
+#if !FACADE_NETCORE
                         Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).ExceptionInfo.Message);
+#else
+                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).Exception.Message);
+#endif
                     }
                     catch (TaskCanceledException)
                     {
@@ -436,7 +440,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     catch (AggregateException ex)
                     {
+#if !FACADE_NETCORE
                         Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).ExceptionInfo.Message);
+#else
+                        Assert.AreEqual("The client could not finish the operation within specified timeout.", RequestResult.TranslateFromExceptionMessage(ex.InnerException.Message).Exception.Message);
+#endif
                     }
                     catch (TaskCanceledException)
                     {
@@ -450,6 +458,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Make sure MaxExecutionTime is not enforced when using streams")]
         [TestCategory(ComponentCategory.Blob)]
@@ -573,6 +582,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
 
         [TestMethod]
         [Description("Get service stats")]
@@ -609,7 +619,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsInstanceOfType(e, typeof(InvalidOperationException));
             }
         }
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Server timeout query parameter")]
         [TestCategory(ComponentCategory.Blob)]
@@ -655,5 +665,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await client.GetServicePropertiesAsync(options, context);
             Assert.IsNull(timeout);
         }
+#endif
     }
 }

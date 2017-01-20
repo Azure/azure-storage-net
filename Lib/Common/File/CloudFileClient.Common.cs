@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System;
 
     /// <summary>
-    /// Provides a client-side logical representation of the Windows Azure File service. This client is used to configure and execute requests against the File service.
+    /// Provides a client-side logical representation of the Microsoft Azure File service. This client is used to configure and execute requests against the File service.
     /// </summary>
     /// <remarks>The service client encapsulates the base URI for the File service. If the service client will be used for authenticated access, it also encapsulates 
     /// the credentials for accessing the storage account.</remarks>
@@ -111,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="shareName">A string containing the name of the share.</param>
         /// <returns>A reference to a share.</returns>
-        public CloudFileShare GetShareReference(string shareName)
+        public virtual CloudFileShare GetShareReference(string shareName)
         {
             return this.GetShareReference(shareName, null /* snapshotTime */);
         }
@@ -122,7 +122,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="shareName">A string containing the name of the share.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
         /// <returns>A reference to a share.</returns>
-        public CloudFileShare GetShareReference(string shareName, DateTimeOffset? snapshotTime)
+        internal CloudFileShare GetShareReference(string shareName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("shareName", shareName);
             return new CloudFileShare(shareName, snapshotTime, this);

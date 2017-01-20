@@ -111,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobName">A string containing the name of the blob.</param>
         /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
-        public CloudPageBlob GetPageBlobReference(string blobName)
+        public virtual CloudPageBlob GetPageBlobReference(string blobName)
         {
             return this.GetPageBlobReference(blobName, null /* snapshotTime */);
         }
@@ -122,7 +122,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobName">The name of the page blob.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
-        public CloudPageBlob GetPageBlobReference(string blobName, DateTimeOffset? snapshotTime)
+        public virtual CloudPageBlob GetPageBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
@@ -135,7 +135,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobName">A string containing the name of the blob.</param>
         /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
-        public CloudBlockBlob GetBlockBlobReference(string blobName)
+        public virtual CloudBlockBlob GetBlockBlobReference(string blobName)
         {
             return this.GetBlockBlobReference(blobName, null /* snapshotTime */);
         }
@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobName">A string containing the name of the blob.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
-        public CloudBlockBlob GetBlockBlobReference(string blobName, DateTimeOffset? snapshotTime)
+        public virtual CloudBlockBlob GetBlockBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
@@ -159,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobName">A string containing the name of the blob.</param>
         /// <returns>A <see cref="CloudAppendBlob"/> object.</returns>
-        public CloudAppendBlob GetAppendBlobReference(string blobName)
+        public virtual CloudAppendBlob GetAppendBlobReference(string blobName)
         {
             return this.GetAppendBlobReference(blobName, null /* snapshotTime */);
         }
@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobName">A string containing the name of the blob.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <returns>A <see cref="CloudAppendBlob"/> object.</returns>
-        public CloudAppendBlob GetAppendBlobReference(string blobName, DateTimeOffset? snapshotTime)
+        public virtual CloudAppendBlob GetAppendBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
@@ -183,7 +183,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobName">A string containing the name of the blob.</param>
         /// <returns>A <see cref="CloudBlob"/> object.</returns>
-        public CloudBlob GetBlobReference(string blobName)
+        public virtual CloudBlob GetBlobReference(string blobName)
         {
             return this.GetBlobReference(blobName, null /* snapshotTime */);
         }
@@ -194,7 +194,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobName">A string containing the name of the blob.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <returns>A <see cref="CloudBlob"/> object.</returns>
-        public CloudBlob GetBlobReference(string blobName, DateTimeOffset? snapshotTime)
+        public virtual CloudBlob GetBlobReference(string blobName, DateTimeOffset? snapshotTime)
         {
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
@@ -207,7 +207,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="itemName">The name of the virtual subdirectory.</param>
         /// <returns>A <see cref="CloudBlobDirectory"/> object representing the virtual subdirectory.</returns>
-        public CloudBlobDirectory GetDirectoryReference(string itemName)
+        public virtual CloudBlobDirectory GetDirectoryReference(string itemName)
         {
             CommonUtility.AssertNotNullOrEmpty("itemName", itemName);
             if (!itemName.EndsWith(this.ServiceClient.DefaultDelimiter, StringComparison.Ordinal))

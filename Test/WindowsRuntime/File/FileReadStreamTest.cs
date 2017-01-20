@@ -196,7 +196,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             return expectedReadCount;
         }
-
+#if !FACADE_NETCORE
 #if WINDOWS_RT
         private static async Task<int> FileReadStreamSeekTestAsync(IRandomAccessStreamWithContentType fileStream, long streamReadSize, byte[] bufferToCompare)
 #else
@@ -235,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.AreEqual(position, fileStream.Position);
             position = (ulong)(streamReadSize + 4096 - 512);
             fileStream.Seek(position);
-#if NETCORE     
+#if NETCORE
             //don't know why adding these two line will pass, but this this the same as the desktop test
             Assert.AreEqual(position, fileStream.Position);
             position += await FileReadStreamSeekAndCompareAsync(fileStream, bufferToCompare, position, 1024, 512);
@@ -296,5 +296,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
+#endif
     }
 }

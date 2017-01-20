@@ -174,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blob.DownloadRangeToStreamAsync(dstStream2, null, null, null, options, context);
             }
         }
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Upload from file to a blob")]
         [TestCategory(ComponentCategory.Blob)]
@@ -264,6 +264,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 System.IO.File.Delete(inputFileName);
                 System.IO.File.Delete(outputFileName);
             }
+
 #else
             StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
             StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
@@ -299,8 +300,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 outputFile.DeleteAsync().AsTask().Wait();
             }
 #endif
-        }
-#if NETCORE
+    }
+#endif //!FACADE_NETCORE
+
+#if NETCORE && !FACADE_NETCORE
         [TestMethod]
         [Description("Test upload using multi-filestream upload strategy.")]
         [TestCategory(ComponentCategory.Blob)]
@@ -387,7 +390,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
-
+#if !FACADE_NETCORE
         private async Task DoLargeBlockUploadDownloadFileAsync(ICloudBlob blob, int fileSize, int blockSize)
         {
 #if NETCORE
@@ -430,7 +433,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 System.IO.File.Delete(outputFileName);
             }
 #else
-            StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
+        StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
             StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
             StorageFile outputFile = await tempFolder.CreateFileAsync("output.file", CreationCollisionOption.GenerateUniqueName);
 
@@ -472,7 +475,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 #endif
         }
-
+#endif
         [TestMethod]
         [Description("Upload a blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
@@ -875,7 +878,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-#if NETCORE
+#if NETCORE && !FACADE_NETCORE
         [TestMethod]
         [Description("Upload from file to a block blob with file cleanup for failure cases")]
         [TestCategory(ComponentCategory.Blob)]
