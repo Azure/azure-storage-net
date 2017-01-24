@@ -1,3 +1,8 @@
+Changes in X.X.X :
+- All: Support for 2016-10-16 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version X.X.
+- Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
+- Files: Added support for server side encryption.
+
 Changes in 8.0.1 :
 - (NetStandard/Xamarin) : Fix for a break in Xamarin Apps with Streaming APIs caused by NotImplemented IncrementalHash APIs in Xamarin Runtime.
 

@@ -271,7 +271,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             Uri uri = FileClientTests.ConstructUri(context.Address, shareName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ShareHttpWebRequestFactory.Delete(uri, context.Timeout, null, accessCondition, true, opContext);
+            HttpWebRequest request = ShareHttpWebRequestFactory.Delete(uri, context.Timeout, null, DeleteShareSnapshotsOption.None, accessCondition, true, opContext);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
             Assert.AreEqual("DELETE", request.Method);

@@ -1192,6 +1192,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
 
             Assert.AreEqual(2, count);
+
+            snapshot.Delete();
+            share.Delete();
         }
 
         [TestMethod]
@@ -1258,8 +1261,8 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 Assert.AreEqual(2, count);
 
-                //snapshot.Delete();
-                //share.Delete();
+                snapshot.Delete();
+                share.Delete();
             }
         }
 
@@ -1322,6 +1325,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
 
             Assert.AreEqual(2, count);
+
+            snapshot.DeleteAsync().Wait();
+            share.DeleteAsync().Wait();
         }
 #endif
     }

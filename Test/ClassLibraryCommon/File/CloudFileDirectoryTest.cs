@@ -1454,8 +1454,8 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.IsNotNull(dir.Properties.ETag);
             Assert.AreNotEqual(dir.Properties.ETag, snapshotDir.Properties.ETag);
 
-            //snapshot.Delete();
-            //share.Delete();
+            snapshot.Delete();
+            share.Delete();
         }
 
         [TestMethod]
@@ -1512,8 +1512,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.IsNotNull(dir.Properties.ETag);
                 Assert.AreNotEqual(dir.Properties.ETag, snapshotDir.Properties.ETag);
 
-                //snapshot.Delete();
-                //share.Delete();
+                result = snapshot.BeginDelete(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                snapshot.EndDelete(result);
+
+                result = share.BeginDelete(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                share.EndDelete(result);
             }
         }
 
@@ -1548,8 +1553,8 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.IsNotNull(dir.Properties.ETag);
             Assert.AreNotEqual(dir.Properties.ETag, snapshotDir.Properties.ETag);
 
-            //snapshot.Delete();
-            //share.Delete();
+            snapshot.DeleteAsync().Wait();
+            share.DeleteAsync().Wait();
         }
 #endif
 
@@ -1593,8 +1598,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
             }
 
-            //snapshot.Delete();
-            //share.Delete();
+            snapshot.Delete();
+            share.Delete();
         }
 
         [TestMethod]
@@ -1651,8 +1656,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                     Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
                 }
 
-                //snapshot.Delete();
-                //share.Delete();
+                result = snapshot.BeginDelete(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                snapshot.EndDelete(result);
+
+                result = share.BeginDelete(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                share.EndDelete(result);
             }
         }
 
@@ -1697,8 +1707,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
             }
 
-            //snapshot.Delete();
-            //share.Delete();
+            snapshot.DeleteAsync().Wait();
+            share.DeleteAsync().Wait();
         }
 #endif
 

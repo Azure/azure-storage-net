@@ -56,14 +56,28 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="uri">The absolute URI to the share.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteShareSnapshotsOption"/> object indicating whether to only delete the share or delete the share and all snapshots.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             ShareHttpRequestMessageFactory.AddShareSnapshot(shareBuilder, snapshot);
 
             StorageRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
+
+            switch (deleteSnapshotsOption)
+            {
+                case DeleteShareSnapshotsOption.None:
+                    break; // nop
+
+                case DeleteShareSnapshotsOption.IncludeSnapshots:
+                    request.Headers.Add(
+                        Constants.HeaderConstants.DeleteSnapshotHeader,
+                        Constants.HeaderConstants.IncludeSnapshotsValue);
+                    break;
+            }
+
             request.ApplyAccessCondition(accessCondition);
             return request;
         }

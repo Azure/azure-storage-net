@@ -18,6 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
     using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -44,6 +45,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal static IDictionary<string, string> GetMetadata(HttpResponseMessage response)
         {
             return GetMetadataOrProperties(response, Constants.HeaderConstants.PrefixForStorageMetadata);
+        }
+
+        /// <summary>
+        /// Parses the server request encrypted response header.
+        /// </summary>
+        /// <param name="response">Response to be parsed.</param>
+        /// <returns><c>true</c> if write content was encrypted by service or <c>false</c> if not.</returns>
+        internal static bool ParseServerRequestEncrypted(HttpResponseMessage response)
+        {
+            string requestEncrypted = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerRequestEncrypted);
+            return string.Equals(requestEncrypted, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
