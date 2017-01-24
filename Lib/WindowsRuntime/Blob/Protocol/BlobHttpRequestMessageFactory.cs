@@ -423,7 +423,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="deleteSnapshotsOption">A set of options indicating whether to delete only blobs, only snapshots, or both.</param>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>

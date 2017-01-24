@@ -27,6 +27,7 @@ using System.Globalization;
 #else
 using Windows.Globalization;
 using Microsoft.WindowsAzure.Storage.Core;
+using System.Threading;
 #endif
 
 namespace Microsoft.WindowsAzure.Storage.File
@@ -867,6 +868,34 @@ namespace Microsoft.WindowsAzure.Storage.File
             CloudFileShare snapshotRef4 = client.GetShareReference(snapshotRef3.Name, snapshotRef3.SnapshotTime);
             Assert.IsTrue(await snapshotRef4.ExistsAsync());
             Assert.IsTrue(snapshotRef4.Metadata.Count == 1 && snapshotRef4.Metadata["abc"].Equals("def"));
+        }
+
+        [TestMethod]
+        [Description("Test deleting a share that contains snapshots")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileShareDeleteSnapshotOptionsAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+            CloudFileShare snapshot = await share.SnapshotAsync();
+
+            try
+            {
+                await share.DeleteAsync(DeleteShareSnapshotsOption.None, null, null, null, CancellationToken.None);
+                Assert.Fail("Should not be able to delete a share that has snapshots");
+            }
+            catch (StorageException e)
+            {
+                Assert.AreEqual("The share has snapshots and the operation requires no snapshots.", e.Message);
+            }
+
+            await share.DeleteAsync(DeleteShareSnapshotsOption.IncludeSnapshots, null, null, null, CancellationToken.None);
+
+            Assert.IsFalse(await share.ExistsAsync());
+            Assert.IsFalse(await snapshot.ExistsAsync());
         }
 
         [TestMethod]
