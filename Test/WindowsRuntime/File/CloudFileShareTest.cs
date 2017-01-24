@@ -18,13 +18,12 @@
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-#if NETCORE
-using System.Globalization;
-#else
+#if !NETCORE
 using Windows.Globalization;
 using Microsoft.WindowsAzure.Storage.Core;
 using System.Threading;
@@ -965,6 +964,91 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
             }
+
+            await snapshot.DeleteAsync();
+        }
+
+        [TestMethod]
+        [Description("Test list files and directories within a snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileListFilesAndDirectoriesWithinSnapshotAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+            CloudFileDirectory myDir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+
+            await myDir.CreateAsync();
+            await myDir.GetFileReference("myfile").CreateAsync(1024);
+            await myDir.GetDirectoryReference("yourDir").CreateAsync();
+            Assert.IsTrue(await share.ExistsAsync());
+            CloudFileShare snapshot = await share.SnapshotAsync();
+            CloudFileClient client = GenerateCloudFileClient();
+            CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+            List<IListFileItem> listedFileItems = new List<IListFileItem>();
+            FileContinuationToken token = null;
+            do
+            {
+                FileResultSegment resultSegment = await snapshotRef.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(token);
+                token = resultSegment.ContinuationToken;
+
+                foreach (IListFileItem listResultItem in resultSegment.Results)
+                {
+                    listedFileItems.Add(listResultItem);
+                }
+            }
+            while (token != null);
+
+            int count = 0;
+            foreach (IListFileItem listFileItem in listedFileItems)
+            {
+                count++;
+                Assert.AreEqual("mydir", ((CloudFileDirectory)listFileItem).Name);
+            }
+
+            Assert.AreEqual(1, count);
+
+            token = null;
+            listedFileItems.Clear();
+            do
+            {
+                FileResultSegment resultSegment = await snapshotRef.GetRootDirectoryReference().GetDirectoryReference("mydir").ListFilesAndDirectoriesSegmentedAsync(token);
+                token = resultSegment.ContinuationToken;
+
+                foreach (IListFileItem listResultItem in resultSegment.Results)
+                {
+                    listedFileItems.Add(listResultItem);
+                }
+            }
+            while (token != null);
+
+            count = 0;
+            foreach (IListFileItem listFileItem in listedFileItems)
+            {
+                if (listFileItem is CloudFileDirectory)
+                {
+                    count++;
+                    CloudFileDirectory listedDir = (CloudFileDirectory)listFileItem;
+                    Assert.IsTrue(listedDir.SnapshotQualifiedUri.ToString().Contains(
+                        "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                    Assert.AreEqual("yourDir", listedDir.Name);
+                }
+                else
+                {
+                    count++;
+                    CloudFile listedFile = (CloudFile)listFileItem;
+                    Assert.IsTrue(listedFile.SnapshotQualifiedUri.ToString().Contains(
+                        "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                    Assert.AreEqual("myfile", listedFile.Name);
+                }
+            }
+
+            Assert.AreEqual(2, count);
+
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 
         /*

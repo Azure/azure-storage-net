@@ -240,9 +240,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             ListFileEntry file = protocolItem as ListFileEntry;
             if (file != null)
             {
-                CloudFileAttributes attributes = file.Attributes;
-                attributes.StorageUri = NavigationHelper.AppendPathToUri(this.StorageUri, file.Name);
-                return new CloudFile(attributes, this.ServiceClient);
+                CloudFile cloudFile = this.GetFileReference(file.Name);
+                cloudFile.Properties = file.Properties;
+                cloudFile.attributes = file.Attributes;
+
+                return cloudFile;
             }
 
             ListFileDirectoryEntry fileDirectory = protocolItem as ListFileDirectoryEntry;

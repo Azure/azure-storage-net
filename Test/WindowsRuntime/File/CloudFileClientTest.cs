@@ -462,6 +462,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
 
             Assert.AreEqual(2, count);
+
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 #endif
     }

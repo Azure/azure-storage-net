@@ -748,8 +748,8 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.IsNotNull(dir.Properties.ETag);
             Assert.AreNotEqual(dir.Properties.ETag, snapshotDir.Properties.ETag);
 
-            //snapshot.Delete();
-            //share.Delete();
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 
         [TestMethod]
@@ -790,8 +790,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
             }
 
-            //snapshot.Delete();
-            //share.Delete();
+            snapshot.DeleteAsync().Wait();
+            share.DeleteAsync().Wait();
         }
     }
 }
