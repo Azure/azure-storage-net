@@ -163,11 +163,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets the blob's server-side encryption state.
         /// </summary>
+        /// <value>A bool representing the blob's server-side encryption state.</value>
         public bool IsServerEncrypted { get; internal set; }
 
         /// <summary>
-        /// Gets a value indicating whether or not this blob is an incremental copy
+        /// Gets a value indicating whether or not this blob is an incremental copy.
         /// </summary>
+        /// <value>A bool representing if the blob is an incremental copy.</value>
         public bool IsIncrementalCopy { get; internal set; }
     }
 }

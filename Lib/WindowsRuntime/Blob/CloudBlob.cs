@@ -1259,7 +1259,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1624,17 +1624,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("source", source);
             return source.ServiceClient.Credentials.TransformUri(source.SnapshotQualifiedUri);
-        }
-
-        /// <summary>
-        /// Parses the server request encrypted response header.
-        /// </summary>
-        /// <param name="response">Response to be parsed.</param>
-        /// <returns><c>true</c> if write content was encrypted by service or <c>false</c> if not.</returns>
-        internal static bool ParseServerRequestEncrypted(HttpResponseMessage response)
-        {
-            string requestEncrypted = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerRequestEncrypted);
-            return string.Equals(requestEncrypted, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
