@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (8.0.1)
+# Microsoft Azure Storage SDK for .NET (8.1.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -86,7 +86,7 @@ Please note that the minimum nuget client version requirement has been updated t
 
 ### OData
 
-This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.7.0) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
+This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.8.2) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
 
 The ODataLib libraries can be downloaded directly or referenced by your code project through NuGet.  
 
@@ -97,13 +97,25 @@ The specific ODataLib packages are:
 - [System.Spatial](http://nuget.org/packages/System.Spatial)
 
 > Note:
-> The ODataLib packages currently do not support NetStandard/NetCore. Thus, you may encounter failures while trying to restore the ODataLib dependencies for one of the targeted frameworks mentioned above. Until the support is added, if you run into this, you can use the imports statement within the framework node of your project.json file to specify to NuGet that it can restore the packages targeting the framework within the "imports" statement as shown below:
+> You may have encountered incompatibility issues while trying to restore Storage Client ODataLib dependencies on a Netstandard/Netcore project since the earlier ODataLib packages did not support NetStandard/NetCore. This issue has been resolved since ODataLib version v5.8.2 and Storage Client v8.1.0, however if you are still using older versions of Storage Client library, you may want to use one of the following options as a workaround:
+
+> If using project.json/xproj: you can use the imports statement within the framework node of your project.json as shown below:
 
 ```
   "imports": [
     "dnxcore50",
     "portable-net451+win8"
   ]
+```
+
+> If using csproj : you can modify your csproj file to specify the target fallback as shown below:
+
+```  <PropertyGroup>
+    <TargetFramework>netcoreapp1.x</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.x' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
+  </PropertyGroup>
 ```
 
 ### Newtonsoft Json
