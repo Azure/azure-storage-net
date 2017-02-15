@@ -1137,7 +1137,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 return Task.Factory.StartNew(() =>
                 {
                     GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
-                    CopyMessage(message, messageResponse.Messages.First());
+                    CopyMessage(message, messageResponse.Messages.ToList().First());
                     return NullType.Value;
                 });
             };
