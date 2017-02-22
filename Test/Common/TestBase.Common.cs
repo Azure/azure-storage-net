@@ -27,7 +27,6 @@ using System.Linq;
 
 #if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Table.DataServices;
 using System.ServiceModel.Channels;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -169,14 +168,6 @@ namespace Microsoft.WindowsAzure.Storage
 
             return client;
         }
-
-#if WINDOWS_DESKTOP
-        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
-        public static void SetPayloadFormatOnDataServiceContext(TableServiceContext ctx, TablePayloadFormat format, CloudTableClient tableClient)
-        {
-            ctx.Format.UseJson(new TableStorageModel(tableClient.Credentials.AccountName));
-        }
-#endif
 
         public static TenantConfiguration TargetTenantConfig { get; private set; }
 

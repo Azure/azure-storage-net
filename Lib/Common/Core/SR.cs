@@ -246,6 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceUpload = "Writing request data.";
         public const string TraceUploadError = "Exception thrown while writing request data: {0}.";
         public const string UndefinedBlobType = "The blob type cannot be undefined.";
+        public const string UnexpectedEDMType = "Unexpected EDM type from the Table Service: {0}.";
         public const string UnexpectedElement = "Unexpected Element '{0}'";
         public const string UnexpectedEmptyElement = "Unexpected Empty Element '{0}'";
         public const string UnexpectedParameterInSAS = "The parameter `api-version` should not be included in the SAS token. Please allow the library to set the  `api-version` parameter.";
