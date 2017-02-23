@@ -32,8 +32,6 @@ namespace Microsoft.WindowsAzure.Storage
         public const string Queue = "Queue";
 
         public const string Table = "Table";
-
-        public const string PremiumTables = "PremiumTables";
     }
 
     public static class TestTypeCategory

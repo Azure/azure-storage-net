@@ -107,21 +107,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         public const string TableName = "TableName";
 
         /// <summary>
-        /// The requested IOPS for the table.
-        /// </summary>
-        public const string RequestedIops = "RequestedIOPS";
-
-        /// <summary>
-        /// The provisioned IOPS for the table.
-        /// </summary>
-        public const string ProvisionedIops = "ProvisionedIOPS";
-
-        /// <summary>
-        /// The table status.
-        /// </summary>
-        public const string TableStatus = "TableStatus";
-
-        /// <summary>
         /// The query filter clause name.
         /// </summary>
         public const string Filter = "$filter";
