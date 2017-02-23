@@ -344,6 +344,20 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                     sb.Append("metadata");
                 }
 
+                if ((detailsIncluded & ShareListingDetails.Snapshots) == ShareListingDetails.Snapshots)
+                {
+                    if (!started)
+                    {
+                        started = true;
+                    }
+                    else
+                    {
+                        sb.Append(",");
+                    }
+
+                    sb.Append("snapshots");
+                }
+
                 builder.Add("include", sb.ToString());
             }
 
