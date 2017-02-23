@@ -73,7 +73,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             this.Name = tableName;
             this.StorageUri = NavigationHelper.AppendPathToUri(client.StorageUri, tableName);
             this.ServiceClient = client;
-            this.Properties = new TableProperties();
         }
 
         /// <summary>
@@ -87,12 +86,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// </summary>
         /// <value>A string containing the name of the table.</value>
         public string Name { get; private set; }
-
-        /// <summary>
-        /// Gets the table's properties.
-        /// </summary>
-        /// <value>A <see cref="TableProperties"/> object.</value>
-        public TableProperties Properties { get; internal set; }
 
         /// <summary>
         /// Gets the table URI for the primary location.

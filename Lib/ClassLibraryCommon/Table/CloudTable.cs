@@ -262,190 +262,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
 
-        #region Fetch Table Properties
-#if SYNC
-        /// <summary>
-        /// Populates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <remarks>For premium tables only.</remarks>
-        [DoesServiceRequest]
-        public virtual void FetchAttributes(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
-        {
-            IEnumerator<CloudTable> listResult = this.ServiceClient.ListTables(this.Name, requestOptions, operationContext).GetEnumerator();
-            listResult.MoveNext();
-            this.Properties.ProvisionedIops = listResult.Current.Properties.ProvisionedIops;
-            this.Properties.RequestedIops = listResult.Current.Properties.RequestedIops;
-            this.Properties.TableStatus = listResult.Current.Properties.TableStatus;
-        }
-#endif
-
-        /// <summary>
-        /// Populates the table's properties.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <remarks>For premium tables only.</remarks>
-        [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginFetchAttributes(AsyncCallback callback, object state)
-        {
-            return this.BeginFetchAttributes(null /* RequestOptions */, null /* OperationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Populates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <remarks>For premium tables only.</remarks>
-        [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginFetchAttributes(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            return this.ServiceClient.BeginListTablesSegmented(this.Name, null, null, requestOptions, operationContext, callback, state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to fetch attributes.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public virtual void EndFetchAttributes(IAsyncResult asyncResult)
-        {
-            IEnumerator<CloudTable> listResult = this.ServiceClient.EndListTablesSegmented(asyncResult).GetEnumerator();
-            listResult.MoveNext();
-            this.Properties.ProvisionedIops = listResult.Current.Properties.ProvisionedIops;
-            this.Properties.RequestedIops = listResult.Current.Properties.RequestedIops;
-            this.Properties.TableStatus = listResult.Current.Properties.TableStatus;
-        }
-
-#if TASK
-        /// <summary>
-        /// Updates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <remarks>For premium tables only</remarks>
-        [DoesServiceRequest]
-        public virtual Task FetchAttributesAsync(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
-        {
-            return this.FetchAttributesAsync(requestOptions, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Updates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <remarks>For premium tables only</remarks>
-        [DoesServiceRequest]
-        public virtual Task FetchAttributesAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, requestOptions, operationContext, CancellationToken.None);
-        }
-#endif
-        #endregion
-
-        #region Set Table Properties
-#if SYNC
-        /// <summary>
-        /// Updates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <remarks>For premium tables only.</remarks>
-        [DoesServiceRequest]
-        public virtual void SetProperties(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
-        {
-            DynamicTableEntity iopsEntity = new DynamicTableEntity();
-            iopsEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-
-            CommonUtility.AssertNotNull("RequestedIops", this.Properties.RequestedIops.Value);
-            CommonUtility.AssertInBounds("RequestedIops", this.Properties.RequestedIops.Value, 1);
-            iopsEntity.Properties.Add(TableConstants.RequestedIops, new EntityProperty(this.Properties.RequestedIops));
-
-            TableOperation operation = new TableOperation(iopsEntity, TableOperationType.Merge, false);
-            operation.IsTableEntity = true;
-            CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
-
-            operation.Execute(this.ServiceClient, serviceTable, requestOptions, operationContext);
-        }
-#endif
-        /// <summary>
-        /// Updates the table's properties.
-        /// </summary>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <remarks>For premium tables only.</remarks>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginSetProperties(AsyncCallback callback, object state)
-        {
-            return this.BeginSetProperties(null /* RequestOptions */, null /* OperationContext */, callback, state);
-        }
-
-        /// <summary>
-        /// Updates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <remarks>For premium tables only</remarks>
-        [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginSetProperties(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            DynamicTableEntity iopsEntity = new DynamicTableEntity();
-            iopsEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-
-            CommonUtility.AssertNotNull("RequestedIops", this.Properties.RequestedIops.Value);
-            CommonUtility.AssertInBounds("RequestedIops", this.Properties.RequestedIops.Value, 1);
-            iopsEntity.Properties.Add(TableConstants.RequestedIops, new EntityProperty(this.Properties.RequestedIops));
-
-            TableOperation operation = new TableOperation(iopsEntity, TableOperationType.Merge, false);
-            operation.IsTableEntity = true;
-            CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
-
-            return operation.BeginExecute(this.ServiceClient, serviceTable, requestOptions, operationContext, callback, state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous operation to set table properties on a premium table.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public virtual void EndSetProperties(IAsyncResult asyncResult)
-        {
-            Executor.EndExecuteAsync<TableResult>(asyncResult);
-        }
-
-#if TASK
-        /// <summary>
-        /// Updates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <remarks>For premium tables only.</remarks>
-        [DoesServiceRequest]
-        public virtual Task SetPropertiesAsync(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
-        {
-            return this.SetPropertiesAsync(requestOptions, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Updates the table's properties.
-        /// </summary>
-        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <remarks>For premium tables only.</remarks>
-        [DoesServiceRequest]
-        public virtual Task SetPropertiesAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetProperties, this.EndSetProperties, requestOptions, operationContext, CancellationToken.None);
-        }
-#endif
-        #endregion
-
         #region TableQuery Execute Methods
         #region NonGeneric
 #if SYNC
@@ -1262,15 +1078,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            DynamicTableEntity iopsEntity = new DynamicTableEntity();
-            iopsEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            if (this.Properties.RequestedIops.HasValue)
-            {
-                CommonUtility.AssertInBounds("RequestedIops", this.Properties.RequestedIops.Value, 1);
-                iopsEntity.Properties.Add(TableConstants.RequestedIops, new EntityProperty(this.Properties.RequestedIops));
-            }
-
-            TableOperation operation = new TableOperation(iopsEntity, TableOperationType.Insert, false);
+            DynamicTableEntity tblEntity = new DynamicTableEntity();
+            tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert, false);
             operation.IsTableEntity = true;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
 
@@ -1303,15 +1113,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            DynamicTableEntity iopsEntity = new DynamicTableEntity();
-            iopsEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            if (this.Properties.RequestedIops.HasValue)
-            {
-                CommonUtility.AssertInBounds("RequestedIops", this.Properties.RequestedIops.Value, 1);
-                iopsEntity.Properties.Add(TableConstants.RequestedIops, new EntityProperty(this.Properties.RequestedIops));
-            }
-
-            TableOperation operation = new TableOperation(iopsEntity, TableOperationType.Insert, false);
+            DynamicTableEntity tblEntity = new DynamicTableEntity();
+            tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Insert, false);
             operation.IsTableEntity = true;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
 
@@ -1555,9 +1359,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            DynamicTableEntity tableEntity = new DynamicTableEntity();
-            tableEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            TableOperation operation = new TableOperation(tableEntity, TableOperationType.Delete);
+            DynamicTableEntity tblEntity = new DynamicTableEntity();
+            tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Delete);
             operation.IsTableEntity = true;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
 
@@ -1590,9 +1394,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            DynamicTableEntity tableEntity = new DynamicTableEntity();
-            tableEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            TableOperation operation = new TableOperation(tableEntity, TableOperationType.Delete);
+            DynamicTableEntity tblEntity = new DynamicTableEntity();
+            tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Delete);
             operation.IsTableEntity = true;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
 
@@ -1925,9 +1729,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            DynamicTableEntity tableEntity = new DynamicTableEntity();
-            tableEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            TableOperation operation = new TableOperation(tableEntity, TableOperationType.Retrieve);
+            DynamicTableEntity tblEntity = new DynamicTableEntity();
+            tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Retrieve);
             operation.IsTableEntity = true;
             operation.IsPrimaryOnlyRetrieve = primaryOnly;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);
@@ -1979,9 +1783,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             requestOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            DynamicTableEntity tableEntity = new DynamicTableEntity();
-            tableEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
-            TableOperation operation = new TableOperation(tableEntity, TableOperationType.Retrieve);
+            DynamicTableEntity tblEntity = new DynamicTableEntity();
+            tblEntity.Properties.Add(TableConstants.TableName, new EntityProperty(this.Name));
+            TableOperation operation = new TableOperation(tblEntity, TableOperationType.Retrieve);
             operation.IsTableEntity = true;
             operation.IsPrimaryOnlyRetrieve = primaryOnly;
             CloudTable serviceTable = this.ServiceClient.GetTableReference(TableConstants.TableServiceTablesName);

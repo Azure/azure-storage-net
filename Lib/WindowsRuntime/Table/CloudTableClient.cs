@@ -182,21 +182,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return Task.Run(async () =>
             {
                 TableQuerySegment seg = await this.ExecuteQuerySegmentedAsync(TableConstants.TableServiceTablesName, query, currentToken, requestOptions, operationContext, cancellationToken);
-                TableResultSegment retSegment = new TableResultSegment(seg.Results.Select(table =>
-                    {
-                        CloudTable tableResult = new CloudTable(table.Properties[TableConstants.TableName].StringValue, this);
-
-                        tableResult.Properties = new TableProperties();
-                        if (table.Properties.ContainsKey(TableConstants.RequestedIops))
-                        {
-                            tableResult.Properties.RequestedIops = table.Properties[TableConstants.RequestedIops].Int32Value;
-                            tableResult.Properties.ProvisionedIops = table.Properties[TableConstants.ProvisionedIops].Int32Value;
-                            tableResult.Properties.TableStatus = (TableStatus)Enum.Parse(typeof(TableStatus), table.Properties[TableConstants.TableStatus].StringValue);
-                        }
-
-                        return tableResult;
-                    }).ToList());
-
+                TableResultSegment retSegment = new TableResultSegment(seg.Results.Select(tbl => new CloudTable(tbl.Properties[TableConstants.TableName].StringValue, this)).ToList());
                 retSegment.ContinuationToken = seg.ContinuationToken;
                 return retSegment;
             }, cancellationToken);
