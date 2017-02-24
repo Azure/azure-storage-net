@@ -56,6 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="uri">The absolute URI to the share.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
+
         /// <param name="deleteSnapshotsOption">A <see cref="DeleteShareSnapshotsOption"/> object indicating whether to only delete the share or delete the share and all snapshots.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
@@ -63,7 +64,6 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             ShareHttpRequestMessageFactory.AddShareSnapshot(shareBuilder, snapshot);
-
             StorageRequestMessage request = HttpRequestMessageFactory.Delete(uri, timeout, shareBuilder, content, operationContext, canonicalizer, credentials);
 
             switch (deleteSnapshotsOption)
@@ -214,6 +214,21 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             {
                 StringBuilder sb = new StringBuilder();
                 bool started = false;
+
+
+                if ((detailsIncluded & ShareListingDetails.Snapshots) == ShareListingDetails.Snapshots)
+                {
+                    if (!started)
+                    {
+                        started = true;
+                    }
+                    else
+                    {
+                        sb.Append(",");
+                    }
+
+                    sb.Append("snapshots");
+                }
 
                 if ((detailsIncluded & ShareListingDetails.Metadata) == ShareListingDetails.Metadata)
                 {

@@ -46,6 +46,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual void Create(FileRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
+
             if (this.Properties.Quota.HasValue)
             {
                 CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
@@ -85,6 +86,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual ICancellableAsyncResult BeginCreate(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.AssertNoSnapshot();
+
             if (this.Properties.Quota.HasValue)
             {
                 CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
@@ -332,7 +334,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="CloudFileShare"/> object that is a share snapshot.</returns>
         [DoesServiceRequest]
-        internal virtual CloudFileShare Snapshot(IDictionary<string, string> metadata = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        public CloudFileShare Snapshot(IDictionary<string, string> metadata = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -350,7 +352,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual ICancellableAsyncResult BeginSnapshot(AsyncCallback callback, object state)
+        public ICancellableAsyncResult BeginSnapshot(AsyncCallback callback, object state)
         {
             return this.BeginSnapshot(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
@@ -366,7 +368,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual ICancellableAsyncResult BeginSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public ICancellableAsyncResult BeginSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -383,7 +385,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns>A <see cref="CloudFileShare"/> object that is a share snapshot.</returns>
-        internal virtual CloudFileShare EndSnapshot(IAsyncResult asyncResult)
+        public CloudFileShare EndSnapshot(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<CloudFileShare>(asyncResult);
         }
@@ -394,7 +396,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual Task<CloudFileShare> SnapshotAsync()
+        public Task<CloudFileShare> SnapshotAsync()
         {
             return this.SnapshotAsync(CancellationToken.None);
         }
@@ -405,7 +407,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
+        public Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, cancellationToken);
         }
@@ -419,7 +421,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SnapshotAsync(metadata, accessCondition, options, operationContext, CancellationToken.None);
         }
@@ -434,7 +436,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, metadata, accessCondition, options, operationContext, cancellationToken);
         }
@@ -1569,6 +1571,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual void SetProperties(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
+
             if (this.Properties.Quota.HasValue)
             {
                 CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
@@ -1607,6 +1610,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.AssertNoSnapshot();
+
             if (this.Properties.Quota.HasValue)
             {
                 CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
@@ -1749,6 +1753,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(deleteCmd);
+
             deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.Delete(uri, serverTimeout, this.SnapshotTime, deleteSnapshotsOption, accessCondition, useVersionHeader, ctx);
             deleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
