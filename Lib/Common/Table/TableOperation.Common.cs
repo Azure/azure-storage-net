@@ -427,7 +427,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 if (this.isTableEntity)
                 {
                     // Note tableEntity is only used internally, so we can assume operationContext is not needed
-                    identity = string.Format(CultureInfo.InvariantCulture, "'{0}'", this.Entity.WriteEntity(null /* OperationContext */)[TableConstants.TableName].StringValue);
+                    identity = string.Format(CultureInfo.InvariantCulture, "'{0}'", this.Entity.WriteEntity(null /* OperationContext  */)[TableConstants.TableName].StringValue);
                 }
                 else
                 {

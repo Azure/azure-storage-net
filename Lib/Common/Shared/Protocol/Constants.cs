@@ -1115,7 +1115,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-
             public const string TargetStorageVersion ="2016-10-16";
 
             /// <summary>

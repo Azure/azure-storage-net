@@ -22,7 +22,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.Data.OData;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using Microsoft.WindowsAzure.Storage.Table.Protocol;
     using System;
 
     /// <summary>
@@ -50,9 +49,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             this.accountName = accountName;
             this.tableType = new EdmEntityType(this.accountName, Constants.EntitySetName);
             this.tableType.AddKeys(this.tableType.AddStructuralProperty(Constants.DefaultTableName, EdmPrimitiveTypeKind.String));
-            this.TableType.AddStructuralProperty(TableConstants.ProvisionedIops, EdmPrimitiveTypeKind.Int32, true);
-            this.TableType.AddStructuralProperty(TableConstants.RequestedIops, EdmPrimitiveTypeKind.Int32, true);
-            this.TableType.AddStructuralProperty(TableConstants.TableStatus, EdmPrimitiveTypeKind.String, true);
             this.AddElement(this.tableType);
 
             // Add the default entity container - the name and namespace should not matter since we look for default entity container. 
@@ -104,9 +100,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 entityType.AddStructuralProperty("RowKey", EdmPrimitiveTypeKind.String),
                 entityType.AddStructuralProperty("PartitionKey", EdmPrimitiveTypeKind.String));
                 entityType.AddStructuralProperty("Timestamp", EdmCoreModel.Instance.GetDateTime(false), null, EdmConcurrencyMode.Fixed);  // We need this because we want to ensure that this property is not used for optimistic concurrency checks. 
-            entityType.AddStructuralProperty(TableConstants.ProvisionedIops, EdmPrimitiveTypeKind.Int32, true);
-            entityType.AddStructuralProperty(TableConstants.RequestedIops, EdmPrimitiveTypeKind.Int32, true);
-            entityType.AddStructuralProperty(TableConstants.TableStatus, EdmPrimitiveTypeKind.String, true);
             return entityType;
         }
 

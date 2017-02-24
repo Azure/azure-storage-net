@@ -93,7 +93,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
             else if (this.OperationType == TableOperationType.Merge)
             {
-
                 CommonUtility.AssertNotNullOrEmpty("Merge requires a valid ETag", this.ETag);
                 CommonUtility.AssertNotNull("Merge requires a valid PartitionKey", this.PartitionKey);
                 CommonUtility.AssertNotNull("Merge requires a valid RowKey", this.RowKey);
@@ -105,14 +104,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CommonUtility.AssertNotNullOrEmpty("RotateEncryptionKey requires a valid ETag", this.ETag);
                 CommonUtility.AssertNotNull("RotateEncryptionKey requires a valid PartitionKey", this.PartitionKey);
                 CommonUtility.AssertNotNull("RotateEncryptionKey requires a valid RowKey", this.RowKey);
-
-                if (!this.isTableEntity)
-                {
-                    CommonUtility.AssertNotNullOrEmpty("Merge requires a valid ETag", this.Entity.ETag);
-                    CommonUtility.AssertNotNull("Merge requires a valid PartitionKey", this.Entity.PartitionKey);
-                    CommonUtility.AssertNotNull("Merge requires a valid RowKey", this.Entity.RowKey);
-                }
-
 
                 return MergeImpl(this, client, table, modifiedOptions);
             }
