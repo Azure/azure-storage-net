@@ -794,6 +794,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             IDictionary<string, string> queryParameters = HttpWebUtility.ParseQueryString(address.Query);
 
+            string snapshot;
+            if (queryParameters.TryGetValue(Constants.QueryConstants.ShareSnapshot, out snapshot))
+            {
+                if (!string.IsNullOrEmpty(snapshot))
+                {
+                    parsedShareSnapshot = ParseSnapshotTime(snapshot);
+                }
+            }
+
             parsedCredentials = SharedAccessSignatureHelper.ParseQuery(queryParameters);
             
             return new Uri(address.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped));
