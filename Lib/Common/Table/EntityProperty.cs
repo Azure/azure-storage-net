@@ -710,21 +710,13 @@ byte[] input)
             {
                 return new EntityProperty((byte[])value);
             }
-            else if (value is bool)
+            else if (value is bool || value is bool?)
             {
-                return new EntityProperty((bool)value);
+                return new EntityProperty(EdmType.Boolean) { PropertyAsObject = value };
             }
-            else if (value is bool?)
+            else if (value is DateTime || value is DateTime?)
             {
-                return new EntityProperty((bool?)value);
-            }
-            else if (value is DateTime)
-            {
-                return new EntityProperty((DateTime)value);
-            }
-            else if (value is DateTime?)
-            {
-                return new EntityProperty((DateTime?)value);
+                return new EntityProperty(EdmType.DateTime) { PropertyAsObject = value };
             }
             else if (value is DateTimeOffset)
             {
@@ -734,37 +726,21 @@ byte[] input)
             {
                 return new EntityProperty((DateTimeOffset?)value);
             }
-            else if (value is double)
+            else if (value is double || value is double?)
             {
-                return new EntityProperty((double)value);
+                return new EntityProperty(EdmType.Double) { PropertyAsObject = value };
             }
-            else if (value is double?)
+            else if (value is Guid || value is Guid?)
             {
-                return new EntityProperty((double?)value);
+                return new EntityProperty(EdmType.Guid) { PropertyAsObject = value };
             }
-            else if (value is Guid?)
+            else if (value is int || value is int?)
             {
-                return new EntityProperty((Guid?)value);
+                return new EntityProperty(EdmType.Int32) { PropertyAsObject = value };
             }
-            else if (value is Guid)
+            else if (value is long || value is long?)
             {
-                return new EntityProperty((Guid)value);
-            }
-            else if (value is int)
-            {
-                return new EntityProperty((int)value);
-            }
-            else if (value is int?)
-            {
-                return new EntityProperty((int?)value);
-            }
-            else if (value is long)
-            {
-                return new EntityProperty((long)value);
-            }
-            else if (value is long?)
-            {
-                return new EntityProperty((long?)value);
+                return new EntityProperty(EdmType.Int64) { PropertyAsObject = value };
             }
             else if (value == null)
             {
@@ -782,69 +758,45 @@ byte[] input)
 
         internal static EntityProperty CreateEntityPropertyFromObject(object value, Type type)
         {
-            if (type == typeof(string))
+            if (value is string)
             {
                 return new EntityProperty((string)value);
             }
-            else if (type == typeof(byte[]))
+            else if (value is byte[])
             {
                 return new EntityProperty((byte[])value);
             }
-            else if (type == typeof(bool))
+            else if (value is bool || value is bool?)
             {
-                return new EntityProperty((bool)value);
+                return new EntityProperty(EdmType.Boolean) { PropertyAsObject = value };
             }
-            else if (type == typeof(bool?))
+            else if (value is DateTime || value is DateTime?)
             {
-                return new EntityProperty((bool?)value);
+                return new EntityProperty(EdmType.DateTime) { PropertyAsObject = value };
             }
-            else if (type == typeof(DateTime))
-            {
-                return new EntityProperty((DateTime)value);
-            }
-            else if (type == typeof(DateTime?))
-            {
-                return new EntityProperty((DateTime?)value);
-            }
-            else if (type == typeof(DateTimeOffset))
+            else if (value is DateTimeOffset)
             {
                 return new EntityProperty((DateTimeOffset)value);
             }
-            else if (type == typeof(DateTimeOffset?))
+            else if (value is DateTimeOffset?)
             {
                 return new EntityProperty((DateTimeOffset?)value);
             }
-            else if (type == typeof(double))
+            else if (value is double || value is double?)
             {
-                return new EntityProperty((double)value);
+                return new EntityProperty(EdmType.Double) { PropertyAsObject = value };
             }
-            else if (type == typeof(double?))
+            else if (value is Guid || value is Guid?)
             {
-                return new EntityProperty((double?)value);
+                return new EntityProperty(EdmType.Guid) { PropertyAsObject = value };
             }
-            else if (type == typeof(Guid?))
+            else if (value is int || value is int?)
             {
-                return new EntityProperty((Guid?)value);
+                return new EntityProperty(EdmType.Int32) { PropertyAsObject = value };
             }
-            else if (type == typeof(Guid))
+            else if (value is long || value is long?)
             {
-                return new EntityProperty((Guid)value);
-            }
-            else if (type == typeof(int))
-            {
-                return new EntityProperty((int)value);
-            }
-            else if (type == typeof(int?))
-            {
-                return new EntityProperty((int?)value);
-            }
-            else if (type == typeof(long))
-            {
-                return new EntityProperty((long)value);
-            }
-            else if (type == typeof(long?))
-            {
-                return new EntityProperty((long?)value);
+                return new EntityProperty(EdmType.Int64) { PropertyAsObject = value };
             }
             else
             {
