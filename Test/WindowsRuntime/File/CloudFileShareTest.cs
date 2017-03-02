@@ -22,12 +22,13 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Threading;
 
 #if !NETCORE
 using Windows.Globalization;
-using Microsoft.WindowsAzure.Storage.Core;
-using System.Threading;
 #endif
+
+using Microsoft.WindowsAzure.Storage.Core;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {

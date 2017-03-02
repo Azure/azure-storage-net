@@ -3,6 +3,14 @@ Changes in X.X.X :
 - Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
 - Files: Added support for server side encryption.
 
+Changes in 8.1.1 :
+- All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard
+
+Changes in 8.1.0 :
+- All: Updated OData references to the latest Netstandard friendly package version 5.8.2.
+- Queues (WinRT/NetCore): Fixed a bug where connections were not closed after an add message operation.
+>>>>>>> f4bc857d98f8d26c96f49f90206aea63f36af437
+
 Changes in 8.0.1 :
 - (NetStandard/Xamarin) : Fix for a break in Xamarin Apps with Streaming APIs caused by NotImplemented IncrementalHash APIs in Xamarin Runtime.
 
