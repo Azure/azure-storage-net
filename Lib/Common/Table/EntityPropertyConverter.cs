@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // Better support for IEnumerable
-            if (current is IEnumerable)
+			if (current is IEnumerable && !(current is string))
                 current = string.Format("_$¿={0}", JsonConvert.SerializeObject(current, GetSerialisationSettings()));
 
             Type type = current.GetType();
