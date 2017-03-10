@@ -146,12 +146,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 return true;
             }
 
-            bool firstRun = false;
             Type type;
             do
             {
-                firstRun = !firstRun;
-
                 type = current.GetType();
                 EntityProperty entityProperty = CreateEntityPropertyWithType(current, type);
 
@@ -163,7 +160,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 // Better support for IEnumerable
                 if (current is IEnumerable && !(current is string))
                     current = string.Format("_$¿={0}", JsonConvert.SerializeObject(current, GetSerialisationSettings()));
-            } while (firstRun);
+                else
+                    break;
+            } while (true);
 
 #if WINDOWS_RT
             IEnumerable<PropertyInfo> propertyInfos = type.GetRuntimeProperties();
