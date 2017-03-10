@@ -141,29 +141,29 @@ namespace Microsoft.WindowsAzure.Storage.Table
             EntityPropertyConverterOptions entityPropertyConverterOptions,
             OperationContext operationContext)
         {
-			if (current == null)
-			{
-				return true;
-			}
+            if (current == null)
+            {
+                return true;
+            }
 
-			bool firstRun = false;
-			Type type;
-			do
-			{
-				firstRun = !firstRun;
+            bool firstRun = false;
+            Type type;
+            do
+            {
+                firstRun = !firstRun;
 
-				type = current.GetType();
-				EntityProperty entityProperty = CreateEntityPropertyWithType(current, type);
+                type = current.GetType();
+                EntityProperty entityProperty = CreateEntityPropertyWithType(current, type);
 
-				if (entityProperty != null)
-				{
-					propertyDictionary.Add(objectPath, entityProperty);
-					return true;
-				}
-				// Better support for IEnumerable
-				if (current is IEnumerable && !(current is string))
-					current = string.Format("_$¿={0}", JsonConvert.SerializeObject(current, GetSerialisationSettings()));
-			} while (firstRun);
+                if (entityProperty != null)
+                {
+                    propertyDictionary.Add(objectPath, entityProperty);
+                    return true;
+                }
+                // Better support for IEnumerable
+                if (current is IEnumerable && !(current is string))
+                    current = string.Format("_$¿={0}", JsonConvert.SerializeObject(current, GetSerialisationSettings()));
+            } while (firstRun);
 
 #if WINDOWS_RT
             IEnumerable<PropertyInfo> propertyInfos = type.GetRuntimeProperties();
