@@ -15,12 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using System.Collections;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
 namespace Microsoft.WindowsAzure.Storage.Table
 {
     using Microsoft.WindowsAzure.Storage.Core;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.IO;
     using System.Linq;
     using System.Reflection;
     using System.Runtime.CompilerServices;
@@ -141,6 +146,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 return true;
             }
 
+            // Better support for IEnumerable
+            if (current is IEnumerable)
+                current = string.Format("_$¿={0}", JsonConvert.SerializeObject(current, GetSerialisationSettings()));
+
             Type type = current.GetType();
             EntityProperty entityProperty = CreateEntityPropertyWithType(current, type);
 
@@ -191,9 +200,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
                                string.Format(CultureInfo.InvariantCulture, SR.PropertyDelimiterExistsInPropertyName, propertyNameDelimiter, propertyInfo.Name, objectPath));
                        }
 
+                       object value;
+                       try
+                       {
+                           value = propertyInfo.GetValue(current, index: null);
+                       }
+                       catch (Exception)
+                       {
+                           // Support for unsupported data types
+                           value = string.Format("_$¿={0}", JsonConvert.SerializeObject(current, GetSerialisationSettings()));
+                       }
+
                        return Flatten(
                            propertyDictionary,
-                           propertyInfo.GetValue(current, index: null),
+                           value,
                            string.IsNullOrWhiteSpace(objectPath) ? propertyInfo.Name : objectPath + propertyNameDelimiter + propertyInfo.Name,
                            antecedents,
                            entityPropertyConverterOptions,
@@ -206,6 +226,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             return success;
+        }
+
+        static JsonSerializerSettings GetSerialisationSettings()
+        {
+            return new JsonSerializerSettings
+            {
+                Formatting = Formatting.None,
+                MissingMemberHandling = MissingMemberHandling.Ignore,
+                DateParseHandling = DateParseHandling.DateTimeOffset,
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                Converters = new List<JsonConverter> { new StringEnumConverter() },
+            };
         }
 
         /// <summary>Creates entity property with given type.</summary>
@@ -388,7 +420,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #else
                 PropertyInfo propertyToSet = parentProperty.GetType().GetProperty(properties.Last());
 #endif
-                propertyToSet.SetValue(parentProperty, ChangeType(propertyValue, propertyToSet.PropertyType), index: null);
+
+                string stringValue = propertyValue as string;
+                // Support for unsupported data types, but only if the target type isn't a string... if the target type is a string, then this isn't unsupported data-type-ing
+                if (stringValue != null && propertyToSet.PropertyType != typeof(string) && stringValue.StartsWith("_$¿="))
+                    propertyToSet.SetValue(parentProperty, Deserialise(stringValue.Substring(4), propertyToSet.PropertyType), index: null);
+                else
+                    propertyToSet.SetValue(parentProperty, ChangeType(propertyValue, propertyToSet.PropertyType), index: null);
 
                 object termValue = parentProperty;
                 while (valueTypePropertyHierarchy.Count != 0)
@@ -405,6 +443,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Logger.LogError(operationContext, SR.TraceSetPropertyError, propertyPath, propertyValue, ex.Message);
                 throw;
             }
+        }
+
+        static object Deserialise(string json, Type type)
+        {
+            using (var stringReader = new StringReader(json))
+                using (var jsonTextReader = new JsonTextReader(stringReader))
+                    return GetSerialiser().Deserialize(jsonTextReader, type);
+        }
+
+        static JsonSerializer GetSerialiser()
+        {
+            JsonSerializerSettings settings = GetSerialisationSettings();
+            return JsonSerializer.Create(settings);
         }
 
         /// <summary>Creates an object of specified propertyType from propertyValue.</summary>
