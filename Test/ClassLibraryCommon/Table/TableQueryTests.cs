@@ -1262,8 +1262,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static void ExecuteQueryAndAssertResults(CloudTable table, string filter, int expectedResults)
         {
-            var data = table.ExecuteQuery(new TableQuery().Where(filter)).ToList();
-            Assert.AreEqual(expectedResults, data.Count);
+            Assert.AreEqual(expectedResults, table.ExecuteQuery(new TableQuery().Where(filter)).Count());
         }
 
         private static DynamicTableEntity GenerateRandomEntity(string pk)
