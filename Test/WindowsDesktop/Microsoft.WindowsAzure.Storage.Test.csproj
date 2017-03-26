@@ -131,6 +131,7 @@
   <ItemGroup>
     <Compile Include="DictionaryKeyResolver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Table\Entities\GenericEntityPoco.cs" />
     <Compile Include="WCFBufferManagerAdapter.cs" />
   </ItemGroup>
   <ItemGroup>

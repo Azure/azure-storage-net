@@ -108,19 +108,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         public virtual void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
+            ReadEntity(this, properties, operationContext);
+        }
+
+        protected void ReadEntity(object entity, IDictionary<string, EntityProperty> properties, OperationContext operationContext)
+        {
+            CommonUtility.AssertNotNull(nameof(entity), entity);
+
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
             if (!TableEntity.DisableCompiledSerializers)
             {
                 if (this.CompiledRead == null)
                 {
-                    this.CompiledRead = compiledReadCache.GetOrAdd(this.GetType(), TableEntity.CompileReadAction);
+                    this.CompiledRead = compiledReadCache.GetOrAdd(entity.GetType(), TableEntity.CompileReadAction);
                 }
 
-                this.CompiledRead(this, operationContext, properties);
+                this.CompiledRead(entity, operationContext, properties);
                 return;
             }
 #endif
-            ReflectionRead(this, properties, operationContext);
+            ReflectionRead(entity, properties, operationContext);
         }
 
         /// <summary>
@@ -289,18 +296,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> typed values created by serializing this table entity instance.</returns>
         public virtual IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
+            return WriteEntity(this, operationContext);
+        }
+
+        protected virtual IDictionary<string, EntityProperty> WriteEntity(object entity, OperationContext operationContext)
+        {
+            CommonUtility.AssertNotNull(nameof(entity), entity);
+
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
             if (!TableEntity.DisableCompiledSerializers)
             {
                 if (this.CompiledWrite == null)
                 {
-                    this.CompiledWrite = compiledWriteCache.GetOrAdd(this.GetType(), TableEntity.CompileWriteFunc);
+                    this.CompiledWrite = compiledWriteCache.GetOrAdd(entity.GetType(), TableEntity.CompileWriteFunc);
                 }
 
-                return this.CompiledWrite(this, operationContext);
+                return this.CompiledWrite(entity, operationContext);
             }
 #endif
-            return ReflectionWrite(this, operationContext);
+            return ReflectionWrite(entity, operationContext);
         }
 
         /// <summary>
