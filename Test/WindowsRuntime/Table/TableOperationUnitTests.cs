@@ -1608,6 +1608,28 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("Tests reading and writing a complex object with multiple layers of nested object hierarchy using TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeNestedComplexObjectWithTableEntityAdapter()
+        {
+            string pk = Guid.NewGuid().ToString();
+            Random rd = new Random();
+            ComplexEntityWithNestedComplexProperties complexEntityWithNestedComplexProperties = CreateComplexEntityWithNestedComplexProperties(pk, rd.Next());
+            OperationContext operationContext = new OperationContext();
+
+            TableEntityAdapter<ComplexEntityWithNestedComplexProperties> writtenEntityAdapter = new TableEntityAdapter<ComplexEntityWithNestedComplexProperties>();
+            writtenEntityAdapter.OriginalEntity = complexEntityWithNestedComplexProperties;
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+
+            TableEntityAdapter<ComplexEntityWithNestedComplexProperties> readEntityAdapter = new TableEntityAdapter<ComplexEntityWithNestedComplexProperties>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+            ComplexEntityWithNestedComplexProperties.AssertEquality(complexEntityWithNestedComplexProperties, readEntityAdapter.OriginalEntity);
+        }
+
+        [TestMethod]
         [Description("Flattening detects recursive referenced object and throws.")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
