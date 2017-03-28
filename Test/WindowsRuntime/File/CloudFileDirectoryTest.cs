@@ -768,6 +768,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.CreateAsync().Wait();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
@@ -776,6 +777,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.DeleteAsync().Wait();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
@@ -784,6 +786,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.SetMetadataAsync(null, null, null).Wait();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
