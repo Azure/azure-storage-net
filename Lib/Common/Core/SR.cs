@@ -35,6 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string BatchErrorInOperation = "Element {0} in the batch returned an unexpected response code.";
         public const string BinaryMessageShouldUseBase64Encoding = "EncodeMessage should be true for binary message.";
         public const string Blob = "blob";
+        public const string BlobAlreadyExists = "The specified blob already exists.";
         public const string BlobDataCorrupted = "Blob data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
         public const string BlobEndPointNotConfigured = "No blob endpoint configured.";
         public const string BlobInvalidSequenceNumber = "The sequence number may not be specified for an increment operation.";

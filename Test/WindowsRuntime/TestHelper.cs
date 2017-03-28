@@ -125,6 +125,17 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 await operation();
             }
+            catch (StorageException storageException)
+            {
+                Assert.AreEqual((int)expectedStatusCode, storageException.RequestInformation.HttpStatusCode, "Http status code is unexpected.");
+                if (!string.IsNullOrEmpty(requestErrorCode))
+                {
+                    Assert.IsNotNull(storageException.RequestInformation.ExtendedErrorInformation);
+                    Assert.AreEqual(requestErrorCode, storageException.RequestInformation.ExtendedErrorInformation.ErrorCode);
+                }
+
+                return;
+            }
             catch (Exception)
             {
                 Assert.AreEqual((int)expectedStatusCode, operationContext.LastResult.HttpStatusCode, "Http status code is unexpected.");
@@ -133,6 +144,7 @@ namespace Microsoft.WindowsAzure.Storage
                     Assert.IsNotNull(operationContext.LastResult.ExtendedErrorInformation);
                     Assert.AreEqual(requestErrorCode, operationContext.LastResult.ExtendedErrorInformation.ErrorCode);
                 }
+
                 return;
             }
 

@@ -104,19 +104,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     try
                     {
-                        await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken);
+                        // If the accessCondition is IsIfNotExists, the fetch call will always return 400
+                        await this.FetchAttributesAsync(accessCondition.Clone().RemoveIsIfNotExistsCondition(), options, operationContext, cancellationToken);
+
+                        // In case the blob already exists and the access condition is "IfNotExists", we should fail fast before uploading any content for the blob 
+                        if (accessCondition.IsIfNotExists)
+                        {
+                            throw GenerateExceptionForConflictFailure();
+                        }
                     }
                     catch (Exception)
                     {
                         if ((operationContext.LastResult != null) && 
                             (((operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound) && 
                             string.IsNullOrEmpty(accessCondition.IfMatchETag)) || 
-                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Forbidden) ||
-                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.BadRequest) &&
-                            (!string.IsNullOrEmpty(accessCondition.IfNoneMatchETag) && (accessCondition.IfNoneMatchETag == "*"))))
+                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Forbidden)))
                         {
                             // If we got a 404 and the condition was not an If-Match OR if we got a 403,
-                            // If we got a 400 and the access condition was If-None-Match-*, continue.  (There is a special case:  If-None-Match-*, on a blob that doesn't exist, will return a 400 on a read operation, because it's an impossible condition.
                             // we should continue with the operation.
                         }
                         else

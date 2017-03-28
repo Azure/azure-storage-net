@@ -1,4 +1,5 @@
 Changes in 8.2
+- All: Fixed a bug where calling OpenWrite with an IfNotExists access condition on an existing block blob only fails when the blob is committed, now it fails with error 409 as soon as OpenWrite is called.
 - Files (WinRT/NetCore): Calling CreateIfNotExistsAsync on a root directory no longer throws the error 405. It returns false if the share exists, or throws 404 if not.
 
 Changes in 8.1.1 :
