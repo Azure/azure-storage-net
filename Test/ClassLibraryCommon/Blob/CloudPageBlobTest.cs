@@ -3705,6 +3705,122 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+
+        [TestMethod]
+        [Description("Set blob tier and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetBlobTier()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                blob.Create(0);
+                blob.SetBlobTier(PageBlobTier.P4);
+                Assert.AreEqual(PageBlobTier.P4, blob.Properties.PageBlobTier);
+                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                blob2.FetchAttributes();
+                Assert.AreEqual(PageBlobTier.P4, blob2.Properties.PageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+
+                CloudPageBlob blob3 = (CloudPageBlob)container.ListBlobs().ToList().First();
+                Assert.AreEqual(PageBlobTier.P4, blob3.Properties.PageBlobTier);
+                Assert.IsFalse(blob3.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set blob tier and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetBlobTierAPM()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                IAsyncResult result;
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    result = blob.BeginCreate(0, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndCreate(result);
+
+                    result = blob.BeginSetBlobTier(PageBlobTier.P6, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndSetBlobTier(result);
+                    Assert.AreEqual(PageBlobTier.P6, blob.Properties.PageBlobTier);
+                    Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+
+                    CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                    result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob2.EndFetchAttributes(result);
+                    Assert.AreEqual(PageBlobTier.P6, blob2.Properties.PageBlobTier);
+                    Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                    Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Set blob tier and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetBlobTierTask()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                blob.CreateAsync(0).Wait();
+
+                blob.SetBlobTierAsync(PageBlobTier.P20).Wait();
+                Assert.AreEqual(PageBlobTier.P20, blob.Properties.PageBlobTier);
+                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                blob2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(PageBlobTier.P20, blob.Properties.PageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
     }
 }
 

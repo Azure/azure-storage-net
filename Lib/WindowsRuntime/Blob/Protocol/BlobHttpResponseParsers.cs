@@ -124,6 +124,32 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
             }
 
+            // Get the tier of the blob
+            string blobTierString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierHeader);
+            BlockBlobTier? blockBlobTier;
+            PageBlobTier? pageBlobTier;
+            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out blockBlobTier, out pageBlobTier);
+            properties.BlockBlobTier = blockBlobTier;
+            properties.PageBlobTier = pageBlobTier;
+
+            // Get the rehydration status
+            string rehydrationStatusString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ArchiveStatusHeader);
+            if (!string.IsNullOrEmpty(rehydrationStatusString))
+            {
+                if (Constants.RehydratePendingToHot.Equals(rehydrationStatusString))
+                {
+                    properties.RehydrationStatus = RehydrationStatus.PendingToHot;
+                }
+                else if (Constants.RehydratePendingToCool.Equals(rehydrationStatusString))
+                {
+                    properties.RehydrationStatus = RehydrationStatus.PendingToCool;
+                }
+                else
+                {
+                    properties.RehydrationStatus = RehydrationStatus.Unknown;
+                }
+            }
+
             return properties;
         }
 

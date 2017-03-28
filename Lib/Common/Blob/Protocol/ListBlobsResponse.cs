@@ -210,6 +210,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copyStatusDescription = null;
             string copyDestinationSnapshotTime = null;
 
+            string blobTierString = null;
+            string rehydrationStatusString = null;
+
             this.reader.ReadStartElement();
             while (this.reader.IsStartElement())
             {
@@ -344,6 +347,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             copyDestinationSnapshotTime = reader.ReadElementContentAsString();
                                             break;
 
+                                        case Constants.AccessTierElement:
+                                            blobTierString = reader.ReadElementContentAsString();
+                                            break;
+
+                                        case Constants.ArchiveStatusElement:
+                                            rehydrationStatusString = reader.ReadElementContentAsString();
+                                            break;
+
                                         default:
                                             reader.Skip();
                                             break;
@@ -389,6 +400,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     copyStatusDescription,
                     copyDestinationSnapshotTime);
             }
+
+            if (!string.IsNullOrEmpty(blobTierString))
+            {
+                BlockBlobTier? blockBlobTier;
+                PageBlobTier? pageBlobTier;
+                BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, blobTierString, out blockBlobTier, out pageBlobTier);
+                blob.Properties.BlockBlobTier = blockBlobTier;
+                blob.Properties.PageBlobTier = pageBlobTier;
+            }
+
+            blob.Properties.RehydrationStatus = BlobHttpResponseParsers.GetRehydrationStatus(rehydrationStatusString);
 
             return new ListBlobEntry(name, blob);
         }

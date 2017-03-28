@@ -493,6 +493,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string CopyFailedValue = "failed";
 
         /// <summary>
+        /// Constant for rehydrating an archived blob to hot storage.
+        /// </summary>
+        public const string RehydratePendingToHot = "rehydrate-pending-to-hot";
+
+        /// <summary>
+        /// Constant for rehydrating an archived blob to cool storage.
+        /// </summary>
+        public const string RehydratePendingToCool = "rehydrate-pending-to-cool";
+
+        /// <summary>
         /// Constant for unavailable geo-replication status.
         /// </summary>
         public const string GeoUnavailableValue = "unavailable";
@@ -506,6 +516,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constant for bootstrap geo-replication status.
         /// </summary>
         public const string GeoBootstrapValue = "bootstrap";
+
+        /// <summary>
+        /// Constant for the blob tier.
+        /// </summary>
+        public const string AccessTierElement = "AccessTier";
+
+        /// <summary>
+        /// Constant for the archive status.
+        /// </summary>
+        public const string ArchiveStatusElement = "ArchiveStatus";
 
         /// <summary>
         /// XML element for blob types.
@@ -982,6 +1002,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string DeleteSnapshotHeader = PrefixForStorageHeader + "delete-snapshots";
 
             /// <summary>
+            /// Header for the blob tier.
+            /// </summary>
+            public const string AccessTierHeader = PrefixForStorageHeader + "access-tier";
+
+            /// <summary>
+            /// Header for the archive status.
+            /// </summary>
+            public const string ArchiveStatusHeader = PrefixForStorageHeader + "archive-status";
+
+            /// <summary>
             /// Header that specifies blob caching control.
             /// </summary>
             public const string BlobCacheControlHeader = PrefixForStorageHeader + "blob-cache-control";
@@ -1115,7 +1145,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion ="2016-10-16";
+            public const string TargetStorageVersion = "2017-04-17";
 
             /// <summary>
             /// Specifies the file type.
