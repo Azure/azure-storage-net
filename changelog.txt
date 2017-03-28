@@ -1,3 +1,6 @@
+Changes in 8.2
+- Files (WinRT/NetCore): Calling CreateIfNotExistsAsync on a root directory no longer throws the error 405. It returns false if the share exists, or throws 404 if not.
+
 Changes in 8.1.1 :
 - All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard
 
