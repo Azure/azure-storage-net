@@ -1454,6 +1454,10 @@ namespace Microsoft.WindowsAzure.Storage.File
             Assert.IsNotNull(dir.Properties.ETag);
             Assert.AreNotEqual(dir.Properties.ETag, snapshotDir.Properties.ETag);
 
+            CloudFileDirectory snapshotDir2 = new CloudFileDirectory(snapshotDir.SnapshotQualifiedStorageUri, client.Credentials);
+            Assert.IsTrue(snapshotDir2.Exists());
+            Assert.IsTrue(snapshotDir2.Share.SnapshotTime.HasValue);
+
             snapshot.Delete();
             share.Delete();
         }
@@ -1576,6 +1580,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.Create();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
@@ -1584,6 +1589,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.Delete();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
@@ -1592,6 +1598,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.SetMetadata();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
@@ -1630,6 +1637,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     result = dir.BeginCreate(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     dir.EndCreate(result);
+                    Assert.Fail("API should fail in a snapshot");
                 }
                 catch (InvalidOperationException e)
                 {
@@ -1640,6 +1648,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     result = dir.BeginDelete(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     dir.EndDelete(result);
+                    Assert.Fail("API should fail in a snapshot");
                 }
                 catch (InvalidOperationException e)
                 {
@@ -1650,6 +1659,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     result = dir.BeginSetMetadata(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     dir.EndSetMetadata(result);
+                    Assert.Fail("API should fail in a snapshot");
                 }
                 catch (InvalidOperationException e)
                 {
@@ -1685,6 +1695,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.CreateAsync().Wait();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
@@ -1693,6 +1704,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.DeleteAsync().Wait();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {
@@ -1701,6 +1713,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 dir.SetMetadataAsync().Wait();
+                Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
             {

@@ -295,11 +295,6 @@ namespace Microsoft.WindowsAzure.Storage.File
             DateTimeOffset? parsedShareSnapshot;
             this.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials, out parsedShareSnapshot);
 
-            if (parsedShareSnapshot.HasValue)
-            {
-                this.Share.SnapshotTime = parsedShareSnapshot;
-            }
-
             if (parsedCredentials != null && credentials != null)
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
@@ -309,6 +304,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             if (this.ServiceClient == null)
             {
                 this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials ?? parsedCredentials);
+            }
+
+            if (parsedShareSnapshot.HasValue)
+            {
+                this.Share.SnapshotTime = parsedShareSnapshot;
             }
 
             this.Name = NavigationHelper.GetFileName(this.Uri, this.ServiceClient.UsePathStyleUris);
