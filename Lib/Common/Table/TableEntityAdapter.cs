@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="POCOAdapter.cs" company="Microsoft">
+// <copyright file="TableEntityAdapter.cs" company="Microsoft">
 //   Copyright 2013 Microsoft Corporation
 //   //    Licensed under the Apache License, Version 2.0 (the "License");
 //   //    you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
 
     /// <summary>
-    /// Adapter class to allow reading and writing POCO objects to azure table storage without inheriting from <see cref="TableEntity"/> class or implementing <see cref="ITableEntity"/> interface.
+    /// Adapter class to allow reading and writing simple and complex POCO objects to azure table storage without inheriting from <see cref="TableEntity"/> class
+    /// or implementing <see cref="ITableEntity"/> interface.
     /// </summary>
-    /// <typeparam name="T">The type of the original entity to read and write to azure table storage.</typeparam>
-    /// <remarks>Automatically handles flattenning and recomposing the original entity of type T for reading and writing to azure table storage.</remarks>
+    /// <typeparam name="T">The type of POCO object to read and write to azure table storage.</typeparam>
+    /// <remarks>Automatically handles flattening and recomposing the POCO object of type T for reading and writing to azure table storage.</remarks>
     public class TableEntityAdapter<T> : TableEntity
     {
         /// <summary>
@@ -31,18 +32,20 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified original object.
+        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified POCO object.
         /// </summary>
-        /// <param name="originalEntity">The object to write to azure table storage.</param>
+        /// <param name="originalEntity">The POCO object to write to azure table storage.</param>
         public TableEntityAdapter(T originalEntity)
         {
             this.OriginalEntity = originalEntity;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified original entity, partition and row keys.
+        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified POCO object, partition key and row key.
         /// </summary>
-        /// <param name="originalEntity">The object to write to azure table storage.</param>
+        /// <param name="originalEntity">The POCO object to write to azure table storage.</param>
+        /// <param name="partitionKey">A string containing the partition key value for the entity.</param>
+        /// <param name="rowKey">A string containing the row key value for the entity.</param>
         public TableEntityAdapter(T originalEntity, string partitionKey, string rowKey)
             : base(partitionKey, rowKey)
         {
@@ -55,7 +58,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public T OriginalEntity { get; set; }
 
         /// <summary>
-        /// Deserializes <see cref="TableEntityAdapter{T}"/> instance using the specified <see cref="IDictionary{TKey,TValue}"/> that maps property names of the OriginalEntity to typed <see cref="EntityProperty"/> values. 
+        /// Deserializes <see cref="TableEntityAdapter{T}"/> instance using the specified <see cref="IDictionary{TKey,TValue}"/> that maps property names of the
+        /// <see cref="OriginalEntity"/> to typed <see cref="EntityProperty"/> values.
         /// </summary>
         /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps property names to typed <see cref="EntityProperty"/> values.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -65,10 +69,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Serializes the <see cref="IDictionary{TKey,TValue}"/> of property names mapped to <see cref="EntityProperty"/> data values from the OriginalEntity property of this <see cref="TableEntityAdapter{T}"/> instance.
+        /// Serializes the <see cref="IDictionary{TKey,TValue}"/> of property names mapped to <see cref="EntityProperty"/> data values from the <see cref="OriginalEntity"/> property.
         /// </summary>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> typed values created by serializing this table entity instance.</returns>
+        /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> typed values created by
+        /// serializing this table entity instance.</returns>
         public override IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
             return Flatten(this.OriginalEntity, operationContext);
