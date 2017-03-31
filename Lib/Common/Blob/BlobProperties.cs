@@ -56,7 +56,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.AppendBlobCommittedBlockCount = other.AppendBlobCommittedBlockCount;
             this.IsServerEncrypted = other.IsServerEncrypted;
             this.IsIncrementalCopy = other.IsIncrementalCopy;
+            this.BlockBlobTier = other.BlockBlobTier;
             this.PageBlobTier = other.PageBlobTier;
+            this.RehydrationStatus = other.RehydrationStatus;
         }
 
         /// <summary>
@@ -174,9 +176,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public bool IsIncrementalCopy { get; internal set; }
 
         /// <summary>
+        /// Gets a value indicating the tier of the block blob.
+        /// </summary>
+        /// <value>A <see cref="BlockBlobTier"/> object that indicates the block blob tier.</value>
+        public BlockBlobTier? BlockBlobTier { get; internal set; }
+
+        /// <summary>
         /// Gets a value indicating the tier of the page blob.
         /// </summary>
         /// <value>A <see cref="PageBlobTier"/> object that indicates the page blob tier.</value>
         public PageBlobTier? PageBlobTier { get; internal set; }
+
+        /// <summary>
+        /// Gets a value indicating that the blob is being rehdrated and the tier of the blob once
+        /// the rehydration from archive has completed.
+        /// </summary>
+        /// <value>A <see cref="RehydrationStatus"/> representing the rehydration status of the blob.</value>
+        /// <remarks>Only applicable for block blobs in this version of the library.</remarks>
+        public RehydrationStatus? RehydrationStatus { get; internal set; }
     }
 }

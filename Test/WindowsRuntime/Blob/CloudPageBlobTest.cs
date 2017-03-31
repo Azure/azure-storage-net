@@ -1405,14 +1405,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 await blob.SetBlobTierAsync(PageBlobTier.P30);
                 Assert.AreEqual(PageBlobTier.P30, blob.Properties.PageBlobTier);
+                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual(PageBlobTier.P30, blob2.Properties.PageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
 
                 BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
                 CloudPageBlob blob3 = (CloudPageBlob)results.Results.ToList().First();
                 Assert.AreEqual(PageBlobTier.P30, blob3.Properties.PageBlobTier);
+                Assert.IsFalse(blob3.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
             }
             finally
             {

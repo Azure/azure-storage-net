@@ -3723,13 +3723,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blob.Create(0);
                 blob.SetBlobTier(PageBlobTier.P4);
                 Assert.AreEqual(PageBlobTier.P4, blob.Properties.PageBlobTier);
+                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 blob2.FetchAttributes();
                 Assert.AreEqual(PageBlobTier.P4, blob2.Properties.PageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob3 = (CloudPageBlob)container.ListBlobs().ToList().First();
                 Assert.AreEqual(PageBlobTier.P4, blob3.Properties.PageBlobTier);
+                Assert.IsFalse(blob3.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
             }
             finally
             {
@@ -3763,12 +3769,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     waitHandle.WaitOne();
                     blob.EndSetBlobTier(result);
                     Assert.AreEqual(PageBlobTier.P6, blob.Properties.PageBlobTier);
+                    Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                     CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                     result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob2.EndFetchAttributes(result);
                     Assert.AreEqual(PageBlobTier.P6, blob2.Properties.PageBlobTier);
+                    Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                    Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
                 }
             }
             finally
@@ -3796,10 +3806,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob.SetBlobTierAsync(PageBlobTier.P20).Wait();
                 Assert.AreEqual(PageBlobTier.P20, blob.Properties.PageBlobTier);
+                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 blob2.FetchAttributesAsync().Wait();
                 Assert.AreEqual(PageBlobTier.P20, blob.Properties.PageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
             }
             finally
             {

@@ -252,12 +252,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="blobType">A <see cref="BlobType" /> indicating the type of blob.</param>
         /// <param name="blobTierString">The blob tier as a string</param>
+        /// <param name="blockBlobTier">A nullable <see cref="BlockBlobTier"/>. This value will be populated if the blob type is unspecified or is a block blob.</param>
         /// <param name="pageBlobTier">A nullable <see cref="PageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
-        internal static void GetBlobTier(BlobType blobType, string blobTierString, out PageBlobTier? pageBlobTier)
+        internal static void GetBlobTier(BlobType blobType, string blobTierString, out BlockBlobTier? blockBlobTier, out PageBlobTier? pageBlobTier)
         {
+            blockBlobTier = null;
             pageBlobTier = null;
 
-            if (blobType.Equals(BlobType.PageBlob))
+            if (blobType.Equals(BlobType.BlockBlob))
+            {
+                BlockBlobTier blockBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out blockBlobTierFromResponse))
+                {
+                    blockBlobTier = blockBlobTierFromResponse;
+                }
+                else
+                {
+                    blockBlobTier = BlockBlobTier.Unknown;
+                }
+            }
+            else if (blobType.Equals(BlobType.PageBlob))
             {
                 PageBlobTier pageBlobTierFromResponse;
                 if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
@@ -271,16 +285,46 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
             else if (blobType.Equals(BlobType.Unspecified))
             {
+                BlockBlobTier blockBlobTierFromResponse;
                 PageBlobTier pageBlobTierFromResponse;
-                if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
+                if (Enum.TryParse(blobTierString, true, out blockBlobTierFromResponse))
+                {
+                    blockBlobTier = blockBlobTierFromResponse;
+                }
+                else if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
                 {
                     pageBlobTier = pageBlobTierFromResponse;
                 }
                 else
                 {
+                    blockBlobTier = BlockBlobTier.Unknown;
                     pageBlobTier = PageBlobTier.Unknown;
                 }
             }
+        }
+
+        /// <summary>
+        /// Determines the rehydration status of the blob.
+        /// </summary>
+        /// <param name="rehydrationStatus">The rehydration status as a string.</param>
+        /// <returns>A <see cref="RehydrationStatus"/> representing the rehydration status of the blob.</returns>
+        internal static RehydrationStatus? GetRehydrationStatus(string rehydrationStatus)
+        {
+            if (!string.IsNullOrEmpty(rehydrationStatus))
+            {
+                if (Constants.RehydratePendingToHot.Equals(rehydrationStatus))
+                {
+                    return RehydrationStatus.PendingToHot;
+                }
+                else if (Constants.RehydratePendingToCool.Equals(rehydrationStatus))
+                {
+                    return RehydrationStatus.PendingToCool;
+                }
+
+                return RehydrationStatus.Unknown;
+            }
+
+            return null;
         }
     }
 }

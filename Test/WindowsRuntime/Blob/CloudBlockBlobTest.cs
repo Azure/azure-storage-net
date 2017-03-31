@@ -1680,5 +1680,105 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+
+        [TestMethod]
+        [Description("Set blob tier and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.BlockBlobOnly)]
+        public async Task CloudBlockBlobSetBlobTierAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                foreach (BlockBlobTier blobTier in Enum.GetValues(typeof(BlockBlobTier)))
+                {
+                    if (blobTier == BlockBlobTier.Unknown)
+                    {
+                        continue;
+                    }
+
+                    CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                    await CreateForTestAsync(blob, 0, 0);
+
+                    await blob.SetBlobTierAsync(blobTier);
+                    Assert.AreEqual(blobTier, blob.Properties.BlockBlobTier.Value);
+                    Assert.IsFalse(blob.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+
+                    CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
+                    await blob2.FetchAttributesAsync();
+                    Assert.AreEqual(blobTier, blob2.Properties.BlockBlobTier.Value);
+                    Assert.IsFalse(blob2.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+
+                    BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
+                    CloudBlockBlob blob3 = (CloudBlockBlob)results.Results.ToList().First();
+                    Assert.AreEqual(blobTier, blob3.Properties.BlockBlobTier.Value);
+                    Assert.IsFalse(blob3.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
+
+                    await blob.DeleteAsync();
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set blob tier to archive then rehydrate it to hot and cool")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.BlockBlobOnly)]
+        public async Task CloudBlockBlobRehydrateBlobAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                await CreateForTestAsync(blob, 0, 0);
+                await blob.SetBlobTierAsync(BlockBlobTier.Archive);
+                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
+                await CreateForTestAsync(blob2, 0, 0);
+                await blob2.SetBlobTierAsync(BlockBlobTier.Archive);
+
+                await blob.SetBlobTierAsync(BlockBlobTier.Cool);
+                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                await blob.FetchAttributesAsync();
+                Assert.AreEqual(RehydrationStatus.PendingToCool, blob.Properties.RehydrationStatus);
+                Assert.AreEqual(BlockBlobTier.Archive, blob.Properties.BlockBlobTier.Value);
+
+                await blob2.SetBlobTierAsync(BlockBlobTier.Hot);
+                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                await blob2.FetchAttributesAsync();
+                Assert.AreEqual(RehydrationStatus.PendingToHot, blob2.Properties.RehydrationStatus);
+                Assert.AreEqual(BlockBlobTier.Archive, blob2.Properties.BlockBlobTier.Value);
+
+                CloudBlockBlob listBlob =  (CloudBlockBlob)container.ListBlobsSegmentedAsync(null).Result.Results.ToList().ElementAt(0);
+                Assert.AreEqual(BlockBlobTier.Archive, listBlob.Properties.BlockBlobTier.Value);
+                Assert.IsFalse(listBlob.Properties.PageBlobTier.HasValue);
+                Assert.AreEqual(RehydrationStatus.PendingToCool, listBlob.Properties.RehydrationStatus.Value);
+
+                CloudBlockBlob listBlob2 = (CloudBlockBlob)container.ListBlobsSegmentedAsync(null).Result.Results.ToList().ElementAt(1);
+                Assert.AreEqual(BlockBlobTier.Archive, listBlob2.Properties.BlockBlobTier.Value);
+                Assert.IsFalse(listBlob2.Properties.PageBlobTier.HasValue);
+                Assert.AreEqual(RehydrationStatus.PendingToHot, listBlob2.Properties.RehydrationStatus.Value);
+
+                await blob.DeleteAsync();
+                await blob2.DeleteAsync();
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
     }
 }
