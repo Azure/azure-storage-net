@@ -508,6 +508,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string GeoBootstrapValue = "bootstrap";
 
         /// <summary>
+        /// Constant for the blob tier.
+        /// </summary>
+        public const string AccessTierElement = "AccessTier";
+
+        /// <summary>
         /// XML element for blob types.
         /// </summary>
         public const string BlobTypeElement = "BlobType";
@@ -982,6 +987,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string DeleteSnapshotHeader = PrefixForStorageHeader + "delete-snapshots";
 
             /// <summary>
+            /// Header for the blob tier.
+            /// </summary>
+            public const string AccessTierHeader = PrefixForStorageHeader + "access-tier";
+
+            /// <summary>
             /// Header that specifies blob caching control.
             /// </summary>
             public const string BlobCacheControlHeader = PrefixForStorageHeader + "blob-cache-control";
@@ -1115,7 +1125,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion ="2016-10-16";
+            public const string TargetStorageVersion = "2016-10-16";
 
             /// <summary>
             /// Specifies the file type.

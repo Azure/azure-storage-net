@@ -1386,5 +1386,38 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+
+        [TestMethod]
+        [Description("Set blob tier and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public async Task CloudPageBlobSetBlobTierAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                await blob.CreateAsync(0);
+
+                await blob.SetBlobTierAsync(PageBlobTier.P30);
+                Assert.AreEqual(PageBlobTier.P30, blob.Properties.PageBlobTier);
+
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                await blob2.FetchAttributesAsync();
+                Assert.AreEqual(PageBlobTier.P30, blob2.Properties.PageBlobTier);
+
+                BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
+                CloudPageBlob blob3 = (CloudPageBlob)results.Results.ToList().First();
+                Assert.AreEqual(PageBlobTier.P30, blob3.Properties.PageBlobTier);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
     }
 }
