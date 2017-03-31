@@ -399,7 +399,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, builder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
-
             return request;
         }
 
@@ -1172,30 +1171,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             {
                 request.Headers.Add(Constants.HeaderConstants.RangeContentMD5Header, Constants.HeaderConstants.TrueHeader);
             }
-
-            return request;
-        }
-
-        /// <summary>
-        /// Generates a web request to set the tier for a blob.
-        /// </summary>
-        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
-        /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="blobTier">The blob tier to set as a string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpWebRequest SetBlobTier(Uri uri, int? timeout, string blobTier, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
-        {
-            UriQueryBuilder builder = new UriQueryBuilder();
-            builder.Add(Constants.QueryConstants.Component, "tier");
-
-            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
-            request.ApplyAccessCondition(accessCondition);
-
-            // Add the blob tier header
-            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
 
             return request;
         }

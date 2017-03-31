@@ -133,18 +133,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
             }
 
-            // Get the tier of the blob
-            string blobTierString = response.Headers[Constants.HeaderConstants.AccessTierHeader];
-            BlockBlobTier? blockBlobTier;
-            PageBlobTier? pageBlobTier;
-            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out blockBlobTier, out pageBlobTier);
-            properties.BlockBlobTier = blockBlobTier;
-            properties.PageBlobTier = pageBlobTier;
-
-            // Get the rehydration status
-            string rehydrationStatusString = response.Headers[Constants.HeaderConstants.ArchiveStatusHeader];
-            properties.RehydrationStatus = BlobHttpResponseParsers.GetRehydrationStatus(rehydrationStatusString);
-
             return properties;
         }
 

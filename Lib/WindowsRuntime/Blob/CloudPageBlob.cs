@@ -970,52 +970,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Sets the tier for a blob.
-        /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(PageBlobTier blobTier)
-        {
-            return this.SetBlobTierAsync(blobTier, null /* accessCondition */, null /* options */, null /* operationContext */);
-        }
-
-        /// <summary>
-        /// Sets the tier for a blob.
-        /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.SetBlobTierAsync(blobTier, accessCondition, options, operationContext, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Sets the tier for a blob.
-        /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                this.SetBlobTierImpl(blobTier, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                cancellationToken), cancellationToken);
-        }
-
-        /// <summary>
         /// Implements the Create method.
         /// </summary>
         /// <param name="sizeInBytes">The size in bytes.</param>
@@ -1282,31 +1236,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-                return NullType.Value;
-            };
-
-            return putCmd;
-        }
-
-        /// <summary>
-        /// Implementation method for the SetBlobTier methods.
-        /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="RESTCommand"/> that sets the blob tier.</returns>
-        private RESTCommand<NullType> SetBlobTierImpl(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options)
-        {
-            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
-
-            options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, blobTier.ToString(), accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
-            {
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-
-                this.attributes.Properties.PageBlobTier = blobTier;
                 return NullType.Value;
             };
 
