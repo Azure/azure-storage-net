@@ -56,6 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.AppendBlobCommittedBlockCount = other.AppendBlobCommittedBlockCount;
             this.IsServerEncrypted = other.IsServerEncrypted;
             this.IsIncrementalCopy = other.IsIncrementalCopy;
+            this.PageBlobTier = other.PageBlobTier;
         }
 
         /// <summary>
@@ -171,5 +172,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <value>A bool representing if the blob is an incremental copy.</value>
         public bool IsIncrementalCopy { get; internal set; }
+
+        /// <summary>
+        /// Gets a value indicating the tier of the page blob.
+        /// </summary>
+        /// <value>A <see cref="PageBlobTier"/> object that indicates the page blob tier.</value>
+        public PageBlobTier? PageBlobTier { get; internal set; }
     }
 }

@@ -834,5 +834,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         {
             return HttpRequestMessageFactory.GetServiceStats(uri, timeout, operationContext, canonicalizer, credentials);
         }
+
+        /// <summary>
+        /// Constructs a web request to set the tier on a page blob.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the blob.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="blobTier">The blob tier to set.</param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string blobTier, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "tier");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+
+            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
+
+            request.ApplyAccessCondition(accessCondition);
+            request.ApplySequenceNumberCondition(accessCondition);
+            return request;
+        }
     }
 }

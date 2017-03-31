@@ -2458,6 +2458,125 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
+#if SYNC
+        /// <summary>
+        /// Sets the tier of the blob.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public virtual void SetBlobTier(PageBlobTier blobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
+            Executor.ExecuteSync(
+                this.SetBlobTierImpl(blobTier, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to set the tier of the blob.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginSetBlobTier(PageBlobTier blobTier, AsyncCallback callback, object state)
+        {
+            return this.BeginSetBlobTier(blobTier, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to set the tier of the blob.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginSetBlobTier(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.SetBlobTierImpl(blobTier, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to set the tier of the blob.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public virtual void EndSetBlobTier(IAsyncResult asyncResult)
+        {
+            Executor.EndExecuteAsync<NullType>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetBlobTierAsync(PageBlobTier blobTier)
+        {
+            return this.SetBlobTierAsync(blobTier, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetBlobTier, this.EndSetBlobTier, blobTier, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.SetBlobTierAsync(blobTier, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetBlobTier, this.EndSetBlobTier, blobTier, accessCondition, options, operationContext, cancellationToken);
+        }
+#endif
+
         /// <summary>
         /// Implements the Create method.
         /// </summary>
@@ -2722,6 +2841,32 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 snapshot.attributes.Properties = new BlobProperties(this.Properties);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
                 return snapshot;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation method for the SetBlobTier methods.
+        /// </summary>
+        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that sets the blob tier.</returns>
+        private RESTCommand<NullType> SetBlobTierImpl(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options)
+        {
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetBlobTier(uri, serverTimeout, blobTier.ToString(), accessCondition, useVersionHeader, ctx);
+            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+
+                this.attributes.Properties.PageBlobTier = blobTier;
+                return NullType.Value;
             };
 
             return putCmd;

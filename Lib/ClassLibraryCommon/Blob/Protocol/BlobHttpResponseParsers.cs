@@ -133,6 +133,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
             }
 
+            // Get the tier of the blob
+            string blobTierString = response.Headers[Constants.HeaderConstants.AccessTierHeader];
+            PageBlobTier? pageBlobTier;
+            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out pageBlobTier);
+            properties.PageBlobTier = pageBlobTier;
+
             return properties;
         }
 
