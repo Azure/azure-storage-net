@@ -2919,6 +2919,33 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("Tests writing and reading complex struct with TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeComplexStructWithTableEntityAdapter()
+        {
+            StructEntity structEntity = new StructEntity { Breadth = 12, Length = 10, Name = "ComplexStructEntity" };
+
+            ComplexEntity originalComplexEntity = CreateComplexEntity(Guid.NewGuid().ToString(), 123);
+            structEntity.ComplextEntity = originalComplexEntity;
+
+            OperationContext operationContext = new OperationContext();
+
+            TableEntityAdapter<StructEntity> writtenEntityAdapter = new TableEntityAdapter<StructEntity>(structEntity, "partitionKey", "rowKey");
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+
+            TableEntityAdapter<StructEntity> readEntityAdapter = new TableEntityAdapter<StructEntity>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+
+            Assert.AreEqual(structEntity.Name, readEntityAdapter.OriginalEntity.Name);
+            Assert.AreEqual(structEntity.Length, readEntityAdapter.OriginalEntity.Length);
+            Assert.AreEqual(structEntity.Breadth, readEntityAdapter.OriginalEntity.Breadth);
+            ComplexEntity.AssertEquality(structEntity.ComplextEntity, readEntityAdapter.OriginalEntity.ComplextEntity);
+        }
+
+        [TestMethod]
         [Description("Flattens and recomposes complex object with flat object structure without nested properties")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
