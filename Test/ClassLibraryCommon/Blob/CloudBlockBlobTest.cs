@@ -2987,6 +2987,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
+        [Description("Download range greater than the size of the blob.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobExceedMaxRange()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+
+                string message = "Sample initial text";
+                blob.UploadText(message);
+
+                byte[] buffer = new byte[message.Length];
+                blob.DownloadRangeToByteArray(buffer, 0, 0, message.Length + 5);
+                string actualMessage = System.Text.Encoding.Default.GetString(buffer);
+                Assert.AreEqual(message, actualMessage);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("Create a snapshot with explicit metadata")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
