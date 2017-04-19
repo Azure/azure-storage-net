@@ -73,14 +73,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> typed values created by
         /// serializing this table entity instance.</returns>
-        /// <remarks>For complex objects with complex properties, <see cref="WriteEntity"/> method will flatten the object.<br/>
-        /// Ie. An object A with complex properties of B and D which have their own properties of C and E with this structure A->B->C and A->D->E,<br/>
-        /// will be flattened to key value pairs of {"B_C", EntityProperty(C)} and {"D_E", EntityProperty(E)}. For each key value pair:<br/>
-        /// 1. The key is the names of properties visited from root (A) to end node property (C or E) appended together and delimited by "_".<br/>
-        /// 2. The value is the <see cref="EntityProperty"/> object, instantiated by the value of the end node property.
+        /// <remarks>If <see cref="OriginalEntity"/> is a simple POCO object with simple properties (primitive types, string, byte[], ...), <see cref="WriteEntity"/> method will create
+        ///  <see cref="EntityProperty"/> objects using these properties.<br/>
+        /// Ie. A simple POCO object A with properties of B and C with this structure A->B, A->C, will be converted to key value pairs of {"B", EntityProperty(B)}, {"C", EntityProperty(C)}.<br/>
+        /// If <see cref="OriginalEntity"/> has complex properties (and potentially these properties having complex properties of their own), <see cref="WriteEntity"/> method will flatten <see cref="OriginalEntity"/> first.<br/>
+        /// Ie. An object A with a simple property of B and complex properties of C and D which have their own properties of E and F with this structure A->B, A->C->E and A->D->F, will be flattened to key value pairs of:<br/>
+        /// {"B", EntityProperty(B)}, {"C_E", EntityProperty(E)} and {"D_F", EntityProperty(F)}.<br/>
+        /// For each key value pair:<br/>
+        /// 1. The key is composed by appending the names of the properties visited from root (A) to end node property (E or F) delimited by "_".<br/>
+        /// 2. The value is the <see cref="EntityProperty"/> object, instantiated by the value of the end node property.<br/>
         /// All key value pairs will be stored in the returned <see cref="IDictionary{TKey,TValue}"/>.<br/>
-        /// <see cref="ReadEntity"/> method will recompose the original object using the <see cref="IDictionary{TKey,TValue}"/> returned by this method and store it in <see cref="OriginalEntity"/> property.<br/>
-        /// Properties that are marked with <see cref="IgnorePropertyAttribute"/> will be skipped and not be added to the returned <see cref="IDictionary{TKey,TValue}"/>.</remarks>
+        /// <see cref="ReadEntity"/> method recomposes the original object (POCO or complex) using the <see cref="IDictionary{TKey,TValue}"/> returned by this method and store it in <see cref="OriginalEntity"/> property.<br/>
+        /// Properties that are marked with <see cref="IgnorePropertyAttribute"/> in the <see cref="OriginalEntity"/> object will be ignored and not processed by this method.</remarks>
         public override IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
             return Flatten(this.OriginalEntity, operationContext);
