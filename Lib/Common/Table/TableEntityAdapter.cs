@@ -17,11 +17,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
 
     /// <summary>
-    /// Adapter class to allow reading and writing simple and complex POCO objects to azure table storage without inheriting from <see cref="TableEntity"/> class
-    /// or implementing <see cref="ITableEntity"/> interface.
+    /// Adapter class to allow reading and writing objects to Azure Table Storage without inheriting from <see cref="TableEntity"/> class
+    /// or implementing <see cref="ITableEntity"/> interface. The objects can be simple POCO objects or complex objects with nested complex properties.
     /// </summary>
-    /// <typeparam name="T">The type of POCO object to read and write to azure table storage.</typeparam>
-    /// <remarks>Automatically handles flattening and recomposing the POCO object of type T for reading and writing to azure table storage.</remarks>
+    /// <typeparam name="T">The type of object to read and write to Azure Table Storage, it can be a class or a struct.</typeparam>
     public class TableEntityAdapter<T> : TableEntity
     {
         /// <summary>
@@ -32,18 +31,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified POCO object.
+        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified object.
         /// </summary>
-        /// <param name="originalEntity">The POCO object to write to azure table storage.</param>
+        /// <param name="originalEntity">The object to write to Azure Table Storage.</param>
         public TableEntityAdapter(T originalEntity)
         {
             this.OriginalEntity = originalEntity;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified POCO object, partition key and row key.
+        /// Initializes a new instance of the <see cref="TableEntityAdapter{T}"/> class with the specified object, partition key and row key.
         /// </summary>
-        /// <param name="originalEntity">The POCO object to write to azure table storage.</param>
+        /// <param name="originalEntity">The object to write to Azure Table Storage.</param>
         /// <param name="partitionKey">A string containing the partition key value for the entity.</param>
         /// <param name="rowKey">A string containing the row key value for the entity.</param>
         public TableEntityAdapter(T originalEntity, string partitionKey, string rowKey)
@@ -59,7 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         /// <summary>
         /// Deserializes <see cref="TableEntityAdapter{T}"/> instance using the specified <see cref="IDictionary{TKey,TValue}"/> that maps property names of the
-        /// <see cref="OriginalEntity"/> to typed <see cref="EntityProperty"/> values.
+        /// <see cref="OriginalEntity"/> to typed <see cref="EntityProperty"/> values and stores it in the <see cref="OriginalEntity"/> property.
         /// </summary>
         /// <param name="properties">An <see cref="IDictionary{TKey,TValue}"/> object that maps property names to typed <see cref="EntityProperty"/> values.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -74,6 +73,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An <see cref="IDictionary{TKey,TValue}"/> object that maps string property names to <see cref="EntityProperty"/> typed values created by
         /// serializing this table entity instance.</returns>
+        /// <remarks>For complex objects with complex properties, <see cref="WriteEntity"/> method will flatten the object.<br/>
+        /// Ie. An object A with complex properties of B and D which have their own properties of C and E with this structure A->B->C and A->D->E,<br/>
+        /// will be flattened to key value pairs of {"B_C", EntityProperty(C)} and {"D_E", EntityProperty(E)}. For each key value pair:<br/>
+        /// 1. The key is the names of properties visited from root (A) to end node property (C or E) appended together and delimited by "_".<br/>
+        /// 2. The value is the <see cref="EntityProperty"/> object, instantiated by the value of the end node property.
+        /// All key value pairs will be stored in the returned <see cref="IDictionary{TKey,TValue}"/>.<br/>
+        /// <see cref="ReadEntity"/> method will recompose the original object using the <see cref="IDictionary{TKey,TValue}"/> returned by this method and store it in <see cref="OriginalEntity"/> property.<br/>
+        /// Properties that are marked with <see cref="IgnorePropertyAttribute"/> will be skipped and not be added to the returned <see cref="IDictionary{TKey,TValue}"/>.</remarks>
         public override IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
             return Flatten(this.OriginalEntity, operationContext);

@@ -1,3 +1,6 @@
+
+- Tables: Added TableEntityAdapter<T> class to allow writing and reading simple or complex objects to Azure Table Storage without the need to implement ITableEntity interface or inherit from TableEntity class.
+
 Changes in 8.0.0 :
 
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
