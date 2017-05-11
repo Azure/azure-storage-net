@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         /// Gets the associated account name for the credentials.
         /// </summary>
         /// <value>The account name.</value>
-        public string AccountName { get; private set; }
+        public string AccountName { get; internal set; }
 
         /// <summary>
         /// Gets the associated key name for the credentials.
@@ -342,7 +342,13 @@ namespace Microsoft.WindowsAzure.Storage.Auth
 
             if (this.IsSAS)
             {
-                return string.Format(CultureInfo.InvariantCulture, "{0}={1}", CloudStorageAccount.SharedAccessSignatureSettingString, exportSecrets ? this.SASToken : "[signature hidden]");
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}={1};{2}={3}",
+                    CloudStorageAccount.AccountNameSettingString,
+                    this.AccountName,
+                    CloudStorageAccount.SharedAccessSignatureSettingString,
+                    exportSecrets ? this.SASToken : "[signature hidden]");
             }
 
             return string.Empty;

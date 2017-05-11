@@ -534,6 +534,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudStorageAccountConnectionStringRoundtrip()
         {
+            // account key
+
             string accountString1 =
                 string.Format(
                     "DefaultEndpointsProtocol=http;AccountName={0};AccountKey={1};EndpointSuffix={2};",
@@ -566,6 +568,180 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             connectionStringRoundtripHelper(accountString2);
             connectionStringRoundtripHelper(accountString3);
             connectionStringRoundtripHelper(accountString4);
+
+            // shared access
+
+            var sas = "sasTest";
+
+            string accountString5 =
+                string.Format(
+                    "DefaultEndpointsProtocol=http;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};",
+                    TestBase.TargetTenantConfig.AccountName,
+                    sas,
+                    "fake.endpoint.suffix");
+
+            string accountString6 =
+                string.Format(
+                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};",
+                    TestBase.TargetTenantConfig.AccountName,
+                    sas);
+
+            string accountString7 =
+                string.Format(
+                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};QueueEndpoint={2}",
+                    TestBase.TargetTenantConfig.AccountName,
+                    sas,
+                    "https://alternate.queue.endpoint/");
+
+            string accountString8 =
+                string.Format(
+                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};QueueEndpoint={3}",
+                    TestBase.TargetTenantConfig.AccountName,
+                    sas,
+                    "fake.endpoint.suffix",
+                    "https://alternate.queue.endpoint/");
+
+            connectionStringRoundtripHelper(accountString5);
+            connectionStringRoundtripHelper(accountString6);
+            connectionStringRoundtripHelper(accountString7);
+            connectionStringRoundtripHelper(accountString8);
+
+            // shared access no account name
+
+            string accountString11 =
+                string.Format(
+                    "SharedAccessSignature={1};QueueEndpoint={2}",
+                    TestBase.TargetTenantConfig.AccountName,
+                    sas,
+                    "https://alternate.queue.endpoint/");
+
+            connectionStringRoundtripHelper(accountString11);
+        }
+
+        [TestMethod]
+        [Description("Regular account with HTTP")]
+        [TestCategory(ComponentCategory.Core)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudStorageAccountConnectionStringExpectedExceptions()
+        {
+            var endpointCombinations = new[]
+                {
+                    new[] { "BlobEndpoint={3}", "BlobSecondaryEndpoint={4}", "BlobEndpoint={3};BlobSecondaryEndpoint={4}" },
+                    new[] { "QueueEndpoint={3}", "QueueSecondaryEndpoint={4}", "QueueEndpoint={3};QueueSecondaryEndpoint={4}" },
+                    new[] { "TableEndpoint={3}", "TableSecondaryEndpoint={4}", "TableEndpoint={3};TableSecondaryEndpoint={4}" },
+                    new[] { "FileEndpoint={3}", "FileSecondaryEndpoint={4}", "FileEndpoint={3};FileSecondaryEndpoint={4}" }
+                };
+
+            var accountKeyParams = new[] 
+                {
+                    TestBase.TargetTenantConfig.AccountName,
+                    TestBase.TargetTenantConfig.AccountKey,
+                    "fake.endpoint.suffix",
+                    "https://primary.endpoint/",
+                    "https://secondary.endpoint/"
+                };
+
+            var accountSasParams = new[] 
+                {
+                    TestBase.TargetTenantConfig.AccountName,
+                    "sasTest",
+                    "fake.endpoint.suffix",
+                    "https://primary.endpoint/",
+                    "https://secondary.endpoint/"
+                };
+
+            foreach (var endpointCombination in endpointCombinations)
+            {
+                // account key
+
+                string accountStringKeyPrimary =
+                    string.Format(
+                        "DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2};" + endpointCombination[0],
+                        accountKeyParams
+                        );
+
+                string accountStringKeySecondary =
+                    string.Format(
+                        "DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2};" + endpointCombination[1],
+                        accountKeyParams
+                        );
+
+
+                string accountStringKeyPrimarySecondary =
+                    string.Format(
+                        "DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2};" + endpointCombination[2],
+                        accountKeyParams
+                        );
+
+
+                CloudStorageAccount.Parse(accountStringKeyPrimary); // no exception expected
+
+                TestHelper.ExpectedException<FormatException>(() => CloudStorageAccount.Parse(accountStringKeySecondary), "connection string parse", "No valid combination of account information found.");
+
+                CloudStorageAccount.Parse(accountStringKeyPrimarySecondary); // no exception expected
+
+                // SAS
+
+                string accountStringSasPrimary =
+                    string.Format(
+                        "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};" + endpointCombination[0],
+                        accountSasParams
+                        );
+
+                string accountStringSasSecondary =
+                    string.Format(
+                        "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};" + endpointCombination[1],
+                        accountSasParams
+                        );
+
+                string accountStringSasPrimarySecondary =
+                    string.Format(
+                        "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};" + endpointCombination[2],
+                        accountSasParams
+                        );
+
+                CloudStorageAccount.Parse(accountStringSasPrimary); // no exception expected
+
+                TestHelper.ExpectedException<FormatException>(() => CloudStorageAccount.Parse(accountStringSasSecondary), "connection string parse", "No valid combination of account information found.");
+
+                CloudStorageAccount.Parse(accountStringSasPrimarySecondary); // no exception expected
+
+                // SAS without AccountName
+
+                string accountStringSasNoNameNoEndpoint =
+                    string.Format(
+                        "SharedAccessSignature={1}",
+                        accountSasParams
+                        );
+
+                string accountStringSasNoNamePrimary =
+                    string.Format(
+                        "SharedAccessSignature={1};" + endpointCombination[0],
+                        accountSasParams
+                        );
+
+                string accountStringSasNoNameSecondary =
+                    string.Format(
+                        "SharedAccessSignature={1};" + endpointCombination[1],
+                        accountSasParams
+                        );
+
+                string accountStringSasNoNamePrimarySecondary =
+                    string.Format(
+                        "SharedAccessSignature={1};" + endpointCombination[2],
+                        accountSasParams
+                        );
+
+                TestHelper.ExpectedException<FormatException>(() => CloudStorageAccount.Parse(accountStringSasNoNameNoEndpoint), "connection string parse", "No valid combination of account information found.");
+
+                CloudStorageAccount.Parse(accountStringSasNoNamePrimary); // no exception expected
+
+                TestHelper.ExpectedException<FormatException>(() => CloudStorageAccount.Parse(accountStringSasNoNameSecondary), "connection string parse", "No valid combination of account information found.");
+
+                CloudStorageAccount.Parse(accountStringSasNoNamePrimarySecondary); // no exception expected
+            }
         }
 
         private void connectionStringRoundtripHelper(string accountString)

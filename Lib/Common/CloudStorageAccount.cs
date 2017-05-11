@@ -112,6 +112,26 @@ namespace Microsoft.WindowsAzure.Storage
         internal const string FileEndpointSettingString = "FileEndpoint";
 
         /// <summary>
+        /// The setting name for a custom blob storage secondary endpoint.
+        /// </summary>
+        internal const string BlobSecondaryEndpointSettingString = "BlobSecondaryEndpoint";
+
+        /// <summary>
+        /// The setting name for a custom queue secondary endpoint.
+        /// </summary>
+        internal const string QueueSecondaryEndpointSettingString = "QueueSecondaryEndpoint";
+
+        /// <summary>
+        /// The setting name for a custom table storage secondary endpoint.
+        /// </summary>
+        internal const string TableSecondaryEndpointSettingString = "TableSecondaryEndpoint";
+
+        /// <summary>
+        /// The setting name for a custom file storage secondary endpoint.
+        /// </summary>
+        internal const string FileSecondaryEndpointSettingString = "FileSecondaryEndpoint";
+
+        /// <summary>
         /// The setting name for a custom storage endpoint suffix.
         /// </summary>
         internal const string EndpointSuffixSettingString = "EndpointSuffix";
@@ -210,6 +230,26 @@ namespace Microsoft.WindowsAzure.Storage
         /// Validator for the FileEndpoint setting. Must be a valid Uri.
         /// </summary>
         private static readonly AccountSetting FileEndpointSetting = Setting(FileEndpointSettingString, IsValidUri);
+
+        /// <summary>
+        /// Validator for the BlobSecondaryEndpoint setting. Must be a valid Uri.
+        /// </summary>
+        private static readonly AccountSetting BlobSecondaryEndpointSetting = Setting(BlobSecondaryEndpointSettingString, IsValidUri);
+
+        /// <summary>
+        /// Validator for the QueueSecondaryEndpoint setting. Must be a valid Uri.
+        /// </summary>
+        private static readonly AccountSetting QueueSecondaryEndpointSetting = Setting(QueueSecondaryEndpointSettingString, IsValidUri);
+
+        /// <summary>
+        /// Validator for the TableSecondaryEndpoint setting. Must be a valid Uri.
+        /// </summary>
+        private static readonly AccountSetting TableSecondaryEndpointSetting = Setting(TableSecondaryEndpointSettingString, IsValidUri);
+
+        /// <summary>
+        /// Validator for the FileSecondaryEndpoint setting. Must be a valid Uri.
+        /// </summary>
+        private static readonly AccountSetting FileSecondaryEndpointSetting = Setting(FileSecondaryEndpointSettingString, IsValidUri);
 
         /// <summary>
         /// Validator for the EndpointSuffix setting. Must be a valid Uri.
@@ -756,19 +796,35 @@ namespace Microsoft.WindowsAzure.Storage
             IDictionary<string, string> settings = ParseStringIntoSettings(connectionString, error);
 
             // malformed settings string
+
             if (settings == null)
             {
                 accountInformation = null;
 
                 return false;
             }
+
+            // helper method 
+
+            Func<string, string> settingOrDefault =
+                (key) =>
+                {
+                    var result = default(string);
+
+                    settings.TryGetValue(key, out result);
+
+                    return result;
+                };
+
             // devstore case
+
             if (MatchesSpecification(
                 settings,
                 AllRequired(UseDevelopmentStorageSetting),
                 Optional(DevelopmentStorageProxyUriSetting)))
             {
-                string proxyUri = null;
+                string proxyUri;
+
                 if (settings.TryGetValue(DevelopmentStorageProxyUriSettingString, out proxyUri))
                 {
                     accountInformation = GetDevelopmentStorageAccount(new Uri(proxyUri));
@@ -779,59 +835,111 @@ namespace Microsoft.WindowsAzure.Storage
                 }
 
                 accountInformation.Settings = ValidCredentials(settings);
+
                 return true;
             }
 
-            // automatic case
-            if (MatchesSpecification(
-                settings,
-                AllRequired(DefaultEndpointsProtocolSetting, AccountNameSetting, AccountKeySetting),
-                Optional(BlobEndpointSetting, QueueEndpointSetting, TableEndpointSetting, FileEndpointSetting, AccountKeyNameSetting, EndpointSuffixSetting)))
+            // non-devstore case
+
+            var endpointsOptional =
+                Optional(
+                    BlobEndpointSetting, BlobSecondaryEndpointSetting,
+                    QueueEndpointSetting, QueueSecondaryEndpointSetting,
+                    TableEndpointSetting, TableSecondaryEndpointSetting,
+                    FileEndpointSetting, FileSecondaryEndpointSetting
+                    );
+
+            var primaryEndpointRequired =
+                AtLeastOne(
+                    BlobEndpointSetting,
+                    QueueEndpointSetting,
+                    TableEndpointSetting,
+                    FileEndpointSetting
+                    );
+
+            var secondaryEndpointsOptional =
+                Optional(
+                    BlobSecondaryEndpointSetting, 
+                    QueueSecondaryEndpointSetting, 
+                    TableSecondaryEndpointSetting,
+                    FileSecondaryEndpointSetting
+                    );
+
+            var automaticEndpointsMatchSpec =
+                MatchesExactly(MatchesAll( 
+                    MatchesOne(
+                        MatchesAll(AllRequired(AccountKeySetting), Optional(AccountKeyNameSetting)), // Key + Name, Endpoints optional
+                        AllRequired(SharedAccessSignatureSetting) // SAS + Name, Endpoints optional
+                    ),
+                    AllRequired(DefaultEndpointsProtocolSetting, AccountNameSetting), // required to automatically create URIs
+                    endpointsOptional,
+                    Optional(EndpointSuffixSetting)
+                    ));
+
+            var explicitEndpointsMatchSpec =
+                MatchesExactly(MatchesAll( // Any Credentials, Endpoints must be explicitly declared
+                    ValidCredentials,
+                    primaryEndpointRequired,
+                    secondaryEndpointsOptional
+                    ));
+
+            if (MatchesSpecification(settings, MatchesOne(automaticEndpointsMatchSpec, explicitEndpointsMatchSpec)))
             {
-                string blobEndpoint = null;
-                settings.TryGetValue(BlobEndpointSettingString, out blobEndpoint);
+                var canAutomaticallyCreateEndpoints = 
+                    settings.ContainsKey(DefaultEndpointsProtocolSettingString) 
+                    && settings.ContainsKey(AccountNameSettingString)
+                    ;
 
-                string queueEndpoint = null;
-                settings.TryGetValue(QueueEndpointSettingString, out queueEndpoint);
+                var blobEndpoint = settingOrDefault(BlobEndpointSettingString);
+                var queueEndpoint = settingOrDefault(QueueEndpointSettingString);
+                var tableEndpoint = settingOrDefault(TableEndpointSettingString);
+                var fileEndpoint = settingOrDefault(FileEndpointSettingString);
+                var blobSecondaryEndpoint = settingOrDefault(BlobSecondaryEndpointSettingString);
+                var queueSecondaryEndpoint = settingOrDefault(QueueSecondaryEndpointSettingString);
+                var tableSecondaryEndpoint = settingOrDefault(TableSecondaryEndpointSettingString);
+                var fileSecondaryEndpoint = settingOrDefault(FileSecondaryEndpointSettingString);
 
-                string tableEndpoint = null;
-                settings.TryGetValue(TableEndpointSettingString, out tableEndpoint);
+                // if secondary is specified, primary must also be specified
 
-                string fileEndpoint = null;
-                settings.TryGetValue(FileEndpointSettingString, out fileEndpoint);
+                Func<string, string, bool> isValidEndpointPair =
+                    (primary, secondary) =>
+                        !String.IsNullOrWhiteSpace(primary)
+                        || /* primary is null, and... */ String.IsNullOrWhiteSpace(secondary);
 
-                accountInformation = new CloudStorageAccount(
-                    GetCredentials(settings),
-                    blobEndpoint != null ? new StorageUri(new Uri(blobEndpoint)) : ConstructBlobEndpoint(settings),
-                    queueEndpoint != null ? new StorageUri(new Uri(queueEndpoint)) : ConstructQueueEndpoint(settings),
-                    tableEndpoint != null ? new StorageUri(new Uri(tableEndpoint)) : ConstructTableEndpoint(settings),
-                    fileEndpoint != null ? new StorageUri(new Uri(fileEndpoint)) : ConstructFileEndpoint(settings));
+                Func<string, string, Func<IDictionary<string, string>, StorageUri>, StorageUri> createStorageUri =
+                    (primary, secondary, factory) =>
+                        !String.IsNullOrWhiteSpace(secondary) && !String.IsNullOrWhiteSpace(primary) 
+                            ? new StorageUri(new Uri(primary), new Uri(secondary))
+                        : !String.IsNullOrWhiteSpace(primary) 
+                            ? new StorageUri(new Uri(primary))
+                        : canAutomaticallyCreateEndpoints && factory != null
+                            ? factory(settings)
+                        : null
+                        ;
 
-                string endpointSuffix = null;
-                if (settings.TryGetValue(EndpointSuffixSettingString, out endpointSuffix))
+                if (
+                    isValidEndpointPair(blobEndpoint, blobSecondaryEndpoint) 
+                    && isValidEndpointPair(queueEndpoint, queueSecondaryEndpoint)
+                    && isValidEndpointPair(tableEndpoint, tableSecondaryEndpoint) 
+                    && isValidEndpointPair(fileEndpoint, fileSecondaryEndpoint) 
+                    )
                 {
-                    accountInformation.EndpointSuffix = endpointSuffix;
+                    accountInformation =
+                        new CloudStorageAccount(
+                            GetCredentials(settings),
+                            createStorageUri(blobEndpoint, blobSecondaryEndpoint, ConstructBlobEndpoint),
+                            createStorageUri(queueEndpoint, queueSecondaryEndpoint, ConstructQueueEndpoint),
+                            createStorageUri(tableEndpoint, tableSecondaryEndpoint, ConstructTableEndpoint),
+                            createStorageUri(fileEndpoint, fileSecondaryEndpoint, ConstructFileEndpoint)
+                            )
+                        {
+                            DefaultEndpoints = (blobEndpoint == null && queueEndpoint == null && tableEndpoint == null && fileEndpoint == null),
+                            EndpointSuffix = settingOrDefault(EndpointSuffixSettingString),
+                            Settings = ValidCredentials(settings)
+                        };
+
+                    return true;
                 }
-
-                accountInformation.Settings = ValidCredentials(settings);
-                return true;
-            }
-
-            // explicit case
-            if (MatchesSpecification(
-                settings,
-                AtLeastOne(BlobEndpointSetting, QueueEndpointSetting, TableEndpointSetting, FileEndpointSetting),
-                ValidCredentials))
-            {
-                Uri blobUri = !settings.ContainsKey(BlobEndpointSettingString) || settings[BlobEndpointSettingString] == null ? null : new Uri(settings[BlobEndpointSettingString]);
-                Uri queueUri = !settings.ContainsKey(QueueEndpointSettingString) || settings[QueueEndpointSettingString] == null ? null : new Uri(settings[QueueEndpointSettingString]);
-                Uri tableUri = !settings.ContainsKey(TableEndpointSettingString) || settings[TableEndpointSettingString] == null ? null : new Uri(settings[TableEndpointSettingString]);
-                Uri fileUri = !settings.ContainsKey(FileEndpointSettingString) || settings[FileEndpointSettingString] == null ? null : new Uri(settings[FileEndpointSettingString]);
-
-                accountInformation = new CloudStorageAccount(GetCredentials(settings), blobUri, queueUri, tableUri, fileUri);
-
-                accountInformation.Settings = ValidCredentials(settings);
-                return true;
             }
 
             // not valid
@@ -1026,6 +1134,80 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
+        /// Settings filter that ensures that all filters match.
+        /// </summary>
+        /// <param name="filters">A list of filters of which all must match.</param>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
+        private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesAll(params Func<IDictionary<string, string>, IDictionary<string, string>>[] filters)
+        {
+            return (settings) =>
+            {
+                IDictionary<string, string> result = new Dictionary<string, string>(settings);
+
+                foreach (var filter in filters)
+                {
+                    if (result == null)
+                    {
+                        break;
+                    }
+
+                    result = filter(result);
+                }
+
+                return result;
+            };
+        }
+
+        /// <summary>
+        /// Settings filter that ensures that exactly one filter matches.
+        /// </summary>
+        /// <param name="filters">A list of filters of which exactly one must match.</param>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
+        private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesOne(params Func<IDictionary<string, string>, IDictionary<string, string>>[] filters)
+        {
+            return (settings) =>
+            {
+                var results =
+                    filters
+                    .Select(filter => filter(new Dictionary<string, string>(settings)))
+                    .Where(result => result != null)
+                    .Take(2)
+                    .ToArray();
+
+                if (results.Length != 1)
+                {
+                    return null;
+                }
+                else
+                {
+                    return results.First();
+                }
+            };
+        }
+
+        /// <summary>
+        /// Settings filter that ensures that the specified filter is an exact match.
+        /// </summary>
+        /// <param name="filter">A list of filters of which ensures that the specified filter is an exact match.</param>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
+        private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesExactly(Func<IDictionary<string, string>, IDictionary<string, string>> filter)
+        {
+            return (settings) =>
+            {
+                var results = filter(settings);
+
+                if (results == null || results.Any())
+                {
+                    return null;
+                }
+                else
+                {
+                    return results;
+                }
+            };
+        }
+
+        /// <summary>
         /// Settings filter that ensures that a valid combination of credentials is present.
         /// </summary>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
@@ -1072,8 +1254,8 @@ namespace Microsoft.WindowsAzure.Storage
                 return result;
             }
 
-            // SharedAccessSignature
-            if (accountName == null && accountKey == null && accountKeyName == null && sharedAccessSignature != null)
+            // SharedAccessSignature (AccountName optional)
+            if (accountKey == null && accountKeyName == null && sharedAccessSignature != null)
             {
                 return result;
             }
@@ -1145,9 +1327,9 @@ namespace Microsoft.WindowsAzure.Storage
                 return new StorageCredentials(accountName, accountKey, accountKeyName);
             }
 
-            if (accountName == null && accountKey == null && accountKeyName == null && sharedAccessSignature != null)
+            if (accountKey == null && accountKeyName == null && sharedAccessSignature != null)
             {
-                return new StorageCredentials(sharedAccessSignature);
+                return new StorageCredentials(sharedAccessSignature) { AccountName = accountName };
             }
 
             return null;
