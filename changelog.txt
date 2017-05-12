@@ -1,3 +1,6 @@
+Changes in 8.x.x:
+- Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
+
 Changes in 8.1.0 :
 - All: Updated OData references to the latest Netstandard friendly package version 5.8.2.
 - Queues (WinRT/NetCore): Fixed a bug where connections were not closed after an add message operation.

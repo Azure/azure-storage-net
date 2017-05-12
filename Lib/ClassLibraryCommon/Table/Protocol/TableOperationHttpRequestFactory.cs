@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return innerDTE;
         }
 
-        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableOperation(Uri uri, UriQueryBuilder builder, int? timeout, TableOperation operation, bool useVersionHeader, OperationContext ctx, TableRequestOptions options)
+        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableOperation(Uri uri, UriQueryBuilder builder, IBufferManager bufferManager, int? timeout, TableOperation operation, bool useVersionHeader, OperationContext ctx, TableRequestOptions options)
         {
             HttpWebRequest msg = BuildRequestCore(uri, builder, operation.HttpMethod, timeout, useVersionHeader, ctx);
 
@@ -119,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 operation.OperationType == TableOperationType.Replace ||
                 operation.OperationType == TableOperationType.RotateEncryptionKey)
             {
-                MemoryStream ms = new MemoryStream();
+                MultiBufferMemoryStream ms = new MultiBufferMemoryStream(bufferManager);
                 using (JsonTextWriter jsonWriter = new JsonTextWriter(new StreamWriter(new NonCloseableStream(ms))))
                 {
                     WriteEntityContent(operation, ctx, options, jsonWriter);
@@ -183,13 +183,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             json.WriteTo(jsonWriter);
         }
 
-        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableBatchOperation(Uri uri, UriQueryBuilder builder, int? timeout, string tableName, TableBatchOperation batch, bool useVersionHeader, OperationContext ctx, TableRequestOptions options)
+        internal static Tuple<HttpWebRequest, Stream> BuildRequestForTableBatchOperation(Uri uri, UriQueryBuilder builder, IBufferManager bufferManager, int? timeout, string tableName, TableBatchOperation batch, bool useVersionHeader, OperationContext ctx, TableRequestOptions options)
         {
             HttpWebRequest msg = BuildRequestCore(NavigationHelper.AppendPathToSingleUri(uri, "$batch"), builder, "POST", timeout, useVersionHeader, ctx);
             TablePayloadFormat payloadFormat = options.PayloadFormat.Value;
             Logger.LogInformational(ctx, SR.PayloadFormat, payloadFormat);
 
-            MemoryStream batchContentStream = new MemoryStream();
+            MultiBufferMemoryStream batchContentStream = new MultiBufferMemoryStream(bufferManager);
 
             using (StreamWriter contentWriter = new StreamWriter(new NonCloseableStream(batchContentStream)))
             {
