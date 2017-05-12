@@ -136,7 +136,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             insertCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, timeout, operation, useVersionHeader, ctx, requestOptions);
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions);
                 insertCmd.SendStream = res.Item2;
                 insertCmd.StreamToDispose = res.Item2;
                 return res.Item1;
@@ -158,7 +158,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             deleteCmd.RetrieveResponseStream = false;
             deleteCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             deleteCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
-            deleteCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, timeout, operation, useVersionHeader, ctx, requestOptions).Item1;
+            deleteCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions).Item1;
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
             return deleteCmd;
@@ -175,7 +175,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             mergeCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             mergeCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, timeout, operation, useVersionHeader, ctx, requestOptions);
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions);
                 mergeCmd.SendStream = res.Item2;
                 mergeCmd.StreamToDispose = res.Item2;
                 return res.Item1;
@@ -197,7 +197,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             replaceCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             replaceCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
-                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, timeout, operation, useVersionHeader, ctx, requestOptions);
+                Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions);
                 replaceCmd.SendStream = res.Item2;
                 replaceCmd.StreamToDispose = res.Item2;
                 return res.Item1;
@@ -232,7 +232,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.SignRequest = client.AuthenticationHandler.SignRequest;
             retrieveCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
-            retrieveCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, timeout, operation, useVersionHeader, ctx, requestOptions).Item1;
+            retrieveCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions).Item1;
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
