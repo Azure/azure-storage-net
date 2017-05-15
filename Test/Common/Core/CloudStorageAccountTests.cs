@@ -747,7 +747,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         private void connectionStringRoundtripHelper(string accountString)
         {
             CloudStorageAccount originalAccount = CloudStorageAccount.Parse(accountString);
-            CloudStorageAccount copiedAccount = CloudStorageAccount.Parse(originalAccount.ToString(true));
+
+            var copiedAccountString = originalAccount.ToString(true);
+
+            CloudStorageAccount copiedAccount = CloudStorageAccount.Parse(copiedAccountString);
 
             // make sure it round trips
             this.AccountsAreEqual(originalAccount, copiedAccount);

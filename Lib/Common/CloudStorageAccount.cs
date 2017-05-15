@@ -499,6 +499,11 @@ namespace Microsoft.WindowsAzure.Storage
         public StorageCredentials Credentials { get; private set; }
 
         /// <summary>
+        /// Private record of the account name for use in ToString(bool).
+        /// </summary>
+        private string AccountName { get; set; }
+
+        /// <summary>
         /// Parses a connection string and returns a <see cref="CloudStorageAccount"/> created
         /// from the connection string.
         /// </summary>
@@ -728,6 +733,11 @@ namespace Microsoft.WindowsAzure.Storage
                 listOfSettings.Add(this.Credentials.ToString(exportSecrets));
             }
 
+            if (!string.IsNullOrWhiteSpace(this.AccountName) && (this.Credentials != null ? string.IsNullOrWhiteSpace(this.Credentials.AccountName) : true))
+            {
+                listOfSettings.Add(string.Format(CultureInfo.InvariantCulture, "{0}={1}", AccountNameSettingString, this.AccountName));
+            }
+
             return string.Join(";", listOfSettings);
         }
 
@@ -937,6 +947,8 @@ namespace Microsoft.WindowsAzure.Storage
                             EndpointSuffix = settingOrDefault(EndpointSuffixSettingString),
                             Settings = ValidCredentials(settings)
                         };
+
+                    accountInformation.AccountName = settingOrDefault(AccountNameSettingString);
 
                     return true;
                 }
@@ -1329,7 +1341,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             if (accountKey == null && accountKeyName == null && sharedAccessSignature != null)
             {
-                return new StorageCredentials(sharedAccessSignature) { AccountName = accountName };
+                return new StorageCredentials(sharedAccessSignature);
             }
 
             return null;
