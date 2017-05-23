@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
@@ -1169,72 +1168,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     Assert.AreEqual(9, checkCount);
                 }
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
-        }
-
-        [TestMethod]
-        [Description("Test UseTransactionalMD5 flag with DownloadRangeToStream")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BasicMD5FlagFunctionality()
-        {
-            CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.Create();
-                string testBlobString = "testBlobString";
-                byte[] blobContent = Encoding.UTF8.GetBytes(testBlobString);
-                CloudBlockBlob testBlob = container.GetBlockBlobReference(testBlobString);
-
-                #region sample_BlobRequestOptions_StoreBlobContentMD5
-                MemoryStream sourceStream;
-
-                // Instruct the Storage Client to calculate and store the MD5 of the blob on upload.
-                BlobRequestOptions optionsWithStoreBlobContentMD5 = new BlobRequestOptions() { StoreBlobContentMD5 = true };
-
-                using (sourceStream = new MemoryStream(blobContent))
-                {
-                    testBlob.UploadFromStream(sourceStream, accessCondition: null, options: optionsWithStoreBlobContentMD5);
-                }
-
-                #endregion
-
-                Assert.AreEqual(testBlobString, testBlob.DownloadText());
-
-                #region sample_BlobRequestOptions_UseTransactionalMD5
-                MemoryStream targetStream;
-
-                // Instruct the Storage Client to request and validate the Content-MD5 for individual REST operations.
-                BlobRequestOptions optionsWithUseTransactionalMD5 = new BlobRequestOptions() { UseTransactionalMD5 = true };
-
-                using (targetStream = new MemoryStream())
-                {
-                    testBlob.DownloadToStream(targetStream, accessCondition: null, options: optionsWithUseTransactionalMD5);
-                }
-
-                #endregion
-
-                Assert.AreEqual(testBlobString, Encoding.UTF8.GetString(targetStream.GetBuffer(), 0, (int)blobContent.Length));
-
-                #region sample_BlobRequestOptions_DisableContentMD5Validation
-
-                // Instruct the Storage Client to skip validating the MD5 hash of the content,
-                BlobRequestOptions optionsWithDisableContentMD5Validation = new BlobRequestOptions() { DisableContentMD5Validation = true };
-
-                using (targetStream = new MemoryStream())
-                {
-                    testBlob.DownloadToStream(targetStream, accessCondition: null, options: optionsWithDisableContentMD5Validation);
-                }
-
-                #endregion
-
-                Assert.AreEqual(testBlobString, Encoding.UTF8.GetString(targetStream.GetBuffer(), 0, (int)blobContent.Length));
             }
             finally
             {

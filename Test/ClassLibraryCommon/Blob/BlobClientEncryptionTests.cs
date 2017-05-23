@@ -103,31 +103,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     blob = container.GetAppendBlobReference("appendblob");
                 }
 
-                #region sample_RequestOptions_EncryptionPolicy
-
                 // Create the Key to be used for wrapping.
-                // This code creates a random encryption key.
-                Microsoft.Azure.KeyVault.SymmetricKey aesKey = new SymmetricKey(kid: "symencryptionkey");
-
-                // Create the encryption policy to be used for upload.
-                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(key: aesKey, keyResolver: null);
-
-                // Set the encryption policy on the request options.
-                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
-
-                // Encrypt and upload the data to the blob.
-                MemoryStream stream = new MemoryStream(buffer);
-                blob.UploadFromStream(stream, length: size, accessCondition: null, options: uploadOptions);
-                
-                #endregion
-
-                // Ensure that the user stream is open.
-                Assert.IsTrue(stream.CanSeek);
-                stream.Dispose();
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
 
                 // Create the resolver to be used for unwrapping.
                 DictionaryKeyResolver resolver = new DictionaryKeyResolver();
                 resolver.Add(aesKey);
+
+                // Create the encryption policy to be used for upload.
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+                // Set the encryption policy on the request options.
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+
+                MemoryStream stream;
+                // Upload the encrypted contents to the blob.
+                using (stream = new MemoryStream(buffer))
+                {
+                    blob.UploadFromStream(stream, size, null, uploadOptions, null);
+
+                    // Ensure that the user stream is open.
+                    Assert.IsTrue(stream.CanSeek);
+                }
 
                 // Download the encrypted blob.
                 // Create the decryption policy to be used for download. There is no need to specify the
