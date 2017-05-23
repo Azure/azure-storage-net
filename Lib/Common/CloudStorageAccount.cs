@@ -1146,7 +1146,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
-        /// Settings filter that ensures that all filters match.
+        /// Settings filter that ensures that all of the specified filters match.
         /// </summary>
         /// <param name="filters">A list of filters of which all must match.</param>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
