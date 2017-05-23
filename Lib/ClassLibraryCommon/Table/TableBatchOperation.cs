@@ -140,6 +140,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableBatchOperation(uri, builder, client.BufferManager, timeout, table.Name, batch, useVersionHeader, ctx, requestOptions, client.AccountName);
                 batchCmd.SendStream = res.Item2;
+                batchCmd.StreamToDispose = res.Item2;
                 return res.Item1;
             };
 

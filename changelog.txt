@@ -2,6 +2,10 @@ Changes in 8.2
 - All: Fixed a bug where calling OpenWrite with an IfNotExists access condition on an existing block blob only fails when the blob is committed, now it fails with error 409 as soon as OpenWrite is called.
 - Files (WinRT/NetCore): Calling CreateIfNotExistsAsync on a root directory no longer throws the error 405. It returns false if the share exists, or throws 404 if not.
 
+Changes in 8.1.2 :
+- Blobs (Desktop) : Fixed a bug where the MaximumExecutionTime was not honored, leading to infinite wait, if due to a failure, e.g., a network failure after receiving the response headers, server stopped sending partial response.
+- All(Desktop) : Fixed a memory leak issue where the SendStream was not being disposed during retries, cancellations and Table Operations.
+
 Changes in 8.1.1 :
 - All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard
 
@@ -51,6 +55,7 @@ Changes in 8.0.0 :
 - Blobs: Fixed error for AcquireLease on non-existent container.
 - PageBlobs: Fixed error response for GetPageRangesDiff.
 - Blobs: Update in "If-None-Match: *" pre-condition behavior to fail for reads(previously disregarded by the service).
+- Blobs: CreateIfNotExists calls on a Container will be logged by AppInsight as a failure if the container exists. The failure is ignored by the library and this change saves an extra service call in case the container doesn't exist.
 
 Changes in 7.2.1 :
 
