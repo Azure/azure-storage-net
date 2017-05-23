@@ -102,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         }
 
         /// <summary>
-        /// Gets the value of the shared access signature token's <code>sig</code> parameter.
+        /// Gets the value of the shared access signature token's <c>sig</c> parameter.
         /// </summary>
         public string SASSignature
         {

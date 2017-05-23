@@ -39,7 +39,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private int? parallelOperationThreadCount;
 
         /// <summary>
-        /// Default is 32 MB.
+        /// Indicates the maximum size of a blob, in bytes, that may be uploaded as a single blob,
+        /// ranging from between 1 and 256 MB inclusive. The Default is 128 MB.
         /// </summary>
         private long? singleBlobUploadThresholdInBytes;
 

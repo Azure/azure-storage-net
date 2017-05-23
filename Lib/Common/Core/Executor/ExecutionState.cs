@@ -228,7 +228,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             }
         }
 
-        private void CheckDisposeSendStream()
+        internal void CheckDisposeSendStream()
         {
             RESTCommand<T> cmd = this.RestCMD;
 
