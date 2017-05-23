@@ -3088,5 +3088,53 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             blob.Delete();
         }
+
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TestAppendBlobAbsorbConditionalErrorsOnRetry()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.Create();
+            try
+            {
+                byte[] inputData = new byte[10*1024*1024];
+                new Random().NextBytes(inputData);
+
+                #region sample_BlobRequestOptions_AbsorbConditionalErrorsOnRetry
+                using (MemoryStream inputDataStream = new MemoryStream(inputData))
+                {
+                    BlobRequestOptions conditionalErrorRequestOptions = new BlobRequestOptions() { AbsorbConditionalErrorsOnRetry = true };
+
+                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("appendBlob");
+                    appendBlob.UploadFromStream(inputDataStream, accessCondition: null, options: conditionalErrorRequestOptions);
+                }
+                #endregion
+
+                using (MemoryStream dataStream = new MemoryStream())
+                using (MemoryStream expectedDataStream = new MemoryStream(inputData))
+                {
+                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("appendBlob");
+                    appendBlob.DownloadToStream(dataStream);
+
+                    dataStream.Seek(0, SeekOrigin.Begin);
+                    Assert.AreEqual(dataStream.Length, expectedDataStream.Length);
+                    TestHelper.AssertStreamsAreEqualAtIndex(
+                        dataStream,
+                        expectedDataStream,
+                        0,
+                        0,
+                        (int)dataStream.Length);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
     }
 }

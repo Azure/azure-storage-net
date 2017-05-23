@@ -508,6 +508,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     Logger.LogError(executionState.OperationContext, shouldRetry ? SR.TraceRetryDecisionTimeout : SR.TraceRetryDecisionPolicy, executionState.ExceptionRef.Message);
 
                     // No Retry
+                    executionState.CheckDisposeSendStream();
                     executionState.OnComplete();
                 }
                 else
@@ -572,6 +573,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         private static void RetryRequest<T>(object state)
         {
             ExecutionState<T> executionState = (ExecutionState<T>)state;
+            executionState.CheckDisposeSendStream();
             Logger.LogInformational(executionState.OperationContext, SR.TraceRetry);
             Executor.FireRetrying(executionState);
             Executor.InitRequest(executionState);
