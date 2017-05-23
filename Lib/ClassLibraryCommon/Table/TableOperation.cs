@@ -138,6 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName);
                 insertCmd.SendStream = res.Item2;
+                insertCmd.StreamToDispose = res.Item2;
                 return res.Item1;
             };
 
@@ -176,6 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName);
                 mergeCmd.SendStream = res.Item2;
+                mergeCmd.StreamToDispose = res.Item2;
                 return res.Item1;
             };
 
@@ -197,6 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName);
                 replaceCmd.SendStream = res.Item2;
+                replaceCmd.StreamToDispose = res.Item2;
                 return res.Item1;
             };
 
