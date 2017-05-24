@@ -1,4 +1,4 @@
-Changes in 8.1.2 :
+Changes in 8.1.3 :
 - Blobs (Desktop) : Fixed a bug where the MaximumExecutionTime was not honored, leading to infinite wait, if due to a failure, e.g., a network failure after receiving the response headers, server stopped sending partial response.
 - All(Desktop) : Fixed a memory leak issue where the SendStream was not being disposed during retries, cancellations and Table Operations.
 
