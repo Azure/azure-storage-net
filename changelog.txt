@@ -2,7 +2,7 @@ Changes in 8.2
 - All: Fixed a bug where calling OpenWrite with an IfNotExists access condition on an existing block blob only fails when the blob is committed, now it fails with error 409 as soon as OpenWrite is called.
 - Files (WinRT/NetCore): Calling CreateIfNotExistsAsync on a root directory no longer throws the error 405. It returns false if the share exists, or throws 404 if not.
 
-Changes in 8.1.2 :
+Changes in 8.1.3 :
 - Blobs (Desktop) : Fixed a bug where the MaximumExecutionTime was not honored, leading to infinite wait, if due to a failure, e.g., a network failure after receiving the response headers, server stopped sending partial response.
 - All(Desktop) : Fixed a memory leak issue where the SendStream was not being disposed during retries, cancellations and Table Operations.
 
