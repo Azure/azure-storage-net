@@ -35,6 +35,7 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Linq;
     using AccountSetting = System.Collections.Generic.KeyValuePair<string, System.Func<string, bool>>;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using ConnectionStringFilter = System.Func<System.Collections.Generic.IDictionary<string, string>, System.Collections.Generic.IDictionary<string, string>>;
 
     /// <summary>
     /// Represents a Microsoft Azure Storage account.
@@ -819,7 +820,7 @@ namespace Microsoft.WindowsAzure.Storage
             Func<string, string> settingOrDefault =
                 (key) =>
                 {
-                    var result = default(string);
+                    string result = default(string);
 
                     settings.TryGetValue(key, out result);
 
@@ -851,7 +852,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             // non-devstore case
 
-            var endpointsOptional =
+            ConnectionStringFilter endpointsOptional =
                 Optional(
                     BlobEndpointSetting, BlobSecondaryEndpointSetting,
                     QueueEndpointSetting, QueueSecondaryEndpointSetting,
@@ -859,7 +860,7 @@ namespace Microsoft.WindowsAzure.Storage
                     FileEndpointSetting, FileSecondaryEndpointSetting
                     );
 
-            var primaryEndpointRequired =
+            ConnectionStringFilter primaryEndpointRequired =
                 AtLeastOne(
                     BlobEndpointSetting,
                     QueueEndpointSetting,
@@ -867,7 +868,7 @@ namespace Microsoft.WindowsAzure.Storage
                     FileEndpointSetting
                     );
 
-            var secondaryEndpointsOptional =
+            ConnectionStringFilter secondaryEndpointsOptional =
                 Optional(
                     BlobSecondaryEndpointSetting, 
                     QueueSecondaryEndpointSetting, 
@@ -875,7 +876,7 @@ namespace Microsoft.WindowsAzure.Storage
                     FileSecondaryEndpointSetting
                     );
 
-            var automaticEndpointsMatchSpec =
+            ConnectionStringFilter automaticEndpointsMatchSpec =
                 MatchesExactly(MatchesAll( 
                     MatchesOne(
                         MatchesAll(AllRequired(AccountKeySetting), Optional(AccountKeyNameSetting)), // Key + Name, Endpoints optional
@@ -886,7 +887,7 @@ namespace Microsoft.WindowsAzure.Storage
                     Optional(EndpointSuffixSetting)
                     ));
 
-            var explicitEndpointsMatchSpec =
+            ConnectionStringFilter explicitEndpointsMatchSpec =
                 MatchesExactly(MatchesAll( // Any Credentials, Endpoints must be explicitly declared
                     ValidCredentials,
                     primaryEndpointRequired,
@@ -895,19 +896,19 @@ namespace Microsoft.WindowsAzure.Storage
 
             if (MatchesSpecification(settings, MatchesOne(automaticEndpointsMatchSpec, explicitEndpointsMatchSpec)))
             {
-                var canAutomaticallyCreateEndpoints = 
+                bool canAutomaticallyCreateEndpoints = 
                     settings.ContainsKey(DefaultEndpointsProtocolSettingString) 
                     && settings.ContainsKey(AccountNameSettingString)
                     ;
 
-                var blobEndpoint = settingOrDefault(BlobEndpointSettingString);
-                var queueEndpoint = settingOrDefault(QueueEndpointSettingString);
-                var tableEndpoint = settingOrDefault(TableEndpointSettingString);
-                var fileEndpoint = settingOrDefault(FileEndpointSettingString);
-                var blobSecondaryEndpoint = settingOrDefault(BlobSecondaryEndpointSettingString);
-                var queueSecondaryEndpoint = settingOrDefault(QueueSecondaryEndpointSettingString);
-                var tableSecondaryEndpoint = settingOrDefault(TableSecondaryEndpointSettingString);
-                var fileSecondaryEndpoint = settingOrDefault(FileSecondaryEndpointSettingString);
+                string blobEndpoint = settingOrDefault(BlobEndpointSettingString);
+                string queueEndpoint = settingOrDefault(QueueEndpointSettingString);
+                string tableEndpoint = settingOrDefault(TableEndpointSettingString);
+                string fileEndpoint = settingOrDefault(FileEndpointSettingString);
+                string blobSecondaryEndpoint = settingOrDefault(BlobSecondaryEndpointSettingString);
+                string queueSecondaryEndpoint = settingOrDefault(QueueSecondaryEndpointSettingString);
+                string tableSecondaryEndpoint = settingOrDefault(TableSecondaryEndpointSettingString);
+                string fileSecondaryEndpoint = settingOrDefault(FileSecondaryEndpointSettingString);
 
                 // if secondary is specified, primary must also be specified
 
@@ -1156,7 +1157,7 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 IDictionary<string, string> result = new Dictionary<string, string>(settings);
 
-                foreach (var filter in filters)
+                foreach (ConnectionStringFilter filter in filters)
                 {
                     if (result == null)
                     {
@@ -1179,7 +1180,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
             return (settings) =>
             {
-                var results =
+                IDictionary<string, string>[] results =
                     filters
                     .Select(filter => filter(new Dictionary<string, string>(settings)))
                     .Where(result => result != null)
@@ -1206,7 +1207,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
             return (settings) =>
             {
-                var results = filter(settings);
+                IDictionary<string, string> results = filter(settings);
 
                 if (results == null || results.Any())
                 {

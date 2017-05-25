@@ -534,35 +534,45 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudStorageAccountConnectionStringRoundtrip()
         {
+            string[] accountKeyParams = new[] 
+                {
+                    TestBase.TargetTenantConfig.AccountName,
+                    TestBase.TargetTenantConfig.AccountKey,
+                    "fake.endpoint.suffix",
+                    "https://primary.endpoint/",
+                    "https://secondary.endpoint/"
+                };
+
+            string[] accountSasParams = new[] 
+                {
+                    TestBase.TargetTenantConfig.AccountName,
+                    "sasTest",
+                    "fake.endpoint.suffix",
+                    "https://primary.endpoint/",
+                    "https://secondary.endpoint/"
+                };
+
             // account key
 
             string accountString1 =
                 string.Format(
                     "DefaultEndpointsProtocol=http;AccountName={0};AccountKey={1};EndpointSuffix={2};",
-                    TestBase.TargetTenantConfig.AccountName,
-                    TestBase.TargetTenantConfig.AccountKey,
-                    "fake.endpoint.suffix");
+                    accountKeyParams);
 
             string accountString2 =
                 string.Format(
                     "DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};",
-                    TestBase.TargetTenantConfig.AccountName,
-                    TestBase.TargetTenantConfig.AccountKey);
+                    accountKeyParams);
 
             string accountString3 =
                 string.Format(
-                    "DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};QueueEndpoint={2}",
-                    TestBase.TargetTenantConfig.AccountName,
-                    TestBase.TargetTenantConfig.AccountKey,
-                    "https://alternate.queue.endpoint/");
+                    "DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};QueueEndpoint={3}",
+                    accountKeyParams);
 
             string accountString4 =
                 string.Format(
                     "DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2};QueueEndpoint={3}",
-                    TestBase.TargetTenantConfig.AccountName,
-                    TestBase.TargetTenantConfig.AccountKey,
-                    "fake.endpoint.suffix",
-                    "https://alternate.queue.endpoint/");
+                    accountKeyParams);
 
             connectionStringRoundtripHelper(accountString1);
             connectionStringRoundtripHelper(accountString2);
@@ -571,35 +581,27 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             // shared access
 
-            var sas = "sasTest";
+            string sas = "sasTest";
 
             string accountString5 =
                 string.Format(
                     "DefaultEndpointsProtocol=http;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};",
-                    TestBase.TargetTenantConfig.AccountName,
-                    sas,
-                    "fake.endpoint.suffix");
+                    accountSasParams);
 
             string accountString6 =
                 string.Format(
                     "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};",
-                    TestBase.TargetTenantConfig.AccountName,
-                    sas);
+                    accountSasParams);
 
             string accountString7 =
                 string.Format(
-                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};QueueEndpoint={2}",
-                    TestBase.TargetTenantConfig.AccountName,
-                    sas,
-                    "https://alternate.queue.endpoint/");
+                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};QueueEndpoint={3}",
+                    accountSasParams);
 
             string accountString8 =
                 string.Format(
                     "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};QueueEndpoint={3}",
-                    TestBase.TargetTenantConfig.AccountName,
-                    sas,
-                    "fake.endpoint.suffix",
-                    "https://alternate.queue.endpoint/");
+                    accountSasParams);
 
             connectionStringRoundtripHelper(accountString5);
             connectionStringRoundtripHelper(accountString6);
@@ -610,10 +612,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             string accountString11 =
                 string.Format(
-                    "SharedAccessSignature={1};QueueEndpoint={2}",
-                    TestBase.TargetTenantConfig.AccountName,
-                    sas,
-                    "https://alternate.queue.endpoint/");
+                    "SharedAccessSignature={1};QueueEndpoint={3}",
+                    accountSasParams);
 
             connectionStringRoundtripHelper(accountString11);
         }
@@ -626,7 +626,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudStorageAccountConnectionStringExpectedExceptions()
         {
-            var endpointCombinations = new[]
+            string[][] endpointCombinations = new[]
                 {
                     new[] { "BlobEndpoint={3}", "BlobSecondaryEndpoint={4}", "BlobEndpoint={3};BlobSecondaryEndpoint={4}" },
                     new[] { "QueueEndpoint={3}", "QueueSecondaryEndpoint={4}", "QueueEndpoint={3};QueueSecondaryEndpoint={4}" },
@@ -634,7 +634,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     new[] { "FileEndpoint={3}", "FileSecondaryEndpoint={4}", "FileEndpoint={3};FileSecondaryEndpoint={4}" }
                 };
 
-            var accountKeyParams = new[] 
+            string[] accountKeyParams = new[] 
                 {
                     TestBase.TargetTenantConfig.AccountName,
                     TestBase.TargetTenantConfig.AccountKey,
@@ -643,7 +643,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     "https://secondary.endpoint/"
                 };
 
-            var accountSasParams = new[] 
+            string[] accountSasParams = new[] 
                 {
                     TestBase.TargetTenantConfig.AccountName,
                     "sasTest",
@@ -652,7 +652,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     "https://secondary.endpoint/"
                 };
 
-            foreach (var endpointCombination in endpointCombinations)
+            foreach (string[] endpointCombination in endpointCombinations)
             {
                 // account key
 
@@ -748,7 +748,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         {
             CloudStorageAccount originalAccount = CloudStorageAccount.Parse(accountString);
 
-            var copiedAccountString = originalAccount.ToString(true);
+            string copiedAccountString = originalAccount.ToString(true);
 
             CloudStorageAccount copiedAccount = CloudStorageAccount.Parse(copiedAccountString);
 
