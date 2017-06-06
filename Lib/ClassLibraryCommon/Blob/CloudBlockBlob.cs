@@ -1043,9 +1043,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUploadFromFile(IAsyncResult asyncResult)
         {
-            if (asyncResult is CancellableAsyncResultTaskWrapper)
+            CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
+            if (cancellableAsyncResult != null)
             {
-                CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
                 cancellableAsyncResult.Wait();
             }
             else
