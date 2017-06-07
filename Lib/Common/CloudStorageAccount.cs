@@ -882,9 +882,9 @@ namespace Microsoft.WindowsAzure.Storage
                         MatchesAll(AllRequired(AccountKeySetting), Optional(AccountKeyNameSetting)), // Key + Name, Endpoints optional
                         AllRequired(SharedAccessSignatureSetting) // SAS + Name, Endpoints optional
                     ),
-                    AllRequired(DefaultEndpointsProtocolSetting, AccountNameSetting), // required to automatically create URIs
+                    AllRequired(AccountNameSetting), // Name required to automatically create URIs
                     endpointsOptional,
-                    Optional(EndpointSuffixSetting)
+                    Optional(DefaultEndpointsProtocolSetting, EndpointSuffixSetting)
                     ));
 
             ConnectionStringFilter explicitEndpointsMatchSpec =
@@ -894,12 +894,15 @@ namespace Microsoft.WindowsAzure.Storage
                     secondaryEndpointsOptional
                     ));
 
-            if (MatchesSpecification(settings, MatchesOne(automaticEndpointsMatchSpec, explicitEndpointsMatchSpec)))
+            bool matchesAutomaticEndpointsSpec = MatchesSpecification(settings, automaticEndpointsMatchSpec);
+            bool matchesExplicitEndpointsSpec = MatchesSpecification(settings, explicitEndpointsMatchSpec);
+
+            if (matchesAutomaticEndpointsSpec || matchesExplicitEndpointsSpec)
             {
-                bool canAutomaticallyCreateEndpoints = 
-                    settings.ContainsKey(DefaultEndpointsProtocolSettingString) 
-                    && settings.ContainsKey(AccountNameSettingString)
-                    ;
+                if (matchesAutomaticEndpointsSpec && !settings.ContainsKey(DefaultEndpointsProtocolSettingString))
+                {
+                    settings.Add(DefaultEndpointsProtocolSettingString, "https");
+                }
 
                 string blobEndpoint = settingOrDefault(BlobEndpointSettingString);
                 string queueEndpoint = settingOrDefault(QueueEndpointSettingString);
@@ -919,13 +922,13 @@ namespace Microsoft.WindowsAzure.Storage
 
                 Func<string, string, Func<IDictionary<string, string>, StorageUri>, StorageUri> createStorageUri =
                     (primary, secondary, factory) =>
-                        !String.IsNullOrWhiteSpace(secondary) && !String.IsNullOrWhiteSpace(primary) 
+                        !String.IsNullOrWhiteSpace(secondary) && !String.IsNullOrWhiteSpace(primary)
                             ? new StorageUri(new Uri(primary), new Uri(secondary))
                         : !String.IsNullOrWhiteSpace(primary) 
                             ? new StorageUri(new Uri(primary))
-                        : canAutomaticallyCreateEndpoints && factory != null
+                        : matchesAutomaticEndpointsSpec && factory != null
                             ? factory(settings)
-                        : null
+                        : new StorageUri(null)
                         ;
 
                 if (
@@ -1072,7 +1075,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="requiredSettings">A list of settings that must be present.</param>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
-        private static Func<IDictionary<string, string>, IDictionary<string, string>> AllRequired(params AccountSetting[] requiredSettings)
+        private static ConnectionStringFilter AllRequired(params AccountSetting[] requiredSettings)
         {
             return (settings) =>
             {
@@ -1100,7 +1103,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="optionalSettings">A list of settings that are optional.</param>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
-        private static Func<IDictionary<string, string>, IDictionary<string, string>> Optional(params AccountSetting[] optionalSettings)
+        private static ConnectionStringFilter Optional(params AccountSetting[] optionalSettings)
         {
             return (settings) =>
             {
@@ -1125,7 +1128,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="atLeastOneSettings">A list of settings of which one must be present.</param>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
         [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1305:FieldNamesMustNotUseHungarianNotation", Justification = "Reviewed.")]
-        private static Func<IDictionary<string, string>, IDictionary<string, string>> AtLeastOne(params AccountSetting[] atLeastOneSettings)
+        private static ConnectionStringFilter AtLeastOne(params AccountSetting[] atLeastOneSettings)
         {
             return (settings) =>
             {
@@ -1147,11 +1150,37 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
+        /// Settings filter that ensures that none of the specified settings are present.
+        /// </summary>
+        /// <param name="atLeastOneSettings">A list of settings of which one must not be present.</param>
+        /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
+        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1305:FieldNamesMustNotUseHungarianNotation", Justification = "Reviewed.")]
+        private static ConnectionStringFilter None(params AccountSetting[] atLeastOneSettings)
+        {
+            return (settings) =>
+            {
+                IDictionary<string, string> result = new Dictionary<string, string>(settings);
+                bool foundOne = false;
+
+                foreach (AccountSetting requirement in atLeastOneSettings)
+                {
+                    string value;
+                    if (result.TryGetValue(requirement.Key, out value) && requirement.Value(value))
+                    {
+                        foundOne = true;
+                    }
+                }
+
+                return foundOne ? null : result;
+            };
+        }
+
+        /// <summary>
         /// Settings filter that ensures that all of the specified filters match.
         /// </summary>
         /// <param name="filters">A list of filters of which all must match.</param>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
-        private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesAll(params Func<IDictionary<string, string>, IDictionary<string, string>>[] filters)
+        private static ConnectionStringFilter MatchesAll(params ConnectionStringFilter[] filters)
         {
             return (settings) =>
             {
@@ -1176,7 +1205,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="filters">A list of filters of which exactly one must match.</param>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
-        private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesOne(params Func<IDictionary<string, string>, IDictionary<string, string>>[] filters)
+        private static ConnectionStringFilter MatchesOne(params ConnectionStringFilter[] filters)
         {
             return (settings) =>
             {
@@ -1203,7 +1232,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// </summary>
         /// <param name="filter">A list of filters of which ensures that the specified filter is an exact match.</param>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
-        private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesExactly(Func<IDictionary<string, string>, IDictionary<string, string>> filter)
+        private static ConnectionStringFilter MatchesExactly(ConnectionStringFilter filter)
         {
             return (settings) =>
             {
@@ -1224,63 +1253,12 @@ namespace Microsoft.WindowsAzure.Storage
         /// Settings filter that ensures that a valid combination of credentials is present.
         /// </summary>
         /// <returns>The remaining settings or <c>null</c> if the filter's requirement is not satisfied.</returns>
-        private static IDictionary<string, string> ValidCredentials(IDictionary<string, string> settings)
-        {
-            string accountName;
-            string accountKey;
-            string accountKeyName;
-            string sharedAccessSignature;
-            IDictionary<string, string> result = new Dictionary<string, string>(settings);
-
-            if (settings.TryGetValue(AccountNameSettingString, out accountName) &&
-                !AccountNameSetting.Value(accountName))
-            {
-                return null;
-            }
-
-            if (settings.TryGetValue(AccountKeySettingString, out accountKey) &&
-                !AccountKeySetting.Value(accountKey))
-            {
-                return null;
-            }
-
-            if (settings.TryGetValue(AccountKeyNameSettingString, out accountKeyName) &&
-                !AccountKeyNameSetting.Value(accountKeyName))
-            {
-                return null;
-            }
-
-            if (settings.TryGetValue(SharedAccessSignatureSettingString, out sharedAccessSignature) &&
-                !SharedAccessSignatureSetting.Value(sharedAccessSignature))
-            {
-                return null;
-            }
-
-            result.Remove(AccountNameSettingString);
-            result.Remove(AccountKeySettingString);
-            result.Remove(AccountKeyNameSettingString);
-            result.Remove(SharedAccessSignatureSettingString);
-
-            // AccountAndKey
-            if (accountName != null && accountKey != null && sharedAccessSignature == null)
-            {
-                return result;
-            }
-
-            // SharedAccessSignature (AccountName optional)
-            if (accountKey == null && accountKeyName == null && sharedAccessSignature != null)
-            {
-                return result;
-            }
-
-            // Anonymous
-            if (accountName == null && accountKey == null && accountKeyName == null && sharedAccessSignature == null)
-            {
-                return result;
-            }
-
-            return null;
-        }
+        private static ConnectionStringFilter ValidCredentials =
+            MatchesOne(
+                MatchesAll(AllRequired(AccountNameSetting, AccountKeySetting), Optional(AccountKeyNameSetting), None(SharedAccessSignatureSetting)),    // AccountAndKey
+                MatchesAll(AllRequired(SharedAccessSignatureSetting), Optional(AccountNameSetting), None(AccountKeySetting, AccountKeyNameSetting)),    // SharedAccessSignature (AccountName optional)
+                None(AccountNameSetting, AccountKeySetting, AccountKeyNameSetting, SharedAccessSignatureSetting)                                        // Anonymous
+            );
 
         /// <summary>
         /// Tests to see if a given list of settings matches a set of filters exactly.
@@ -1294,9 +1272,9 @@ namespace Microsoft.WindowsAzure.Storage
         /// </returns>
         private static bool MatchesSpecification(
             IDictionary<string, string> settings,
-            params Func<IDictionary<string, string>, IDictionary<string, string>>[] constraints)
+            params ConnectionStringFilter[] constraints)
         {
-            foreach (Func<IDictionary<string, string>, IDictionary<string, string>> constraint in constraints)
+            foreach (ConnectionStringFilter constraint in constraints)
             {
                 IDictionary<string, string> remainingSettings = constraint(settings);
 

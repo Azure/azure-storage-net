@@ -579,43 +579,91 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             connectionStringRoundtripHelper(accountString3);
             connectionStringRoundtripHelper(accountString4);
 
-            // shared access
-
-            string sas = "sasTest";
-
             string accountString5 =
                 string.Format(
-                    "DefaultEndpointsProtocol=http;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};",
-                    accountSasParams);
+                    "AccountName={0};AccountKey={1};EndpointSuffix={2};",
+                    accountKeyParams);
 
             string accountString6 =
                 string.Format(
-                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};",
-                    accountSasParams);
+                    "AccountName={0};AccountKey={1};",
+                    accountKeyParams);
 
             string accountString7 =
                 string.Format(
-                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};QueueEndpoint={3}",
-                    accountSasParams);
+                    "AccountName={0};AccountKey={1};QueueEndpoint={3}",
+                    accountKeyParams);
 
             string accountString8 =
                 string.Format(
-                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};QueueEndpoint={3}",
-                    accountSasParams);
+                    "AccountName={0};AccountKey={1};EndpointSuffix={2};QueueEndpoint={3}",
+                    accountKeyParams);
 
             connectionStringRoundtripHelper(accountString5);
             connectionStringRoundtripHelper(accountString6);
             connectionStringRoundtripHelper(accountString7);
             connectionStringRoundtripHelper(accountString8);
 
-            // shared access no account name
+            // shared access
+
+            string accountString9 =
+                string.Format(
+                    "DefaultEndpointsProtocol=http;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};",
+                    accountSasParams);
+
+            string accountString10 =
+                string.Format(
+                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};",
+                    accountSasParams);
 
             string accountString11 =
+                string.Format(
+                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};QueueEndpoint={3}",
+                    accountSasParams);
+
+            string accountString12 =
+                string.Format(
+                    "DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};QueueEndpoint={3}",
+                    accountSasParams);
+
+            connectionStringRoundtripHelper(accountString9);
+            connectionStringRoundtripHelper(accountString10);
+            connectionStringRoundtripHelper(accountString11);
+            connectionStringRoundtripHelper(accountString12);
+
+            string accountString13 =
+                string.Format(
+                    "AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};",
+                    accountSasParams);
+
+            string accountString14 =
+                string.Format(
+                    "AccountName={0};SharedAccessSignature={1};",
+                    accountSasParams);
+
+            string accountString15 =
+                string.Format(
+                    "AccountName={0};SharedAccessSignature={1};QueueEndpoint={3}",
+                    accountSasParams);
+
+            string accountString16 =
+                string.Format(
+                    "AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};QueueEndpoint={3}",
+                    accountSasParams);
+
+            connectionStringRoundtripHelper(accountString13);
+            connectionStringRoundtripHelper(accountString14);
+            connectionStringRoundtripHelper(accountString15);
+            connectionStringRoundtripHelper(accountString16);
+
+            // shared access no account name
+
+            string accountString17 =
                 string.Format(
                     "SharedAccessSignature={1};QueueEndpoint={3}",
                     accountSasParams);
 
-            connectionStringRoundtripHelper(accountString11);
+            connectionStringRoundtripHelper(accountString17);
         }
 
         [TestMethod]
@@ -682,6 +730,34 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
                 CloudStorageAccount.Parse(accountStringKeyPrimarySecondary); // no exception expected
 
+                // account key, no default protocol
+
+                string accountStringKeyNoDefaultProtocolPrimary =
+                    string.Format(
+                        "AccountName={0};AccountKey={1};EndpointSuffix={2};" + endpointCombination[0],
+                        accountKeyParams
+                        );
+
+                string accountStringKeyNoDefaultProtocolSecondary =
+                    string.Format(
+                        "AccountName={0};AccountKey={1};EndpointSuffix={2};" + endpointCombination[1],
+                        accountKeyParams
+                        );
+
+
+                string accountStringKeyNoDefaultProtocolPrimarySecondary =
+                    string.Format(
+                        "AccountName={0};AccountKey={1};EndpointSuffix={2};" + endpointCombination[2],
+                        accountKeyParams
+                        );
+
+
+                CloudStorageAccount.Parse(accountStringKeyNoDefaultProtocolPrimary); // no exception expected
+
+                TestHelper.ExpectedException<FormatException>(() => CloudStorageAccount.Parse(accountStringKeyNoDefaultProtocolSecondary), "connection string parse", "No valid combination of account information found.");
+
+                CloudStorageAccount.Parse(accountStringKeyNoDefaultProtocolPrimarySecondary); // no exception expected
+
                 // SAS
 
                 string accountStringSasPrimary =
@@ -707,6 +783,32 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 TestHelper.ExpectedException<FormatException>(() => CloudStorageAccount.Parse(accountStringSasSecondary), "connection string parse", "No valid combination of account information found.");
 
                 CloudStorageAccount.Parse(accountStringSasPrimarySecondary); // no exception expected
+
+                // SAS, no default protocol
+
+                string accountStringSasNoDefaultProtocolPrimary =
+                    string.Format(
+                        "AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};" + endpointCombination[0],
+                        accountSasParams
+                        );
+
+                string accountStringSasNoDefaultProtocolSecondary =
+                    string.Format(
+                        "AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};" + endpointCombination[1],
+                        accountSasParams
+                        );
+
+                string accountStringSasNoDefaultProtocolPrimarySecondary =
+                    string.Format(
+                        "AccountName={0};SharedAccessSignature={1};EndpointSuffix={2};" + endpointCombination[2],
+                        accountSasParams
+                        );
+
+                CloudStorageAccount.Parse(accountStringSasNoDefaultProtocolPrimary); // no exception expected
+
+                TestHelper.ExpectedException<FormatException>(() => CloudStorageAccount.Parse(accountStringSasNoDefaultProtocolSecondary), "connection string parse", "No valid combination of account information found.");
+
+                CloudStorageAccount.Parse(accountStringSasNoDefaultProtocolPrimarySecondary); // no exception expected
 
                 // SAS without AccountName
 
@@ -945,19 +1047,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         }
 
         [TestMethod]
-        [Description("ToString method for custom endpoints should return the same connection string")]
-        [TestCategory(ComponentCategory.Core)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudStorageAccountExplicitCloudRoundtrip()
-        {
-            string accountString = "BlobEndpoint=https://blobs/;AccountName=test;AccountKey=abc=";
-
-            Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
-        }
-
-        [TestMethod]
         [Description("ToString method for anonymous credentials should return the same connection string")]
         [TestCategory(ComponentCategory.Core)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -972,72 +1061,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             CloudStorageAccount account = new CloudStorageAccount(null, new Uri("http://blobs/"), null, null, null);
 
             AccountsAreEqual(account, CloudStorageAccount.Parse(account.ToString(true)));
-        }
-
-        [TestMethod]
-        [Description("Parse method should ignore empty values")]
-        [TestCategory(ComponentCategory.Core)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudStorageAccountEmptyValues()
-        {
-            string accountString = ";BlobEndpoint=http://blobs/;;AccountName=test;;AccountKey=abc=;";
-            string validAccountString = "BlobEndpoint=http://blobs/;AccountName=test;AccountKey=abc=";
-
-            Assert.AreEqual(validAccountString, CloudStorageAccount.Parse(accountString).ToString(true));
-        }
-
-        [TestMethod]
-        [Description("ToString method with custom blob endpoint should return the same connection string")]
-        [TestCategory(ComponentCategory.Core)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudStorageAccountJustBlobToString()
-        {
-            string accountString = "BlobEndpoint=http://blobs/;AccountName=test;AccountKey=abc=";
-
-            Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
-        }
-
-        [TestMethod]
-        [Description("ToString method with custom queue endpoint should return the same connection string")]
-        [TestCategory(ComponentCategory.Core)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudStorageAccountJustQueueToString()
-        {
-            string accountString = "QueueEndpoint=http://queue/;AccountName=test;AccountKey=abc=";
-
-            Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
-        }
-
-        [TestMethod]
-        [Description("ToString method with custom table endpoint should return the same connection string")]
-        [TestCategory(ComponentCategory.Core)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudStorageAccountJustTableToString()
-        {
-            string accountString = "TableEndpoint=http://table/;AccountName=test;AccountKey=abc=";
-
-            Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
-        }
-
-        [TestMethod]
-        [Description("ToString method with custom file endpoint should return the same connection string")]
-        [TestCategory(ComponentCategory.Core)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudStorageAccountJustFileToString()
-        {
-            string accountString = "FileEndpoint=http://file/;AccountName=test;AccountKey=abc=";
-
-            Assert.AreEqual(accountString, CloudStorageAccount.Parse(accountString).ToString(true));
         }
 
         [TestMethod]
