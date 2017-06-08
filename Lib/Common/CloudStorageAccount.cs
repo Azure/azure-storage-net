@@ -502,7 +502,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Private record of the account name for use in ToString(bool).
         /// </summary>
-        private string AccountName { get; set; }
+        private string accountName;
 
         /// <summary>
         /// Parses a connection string and returns a <see cref="CloudStorageAccount"/> created
@@ -734,9 +734,9 @@ namespace Microsoft.WindowsAzure.Storage
                 listOfSettings.Add(this.Credentials.ToString(exportSecrets));
             }
 
-            if (!string.IsNullOrWhiteSpace(this.AccountName) && (this.Credentials != null ? string.IsNullOrWhiteSpace(this.Credentials.AccountName) : true))
+            if (!string.IsNullOrWhiteSpace(this.accountName) && (this.Credentials != null ? string.IsNullOrWhiteSpace(this.Credentials.AccountName) : true))
             {
-                listOfSettings.Add(string.Format(CultureInfo.InvariantCulture, "{0}={1}", AccountNameSettingString, this.AccountName));
+                listOfSettings.Add(string.Format(CultureInfo.InvariantCulture, "{0}={1}", AccountNameSettingString, this.accountName));
             }
 
             return string.Join(";", listOfSettings);
@@ -952,7 +952,7 @@ namespace Microsoft.WindowsAzure.Storage
                             Settings = ValidCredentials(settings)
                         };
 
-                    accountInformation.AccountName = settingOrDefault(AccountNameSettingString);
+                    accountInformation.accountName = settingOrDefault(AccountNameSettingString);
 
                     return true;
                 }
