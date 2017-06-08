@@ -618,23 +618,74 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudStorageAccountClientUriVerify()
         {
-            StorageCredentials cred = new StorageCredentials(TestBase.TargetTenantConfig.AccountName, TestBase.TargetTenantConfig.AccountKey);
-            CloudStorageAccount cloudStorageAccount = new CloudStorageAccount(cred, true);
+            string myAccountName = TestBase.TargetTenantConfig.AccountName;
+            string myAccountKey = TestBase.TargetTenantConfig.AccountKey;
 
+            #region sample_CloudStorageAccount_Constructor
+
+            // Create a CloudStorageAccount object using account name and key.
+            // The account name should be just the name of a Storage Account, not a URI, and 
+            // not including the suffix. The key should be a base-64 encoded string that you
+            // can acquire from the portal, or from the management plane.
+            // This will have full permissions to all operations on the account.
+            StorageCredentials storageCredentials = new StorageCredentials(myAccountName, myAccountKey);
+            CloudStorageAccount cloudStorageAccount = new CloudStorageAccount(storageCredentials, useHttps: true);
+
+            // Create a CloudBlobClient object from the storage account.
+            // This object is the root object for all operations on the 
+            // blob service for this particular account.
             CloudBlobClient blobClient = cloudStorageAccount.CreateCloudBlobClient();
+
+            // Get a reference to a CloudBlobContainer object in this account. 
+            // This object can be used to create the container on the service, 
+            // list blobs, delete the container, etc. This operation does not make a 
+            // call to the Azure Storage service.  It neither creates the container 
+            // on the service, nor validates its existence.
             CloudBlobContainer container = blobClient.GetContainerReference("container1");
-            Assert.AreEqual(cloudStorageAccount.BlobEndpoint.ToString() + "container1", container.Uri.ToString());
 
+
+            // Create a CloudQueueClient object from the storage account.
+            // This object is the root object for all operations on the 
+            // queue service for this particular account.
             CloudQueueClient queueClient = cloudStorageAccount.CreateCloudQueueClient();
+
+            // Get a reference to a CloudQueue object in this account. 
+            // This object can be used to create the queue on the service, 
+            // delete the queue, add messages, etc. This operation does not
+            // make a call to the Azure Storage service.  It neither creates 
+            // the queue on the service, nor validates its existence.
             CloudQueue queue = queueClient.GetQueueReference("queue1");
-            Assert.AreEqual(cloudStorageAccount.QueueEndpoint.ToString() + "queue1", queue.Uri.ToString());
 
+
+            // Create a CloudTableClient object from the storage account.
+            // This object is the root object for all operations on the 
+            // table service for this particular account.
             CloudTableClient tableClient = cloudStorageAccount.CreateCloudTableClient();
-            CloudTable table = tableClient.GetTableReference("table1");
-            Assert.AreEqual(cloudStorageAccount.TableEndpoint.ToString() + "table1", table.Uri.ToString());
 
+            // Get a reference to a CloudTable object in this account. 
+            // This object can be used to create the table on the service, 
+            // delete the table, insert entities, etc. This operation does 
+            // not make a call to the Azure Storage service.  It neither 
+            // creates the table on the service, nor validates its existence.
+            CloudTable table = tableClient.GetTableReference("table1");
+
+
+            // Create a CloudFileClient object from the storage account.
+            // This object is the root object for all operations on the 
+            // file service for this particular account.
             CloudFileClient fileClient = cloudStorageAccount.CreateCloudFileClient();
+
+            // Get a reference to a CloudFileShare object in this account. 
+            // This object can be used to create the share on the service, 
+            // delete the share, list files and directories, etc. This operation 
+            // does not make a call to the Azure Storage service. It neither 
+            // creates the share on the service, nor validates its existence.
             CloudFileShare share = fileClient.GetShareReference("share1");
+            #endregion
+
+            Assert.AreEqual(cloudStorageAccount.BlobEndpoint.ToString() + "container1", container.Uri.ToString());
+            Assert.AreEqual(cloudStorageAccount.QueueEndpoint.ToString() + "queue1", queue.Uri.ToString());
+            Assert.AreEqual(cloudStorageAccount.TableEndpoint.ToString() + "table1", table.Uri.ToString());
             Assert.AreEqual(cloudStorageAccount.FileEndpoint.ToString() + "share1", share.Uri.ToString());
         }
 

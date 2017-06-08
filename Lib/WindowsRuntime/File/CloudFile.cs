@@ -1250,7 +1250,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5)
@@ -1264,7 +1264,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
@@ -1281,7 +1281,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
@@ -1869,8 +1869,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">The range data.</param>
         /// <param name="startOffset">The start offset.</param> 
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <code>null</code>, no condition is used.</param>
+        /// on the file. May be <c>null</code> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that writes the range.</returns>
         private RESTCommand<NullType> PutRangeImpl(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options)

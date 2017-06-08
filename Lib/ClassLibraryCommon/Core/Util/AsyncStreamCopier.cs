@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+
     // Class to copy streams with potentially overlapping read / writes. This uses no waithandle, extra threads, but does contain a single lock
     internal class AsyncStreamCopier<T> : IDisposable
     {
@@ -116,8 +117,6 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                             {
                                 state.ReqTimedOut = timedOut;
 
-                                // Note: the old logic had the following line happen on different threads for Desktop and Phone.  I don't think 
-                                // we still need to do that, but I'm not sure.
 #if WINDOWS_DESKTOP || WINDOWS_PHONE
                                 state.Req.Abort();
 #endif
@@ -218,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 this.cancellationTokenSourceCombined = this.cancellationTokenSourceAbort;
             }
-
+            
             await this.StartCopyStreamAsyncHelper(copyLength, maxLength, this.cancellationTokenSourceCombined.Token).ConfigureAwait(false);
         }
 
@@ -284,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
                 UpdateStreamCopyState(writeBuff, bytesCopied);
 
-                bytesCopied = await readTask.ConfigureAwait(false);
+                bytesCopied = await readTask.WithCancellation(token).ConfigureAwait(false);
                 totalBytes = totalBytes + bytesCopied;
 
                 CheckMaxLength(maxLength, totalBytes);
