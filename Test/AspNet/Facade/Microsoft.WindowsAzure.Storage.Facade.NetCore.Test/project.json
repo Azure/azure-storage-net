@@ -1,13 +1,13 @@
 {
   "title": "Microsoft.WindowsAzure.Storage.Facade.NetCore.Test",
-  "version": "8.0.1.0",
+  "version": "8.1.4.0",
   "testRunner": "xunit",
 
   "dependencies": {
     "xunit": "2.1.0",
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "XUnitForMsTest": "1.0.0.0"
-    },
+  },
 
   "frameworks": {
     "netcoreapp1.0": {
@@ -16,12 +16,10 @@
           "type": "platform",
           "version": "1.0.0"
         },
-        "Microsoft.WindowsAzure.Storage.Facade.Portable": "8.0.1.0"
+        "WindowsAzure.Storage": "8.1.4"
       },
-      "imports": [
-        "dnxcore50",
-        "portable-net45+win8"
-      ]
+
+      "imports": "dnxcore50"
     }
   },
 

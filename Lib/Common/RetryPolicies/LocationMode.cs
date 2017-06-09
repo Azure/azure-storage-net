@@ -25,21 +25,37 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         /// <summary>
         /// Requests are always sent to the primary location.
         /// </summary>
+        /// <remarks>
+        /// If this value is used for requests that only work against a secondary location
+        /// (GetServiceStats, for example), the request will fail in the client.
+        /// </remarks>
         PrimaryOnly,
 
         /// <summary>
         /// Requests are always sent to the primary location first. If a request fails, it is sent to the secondary location.
         /// </summary>
+        /// <remarks>
+        /// If this value is used for requests that are only valid against one location, the client will
+        /// only target the allowed location.
+        /// </remarks>
         PrimaryThenSecondary,
 
         /// <summary>
         /// Requests are always sent to the secondary location.
         /// </summary>
+        /// <remarks>
+        /// If this value is used for requests that only work against a primary location
+        /// (create, modify, and delete APIs), the request will fail in the client.
+        /// </remarks>
         SecondaryOnly,
 
         /// <summary>
         /// Requests are always sent to the secondary location first. If a request fails, it is sent to the primary location.
         /// </summary>
+        /// <remarks>
+        /// If this value is used for requests that are only valid against one location, the client will
+        /// only target the allowed location.
+        /// </remarks>
         SecondaryThenPrimary,
     }
 }

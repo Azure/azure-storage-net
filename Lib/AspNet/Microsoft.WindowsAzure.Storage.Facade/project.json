@@ -1,12 +1,12 @@
 {
     "title": "Microsoft.WindowsAzure.Storage",
-    "version": "8.0.1.0",
+    "version": "8.1.4.0",
+
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for NetCore",
     "dependencies": {
-      "Microsoft.Data.OData": "5.7.0",
-      "Microsoft.Data.Services.Client": "5.7.0",
-      "System.Spatial": "5.7.0",
+      "Microsoft.Data.OData": "5.8.2",
+      "System.Spatial": "5.8.2",
       "Newtonsoft.Json": "9.0.1"
   },
 
@@ -15,10 +15,7 @@
             "dependencies": {
                 "NETStandard.Library": "1.6.0"
             },
-            "imports": [
-                "dnxcore50",
-                "portable-net451+win8"
-            ]
+            "imports":"dnxcore50"
         }
 
     },

@@ -1,5 +1,20 @@
+Changes in 8.X :
 
 - Tables: Added TableEntityAdapter<T> class to allow writing and reading simple or complex objects to Azure Table Storage without the need to implement ITableEntity interface or inherit from TableEntity class.
+
+Changes in 8.1.4 :
+- All(Desktop): Fixed a regression in the executor caused by disposing the SendStream during parallel operations.
+
+Changes in 8.1.3 :
+- Blobs (Desktop) : Fixed a bug where the MaximumExecutionTime was not honored, leading to infinite wait, if due to a failure, e.g., a network failure after receiving the response headers, server stopped sending partial response.
+- All(Desktop) : Fixed a memory leak issue where the SendStream was not being disposed during retries, cancellations and Table Operations.
+
+Changes in 8.1.1 :
+- All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard
+
+Changes in 8.1.0 :
+- All: Updated OData references to the latest Netstandard friendly package version 5.8.2.
+- Queues (WinRT/NetCore): Fixed a bug where connections were not closed after an add message operation.
 
 Changes in 8.0.1 :
 - (NetStandard/Xamarin) : Fix for a break in Xamarin Apps with Streaming APIs caused by NotImplemented IncrementalHash APIs in Xamarin Runtime.
@@ -43,6 +58,7 @@ Changes in 8.0.0 :
 - Blobs: Fixed error for AcquireLease on non-existent container.
 - PageBlobs: Fixed error response for GetPageRangesDiff.
 - Blobs: Update in "If-None-Match: *" pre-condition behavior to fail for reads(previously disregarded by the service).
+- Blobs: CreateIfNotExists calls on a Container will be logged by AppInsight as a failure if the container exists. The failure is ignored by the library and this change saves an extra service call in case the container doesn't exist.
 
 Changes in 7.2.1 :
 
