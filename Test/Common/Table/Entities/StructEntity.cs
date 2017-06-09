@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="ShapeEntity.cs" company="Microsoft">
+// <copyright file="StructEntity.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,25 +17,12 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table.Entities
 {
-    public class ShapeEntity
+	public struct StructEntity
     {
-        public ShapeEntity()
-        {
-        }
-
-        public ShapeEntity(string partitionKey, string rowKey, string name, int length, int breadth)
-        {
-            this.PartitionKey = partitionKey;
-            this.RowKey = rowKey;
-            this.Name = name;
-            this.Length = length;
-            this.Breadth = breadth;
-        }
-
-        public string PartitionKey { get; set; }
-        public string RowKey { get; set; }
         public string Name { get; set; }
         public int Length { get; set; }
         public int Breadth { get; set; }
+
+        public ComplexEntity ComplextEntity { get; set; }
     }
 }

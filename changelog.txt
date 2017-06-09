@@ -1,3 +1,7 @@
+Changes in 8.X :
+
+- Tables: Added TableEntityAdapter<T> class to allow writing and reading simple or complex objects to Azure Table Storage without the need to implement ITableEntity interface or inherit from TableEntity class.
+
 Changes in 8.1.4 :
 - All(Desktop): Fixed a regression in the executor caused by disposing the SendStream during parallel operations.
 
