@@ -296,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                         break;
                     }
 
-                    readCount = await stream.ReadAsync(buffer, 0, bytesToRead, token);
+                    readCount = await stream.ReadAsync(buffer, 0, bytesToRead, token).ConfigureAwait(false);
 
                     if (bytesRemaining.HasValue)
                     {
@@ -305,7 +305,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
                     if (readCount > 0)
                     {
-                        await toStream.WriteAsync(buffer, 0, readCount, token);
+                        await toStream.WriteAsync(buffer, 0, readCount, token).ConfigureAwait(false);
 
                         // Update the StreamDescriptor after the bytes are successfully committed to the output stream
                         if (streamCopyState != null)
@@ -342,7 +342,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             // Streams opened with AsStreamForWrite extension need to be flushed
             // to write all buffered data to the underlying Windows Runtime stream.
-            await toStream.FlushAsync();
+            await toStream.FlushAsync().ConfigureAwait(false);
 
             if (streamCopyState != null && streamCopyState.Md5HashRef != null)
             {
