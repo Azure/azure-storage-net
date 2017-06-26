@@ -61,7 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
                 try
                 {
-                    Stream errStream = await response.Content.ReadAsStreamAsync();
+                    Stream errStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                     if (parseError != null)
                     {
                         currentResult.ExtendedErrorInformation = parseError(errStream, response, response.Content.Headers.ContentType.ToString());
