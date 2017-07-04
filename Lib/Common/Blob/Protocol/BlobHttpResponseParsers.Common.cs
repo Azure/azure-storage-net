@@ -252,33 +252,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="blobType">A <see cref="BlobType" /> indicating the type of blob.</param>
         /// <param name="blobTierString">The blob tier as a string</param>
-        /// <param name="pageBlobTier">A nullable <see cref="PageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
-        internal static void GetBlobTier(BlobType blobType, string blobTierString, out PageBlobTier? pageBlobTier)
+        /// <param name="pageBlobTier">A nullable <see cref="PremiumPageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
+        internal static void GetBlobTier(BlobType blobType, string blobTierString, out PremiumPageBlobTier? premiumPageBlobTier)
         {
-            pageBlobTier = null;
+            premiumPageBlobTier = null;
 
             if (blobType.Equals(BlobType.PageBlob))
             {
-                PageBlobTier pageBlobTierFromResponse;
-                if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
+                PremiumPageBlobTier premiumPageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out premiumPageBlobTierFromResponse))
                 {
-                    pageBlobTier = pageBlobTierFromResponse;
+                    premiumPageBlobTier = premiumPageBlobTierFromResponse;
                 }
                 else
                 {
-                    pageBlobTier = PageBlobTier.Unknown;
+                    premiumPageBlobTier = PremiumPageBlobTier.Unknown;
                 }
             }
             else if (blobType.Equals(BlobType.Unspecified))
             {
-                PageBlobTier pageBlobTierFromResponse;
-                if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
+                PremiumPageBlobTier premiumPageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out premiumPageBlobTierFromResponse))
                 {
-                    pageBlobTier = pageBlobTierFromResponse;
+                    premiumPageBlobTier = premiumPageBlobTierFromResponse;
                 }
                 else
                 {
-                    pageBlobTier = PageBlobTier.Unknown;
+                    premiumPageBlobTier = PremiumPageBlobTier.Unknown;
                 }
             }
         }

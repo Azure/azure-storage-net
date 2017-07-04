@@ -2409,7 +2409,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.SendStream = stream;
             putCmd.SendStreamLength = length ?? stream.Length - offset;
             putCmd.RecoveryAction = (cmd, ex, ctx) => RecoveryActions.SeekStream(cmd, offset);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, null /* premiumPageBlobTier */, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>

@@ -55,6 +55,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual CloudBlobStream OpenWrite(long? size, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
+            return this.OpenWrite(size, null /* premiumPageBlobTier */, accessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Opens a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
+        /// </summary>
+        /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="CloudBlobStream"/> object.</returns>
+        /// <remarks>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.FetchAttributes(AccessCondition, BlobRequestOptions, OperationContext)"/> method under the covers.</para>
+        /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the block size to write, in bytes, 
+        /// ranging from between 16 KB and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
+        /// </remarks>
+        [DoesServiceRequest]
+        internal virtual CloudBlobStream OpenWrite(long? size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
             bool createNew = size.HasValue;
@@ -72,7 +94,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             if (createNew)
             {
-                this.Create(size.Value, accessCondition, options, operationContext);
+                this.Create(size.Value, premiumPageBlobTier, accessCondition, options, operationContext);
             }
             else
             {
@@ -149,6 +171,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenWrite(long? size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginOpenWrite(size, null /* premiumPageBlobTier */, accessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to open a stream for writing to the blob. If the blob already exists, then existing data in the blob may be overwritten.
+        /// </summary>
+        /// <param name="size">The size of the page blob, in bytes. The size must be a multiple of 512. If <c>null</c>, the page blob must already exist.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// <para>Note that this method always makes a call to the <see cref="CloudBlob.BeginFetchAttributes(AccessCondition, BlobRequestOptions, OperationContext, AsyncCallback, object)"/> method under the covers.</para>
+        /// <para>Set the <see cref="StreamWriteSizeInBytes"/> property before calling this method to specify the page size to write, in multiples of 512 bytes, 
+        /// ranging from between 512 and 4 MB inclusive.</para>
+        /// <para>To throw an exception if the blob exists instead of overwriting it, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.</para>
+        /// </remarks>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
+        [DoesServiceRequest]
+        internal virtual ICancellableAsyncResult BeginOpenWrite(long? size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
             this.attributes.AssertNoSnapshot();
             bool createNew = size.HasValue;
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, this.BlobType, this.ServiceClient, false);
@@ -173,6 +220,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
                 result = this.BeginCreate(
                     size.Value,
+                    premiumPageBlobTier,
                     accessCondition,
                     options,
                     operationContext,
@@ -358,7 +406,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual void UploadFromStream(Stream source, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            this.UploadFromStreamHelper(source, null /* length */, accessCondition, options, operationContext);
+            this.UploadFromStreamHelper(source, null /* length */, null /* premiumPageBlobTier */, accessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public virtual void UploadFromStream(Stream source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            this.UploadFromStreamHelper(source, null /* length */, premiumPageBlobTier, accessCondition, options, operationContext);
         }
 
         /// <summary>
@@ -372,7 +434,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual void UploadFromStream(Stream source, long length, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            this.UploadFromStreamHelper(source, length, accessCondition, options, operationContext);
+            this.UploadFromStreamHelper(source, length, null /* premiumPageBlobTier */, accessCondition, options, operationContext);
         }
 
         /// <summary>
@@ -380,10 +442,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public virtual void UploadFromStream(Stream source, long length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            this.UploadFromStreamHelper(source, length, premiumPageBlobTier, accessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        internal void UploadFromStreamHelper(Stream source, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        internal void UploadFromStreamHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -410,7 +488,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            using (CloudBlobStream blobStream = this.OpenWrite(length, accessCondition, modifiedOptions, operationContext))
+            using (CloudBlobStream blobStream = this.OpenWrite(length, premiumPageBlobTier, accessCondition, modifiedOptions, operationContext))
             {
                 using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
                 {
@@ -431,7 +509,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AsyncCallback callback, object state)
         {
-            return this.BeginUploadFromStreamHelper(source, null /* length */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginUploadFromStreamHelper(source, null /* length */, null /* premiumPageBlobTier */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -447,7 +525,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginUploadFromStreamHelper(source, null /* length */, accessCondition, options, operationContext, callback, state);
+            return this.BeginUploadFromStreamHelper(source, null /* length */, null /* premiumPageBlobTier */, accessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginUploadFromStreamHelper(source, null /* length */, premiumPageBlobTier, accessCondition, options, operationContext, callback, state);
         }
 
         /// <summary>
@@ -461,7 +556,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AsyncCallback callback, object state)
         {
-            return this.BeginUploadFromStreamHelper(source, length, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginUploadFromStreamHelper(source, length, null /* premiumPageBlobTier */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -478,7 +573,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginUploadFromStreamHelper(source, length, accessCondition, options, operationContext, callback, state);
+            return this.BeginUploadFromStreamHelper(source, length, null /* premiumPageBlobTier */, accessCondition, options, operationContext, callback, state);
         }
 
         /// <summary>
@@ -486,6 +581,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginUploadFromStreamHelper(source, length, premiumPageBlobTier, accessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -494,7 +608,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         [DoesServiceRequest]
-        internal ICancellableAsyncResult BeginUploadFromStreamHelper(Stream source, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        internal ICancellableAsyncResult BeginUploadFromStreamHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -525,6 +639,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             ICancellableAsyncResult result = this.BeginOpenWrite(
                 length,
+                premiumPageBlobTier,
                 accessCondition,
                 modifiedOptions,
                 operationContext,
@@ -659,7 +774,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromStream, this.EndUploadFromStream, source, accessCondition, options, operationContext, cancellationToken);
+            return this.UploadFromStreamAsync(source, null /* premiumPageBlobTier */, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromStreamAsync(Stream source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromStream, this.EndUploadFromStream, source, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -715,7 +846,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromStream, this.EndUploadFromStream, source, length, accessCondition, options, operationContext, cancellationToken);
+            return this.UploadFromStreamAsync(source, length, null /* premiumPageBlobTier */, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromStreamAsync(Stream source, long length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromStream, this.EndUploadFromStream, source, length, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 
 #if SYNC
@@ -729,11 +877,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual void UploadFromFile(string path, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.UploadFromFile(path, null /* premiumPageBlobTier */, accessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public virtual void UploadFromFile(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
             CommonUtility.AssertNotNull("path", path);
 
             using (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                this.UploadFromStream(fileStream, accessCondition, options, operationContext);
+                this.UploadFromStream(fileStream, premiumPageBlobTier, accessCondition, options, operationContext);
             }
         }
 #endif
@@ -764,6 +926,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromFile(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginUploadFromFile(path, null /* premiumPageBlobTier */, accessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginUploadFromFile(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
             CommonUtility.AssertNotNull("path", path);
 
             FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
@@ -774,7 +953,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             try
             {
-                ICancellableAsyncResult asyncResult = this.BeginUploadFromStream(fileStream, accessCondition, options, operationContext, this.UploadFromFileCallback, storageAsyncResult);
+                ICancellableAsyncResult asyncResult = this.BeginUploadFromStream(fileStream, premiumPageBlobTier, accessCondition, options, operationContext, this.UploadFromFileCallback, storageAsyncResult);
                 storageAsyncResult.CancelDelegate = asyncResult.Cancel;
                 return storageAsyncResult;
             }
@@ -878,7 +1057,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromFile, this.EndUploadFromFile, path, accessCondition, options, operationContext, cancellationToken);
+            return this.UploadFromFileAsync(path, null /* premiumPageBlobTier */, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromFileAsync(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromFile, this.EndUploadFromFile, path, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -895,11 +1090,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual void UploadFromByteArray(byte[] buffer, int index, int count, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.UploadFromByteArray(buffer, index, count, null /* premiumPageBlobTier */, accessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Uploads the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="buffer">An array of bytes.</param>
+        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
+        /// <param name="count">The number of bytes to be written to the blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public virtual void UploadFromByteArray(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
             CommonUtility.AssertNotNull("buffer", buffer);
 
             using (SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count))
             {
-                this.UploadFromStream(stream, accessCondition, options, operationContext);
+                this.UploadFromStream(stream, premiumPageBlobTier, accessCondition, options, operationContext);
             }
         }
 #endif
@@ -934,10 +1145,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginUploadFromByteArray(buffer, index, count, null /* premiumPageBlobTier */, accessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="buffer">An array of bytes.</param>
+        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
+        /// <param name="count">The number of bytes to be written to the blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
             CommonUtility.AssertNotNull("buffer", buffer);
 
             SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
-            return this.BeginUploadFromStream(stream, accessCondition, options, operationContext, callback, state);
+            return this.BeginUploadFromStream(stream, premiumPageBlobTier, accessCondition, options, operationContext, callback, state);
         }
 
         /// <summary>
@@ -1007,7 +1237,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromByteArray, this.EndUploadFromByteArray, buffer, index, count, accessCondition, options, operationContext, cancellationToken);
+            return this.UploadFromByteArrayAsync(buffer, index, count, null /* premiumPageBlobTier */, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="buffer">An array of bytes.</param>
+        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
+        /// <param name="count">The number of bytes to be written to the blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromByteArray, this.EndUploadFromByteArray, buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -1023,10 +1271,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual void Create(long size, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.Create(size, null /* pageBlobTier */, accessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
+        /// </summary>
+        /// <param name="size">The maximum size of the page blob, in bytes.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public virtual void Create(long size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             Executor.ExecuteSync(
-                this.CreateImpl(size, accessCondition, modifiedOptions),
+                this.CreateImpl(size, premiumPageBlobTier, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -1043,7 +1306,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(long size, AsyncCallback callback, object state)
         {
-            return this.BeginCreate(size, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginCreate(size, null /* pageBlobTier */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -1060,9 +1323,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(long size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginCreate(size, null /* premiumPageBlobTier */, accessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
+        /// </summary>
+        /// <param name="size">The maximum size of the blob, in bytes.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginCreate(long size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.CreateImpl(size, accessCondition, modifiedOptions),
+                this.CreateImpl(size, premiumPageBlobTier, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -1132,7 +1413,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task CreateAsync(long size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginCreate, this.EndCreate, size, accessCondition, options, operationContext, cancellationToken);
+            return this.CreateAsync(size, null /* pageBlobTier */, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to create a page blob. If the blob already exists, this operation will overwrite it. To throw an exception if the blob exists, instead of overwriting, pass in an <see cref="AccessCondition"/>
+        /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
+        /// </summary>
+        /// <param name="size">The maximum size of the blob, in bytes.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task CreateAsync(long size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginCreate, this.EndCreate, size, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -2215,6 +2513,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Begins an operation to start copying another page blob's contents, properties, and metadata to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual string StartCopy(CloudPageBlob source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            return this.StartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+
+        /// <summary>
         /// Begins an operation to start an incremental copy of another page blob's contents, properties, and metadata to this page blob.
         /// </summary>
         /// <param name="sourceSnapshot">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
@@ -2252,7 +2570,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, true /* incrementalCopy */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, true /* incrementalCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2299,7 +2617,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+            return this.BeginStartCopy(source, null /* premiumPageBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another page blob's contents, properties, and metadata to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest", Justification = "Reviewed")]
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginStartCopy(CloudPageBlob source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
 
         /// <summary>
@@ -2336,7 +2673,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshot, true /* incrementalCopy */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshot, true /* incrementalCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -2438,7 +2775,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, null /* premiumPageBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
+        /// to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(CloudPageBlob source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -2460,41 +2815,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Sets the tier of the blob.
+        /// Sets the tier of the premium blob.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        public virtual void SetBlobTier(PageBlobTier blobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void SetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             Executor.ExecuteSync(
-                this.SetBlobTierImpl(blobTier, accessCondition, modifiedOptions),
+                this.SetBlobTierImpl(premiumPageBlobTier, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to set the tier of the blob.
+        /// Begins an asynchronous operation to set the tier of the premium blob.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginSetBlobTier(PageBlobTier blobTier, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginSetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, AsyncCallback callback, object state)
         {
-            return this.BeginSetBlobTier(blobTier, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginSetPremiumBlobTier(premiumPageBlobTier, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to set the tier of the blob.
+        /// Begins an asynchronous operation to set the tier of the premium blob.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -2502,12 +2857,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginSetBlobTier(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginSetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.SetBlobTierImpl(blobTier, accessCondition, modifiedOptions),
+                this.SetBlobTierImpl(premiumPageBlobTier, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -2515,65 +2870,65 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Ends an asynchronous operation to set the tier of the blob.
+        /// Ends an asynchronous operation to set the tier of the premium blob.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public virtual void EndSetBlobTier(IAsyncResult asyncResult)
+        public virtual void EndSetPremiumBlobTier(IAsyncResult asyncResult)
         {
             Executor.EndExecuteAsync<NullType>(asyncResult);
         }
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the tier of the premium blob.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(PageBlobTier blobTier)
+        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier)
         {
-            return this.SetBlobTierAsync(blobTier, CancellationToken.None);
+            return this.SetPremiumBlobTierAsync(premiumPageBlobTier, CancellationToken.None);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the tier of the premium blob.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, CancellationToken cancellationToken)
+        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetBlobTier, this.EndSetBlobTier, blobTier, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPremiumBlobTier, this.EndSetPremiumBlobTier, premiumPageBlobTier, cancellationToken);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the tier of the premium blob.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.SetBlobTierAsync(blobTier, accessCondition, options, operationContext, CancellationToken.None);
+            return this.SetPremiumBlobTierAsync(premiumPageBlobTier, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the premium tier of the blob.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetBlobTier, this.EndSetBlobTier, blobTier, accessCondition, options, operationContext, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPremiumBlobTier, this.EndSetPremiumBlobTier, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -2581,15 +2936,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Implements the Create method.
         /// </summary>
         /// <param name="sizeInBytes">The size in bytes.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that creates the blob.</returns>
-        private RESTCommand<NullType> CreateImpl(long sizeInBytes, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> CreateImpl(long sizeInBytes, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.PageBlob, sizeInBytes, accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.PageBlob, sizeInBytes, premiumPageBlobTier, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2598,6 +2954,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = sizeInBytes;
+                this.attributes.Properties.PremiumPageBlobTier = premiumPageBlobTier;
+                if (premiumPageBlobTier.HasValue)
+                {
+                    this.attributes.Properties.BlobTierInferred = false;
+                }
+
                 return NullType.Value;
             };
 
@@ -2849,23 +3211,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Implementation method for the SetBlobTier methods.
         /// </summary>
-        /// <param name="blobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that sets the blob tier.</returns>
-        private RESTCommand<NullType> SetBlobTierImpl(PageBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> SetBlobTierImpl(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetBlobTier(uri, serverTimeout, blobTier.ToString(), accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetBlobTier(uri, serverTimeout, premiumPageBlobTier.ToString(), accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
 
-                this.attributes.Properties.PageBlobTier = blobTier;
+                this.attributes.Properties.PremiumPageBlobTier = premiumPageBlobTier;
+                this.attributes.Properties.BlobTierInferred = false;
                 return NullType.Value;
             };
 

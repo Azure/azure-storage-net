@@ -1003,7 +1003,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(cappedStream, offset, length, null /* md5 */, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, null, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };

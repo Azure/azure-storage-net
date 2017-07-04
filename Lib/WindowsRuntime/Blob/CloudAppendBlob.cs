@@ -1162,7 +1162,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.AppendBlob, 0, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.AppendBlob, 0, null /* pageBlobTier */, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };

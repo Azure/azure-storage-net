@@ -2,7 +2,7 @@ Changes in X.X.X :
 - All: Support for 2016-10-16 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version X.X.
 - Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
 - Files: Added support for server side encryption.
-- PageBlobs: For Premium Accounts only, added support for getting and setting the tier on a page blob.
+- PageBlobs: For Premium Accounts only, added support for getting and setting the tier on a page blob. The tier can also be set when creating or copying from an existing page blob.
 
 Changes in 8.1.1 :
 - All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard

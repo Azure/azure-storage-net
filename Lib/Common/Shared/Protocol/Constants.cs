@@ -992,6 +992,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string AccessTierHeader = PrefixForStorageHeader + "access-tier";
 
             /// <summary>
+            /// Header for the blob tier inferred.
+            /// </summary>
+            public const string AccessTierInferredHeader = PrefixForStorageHeader + "access-tier-inferred";
+
+            /// <summary>
             /// Header that specifies blob caching control.
             /// </summary>
             public const string BlobCacheControlHeader = PrefixForStorageHeader + "blob-cache-control";

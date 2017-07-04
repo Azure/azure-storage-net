@@ -125,10 +125,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
 
             // Get the tier of the blob
-            string blobTierString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierHeader);
-            PageBlobTier? pageBlobTier;
-            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out pageBlobTier);
-            properties.PageBlobTier = pageBlobTier;
+            string premiumBlobTierInferredString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierInferredHeader);
+            if (!string.IsNullOrEmpty(premiumBlobTierInferredString))
+            {
+                properties.BlobTierInferred = Convert.ToBoolean(premiumBlobTierInferredString);
+            }
+
+            string premiumBlobTierString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierHeader);
+            PremiumPageBlobTier? premiumPageBlobTier;
+            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, premiumBlobTierString, out premiumPageBlobTier);
+            properties.PremiumPageBlobTier = premiumPageBlobTier;
+            if (properties.PremiumPageBlobTier.HasValue && !properties.BlobTierInferred.HasValue)
+            {
+                properties.BlobTierInferred = false;
+            }
 
             return properties;
         }
