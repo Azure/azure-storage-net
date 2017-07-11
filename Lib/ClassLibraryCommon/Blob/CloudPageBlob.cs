@@ -2818,16 +2818,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Sets the tier of the premium blob.
         /// </summary>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        public virtual void SetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void SetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             Executor.ExecuteSync(
-                this.SetBlobTierImpl(premiumPageBlobTier, accessCondition, modifiedOptions),
+                this.SetBlobTierImpl(premiumPageBlobTier, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2843,26 +2842,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, AsyncCallback callback, object state)
         {
-            return this.BeginSetPremiumBlobTier(premiumPageBlobTier, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginSetPremiumBlobTier(premiumPageBlobTier, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
         /// Begins an asynchronous operation to set the tier of the premium blob.
         /// </summary>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginSetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginSetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.SetBlobTierImpl(premiumPageBlobTier, accessCondition, modifiedOptions),
+                this.SetBlobTierImpl(premiumPageBlobTier, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -2906,29 +2904,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initiates an asynchronous operation to set the tier of the premium blob.
         /// </summary>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.SetPremiumBlobTierAsync(premiumPageBlobTier, accessCondition, options, operationContext, CancellationToken.None);
+            return this.SetPremiumBlobTierAsync(premiumPageBlobTier, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
         /// Initiates an asynchronous operation to set the premium tier of the blob.
         /// </summary>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumPageBlobTier, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPremiumBlobTier, this.EndSetPremiumBlobTier, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPremiumBlobTier, this.EndSetPremiumBlobTier, premiumPageBlobTier, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -3212,15 +3208,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Implementation method for the SetBlobTier methods.
         /// </summary>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that sets the blob tier.</returns>
-        private RESTCommand<NullType> SetBlobTierImpl(PremiumPageBlobTier premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> SetBlobTierImpl(PremiumPageBlobTier premiumPageBlobTier, BlobRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetBlobTier(uri, serverTimeout, premiumPageBlobTier.ToString(), accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetBlobTier(uri, serverTimeout, premiumPageBlobTier.ToString(), useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
