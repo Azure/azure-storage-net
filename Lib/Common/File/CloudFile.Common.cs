@@ -220,7 +220,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Gets the absolute URI to the file, including query string information if the file's share is a snapshot.
         /// </summary>
         /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the file, including snapshot query information if the file's share is a snapshot.</value>
-        public Uri SnapshotQualifiedUri
+        internal Uri SnapshotQualifiedUri
         {
             get
             {
@@ -242,7 +242,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>An object of type <see cref="StorageUri"/> containing the file's URIs for both the primary and secondary locations, 
         /// including snapshot query information if the file's share is a snapshot.</value>
-        public StorageUri SnapshotQualifiedStorageUri
+        internal StorageUri SnapshotQualifiedStorageUri
         {
             get
             {
