@@ -26,8 +26,9 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-#if WINDOWS_RT   || NETCORE
+#if WINDOWS_RT || NETCORE
     using System.Net.Http;
+    using System.Threading.Tasks;
 #endif
     using System.Xml;
 
@@ -108,6 +109,44 @@ namespace Microsoft.WindowsAzure.Storage
                 return null;
             }
         }
+
+#if WINDOWS_RT || NETCORE
+
+        /// <summary>
+        /// Gets the error details from an XML-formatted error stream.
+        /// </summary>
+        /// <param name="inputStream">The input stream.</param>
+        /// <returns>The error details.</returns>
+        public static async Task<StorageExtendedErrorInformation> ReadFromStreamAsync(Stream inputStream)
+        {
+            CommonUtility.AssertNotNull("inputStream", inputStream);
+
+            if (inputStream.CanSeek && inputStream.Length < 1)
+            {
+                return null;
+            }
+
+            StorageExtendedErrorInformation extendedErrorInfo = new StorageExtendedErrorInformation();
+            try
+            {
+                XmlReaderSettings settings = new XmlReaderSettings();
+                settings.Async = true;
+
+                using (XmlReader reader = XmlReader.Create(inputStream, settings))
+                {
+                    await reader.ReadAsync();
+                    extendedErrorInfo.ReadXml(reader);
+                }
+
+                return extendedErrorInfo;
+            }
+            catch (XmlException)
+            {
+                // If there is a parsing error we cannot return extended error information
+                return null;
+            }
+        }
+#endif
 
         #region IXmlSerializable
 
