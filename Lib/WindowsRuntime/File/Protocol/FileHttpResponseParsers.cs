@@ -67,6 +67,9 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                     properties.ContentType = response.Content.Headers.ContentType.ToString();
                 }
 
+                string fileEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
+                properties.IsServerEncrypted = string.Equals(fileEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+
                 // Get the content length. Prioritize range and x-ms over content length for the special cases.
                 string contentLengthHeader = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentLengthHeader);
                 if ((response.Content.Headers.ContentRange != null) &&

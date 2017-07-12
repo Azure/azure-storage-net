@@ -50,6 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.Length = other.Length;
             this.ETag = other.ETag;
             this.LastModified = other.LastModified;
+            this.IsServerEncrypted = other.IsServerEncrypted;
         }
 
         /// <summary>
@@ -117,5 +118,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>The file's last-modified time, in UTC format.</value>
         public DateTimeOffset? LastModified { get; internal set; }
+
+        /// <summary>
+        /// Gets the file's server-side encryption state.
+        /// </summary>
+        /// <value>A bool representing the file's server-side encryption state.</value>
+        public bool IsServerEncrypted { get; internal set; }
     }
 }

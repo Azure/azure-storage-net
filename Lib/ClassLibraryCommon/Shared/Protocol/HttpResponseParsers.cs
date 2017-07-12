@@ -69,6 +69,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Parses the server request encrypted response header.
+        /// </summary>
+        /// <param name="response">Response to be parsed.</param>
+        /// <returns><c>true</c> if write content was encrypted by service or <c>false</c> if not.</returns>
+        internal static bool ParseServerRequestEncrypted(HttpWebResponse response)
+        {
+            string requestEncrypted = response.Headers[Constants.HeaderConstants.ServerRequestEncrypted];
+            return string.Equals(requestEncrypted, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Gets the metadata or properties.
         /// </summary>
         /// <param name="response">The response from server.</param>

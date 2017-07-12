@@ -65,6 +65,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task CreateAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.CreateShareImpl(modifiedOptions),
@@ -108,6 +114,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
@@ -202,7 +214,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task DeleteAsync()
         {
-            return this.DeleteAsync(null, null, null);
+            return this.DeleteAsync(DeleteShareSnapshotsOption.None, null, null, null, CancellationToken.None);
         }
 
         /// <summary>
@@ -214,7 +226,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
-            return this.DeleteAsync(accessCondition, options, operationContext, CancellationToken.None);
+            return this.DeleteAsync(DeleteShareSnapshotsOption.None, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -227,9 +239,23 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.DeleteIfExistsAsync(DeleteShareSnapshotsOption.None, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Deletes the share.
+        /// </summary>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteShareSnapshotsOption"/> object indicating whether to only delete the share or delete the share and all snapshots.</param>
+        /// <param name="accessCondition">An object that represents the access conditions for the share. If null, no condition is used.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        [DoesServiceRequest]
+        public virtual Task DeleteAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-                this.DeleteShareImpl(accessCondition, modifiedOptions),
+                this.DeleteShareImpl(deleteSnapshotsOption, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken), cancellationToken);
@@ -242,7 +268,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> DeleteIfExistsAsync()
         {
-            return this.DeleteIfExistsAsync(null, null, null);
+            return this.DeleteIfExistsAsync(DeleteShareSnapshotsOption.None, null, null, null, CancellationToken.None);
         }
 
         /// <summary>
@@ -255,7 +281,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
-            return this.DeleteIfExistsAsync(accessCondition, options, operationContext, CancellationToken.None);
+            return this.DeleteIfExistsAsync(DeleteShareSnapshotsOption.None, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -267,6 +293,20 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns><c>true</c> if the share already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
         public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.DeleteIfExistsAsync(DeleteShareSnapshotsOption.None, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Deletes the share if it already exists.
+        /// </summary>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteShareSnapshotsOption"/> object indicating whether to only delete the share or delete the share and all snapshots.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns><c>true</c> if the share already existed and was deleted; otherwise, <c>false</c>.</returns>
+        [DoesServiceRequest]
+        public virtual Task<bool> DeleteIfExistsAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
@@ -291,7 +331,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 try
                 {
-                    await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);
+                    await this.DeleteAsync(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext, cancellationToken);
                     return true;
                 }
                 catch (Exception)
@@ -437,6 +477,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetPermissionsAsync(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.SetPermissionsImpl(permissions, accessCondition, modifiedOptions),
@@ -478,6 +519,12 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
+            if (this.Properties.Quota.HasValue)
+            {
+                CommonUtility.AssertInBounds("Quota", this.Properties.Quota.Value, 1);
+            }
+
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -519,6 +566,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileSharePermissions> GetPermissionsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync<FileSharePermissions>(
                 this.GetPermissionsImpl(accessCondition, modifiedOptions),
@@ -558,6 +606,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<ShareStats> GetStatsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync<ShareStats>(
                 this.GetStatsImpl(modifiedOptions),
@@ -597,6 +646,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
@@ -671,15 +721,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Implementation for the Delete method.
         /// </summary>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteShareSnapshotsOption"/> object indicating whether to only delete the share or delete the share and all snapshots.</param>
         /// <param name="accessCondition">An object that represents the access conditions for the share. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that deletes the share.</returns>
-        private RESTCommand<NullType> DeleteShareImpl(AccessCondition accessCondition, FileRequestOptions options)
+        private RESTCommand<NullType> DeleteShareImpl(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options)
         {
             RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(deleteCmd);
-            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.Delete(uri, serverTimeout, this.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.Delete(uri, serverTimeout, this.SnapshotTime, deleteSnapshotsOption, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
             return deleteCmd;

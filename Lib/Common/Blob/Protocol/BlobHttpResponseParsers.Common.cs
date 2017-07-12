@@ -246,5 +246,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         {
             return string.Equals(header, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
+
+        /// <summary>
+        /// Determines the tier of the blob.
+        /// </summary>
+        /// <param name="blobType">A <see cref="BlobType" /> indicating the type of blob.</param>
+        /// <param name="blobTierString">The blob tier as a string</param>
+        /// <param name="pageBlobTier">A nullable <see cref="PremiumPageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
+        internal static void GetBlobTier(BlobType blobType, string blobTierString, out PremiumPageBlobTier? premiumPageBlobTier)
+        {
+            premiumPageBlobTier = null;
+
+            if (blobType.Equals(BlobType.PageBlob))
+            {
+                PremiumPageBlobTier premiumPageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out premiumPageBlobTierFromResponse))
+                {
+                    premiumPageBlobTier = premiumPageBlobTierFromResponse;
+                }
+                else
+                {
+                    premiumPageBlobTier = PremiumPageBlobTier.Unknown;
+                }
+            }
+            else if (blobType.Equals(BlobType.Unspecified))
+            {
+                PremiumPageBlobTier premiumPageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out premiumPageBlobTierFromResponse))
+                {
+                    premiumPageBlobTier = premiumPageBlobTierFromResponse;
+                }
+                else
+                {
+                    premiumPageBlobTier = PremiumPageBlobTier.Unknown;
+                }
+            }
+        }
     }
 }

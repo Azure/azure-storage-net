@@ -75,7 +75,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 operation.OperationType == TableOperationType.Replace ||
                 operation.OperationType == TableOperationType.Merge)
             {
-                msg.Headers.Add("If-Match", operation.Entity.ETag);
+                if (operation.ETag != null)
+                {
+                    msg.Headers.Add("If-Match", operation.Entity.ETag);
+                }
             }
 
             // Prefer header

@@ -100,6 +100,7 @@
     <Compile Include="File\CloudFileDirectoryTest.cs" />
     <Compile Include="File\CloudFileShareTest.cs" />
     <Compile Include="File\CloudFileTest.cs" />
+    <Compile Include="File\FileServerEncryptionTests.cs" />
     <Compile Include="File\FileTestBase.cs" />
     <Compile Include="File\FileMD5FlagsTest.cs" />
     <Compile Include="Core\LoggingTests.cs" />
