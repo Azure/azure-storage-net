@@ -463,7 +463,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        public virtual void Delete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        internal virtual void Delete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
@@ -480,11 +480,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginDelete(AsyncCallback callback, object state)
+        internal virtual ICancellableAsyncResult BeginDelete(AsyncCallback callback, object state)
         {
             return this.BeginDelete(DeleteShareSnapshotsOption.None, null /* accessCondition */, null /* options */, null /*operationContext */, callback, state);
         }
-
+        
         /// <summary>
         /// Begins an asynchronous operation to delete a share.
         /// </summary>
@@ -495,7 +495,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        internal virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             return this.BeginDelete(DeleteShareSnapshotsOption.None, accessCondition, options, operationContext, callback, state);
         }
@@ -511,7 +511,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginDelete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
+        internal virtual ICancellableAsyncResult BeginDelete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -591,7 +591,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public virtual Task DeleteAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        internal virtual Task DeleteAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);
         }
@@ -620,7 +620,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the share did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
-        public virtual bool DeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        internal virtual bool DeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
@@ -706,7 +706,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginDeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
+        internal virtual ICancellableAsyncResult BeginDeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -878,7 +878,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
+        internal virtual Task<bool> DeleteIfExistsAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);
