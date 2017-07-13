@@ -58,6 +58,10 @@ public class CloudFile : IListFileItem
         {
             throw new System.NotImplementedException();
         }
+        internal set
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public IDictionary<string, string> Metadata

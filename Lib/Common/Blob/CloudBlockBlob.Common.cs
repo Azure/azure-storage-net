@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Net;
 
     /// <summary>
     /// Represents a blob that is uploaded as a set of blocks.
@@ -293,6 +294,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Helper method to generate a 409 Conflict exception.
+        /// <returns>Return a 409 error wrapped in StorageException </returns>
+        private static StorageException GenerateExceptionForConflictFailure()
+        {
+            RequestResult requestResult = new RequestResult();
+            requestResult.HttpStatusMessage = SR.BlobAlreadyExists;
+            requestResult.HttpStatusCode = (int)HttpStatusCode.Conflict;
+            requestResult.ExtendedErrorInformation = null;
+            return new StorageException(requestResult, SR.BlobAlreadyExists, null /* inner */);
         }
     }
 }

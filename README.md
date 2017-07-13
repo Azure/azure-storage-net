@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (8.1.4)
+# Microsoft Azure Storage SDK for .NET (8.2.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -25,7 +25,7 @@ complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http:
 
 The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://azure.microsoft.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
 
-Please review [Get started with Azure Storage in five minutes](http://azure.microsoft.com/en-us/documentation/articles/storage-getting-started-guide/) if you are not familiar with Azure Storage.
+Please review [Get started with Azure Storage](https://docs.microsoft.com/en-us/azure/storage/storage-dotnet-how-to-use-blobs) if you are not familiar with Azure Storage.
 
 For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
 
@@ -56,13 +56,13 @@ Through the bait and switch technique, the reference assembly enables other port
 ## Use with the Azure Storage Emulator
 
 - The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
-- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.6. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.4. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-This version of the Storage Client Library ships with the storage version 2016-05-31.
+This version of the Storage Client Library ships with the storage version 2017-04-17.
 
 ### Via Git
 

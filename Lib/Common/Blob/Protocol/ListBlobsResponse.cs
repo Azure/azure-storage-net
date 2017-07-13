@@ -210,6 +210,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copyStatusDescription = null;
             string copyDestinationSnapshotTime = null;
 
+            string premiumPageBlobTierString = null;
+
             this.reader.ReadStartElement();
             while (this.reader.IsStartElement())
             {
@@ -344,6 +346,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             copyDestinationSnapshotTime = reader.ReadElementContentAsString();
                                             break;
 
+                                        case Constants.AccessTierElement:
+                                            premiumPageBlobTierString = reader.ReadElementContentAsString();
+                                            break;
+
                                         default:
                                             reader.Skip();
                                             break;
@@ -388,6 +394,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     copyCompletionTime,
                     copyStatusDescription,
                     copyDestinationSnapshotTime);
+            }
+
+            if (!string.IsNullOrEmpty(premiumPageBlobTierString))
+            {
+                PremiumPageBlobTier? premiumPageBlobTier;
+                BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, premiumPageBlobTierString, out premiumPageBlobTier);
+                blob.Properties.PremiumPageBlobTier = premiumPageBlobTier;
+                blob.Properties.BlobTierInferred = false;
             }
 
             return new ListBlobEntry(name, blob);

@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core;
 using Microsoft.WindowsAzure.Storage.File.Protocol;
 using System;
 using System.Collections.Generic;
@@ -2285,7 +2286,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-        private CloudFileShare GenerateRandomWriteOnlyFileShare() {
+        private CloudFileShare GenerateRandomWriteOnlyFileShare()
+        {
             string fileName = "n" + Guid.NewGuid().ToString("N");
 
             SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
@@ -2307,6 +2309,759 @@ namespace Microsoft.WindowsAzure.Storage.File
             CloudFileShare fileShareWithSAS = fileClientWithSAS.GetShareReference(fileName);
             return fileShareWithSAS;
         }
+
+        [TestMethod]
+        [Description("Test share snapshot create")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileCreateShareSnapshot()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.Create();
+            share.Metadata["key1"] = "value1";
+            share.SetMetadata();
+
+            CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            dir1.Create();
+            CloudFile file1 = dir1.GetFileReference("file1");
+            file1.Create(1024);
+            byte[] buffer = GetRandomBuffer(1024);
+            file1.UploadFromByteArray(buffer, 0, 1024);
+            dir1.Metadata["key2"] = "value2";
+            dir1.SetMetadata();
+
+            CloudFileShare snapshot = share.Snapshot();
+            CloudFileClient client = GenerateCloudFileClient();
+            CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+            Assert.IsTrue(snapshotRef.Exists());
+            Assert.IsTrue(snapshotRef.Metadata.Count == 1 && snapshotRef.Metadata["key1"].Equals("value1"));
+
+            CloudFileShare snapshotRef2 = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+            snapshotRef2.FetchAttributes();
+            Assert.IsTrue(snapshotRef2.Metadata.Count == 1 && snapshotRef2.Metadata["key1"].Equals("value1"));
+
+            Assert.IsTrue(snapshot.Metadata.Count == 1 && snapshot.Metadata["key1"].Equals("value1"));
+
+            CloudFileDirectory snapshotDir1 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            snapshotDir1.Exists();
+            Assert.IsTrue(snapshotDir1.Metadata.Count == 1 && snapshotDir1.Metadata["key2"].Equals("value2"));
+
+            CloudFileDirectory snapshotDir2 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            snapshotDir2.FetchAttributes();
+            Assert.IsTrue(snapshotDir2.Metadata.Count == 1 && snapshotDir2.Metadata["key2"].Equals("value2"));
+
+            // create snapshot with metadata
+            IDictionary<string, string> shareMeta2 = new Dictionary<string, string>();
+            shareMeta2.Add("abc", "def");
+            CloudFileShare snapshotRef3 = share.Snapshot(shareMeta2, null, null, null);
+            CloudFileShare snapshotRef4 = client.GetShareReference(snapshotRef3.Name, snapshotRef3.SnapshotTime);
+            Assert.IsTrue(snapshotRef4.Exists());
+            Assert.IsTrue(snapshotRef4.Metadata.Count == 1 && snapshotRef4.Metadata["abc"].Equals("def"));
+        }
+
+        [TestMethod]
+        [Description("Test share snapshot create - APM")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileCreateShareSnapshotAPM()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                IAsyncResult result = share.BeginCreate(
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                share.EndCreate(result);
+
+                share.Metadata["key1"] = "value1";
+                result = share.BeginSetMetadata(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                share.EndSetMetadata(result);
+
+                CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                result = dir1.BeginCreate(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                dir1.EndCreate(result);
+
+                CloudFile file1 = dir1.GetFileReference("file1");
+                result = file1.BeginCreate(1024, ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                file1.EndCreate(result);
+
+                byte[] buffer = GetRandomBuffer(1024);
+                result = file1.BeginUploadFromByteArray(buffer, 0, 1024, ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                file1.EndUploadFromByteArray(result);
+
+                dir1.Metadata["key2"] = "value2";
+                result = dir1.BeginSetMetadata(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                dir1.EndSetMetadata(result);
+
+                result = share.BeginSnapshot(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                CloudFileShare snapshot = share.EndSnapshot(result);
+
+                CloudFileClient client = GenerateCloudFileClient();
+                CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+                result = snapshotRef.BeginExists(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                Assert.IsTrue(snapshotRef.EndExists(result));
+
+                result = snapshotRef.BeginFetchAttributes(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                snapshotRef.EndFetchAttributes(result);
+
+                Assert.IsTrue(snapshotRef.Metadata.Count == 1 && snapshotRef.Metadata["key1"].Equals("value1"));
+                Assert.IsTrue(snapshot.Metadata.Count == 1 && snapshot.Metadata["key1"].Equals("value1"));
+                CloudFileDirectory snapshotDir1 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                result = snapshotDir1.BeginFetchAttributes(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                snapshotDir1.EndFetchAttributes(result);
+                Assert.IsTrue(snapshotDir1.Metadata.Count == 1 && snapshotDir1.Metadata["key2"].Equals("value2"));
+
+                // create snapshot with metadata
+                IDictionary<string, string> shareMeta2 = new Dictionary<string, string>();
+                shareMeta2.Add("abc", "def");
+                result = share.BeginSnapshot(shareMeta2, null, null, null, ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                CloudFileShare snapshotRef3 = share.EndSnapshot(result);
+
+                CloudFileShare snapshotRef4 = client.GetShareReference(snapshotRef3.Name, snapshotRef3.SnapshotTime);
+                result = snapshotRef4.BeginExists(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                Assert.IsTrue(snapshotRef4.EndExists(result));
+                Assert.IsTrue(snapshotRef4.Metadata.Count == 1 && snapshotRef4.Metadata["abc"].Equals("def"));
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test share snapshot create - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileCreateShareSnapshotTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.CreateAsync().Wait();
+            share.Metadata["key1"] = "value1";
+            share.SetMetadataAsync().Wait();
+
+            CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            dir1.CreateAsync().Wait();
+            CloudFile file1 = dir1.GetFileReference("file1");
+            file1.CreateAsync(1024).Wait();
+            byte[] buffer = GetRandomBuffer(1024);
+            file1.UploadFromByteArrayAsync(buffer, 0, 1024).Wait();
+            dir1.Metadata["key2"] = "value2";
+            dir1.SetMetadataAsync().Wait();
+
+            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFileClient client = GenerateCloudFileClient();
+            CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+            Assert.IsTrue(snapshotRef.ExistsAsync().Result);
+            Assert.IsTrue(snapshotRef.Metadata.Count == 1 && snapshotRef.Metadata["key1"].Equals("value1"));
+
+            CloudFileShare snapshotRef2 = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+            snapshotRef2.FetchAttributesAsync().Wait();
+            Assert.IsTrue(snapshotRef2.Metadata.Count == 1 && snapshotRef2.Metadata["key1"].Equals("value1"));
+
+            Assert.IsTrue(snapshot.Metadata.Count == 1 && snapshot.Metadata["key1"].Equals("value1"));
+
+            CloudFileDirectory snapshotDir1 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            snapshotDir1.FetchAttributesAsync().Wait();
+            Assert.IsTrue(snapshotDir1.Metadata.Count == 1 && snapshotDir1.Metadata["key2"].Equals("value2"));
+
+            // create snapshot with metadata
+            IDictionary<string, string> shareMeta2 = new Dictionary<string, string>();
+            shareMeta2.Add("abc", "def");
+            CloudFileShare snapshotRef3 = share.SnapshotAsync(shareMeta2, null, null, null).Result;
+            CloudFileShare snapshotRef4 = client.GetShareReference(snapshotRef3.Name, snapshotRef3.SnapshotTime);
+            Assert.IsTrue(snapshotRef4.ExistsAsync().Result);
+            Assert.IsTrue(snapshotRef4.Metadata.Count == 1 && snapshotRef4.Metadata["abc"].Equals("def"));
+        }
+#endif
+
+        [TestMethod]
+        [Description("Test deleting a share that contains snapshots")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareDeleteSnapshotOptions()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.Create();
+            CloudFileShare snapshot = share.Snapshot();
+
+            try
+            {
+                share.Delete(DeleteShareSnapshotsOption.None, null, null, null);
+                Assert.Fail("Should not be able to delete a share that has snapshots");
+            }
+            catch (StorageException e)
+            {
+                Assert.AreEqual("ShareHasSnapshots", e.RequestInformation.ExtendedErrorInformation.ErrorCode);
+            }
+
+            share.Delete(DeleteShareSnapshotsOption.IncludeSnapshots, null, null, null);
+
+            Assert.IsFalse(share.Exists());
+            Assert.IsFalse(snapshot.Exists());
+        }
+
+        [TestMethod]
+        [Description("Test deleting a share that contains snapshots - APM")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareDeleteSnapshotOptionsAPM()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                IAsyncResult result = share.BeginCreate(
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                share.EndCreate(result);
+
+                result = share.BeginSnapshot(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                CloudFileShare snapshot = share.EndSnapshot(result);
+
+                try
+                {
+                    result = share.BeginDelete( DeleteShareSnapshotsOption.None, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndDelete(result);
+
+                    Assert.Fail("Should not be able to delete a share that has snapshots");
+                }
+                catch (StorageException e)
+                {
+                    Assert.AreEqual("ShareHasSnapshots", e.RequestInformation.ExtendedErrorInformation.ErrorCode);
+                }
+
+                result = share.BeginDelete(DeleteShareSnapshotsOption.IncludeSnapshots, null, null, null, ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                share.EndDelete(result);
+
+                result = share.BeginExists(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                Assert.IsFalse(share.EndExists(result));
+
+                result = snapshot.BeginExists(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                Assert.IsFalse(snapshot.EndExists(result));
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test deleting a share that contains snapshots - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileShareDeleteSnapshotOptionsTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.CreateAsync().Wait();
+
+            CloudFileShare snapshot = share.SnapshotAsync().Result;
+
+            try
+            {
+                share.DeleteAsync(DeleteShareSnapshotsOption.None, null, null, null, CancellationToken.None).Wait();
+                Assert.Fail("Should not be able to delete a share that has snapshots");
+            }
+            catch (AggregateException ae)
+            {
+                StorageException se = ae.InnerException as StorageException;
+                Assert.AreEqual("ShareHasSnapshots", se.RequestInformation.ExtendedErrorInformation.ErrorCode);
+            }
+
+            share.DeleteAsync(DeleteShareSnapshotsOption.IncludeSnapshots, null, null, null, CancellationToken.None).Wait();
+
+            Assert.IsFalse(share.ExistsAsync().Result);
+            Assert.IsFalse(snapshot.ExistsAsync().Result);
+        }
+#endif
+
+        [TestMethod]
+        [Description("Test invalid APIs on a share snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileInvalidApisForShareSnapshot()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.Create();
+            CloudFileShare snapshot = share.Snapshot();
+            try
+            {
+                snapshot.Create();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.GetPermissions();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.GetStats();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.SetMetadata();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.SetPermissions(null);
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.SetProperties();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.Snapshot();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+        }
+
+        [TestMethod]
+        [Description("Test invalid APIs on a share snapshot - APM")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileInvalidApisForShareSnapshotAPM()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                IAsyncResult result = share.BeginCreate(
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                share.EndCreate(result);
+
+                result = share.BeginSnapshot(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                CloudFileShare snapshot = share.EndSnapshot(result);
+
+                try
+                {
+                    result = snapshot.BeginCreate(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndSnapshot(result);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+                }
+                try
+                {
+                    result = snapshot.BeginGetPermissions(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndGetPermissions(result);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+                }
+                try
+                {
+                    result = snapshot.BeginGetStats(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndGetStats(result);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+                }
+                try
+                {
+                    result = snapshot.BeginSetMetadata(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndSetMetadata(result);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+                }
+                try
+                {
+                    result = snapshot.BeginSetPermissions(null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndSetPermissions(result);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+                }
+                try
+                {
+                    result = snapshot.BeginSetProperties(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndSetProperties(result);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+                }
+                try
+                {
+                    result = snapshot.BeginSnapshot(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    share.EndSnapshot(result);
+                }
+                catch (InvalidOperationException e)
+                {
+                    Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+                }
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test invalid APIs on a share snapshot - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileInvalidApisForShareSnapshotTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.CreateAsync().Wait();
+
+            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            try
+            {
+                snapshot.CreateAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.GetPermissionsAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.GetStatsAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.SetMetadataAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.SetPermissionsAsync(null).Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.SetPropertiesAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                snapshot.SnapshotAsync().Wait();
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Test list files and directories within a snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileListFilesAndDirectoriesWithinSnapshot()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.Create();
+            CloudFileDirectory myDir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+
+            myDir.Create();
+            myDir.GetFileReference("myfile").Create(1024);;
+            myDir.GetDirectoryReference("yourDir").Create();
+            Assert.IsTrue(share.Exists());
+            CloudFileShare snapshot = share.Snapshot();
+            CloudFileClient client = GenerateCloudFileClient();
+            CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+            IEnumerable<IListFileItem> listResult = snapshotRef.GetRootDirectoryReference().ListFilesAndDirectories();
+            int count = 0;
+            foreach (IListFileItem listFileItem in listResult)
+            {
+                count++;
+                Assert.AreEqual("mydir", ((CloudFileDirectory)listFileItem).Name);
+            }
+
+            Assert.AreEqual(1, count);
+
+            count = 0;
+            listResult = snapshotRef.GetRootDirectoryReference().GetDirectoryReference("mydir").ListFilesAndDirectories();
+            foreach (IListFileItem listFileItem in listResult) {
+                if (listFileItem is CloudFileDirectory)
+                {
+                    count++;
+                    CloudFileDirectory listedDir = (CloudFileDirectory)listFileItem;
+                    Assert.IsTrue(listedDir.SnapshotQualifiedUri.ToString().Contains(
+                        "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                    Assert.AreEqual("yourDir", listedDir.Name);
+                }
+                else
+                {
+                    count++;
+                    CloudFile listedFile = (CloudFile)listFileItem;
+                    Assert.IsTrue(listedFile.SnapshotQualifiedUri.ToString().Contains(
+                        "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                    Assert.AreEqual("myfile", listedFile.Name);
+                }
+            }
+
+            Assert.AreEqual(2, count);
+
+            snapshot.Delete();
+            share.Delete();
+        }
+
+        [TestMethod]
+        [Description("Test list files and directories within a snapshot - APM")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileListFilesAndDirectoriesWithinSnapshotAPM()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                IAsyncResult result = share.BeginCreate(
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                share.EndCreate(result);
+
+                CloudFileDirectory myDir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                result = myDir.BeginCreate(
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                myDir.EndCreate(result);
+
+                myDir.GetFileReference("myfile").Create(1024);
+                CloudFileDirectory yourDir = myDir.GetDirectoryReference("yourDir");
+                result = yourDir.BeginCreate(
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                yourDir.EndCreate(result);
+
+                result = share.BeginExists(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                Assert.IsTrue(share.EndExists(result));
+
+                result = share.BeginSnapshot(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                CloudFileShare snapshot = share.EndSnapshot(result);
+
+                CloudFileClient client = GenerateCloudFileClient();
+                CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+                result = snapshotRef.GetRootDirectoryReference().BeginListFilesAndDirectoriesSegmented(null, ArgIterator => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                IEnumerable<IListFileItem> listResult = snapshotRef.GetRootDirectoryReference().EndListFilesAndDirectoriesSegmented(result).Results;
+                int count = 0;
+                foreach (IListFileItem listFileItem in listResult)
+                {
+                    count++;
+                    Assert.AreEqual("mydir", ((CloudFileDirectory)listFileItem).Name);
+                }
+
+                Assert.AreEqual(1, count);
+
+                count = 0;
+                result = snapshotRef.GetRootDirectoryReference().GetDirectoryReference("mydir").BeginListFilesAndDirectoriesSegmented(null, ArgIterator => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                listResult = snapshotRef.GetRootDirectoryReference().EndListFilesAndDirectoriesSegmented(result).Results;
+                foreach (IListFileItem listFileItem in listResult)
+                {
+                    if (listFileItem is CloudFileDirectory)
+                    {
+                        count++;
+                        CloudFileDirectory listedDir = (CloudFileDirectory)listFileItem;
+                        Assert.IsTrue(listedDir.SnapshotQualifiedUri.ToString().Contains(
+                            "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                        Assert.AreEqual("yourDir", listedDir.Name);
+                    }
+                    else
+                    {
+                        count++;
+                        CloudFile listedFile = (CloudFile)listFileItem;
+                        Assert.IsTrue(listedFile.SnapshotQualifiedUri.ToString().Contains(
+                            "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                        Assert.AreEqual("myfile", listedFile.Name);
+                    }
+                }
+
+                Assert.AreEqual(2, count);
+
+                result = snapshot.BeginDelete(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                snapshot.EndDelete(result);
+
+                result = share.BeginDelete(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                share.EndDelete(result);
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test list files and directories within a snapshot - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileListFilesAndDirectoriesWithinSnapshotTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.CreateAsync().Wait();
+            CloudFileDirectory myDir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+
+            myDir.CreateAsync().Wait();
+            myDir.GetFileReference("myfile").CreateAsync(1024);
+            myDir.GetDirectoryReference("yourDir").CreateAsync();
+            Assert.IsTrue(share.ExistsAsync().Result);
+            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFileClient client = GenerateCloudFileClient();
+            CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
+            List<IListFileItem> listedFileItems = new List<IListFileItem>();
+            FileContinuationToken token = null;
+            do
+            {
+                FileResultSegment resultSegment = snapshotRef.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(token).Result;
+                token = resultSegment.ContinuationToken;
+
+                foreach (IListFileItem listResultItem in resultSegment.Results)
+                {
+                    listedFileItems.Add(listResultItem);
+                }
+            }
+            while (token != null);
+
+            int count = 0;
+            foreach (IListFileItem listFileItem in listedFileItems)
+            {
+                count++;
+                Assert.AreEqual("mydir", ((CloudFileDirectory)listFileItem).Name);
+            }
+
+            Assert.AreEqual(1, count);
+
+            token = null;
+            listedFileItems.Clear();
+            do
+            {
+                FileResultSegment resultSegment = snapshotRef.GetRootDirectoryReference().GetDirectoryReference("mydir").ListFilesAndDirectoriesSegmentedAsync(token).Result;
+                token = resultSegment.ContinuationToken;
+
+                foreach (IListFileItem listResultItem in resultSegment.Results)
+                {
+                    listedFileItems.Add(listResultItem);
+                }
+            }
+            while (token != null);
+
+            count = 0;
+            foreach (IListFileItem listFileItem in listedFileItems)
+            {
+                if (listFileItem is CloudFileDirectory)
+                {
+                    count++;
+                    CloudFileDirectory listedDir = (CloudFileDirectory)listFileItem;
+                    Assert.IsTrue(listedDir.SnapshotQualifiedUri.ToString().Contains(
+                        "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                    Assert.AreEqual("yourDir", listedDir.Name);
+                }
+                else
+                {
+                    count++;
+                    CloudFile listedFile = (CloudFile)listFileItem;
+                    Assert.IsTrue(listedFile.SnapshotQualifiedUri.ToString().Contains(
+                        "sharesnapshot=" + snapshot.SnapshotTime.Value.UtcDateTime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffff'Z'", CultureInfo.InvariantCulture)));
+                    Assert.AreEqual("myfile", listedFile.Name);
+                }
+            }
+
+            Assert.AreEqual(2, count);
+
+            snapshot.DeleteAsync().Wait();
+            share.DeleteAsync().Wait();
+        }
+#endif
 
         /*
         [TestMethod]

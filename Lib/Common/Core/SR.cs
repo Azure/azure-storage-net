@@ -35,6 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string BatchErrorInOperation = "Element {0} in the batch returned an unexpected response code.";
         public const string BinaryMessageShouldUseBase64Encoding = "EncodeMessage should be true for binary message.";
         public const string Blob = "blob";
+        public const string BlobAlreadyExists = "The specified blob already exists.";
         public const string BlobDataCorrupted = "Blob data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
         public const string BlobEndPointNotConfigured = "No blob endpoint configured.";
         public const string BlobInvalidSequenceNumber = "The sequence number may not be specified for an increment operation.";
@@ -42,6 +43,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string BlobStreamAlreadyCommitted = "Blob stream has already been committed once.";
         public const string BlobStreamFlushPending = "Blob stream has a pending flush operation. Please call EndFlush first.";
         public const string BlobStreamReadPending = "Blob stream has a pending read operation. Please call EndRead first.";
+        public const string BlobTierNotSupported = "Blob tier cannot be set by this API on an existing blob. Please call SetBlobTier for existing blobs.";
         public const string BlobTypeMismatch = "Blob type of the blob reference doesn't match blob type of the blob.";
         public const string BufferTooSmall = "The provided buffer is too small to fit in the blob data given the offset.";
         public const string BufferManagerProvidedIncorrectLengthBuffer = "The IBufferManager provided an incorrect length buffer to the stream, Expected {0}, received {1}. Buffer length should equal the value returned by IBufferManager.GetDefaultBufferSize().";

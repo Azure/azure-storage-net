@@ -1,5 +1,5 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="FileShareProperties.cs" company="Microsoft">
+//-----------------------------------------------------------------------
+// <copyright file="DeleteShareSnapshotsOption.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,30 +17,19 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using System;
-
     /// <summary>
-    /// Represents the system properties for a share.
+    /// The set of options describing delete operation.
     /// </summary>
-    public sealed class FileShareProperties
+    internal enum DeleteShareSnapshotsOption
     {
         /// <summary>
-        /// Gets the ETag value for the share.
+        /// Delete the share only. If the share has snapshots, this option will result in an error from the service.
         /// </summary>
-        /// <value>The share's quoted ETag value.</value>
-        public string ETag { get; internal set; }
+        None,
 
         /// <summary>
-        /// Gets the share's last-modified time.
+        /// Delete the share and its snapshots.
         /// </summary>
-        /// <value>The share's last-modified time.</value>
-        public DateTimeOffset? LastModified { get; internal set; }
-
-        /// <summary>
-        /// Gets or sets the maximum size for the share, in gigabytes.
-        /// </summary>
-        public int? Quota { get; set; }
+        IncludeSnapshots
     }
 }

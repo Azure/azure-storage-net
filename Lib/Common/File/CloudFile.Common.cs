@@ -119,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Stores the file's attributes.
         /// </summary>
-        private readonly CloudFileAttributes attributes;
+        internal CloudFileAttributes attributes;
 
         /// <summary>
         /// Gets the <see cref="CloudFileClient"/> object that represents the File service.
@@ -172,6 +172,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             get
             {
                 return this.attributes.Properties;
+            }
+
+            internal set
+            {
+                this.attributes.Properties = value;
             }
         }
 
@@ -436,13 +441,13 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 this.ServiceClient = new CloudFileClient(NavigationHelper.GetServiceClientBaseAddress(this.StorageUri, null /* usePathStyleUris */), credentials ?? parsedCredentials);
             }
-            
+
             // Create ServiceClient before creating share.
             if (parsedShareSnapshot.HasValue)
             {
                 this.Share.SnapshotTime = parsedShareSnapshot;
             }
-            
+
             this.Name = NavigationHelper.GetFileName(this.Uri, this.ServiceClient.UsePathStyleUris);
         }
     }
