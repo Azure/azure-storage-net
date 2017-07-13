@@ -4,7 +4,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
 public static class HeaderConstants
 {
-    public static readonly string UserAgent = "Azure-Storage/8.2.0 " + Constants.HeaderConstants.UserAgentComment;
+    public static readonly string UserAgent = "Azure-Storage/8.2.0 ";
     public const string UserAgentProductName = "Azure-Storage";
     public const string UserAgentProductVersion = "8.2.0";
     public const string PrefixForStorageHeader = "x-ms-";
