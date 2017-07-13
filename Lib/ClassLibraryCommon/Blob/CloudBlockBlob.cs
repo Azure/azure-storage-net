@@ -1043,9 +1043,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUploadFromFile(IAsyncResult asyncResult)
         {
-            if (asyncResult is CancellableAsyncResultTaskWrapper)
+            CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
+            if (cancellableAsyncResult != null)
             {
-                CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
                 cancellableAsyncResult.Wait();
             }
             else
@@ -2423,14 +2423,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.SendStream = stream;
             putCmd.SendStreamLength = length ?? stream.Length - offset;
             putCmd.RecoveryAction = (cmd, ex, ctx) => RecoveryActions.SeekStream(cmd, offset);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, null /* premiumPageBlobTier */, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = putCmd.SendStreamLength.Value;
                 return NullType.Value;
             };
@@ -2470,7 +2470,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -2521,7 +2521,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };

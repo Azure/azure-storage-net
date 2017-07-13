@@ -69,6 +69,6 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// Gets the share's snapshot time, if any.
         /// </summary>
         /// <value>A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</value>
-        internal DateTimeOffset? SnapshotTime { get; /*internal*/ set; }
+        internal DateTimeOffset? SnapshotTime { get; set; }
     }
 }

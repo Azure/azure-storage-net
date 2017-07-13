@@ -884,6 +884,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task CreateAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
@@ -1236,6 +1237,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
@@ -1250,7 +1252,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5)
@@ -1264,7 +1266,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
@@ -1281,7 +1283,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
@@ -1390,6 +1392,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task ClearRangeAsync(long startOffset, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.ClearRangeImpl(startOffset, length, accessCondition, modifiedOptions),
@@ -1478,6 +1481,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync<string>(
                 this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
@@ -1539,6 +1543,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task AbortCopyAsync(string copyId, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                this.AbortCopyImpl(copyId, accessCondition, modifiedOptions),
@@ -1677,6 +1682,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
                 this.Properties.Length = sizeInBytes;
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1806,6 +1812,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1857,6 +1864,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1869,8 +1877,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">The range data.</param>
         /// <param name="startOffset">The start offset.</param> 
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <code>null</code>, no condition is used.</param>
+        /// on the file. May be <c>null</code> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that writes the range.</returns>
         private RESTCommand<NullType> PutRangeImpl(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options)
@@ -1895,6 +1903,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 

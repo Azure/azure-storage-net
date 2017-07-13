@@ -217,7 +217,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             try
             {
-                this.Create(accessType, requestOptions, operationContext);
+                this.Create(accessType, modifiedOptions, operationContext);
                 return true;
             } 
             catch (StorageException e)
