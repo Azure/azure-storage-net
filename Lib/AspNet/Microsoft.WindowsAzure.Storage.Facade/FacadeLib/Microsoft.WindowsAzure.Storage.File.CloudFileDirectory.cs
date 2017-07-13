@@ -34,7 +34,7 @@ public class CloudFileDirectory : IListFileItem
         get; private set;
     }
 
-    public Uri SnapshotQualifiedUri
+    internal Uri SnapshotQualifiedUri
     {
         get
         {
@@ -42,7 +42,7 @@ public class CloudFileDirectory : IListFileItem
         }
     }
 
-    public StorageUri SnapshotQualifiedStorageUri
+    internal StorageUri SnapshotQualifiedStorageUri
     {
         get
         {

@@ -31,9 +31,10 @@ using System.Security.Cryptography;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using Windows.Storage;
 #endif
+
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -1424,6 +1425,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(PremiumPageBlobTier.P10, blob4.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob4.Properties.BlobTierInferred.Value);
 
+#if !NETCORE
                 StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
                 StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
                 using (Stream file = await inputFile.OpenStreamForWriteAsync())
@@ -1435,6 +1437,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await blob5.UploadFromFileAsync(inputFile, PremiumPageBlobTier.P20, null, null, null, CancellationToken.None);
                 Assert.AreEqual(PremiumPageBlobTier.P20, blob5.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob5.Properties.BlobTierInferred.Value);
+#endif
 
                 using (MemoryStream memStream = new MemoryStream(data))
                 {

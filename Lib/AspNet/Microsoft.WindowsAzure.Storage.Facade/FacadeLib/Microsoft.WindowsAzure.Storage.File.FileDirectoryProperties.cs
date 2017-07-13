@@ -12,6 +12,11 @@ public sealed class FileDirectoryProperties
     {
         get; internal set;
     }
+
+    public bool IsServerEncrypted
+    {
+        get; internal set;
+    }
 }
 
 }

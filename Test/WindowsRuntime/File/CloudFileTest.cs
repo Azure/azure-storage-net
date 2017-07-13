@@ -29,8 +29,9 @@ using System.Security.Cryptography;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
-using Microsoft.WindowsAzure.Storage.Core;
 #endif
+
+using Microsoft.WindowsAzure.Storage.Core;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {

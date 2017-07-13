@@ -76,6 +76,11 @@ namespace Microsoft.WindowsAzure.Storage
         {
             return ReadFromStream(inputStream.AsStreamForRead());
         }
+
+        public static async Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
+        {
+            return await ReadFromStreamAsync(inputStream.AsStreamForRead());
+        }
 #endif
 
         /// <summary>
