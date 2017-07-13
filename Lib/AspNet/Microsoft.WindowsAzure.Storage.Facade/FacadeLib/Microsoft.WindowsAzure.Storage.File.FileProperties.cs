@@ -49,6 +49,11 @@ public sealed class FileProperties
         get; internal set;
     }
 
+    public bool IsServerEncrypted
+    {
+        get; internal set;
+    }
+
     public FileProperties()
     {
         throw new System.NotImplementedException();

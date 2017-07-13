@@ -403,6 +403,70 @@ namespace Microsoft.WindowsAzure.Storage.File
             await share.ExistsAsync(options, context);
             Assert.IsNull(timeout);
         }
+
+        //TODO: Enable for ShareSnapshot release
+        //[TestMethod]
+        [Description("Test list shares with a snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileListSharesWithSnapshotAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+            share.Metadata["key1"] = "value1";
+            await share.SetMetadataAsync();
+
+            CloudFileShare snapshot = await share.SnapshotAsync();
+            share.Metadata["key2"] = "value2";
+            await share.SetMetadataAsync();
+
+            CloudFileClient client = GenerateCloudFileClient();
+            List<CloudFileShare> listedShares = new List<CloudFileShare>();
+            FileContinuationToken token = null;
+            do
+            {
+                ShareResultSegment resultSegment = await client.ListSharesSegmentedAsync(share.Name, ShareListingDetails.All, null, token, null, null);
+                token = resultSegment.ContinuationToken;
+
+                foreach (CloudFileShare listResultShare in resultSegment.Results)
+                {
+                    listedShares.Add(listResultShare);
+                }
+            }
+            while (token != null);
+
+            int count = 0;
+            bool originalFound = false;
+            bool snapshotFound = false;
+            foreach (CloudFileShare listShareItem in listedShares)
+            {
+                if (listShareItem.Name.Equals(share.Name) && !listShareItem.IsSnapshot && !originalFound)
+                {
+                    count++;
+                    originalFound = true;
+                    Assert.AreEqual(2, listShareItem.Metadata.Count);
+                    Assert.AreEqual("value2", listShareItem.Metadata["key2"]);
+                    Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                    Assert.AreEqual(share.StorageUri, listShareItem.StorageUri);
+                }
+                else if (listShareItem.Name.Equals(share.Name) &&
+                        listShareItem.IsSnapshot && !snapshotFound)
+                {
+                    count++;
+                    snapshotFound = true;
+                    Assert.AreEqual(1, listShareItem.Metadata.Count);
+                    Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                    Assert.AreEqual(snapshot.StorageUri, listShareItem.StorageUri);
+                }
+            }
+
+            Assert.AreEqual(2, count);
+
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
+        }
 #endif
     }
 }
