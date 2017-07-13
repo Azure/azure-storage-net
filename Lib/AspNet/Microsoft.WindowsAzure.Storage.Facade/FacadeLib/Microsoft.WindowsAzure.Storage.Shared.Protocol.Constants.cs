@@ -98,6 +98,7 @@ internal static class Constants
     public const string GeoUnavailableValue = "unavailable";
     public const string GeoLiveValue = "live";
     public const string GeoBootstrapValue = "bootstrap";
+    public const string AccessTierElement = "AccessTier";
     public const string BlobTypeElement = "BlobType";
     public const string LeaseStatusElement = "LeaseStatus";
     public const string LeaseStateElement = "LeaseState";
@@ -245,7 +246,7 @@ internal static class Constants
         public const string TableEncryptionKeyDetails = "_ClientEncryptionMetadata1";
         public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
         public const string AgentMetadataKey = "EncryptionLibrary";
-        public const string AgentMetadataValue = ".NET 8.1.3";
+        public const string AgentMetadataValue = ".NET 8.2.0";
     }
 }
 

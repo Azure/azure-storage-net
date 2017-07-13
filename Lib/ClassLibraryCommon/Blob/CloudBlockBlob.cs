@@ -65,7 +65,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 try
                 {
-                    this.FetchAttributes(accessCondition, options, operationContext);
+                    // If the accessCondition is IsIfNotExists, the fetch call will always return 400
+                    this.FetchAttributes(accessCondition.Clone().RemoveIsIfNotExistsCondition(), options, operationContext);
+
+                    // In case the blob already exists and the access condition is "IfNotExists", we should fail fast before uploading any content for the blob 
+                    if (accessCondition.IsIfNotExists)
+                    {
+                        throw GenerateExceptionForConflictFailure();
+                    }
                 }
                 catch (StorageException e)
                 {
@@ -154,7 +161,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if ((accessCondition != null) && accessCondition.IsConditional)
             {
                 ICancellableAsyncResult result = this.BeginFetchAttributes(
-                    accessCondition,
+                    // If the accessCondition is IsIfNotExists, the fetch call will always return 400
+                    accessCondition.Clone().RemoveIsIfNotExistsCondition(),
                     options,
                     operationContext,
                     ar =>
@@ -164,6 +172,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         try
                         {
                             this.EndFetchAttributes(ar);
+
+                            // In case the blob already exists and the access condition is "IfNotExists", we should fail fast before uploading any content for the blob 
+                            if (accessCondition.IsIfNotExists)
+                            {
+                                storageAsyncResult.OnComplete(GenerateExceptionForConflictFailure());
+                            }
                         }
                         catch (StorageException e)
                         {
@@ -1029,9 +1043,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUploadFromFile(IAsyncResult asyncResult)
         {
-            if (asyncResult is CancellableAsyncResultTaskWrapper)
+            CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
+            if (cancellableAsyncResult != null)
             {
-                CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
                 cancellableAsyncResult.Wait();
             }
             else
@@ -2409,14 +2423,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.SendStream = stream;
             putCmd.SendStreamLength = length ?? stream.Length - offset;
             putCmd.RecoveryAction = (cmd, ex, ctx) => RecoveryActions.SeekStream(cmd, offset);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, null /* premiumPageBlobTier */, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = putCmd.SendStreamLength.Value;
                 return NullType.Value;
             };
@@ -2456,7 +2470,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -2507,7 +2521,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };
@@ -2634,9 +2648,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // If we got a 404 and the access condition was not an If-Match, continue.  (We don't want an if-none-match to interfere with the case where the blob doesn't exist)
             if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) && string.IsNullOrEmpty(accessCondition.IfMatchETag)) return true;
-
-            // If we got a 400 and the access condition was If-None-Match-*, continue.  (There is a special case:  If-None-Match-*, on a blob that doesn't exist, will return a 400 on a read operation, because it's an impossible condition.
-            if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.BadRequest) && !string.IsNullOrEmpty(accessCondition.IfNoneMatchETag) && (accessCondition.IfNoneMatchETag == "*")) return true;
 
             // If we got a 403, continue.  This is to account for the case where our credentials give write, but not read permission.
             if (exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden) return true;

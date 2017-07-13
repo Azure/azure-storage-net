@@ -41,5 +41,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <value>The directory's last-modified time.</value>
         public DateTimeOffset? LastModified { get; internal set; }
+
+        /// <summary>
+        /// Gets the directory's server-side encryption state.
+        /// </summary>
+        /// <value>A bool representing the directory's server-side encryption state.</value>
+        public bool IsServerEncrypted { get; internal set; }
     }
 }

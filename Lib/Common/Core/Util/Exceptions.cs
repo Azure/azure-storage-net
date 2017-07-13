@@ -61,14 +61,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
                 try
                 {
-                    Stream errStream = await response.Content.ReadAsStreamAsync();
+                    Stream errStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                     if (parseError != null)
                     {
                         currentResult.ExtendedErrorInformation = parseError(errStream, response, response.Content.Headers.ContentType.ToString());
                     }
                     else
                     {
-                        currentResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(errStream.AsInputStream());
+                        currentResult.ExtendedErrorInformation = await StorageExtendedErrorInformation.ReadFromStreamAsync(errStream.AsInputStream());
                     }
                 }
                 catch (Exception)
