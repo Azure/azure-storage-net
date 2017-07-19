@@ -124,6 +124,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
             }
 
+            // Get the tier of the blob
+            string premiumBlobTierInferredString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierInferredHeader);
+            if (!string.IsNullOrEmpty(premiumBlobTierInferredString))
+            {
+                properties.BlobTierInferred = Convert.ToBoolean(premiumBlobTierInferredString);
+            }
+
+            string premiumBlobTierString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierHeader);
+            PremiumPageBlobTier? premiumPageBlobTier;
+            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, premiumBlobTierString, out premiumPageBlobTier);
+            properties.PremiumPageBlobTier = premiumPageBlobTier;
+            if (properties.PremiumPageBlobTier.HasValue && !properties.BlobTierInferred.HasValue)
+            {
+                properties.BlobTierInferred = false;
+            }
+
             return properties;
         }
 

@@ -35,20 +35,12 @@ public class CloudFileShare
         get; private set;
     }
 
-    public DateTimeOffset? SnapshotTime
+    internal DateTimeOffset? SnapshotTime
     {
-        get; internal set;
+        get; set;
     }
 
-    public bool IsSnapshot
-    {
-        get
-        {
-            throw new System.NotImplementedException();
-        }
-    }
-
-    public Uri SnapshotQualifiedUri
+    internal bool IsSnapshot
     {
         get
         {
@@ -56,7 +48,15 @@ public class CloudFileShare
         }
     }
 
-    public StorageUri SnapshotQualifiedStorageUri
+    internal Uri SnapshotQualifiedUri
+    {
+        get
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
+    internal StorageUri SnapshotQualifiedStorageUri
     {
         get
         {
@@ -89,7 +89,7 @@ public class CloudFileShare
     {
         throw new System.NotImplementedException();
     }
-    public CloudFileShare(Uri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
+    internal CloudFileShare(Uri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
       : this(new StorageUri(shareAddress), snapshotTime, credentials)
     {
         throw new System.NotImplementedException();
@@ -99,7 +99,7 @@ public class CloudFileShare
     {
         throw new System.NotImplementedException();
     }
-    public CloudFileShare(StorageUri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
+    internal CloudFileShare(StorageUri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
     {
         throw new System.NotImplementedException();
     }
@@ -142,48 +142,35 @@ public class CloudFileShare
     {
         throw new System.NotImplementedException();
     }
-    internal virtual Task<CloudFileShare> SnapshotAsync()
-    {
-        throw new System.NotImplementedException();
-    }
-    internal virtual Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
-    {
-        throw new System.NotImplementedException();
-    }
-    internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
-    {
-        throw new System.NotImplementedException();
-    }
-    internal virtual Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-    {
-        throw new System.NotImplementedException();
-    }
     public virtual Task DeleteAsync()
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
     public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
     public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    internal virtual Task DeleteAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task<bool> DeleteIfExistsAsync()
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
     public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
     public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal virtual Task<bool> DeleteIfExistsAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }
@@ -300,7 +287,7 @@ public class CloudFileShare
     {
         throw new System.NotImplementedException();
     }
-    private RESTCommand<NullType> DeleteShareImpl(AccessCondition accessCondition, FileRequestOptions options)
+    private RESTCommand<NullType> DeleteShareImpl(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options)
     {
         throw new System.NotImplementedException();
     }

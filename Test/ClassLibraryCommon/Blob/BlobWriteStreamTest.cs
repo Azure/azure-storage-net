@@ -170,10 +170,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     HttpStatusCode.NotModified);
 
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                blobStream = existingBlob.OpenWrite(accessCondition);
                 TestHelper.ExpectedException(
-                    () => blobStream.Dispose(),
-                    "BlobWriteStream.Dispose with a non-met condition should fail",
+                    () => existingBlob.OpenWrite(accessCondition),
+                    "OpenWrite with a non-met condition should fail",
                     HttpStatusCode.Conflict);
 
                 accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
@@ -213,7 +212,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     "BlobWriteStream.Dispose with a non-met condition should fail",
                     HttpStatusCode.Conflict);
 
-                blob = container.GetBlockBlobReference("blob8");
                 accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value);
                 blobStream = existingBlob.OpenWrite(accessCondition);
 
@@ -335,13 +333,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
                     result = existingBlob.BeginOpenWrite(accessCondition, null, null,
-                        ar => waitHandle.Set(),
-                        null);
+                       ar => waitHandle.Set(),
+                       null);
                     waitHandle.WaitOne();
-                    blobStream = existingBlob.EndOpenWrite(result);
                     TestHelper.ExpectedException(
-                        () => blobStream.Dispose(),
-                        "BlobWriteStream.Dispose with a non-met condition should fail",
+                        () => existingBlob.EndOpenWrite(result),
+                        "OpenWrite with a non-met condition should fail",
                         HttpStatusCode.Conflict);
 
                     accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingBlob.Properties.LastModified.Value.AddMinutes(-1));
@@ -394,18 +391,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     blob = container.GetBlockBlobReference("blob7");
                     accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                    result = existingBlob.BeginOpenWrite(accessCondition, null, null,
+                    result = blob.BeginOpenWrite(accessCondition, null, null,
                         ar => waitHandle.Set(),
                         null);
                     waitHandle.WaitOne();
-                    blobStream = existingBlob.EndOpenWrite(result);
+                    blobStream = blob.EndOpenWrite(result);
                     blob.PutBlockList(new List<string>());
                     TestHelper.ExpectedException(
                         () => blobStream.Dispose(),
                         "BlobWriteStream.Dispose with a non-met condition should fail",
                         HttpStatusCode.Conflict);
 
-                    blob = container.GetBlockBlobReference("blob8");
                     accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingBlob.Properties.LastModified.Value);
                     result = existingBlob.BeginOpenWrite(accessCondition, null, null,
                         ar => waitHandle.Set(),
