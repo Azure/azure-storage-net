@@ -156,6 +156,48 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Calling CreateIfNotExistsAsync on an existing root directory should return false")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileExistingRootDirectoryCreateIfNotExistsAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+
+            try
+            {
+                CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
+                Assert.IsFalse(await rootDirectory.CreateIfNotExistsAsync());
+            }
+            finally
+            {
+                share.DeleteAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Calling CreateIfNotExistsAsync on a nonexistent share's root directory should result in an error 404")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileNonexistentRootDirectoryCreateIfNotExistsAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.DeleteIfExistsAsync();
+
+            CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
+            OperationContext context = new OperationContext();
+            await TestHelper.ExpectedExceptionAsync(
+                async () => await rootDirectory.CreateIfNotExistsAsync(null, context), 
+                context,
+                "Calling CreateIfNotExistsAsync on a nonexistent root directory should have resulted in an error 404",
+                HttpStatusCode.NotFound);
+        }
+
+        [TestMethod]
         [Description("Verify that a file directory's metadata can be updated")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

@@ -65,7 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task CreateAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            this.share.AssertNoSnapshot();
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async() => await Executor.ExecuteAsyncNullReturn(
                 this.CreateDirectoryImpl(modifiedOptions),
@@ -114,6 +114,20 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 try
                 {
+                    // Root directory always exists if the share exists.
+                    // We cannot call this.CreateDirectoryImpl if this is the root directory, because the service will always 
+                    // return a 405 error in that case, regardless of whether or not the share exists.
+                    if (string.IsNullOrEmpty(this.Name))
+                    {
+                        // If the share does not exist, this fetch call will throw a 404, which is what we want.
+                        await Executor.ExecuteAsync(
+                            this.FetchAttributesImpl(null, modifiedOptions),
+                            modifiedOptions.RetryPolicy,
+                            operationContext,
+                            cancellationToken);
+                        return false;
+                    }
+
                     await Executor.ExecuteAsync(
                         this.CreateDirectoryImpl(modifiedOptions),
                         modifiedOptions.RetryPolicy,
@@ -168,7 +182,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            this.share.AssertNoSnapshot();
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.DeleteDirectoryImpl(accessCondition, modifiedOptions),
@@ -459,7 +473,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            this.share.AssertNoSnapshot();
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),

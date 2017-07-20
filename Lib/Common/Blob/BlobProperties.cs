@@ -56,8 +56,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.AppendBlobCommittedBlockCount = other.AppendBlobCommittedBlockCount;
             this.IsServerEncrypted = other.IsServerEncrypted;
             this.IsIncrementalCopy = other.IsIncrementalCopy;
+            this.PremiumPageBlobTier = other.PremiumPageBlobTier;
             this.BlockBlobTier = other.BlockBlobTier;
-            this.PageBlobTier = other.PageBlobTier;
             this.RehydrationStatus = other.RehydrationStatus;
         }
 
@@ -182,17 +182,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public BlockBlobTier? BlockBlobTier { get; internal set; }
 
         /// <summary>
-        /// Gets a value indicating the tier of the page blob.
-        /// </summary>
-        /// <value>A <see cref="PageBlobTier"/> object that indicates the page blob tier.</value>
-        public PageBlobTier? PageBlobTier { get; internal set; }
-
-        /// <summary>
         /// Gets a value indicating that the blob is being rehdrated and the tier of the blob once
         /// the rehydration from archive has completed.
         /// </summary>
         /// <value>A <see cref="RehydrationStatus"/> representing the rehydration status of the blob.</value>
         /// <remarks>Only applicable for block blobs in this version of the library.</remarks>
         public RehydrationStatus? RehydrationStatus { get; internal set; }
+
+        /// Gets a value indicating the tier of the premium page blob.
+        /// </summary>
+        /// <value>A <see cref="PremiumPageBlobTier"/> object that indicates the page blob tier.</value>
+        public PremiumPageBlobTier? PremiumPageBlobTier { get; internal set; }
+
+        /// <summary>
+        /// Gets a value indicating if the tier of the premium page blob has been inferred.
+        /// </summary>
+        /// <value>A bool representing if the premium blob tier has been inferred.</value>
+        public bool? BlobTierInferred { get; internal set; }
     }
 }

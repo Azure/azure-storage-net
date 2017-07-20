@@ -237,7 +237,19 @@ public sealed class CloudStorageAccount
     {
         throw new System.NotImplementedException();
     }
-    private static IDictionary<string, string> ValidCredentials(IDictionary<string, string> settings)
+    private static Func<IDictionary<string, string>, IDictionary<string, string>> None(params KeyValuePair<string, Func<string, bool>>[] atLeastOneSettings)
+    {
+        throw new System.NotImplementedException();
+    }
+    private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesAll(params Func<IDictionary<string, string>, IDictionary<string, string>>[] filters)
+    {
+        throw new System.NotImplementedException();
+    }
+    private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesOne(params Func<IDictionary<string, string>, IDictionary<string, string>>[] filters)
+    {
+        throw new System.NotImplementedException();
+    }
+    private static Func<IDictionary<string, string>, IDictionary<string, string>> MatchesExactly(Func<IDictionary<string, string>, IDictionary<string, string>> filter)
     {
         throw new System.NotImplementedException();
     }

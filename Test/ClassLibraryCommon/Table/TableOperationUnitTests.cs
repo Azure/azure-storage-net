@@ -2888,6 +2888,64 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("Tests writing and reading simple object with TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeSimpleObjectWithTableEntityAdapter()
+        {
+            ShapeEntity shapeEntity = new ShapeEntity(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "square", 4, 4);
+            OperationContext operationContext = new OperationContext();
+
+            TableEntityAdapter<ShapeEntity> writtenEntityAdapter = new TableEntityAdapter<ShapeEntity>(shapeEntity, shapeEntity.PartitionKey, shapeEntity.RowKey);
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+
+            Assert.AreEqual(5, properties.Count);
+            Assert.AreEqual(shapeEntity.PartitionKey, properties["PartitionKey"].StringValue);
+            Assert.AreEqual(shapeEntity.RowKey, properties["RowKey"].StringValue);
+            Assert.AreEqual(shapeEntity.Name, properties["Name"].StringValue);
+            Assert.AreEqual(shapeEntity.Length, properties["Length"].Int32Value);
+            Assert.AreEqual(shapeEntity.Breadth, properties["Breadth"].Int32Value);
+
+            TableEntityAdapter<ShapeEntity> readEntityAdapter = new TableEntityAdapter<ShapeEntity>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+
+            Assert.AreEqual(properties["PartitionKey"].StringValue, readEntityAdapter.OriginalEntity.PartitionKey);
+            Assert.AreEqual(properties["RowKey"].StringValue, readEntityAdapter.OriginalEntity.RowKey);
+            Assert.AreEqual(properties["Name"].StringValue, readEntityAdapter.OriginalEntity.Name);
+            Assert.AreEqual(properties["Length"].Int32Value, readEntityAdapter.OriginalEntity.Length);
+            Assert.AreEqual(properties["Breadth"].Int32Value, readEntityAdapter.OriginalEntity.Breadth);
+        }
+
+        [TestMethod]
+        [Description("Tests writing and reading complex struct with TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeComplexStructWithTableEntityAdapter()
+        {
+            StructEntity structEntity = new StructEntity { Breadth = 12, Length = 10, Name = "ComplexStructEntity" };
+
+            ComplexEntity originalComplexEntity = CreateComplexEntity(Guid.NewGuid().ToString(), 123);
+            structEntity.ComplextEntity = originalComplexEntity;
+
+            OperationContext operationContext = new OperationContext();
+
+            TableEntityAdapter<StructEntity> writtenEntityAdapter = new TableEntityAdapter<StructEntity>(structEntity, "partitionKey", "rowKey");
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+
+            TableEntityAdapter<StructEntity> readEntityAdapter = new TableEntityAdapter<StructEntity>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+
+            Assert.AreEqual(structEntity.Name, readEntityAdapter.OriginalEntity.Name);
+            Assert.AreEqual(structEntity.Length, readEntityAdapter.OriginalEntity.Length);
+            Assert.AreEqual(structEntity.Breadth, readEntityAdapter.OriginalEntity.Breadth);
+            ComplexEntity.AssertEquality(structEntity.ComplextEntity, readEntityAdapter.OriginalEntity.ComplextEntity);
+        }
+
+        [TestMethod]
         [Description("Flattens and recomposes complex object with flat object structure without nested properties")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -2915,6 +2973,24 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 ComplexEntity recomposedComplexEntity = TableEntity.ConvertBack<ComplexEntity>(properties, operationContext);
                 ComplexEntity.AssertEquality(originalComplexEntity, recomposedComplexEntity);
             }
+        }
+
+        [TestMethod]
+        [Description("Tests writing and reading complex object with TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeComplexObjectWithTableEntityAdapter()
+        {
+            ComplexEntity originalComplexEntity = CreateComplexEntity(Guid.NewGuid().ToString(), 0);
+            OperationContext operationContext = new OperationContext();
+            TableEntityAdapter<ComplexEntity> writtenEntityAdapter = new TableEntityAdapter<ComplexEntity>(originalComplexEntity);
+
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+            TableEntityAdapter<ComplexEntity> readEntityAdapter = new TableEntityAdapter<ComplexEntity>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+            ComplexEntity.AssertEquality(originalComplexEntity, readEntityAdapter.OriginalEntity);
         }
 
         [TestMethod]
@@ -2955,6 +3031,28 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         [TestMethod]
+        [Description("Tests reading and writing a complex object with multiple layers of nested object hierarchy using TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeNestedComplexObjectWithTableEntityAdapter()
+        {
+            string pk = Guid.NewGuid().ToString();
+            Random rd = new Random();
+            ComplexEntityWithNestedComplexProperties complexEntityWithNestedComplexProperties = CreateComplexEntityWithNestedComplexProperties(pk, rd.Next());
+            OperationContext operationContext = new OperationContext();
+
+            TableEntityAdapter<ComplexEntityWithNestedComplexProperties> writtenEntityAdapter = new TableEntityAdapter<ComplexEntityWithNestedComplexProperties>();
+            writtenEntityAdapter.OriginalEntity = complexEntityWithNestedComplexProperties;
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+
+            TableEntityAdapter<ComplexEntityWithNestedComplexProperties> readEntityAdapter = new TableEntityAdapter<ComplexEntityWithNestedComplexProperties>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+            ComplexEntityWithNestedComplexProperties.AssertEquality(complexEntityWithNestedComplexProperties, readEntityAdapter.OriginalEntity);
+        }
+
+        [TestMethod]
         [Description("Flattening detects recursive referenced object and throws.")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -2973,6 +3071,34 @@ namespace Microsoft.WindowsAzure.Storage.Table
             // Flattening detects recursive reference and throws.
             SerializationException ex = TestHelper.ExpectedException<SerializationException>(
                 () => TableEntity.Flatten(recursiveReferencedObject, operationContext),
+                "Flatten should throw SerializationException for recursive referenced objects.");
+
+            Assert.AreEqual("Recursive reference detected. Object Path: InnerComplexEntityWithNestedComplexProperties"
+                + " Property Type: Microsoft.WindowsAzure.Storage.Table.Entities.ComplexEntityWithNestedComplexProperties.", ex.Message);
+        }
+
+        [TestMethod]
+        [Description("TableEntityAdapter detects recursive referenced object and throws.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableEntityAdapterDetectsRecursiveReferencedObjectsAndThrows()
+        {
+            string pk = Guid.NewGuid().ToString();
+            Random rd = new Random();
+            ComplexEntityWithNestedComplexProperties recursiveReferencedObject = CreateComplexEntityWithNestedComplexProperties(pk, rd.Next());
+
+            // Create a recursive reference to itself via its composite property
+            recursiveReferencedObject.InnerComplexEntityWithNestedComplexProperties = recursiveReferencedObject;
+
+            OperationContext operationContext = new OperationContext();
+            TableEntityAdapter<ComplexEntityWithNestedComplexProperties> writtenEntityAdapter =
+                new TableEntityAdapter<ComplexEntityWithNestedComplexProperties>(recursiveReferencedObject);
+
+            // Flattening detects recursive reference and throws.
+            SerializationException ex = TestHelper.ExpectedException<SerializationException>(
+                () => writtenEntityAdapter.WriteEntity(operationContext),
                 "Flatten should throw SerializationException for recursive referenced objects.");
 
             Assert.AreEqual("Recursive reference detected. Object Path: InnerComplexEntityWithNestedComplexProperties"

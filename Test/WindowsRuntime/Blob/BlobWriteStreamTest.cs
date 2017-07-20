@@ -202,13 +202,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     HttpStatusCode.NotModified);
 
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                blobStream = await existingBlob.OpenWriteAsync(accessCondition, null, context);
                 await TestHelper.ExpectedExceptionAsync(
-                    () =>
-                    {
-                        blobStream.Dispose();
-                        return Task.FromResult(true);
-                    },
+                    async () => await existingBlob.OpenWriteAsync(accessCondition, null, context),
                     context,
                     "BlobWriteStream.Dispose with a non-met condition should fail",
                     HttpStatusCode.Conflict);
@@ -267,6 +262,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blobStream = await existingBlob.OpenWriteAsync(accessCondition, null, context);
 #if NETCORE
                 Thread.Sleep(1000); //Make the condition invalid for sure
+
+#else
+                // wait for a second so that the LastModified time of existingBlob is in the past, as the precision is in seconds
+                await Task.Delay(TimeSpan.FromSeconds(1));
 #endif
                 await existingBlob.SetPropertiesAsync();
                 await TestHelper.ExpectedExceptionAsync(
@@ -616,6 +615,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                         }
 
+#if NETCORE
+                        // todo: Make some other better logic for this test to be reliable.
+                        System.Threading.Thread.Sleep(500);
+#else
+                        await Task.Delay(TimeSpan.FromSeconds(1));
+#endif
+
                         Assert.AreEqual(1, opContext.RequestResults.Count);
 
                         await blobStream.FlushAsync();
@@ -840,8 +846,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #if NETCORE
                         // todo: Make some other better logic for this test to be reliable.
                         System.Threading.Thread.Sleep(500);
+#else
+                        await Task.Delay(TimeSpan.FromSeconds(1));
 #endif
-
                         Assert.AreEqual(2, opContext.RequestResults.Count);
 
                         await blobStream.FlushAsync();
@@ -1012,6 +1019,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #if NETCORE
                         // todo: Make some other better logic for this test to be reliable.
                         System.Threading.Thread.Sleep(500);
+#else
+                        await Task.Delay(TimeSpan.FromSeconds(1));
 #endif
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);

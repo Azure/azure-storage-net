@@ -404,10 +404,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             if (!string.IsNullOrEmpty(blobTierString))
             {
                 BlockBlobTier? blockBlobTier;
-                PageBlobTier? pageBlobTier;
-                BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, blobTierString, out blockBlobTier, out pageBlobTier);
+                PremiumPageBlobTier? premiumPageBlobTier;
+                BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, blobTierString, out blockBlobTier, out premiumPageBlobTier);
                 blob.Properties.BlockBlobTier = blockBlobTier;
-                blob.Properties.PageBlobTier = pageBlobTier;
+                blob.Properties.PremiumPageBlobTier = premiumPageBlobTier;
+                blob.Properties.BlobTierInferred = false;
             }
 
             blob.Properties.RehydrationStatus = BlobHttpResponseParsers.GetRehydrationStatus(rehydrationStatusString);

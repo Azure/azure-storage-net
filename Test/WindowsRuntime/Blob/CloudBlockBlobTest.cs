@@ -1706,19 +1706,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     await blob.SetBlobTierAsync(blobTier);
                     Assert.AreEqual(blobTier, blob.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     await blob2.FetchAttributesAsync();
                     Assert.AreEqual(blobTier, blob2.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob2.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
 
                     BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
                     CloudBlockBlob blob3 = (CloudBlockBlob)results.Results.ToList().First();
                     Assert.AreEqual(blobTier, blob3.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob3.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob3.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
 
                     await blob.DeleteAsync();
@@ -1764,12 +1764,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob listBlob =  (CloudBlockBlob)container.ListBlobsSegmentedAsync(null).Result.Results.ToList().ElementAt(0);
                 Assert.AreEqual(BlockBlobTier.Archive, listBlob.Properties.BlockBlobTier.Value);
-                Assert.IsFalse(listBlob.Properties.PageBlobTier.HasValue);
+                Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToCool, listBlob.Properties.RehydrationStatus.Value);
 
                 CloudBlockBlob listBlob2 = (CloudBlockBlob)container.ListBlobsSegmentedAsync(null).Result.Results.ToList().ElementAt(1);
                 Assert.AreEqual(BlockBlobTier.Archive, listBlob2.Properties.BlockBlobTier.Value);
-                Assert.IsFalse(listBlob2.Properties.PageBlobTier.HasValue);
+                Assert.IsFalse(listBlob2.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToHot, listBlob2.Properties.RehydrationStatus.Value);
 
                 await blob.DeleteAsync();

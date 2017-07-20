@@ -46,6 +46,10 @@ internal static class BlobHttpResponseParsers
     {
         throw new System.NotImplementedException();
     }
+    internal static void GetBlobTier(BlobType blobType, string blobTierString, out PremiumPageBlobTier? premiumPageBlobTier)
+    {
+        throw new System.NotImplementedException();
+    }
 }
 
 }

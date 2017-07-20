@@ -3182,18 +3182,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     CreateForTestTask(blob, 2, 1024);
                     blob.SetBlobTier(blobTier);
                     Assert.AreEqual(blobTier, blob.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     blob2.FetchAttributes();
                     Assert.AreEqual(blobTier, blob2.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob2.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
 
                     CloudBlockBlob blob3 = (CloudBlockBlob)container.ListBlobs().ToList().First();
                     Assert.AreEqual(blobTier, blob3.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob3.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob3.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
 
                     blob.Delete();
@@ -3241,12 +3241,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob listBlob = (CloudBlockBlob)container.ListBlobs().ToList().ElementAt(0);
                 Assert.AreEqual(BlockBlobTier.Archive, listBlob.Properties.BlockBlobTier.Value);
-                Assert.IsFalse(listBlob.Properties.PageBlobTier.HasValue);
+                Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToCool, listBlob.Properties.RehydrationStatus.Value);
 
                 CloudBlockBlob listBlob2 = (CloudBlockBlob)container.ListBlobs().ToList().ElementAt(1);
                 Assert.AreEqual(BlockBlobTier.Archive, listBlob2.Properties.BlockBlobTier.Value);
-                Assert.IsFalse(listBlob2.Properties.PageBlobTier.HasValue);
+                Assert.IsFalse(listBlob2.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToHot, listBlob2.Properties.RehydrationStatus.Value);
 
                 blob.Delete();
@@ -3288,7 +3288,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         waitHandle.WaitOne();
                         blob.EndSetBlobTier(result);
                         Assert.AreEqual(blobTier, blob.Properties.BlockBlobTier.Value);
-                        Assert.IsFalse(blob.Properties.PageBlobTier.HasValue);
+                        Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                         Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                         CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
@@ -3296,7 +3296,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         waitHandle.WaitOne();
                         blob2.EndFetchAttributes(result);
                         Assert.AreEqual(blobTier, blob2.Properties.BlockBlobTier.Value);
-                        Assert.IsFalse(blob2.Properties.PageBlobTier.HasValue);
+                        Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                         Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
 
                         blob.Delete();
@@ -3335,13 +3335,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     blob.SetBlobTierAsync(blobTier).Wait();
                     Assert.AreEqual(blobTier, blob.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     blob2.FetchAttributesAsync().Wait();
                     Assert.AreEqual(blobTier, blob2.Properties.BlockBlobTier.Value);
-                    Assert.IsFalse(blob2.Properties.PageBlobTier.HasValue);
+                    Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
                 }
             }
