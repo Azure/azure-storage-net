@@ -31,7 +31,10 @@ using System.Security.Cryptography;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
+using Windows.Storage;
 #endif
+
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -1380,6 +1383,193 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 Assert.IsTrue(incrementalCopyFound);
 
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set premium blob tier when creating a page blob and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public async Task CloudPageBlobSetPremiumBlobTierOnCreateAsync()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                await blob.CreateAsync(0, PremiumPageBlobTier.P30, null, null, null, CancellationToken.None);
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                await blob2.FetchAttributesAsync();
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob2.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
+
+                BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
+                CloudPageBlob blob3 = (CloudPageBlob)results.Results.ToList().First();
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+
+                byte[] data = GetRandomBuffer(512);
+
+                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                await blob4.UploadFromByteArrayAsync(data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null, CancellationToken.None);
+                Assert.AreEqual(PremiumPageBlobTier.P10, blob4.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob4.Properties.BlobTierInferred.Value);
+
+#if !NETCORE
+                StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
+                StorageFile inputFile = await tempFolder.CreateFileAsync("input.file", CreationCollisionOption.GenerateUniqueName);
+                using (Stream file = await inputFile.OpenStreamForWriteAsync())
+                {
+                    await file.WriteAsync(data, 0, data.Length);
+                }
+
+                CloudPageBlob blob5 = container.GetPageBlobReference("blob5");
+                await blob5.UploadFromFileAsync(inputFile, PremiumPageBlobTier.P20, null, null, null, CancellationToken.None);
+                Assert.AreEqual(PremiumPageBlobTier.P20, blob5.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob5.Properties.BlobTierInferred.Value);
+#endif
+
+                using (MemoryStream memStream = new MemoryStream(data))
+                {
+                    CloudPageBlob blob6 = container.GetPageBlobReference("blob6");
+                    await blob6.UploadFromStreamAsync(memStream, PremiumPageBlobTier.P30, null, null, null, CancellationToken.None);
+                    Assert.AreEqual(PremiumPageBlobTier.P30, blob6.Properties.PremiumPageBlobTier);
+                    Assert.IsFalse(blob6.Properties.BlobTierInferred.Value);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set premium blob tier and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public async Task CloudPageBlobSetPremiumBlobTierAsync()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                await blob.CreateAsync(0);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.HasValue);
+                await blob.FetchAttributesAsync();
+                Assert.IsTrue(blob.Properties.BlobTierInferred.Value);
+
+                await blob.SetPremiumBlobTierAsync(PremiumPageBlobTier.P30);
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                await blob2.FetchAttributesAsync();
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob2.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
+
+                BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
+                CloudPageBlob blob3 = (CloudPageBlob)results.Results.ToList().First();
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                await blob4.CreateAsync(125 * Constants.GB);
+                try
+                {
+                    await blob4.SetPremiumBlobTierAsync(PremiumPageBlobTier.P6);
+                    Assert.Fail("Expected failure when setting blob tier size to be less than content length");
+                }
+                catch (StorageException e)
+                {
+                    Assert.AreEqual("Specified blob tier size limit cannot be less than content length.", e.Message);
+                    Assert.IsFalse(blob4.Properties.BlobTierInferred.HasValue);
+                }
+
+                try
+                {
+                    await blob2.SetPremiumBlobTierAsync(PremiumPageBlobTier.P4);
+                    Assert.Fail("Expected failure when attempted to set the tier to a lower value than previously");
+                }
+                catch (StorageException e)
+                {
+                    Assert.AreEqual("A higher blob tier has already been explicitly set.", e.Message);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set premium blob tier when copying from an existing blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public async Task CloudPageBlobSetPremiumBlobTierOnCopyAsync()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                CloudPageBlob blob = container.GetPageBlobReference("source");
+                await blob.CreateAsync(1024, PremiumPageBlobTier.P6, null, null, null, CancellationToken.None);
+
+                // copy to larger disk
+                CloudPageBlob copy = container.GetPageBlobReference("copy");
+                await copy.StartCopyAsync(blob, PremiumPageBlobTier.P10, null, null, null, null, CancellationToken.None);
+                await WaitForCopyAsync(copy);
+                Assert.AreEqual(PremiumPageBlobTier.P6, blob.Properties.PremiumPageBlobTier);
+                Assert.AreEqual(PremiumPageBlobTier.P10, copy.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(copy.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob copyRef = container.GetPageBlobReference("copy");
+                await copyRef.FetchAttributesAsync();
+                Assert.AreEqual(PremiumPageBlobTier.P10, copyRef.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(copyRef.Properties.BlobTierInferred.Value);
+
+                // copy where source does not have a tier
+                CloudPageBlob source2 = container.GetPageBlobReference("source2");
+                await source2.CreateAsync(1024);
+                CloudPageBlob copy2 = container.GetPageBlobReference("copy2");
+                await copy2.StartCopyAsync(TestHelper.Defiddler(source2), PremiumPageBlobTier.P20, null, null, null, null, CancellationToken.None);
+                await WaitForCopyAsync(copy2);
+                Assert.AreEqual(BlobType.PageBlob, copy2.BlobType);
+                Assert.IsNull(source2.Properties.PremiumPageBlobTier);
+                Assert.AreEqual(PremiumPageBlobTier.P20, copy2.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(copy2.Properties.BlobTierInferred.Value);
+
+                // attempt to copy to a disk too small
+                CloudPageBlob source3 = container.GetPageBlobReference("source3");
+                source3.CreateAsync(120 * Constants.GB).Wait();
+                CloudPageBlob copy3 = container.GetPageBlobReference("copy3");
+                try
+                {
+                    copy3.StartCopyAsync(TestHelper.Defiddler(source3), PremiumPageBlobTier.P6, null, null, null, null, CancellationToken.None).Wait();
+                    Assert.Fail("Expect failure when attempting to copy to too small of a disk");
+                }
+                catch (AggregateException e)
+                {
+                    Assert.AreEqual("Specified blob tier size limit cannot be less than content length.", e.InnerException.Message);
+                    Assert.IsFalse(copy3.Properties.BlobTierInferred.HasValue);
+                }
             }
             finally
             {

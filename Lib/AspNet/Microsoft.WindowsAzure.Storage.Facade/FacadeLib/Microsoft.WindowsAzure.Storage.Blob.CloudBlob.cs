@@ -502,7 +502,7 @@ public class CloudBlob : IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+    internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
     {
         throw new System.NotImplementedException();
     }

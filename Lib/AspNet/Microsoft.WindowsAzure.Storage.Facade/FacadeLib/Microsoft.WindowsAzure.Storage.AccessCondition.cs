@@ -75,6 +75,22 @@ public sealed class AccessCondition
         }
     }
 
+    internal bool IsIfNotExists
+    {
+        get
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
+    internal AccessCondition RemoveIsIfNotExistsCondition()
+    {
+        throw new System.NotImplementedException();
+    }
+    public AccessCondition Clone()
+    {
+        throw new System.NotImplementedException();
+    }
     public static AccessCondition GenerateEmptyCondition()
     {
         throw new System.NotImplementedException();

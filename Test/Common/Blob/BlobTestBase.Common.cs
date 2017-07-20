@@ -44,6 +44,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return container;
         }
 
+        public static CloudBlobContainer GetRandomPremiumBlobContainerReference()
+        {
+            if (TestBase.PremiumBlobTenantConfig == null || TestBase.PremiumBlobStorageCredentials == null)
+            {
+                Assert.Inconclusive("A premium blob storage account must be specified to run this test.");
+            }
+
+            Uri baseAddressUri = new Uri(TestBase.PremiumBlobTenantConfig.BlobServiceEndpoint);
+            CloudBlobClient blobClient = new CloudBlobClient(baseAddressUri, TestBase.PremiumBlobStorageCredentials);
+            string name = GetRandomContainerName();
+            CloudBlobContainer container = blobClient.GetContainerReference(name);
+
+            return container;
+        }
+
         public static List<string> GetBlockIdList(int count)
         {
             List<string> blocks = new List<string>();
