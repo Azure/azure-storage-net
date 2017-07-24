@@ -70,9 +70,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                     return metadata;
                 }
 
-                if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
+                if (reader.NodeType == XmlNodeType.Element)
                 {
                     needToRead = false;
+
+                    if (reader.IsEmptyElement)
+                    {
+                        reader.Read();
+                        continue;
+                    }
+
                     string elementName = reader.Name;
                     string elementValue = reader.ReadElementContentAsString();
                     if (elementName != Constants.InvalidMetadataName)
