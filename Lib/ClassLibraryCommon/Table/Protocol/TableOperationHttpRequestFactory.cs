@@ -35,8 +35,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         {
             HttpWebRequest msg = HttpWebRequestFactory.CreateWebRequest(method, uri, timeout, builder, useVersionHeader, ctx);
 
-            msg.Headers.Add("Accept-Charset", "UTF-8");
-            msg.Headers.Add("MaxDataServiceVersion", "3.0;NetFx");
+            msg.Headers.Add(Constants.HeaderConstants.AcceptCharset, Constants.HeaderConstants.AcceptCharsetValue);
+            msg.Headers.Add(Constants.HeaderConstants.MaxDataServiceVersion, Constants.HeaderConstants.MaxDataServiceVersionValue);
 
             return msg;
         }
@@ -71,7 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             SetAcceptHeaderForHttpWebRequest(msg, payloadFormat);
             Logger.LogInformational(ctx, SR.PayloadFormat, payloadFormat);
 
-            msg.Headers.Add("DataServiceVersion", "3.0;");
+            msg.Headers.Add(Constants.HeaderConstants.DataServiceVersion, Constants.HeaderConstants.DataServiceVersionValue);
             if (operation.HttpMethod != "HEAD" && operation.HttpMethod != "GET")
             {
                 msg.ContentType = Constants.JsonContentTypeHeaderValue;
@@ -85,13 +85,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 options.AssertNoEncryptionPolicyOrStrictMode();
 
                 // post tunnelling
-                msg.Headers.Add("X-HTTP-Method", "MERGE");
+                msg.Headers.Add(Constants.HeaderConstants.PostTunnelling, "MERGE");
             }
 
             if (operation.OperationType == TableOperationType.RotateEncryptionKey)
             {
                 // post tunnelling
-                msg.Headers.Add("X-HTTP-Method", "MERGE");
+                msg.Headers.Add(Constants.HeaderConstants.PostTunnelling, "MERGE");
             }
             
             // etag
@@ -102,14 +102,14 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             {
                 if (operation.ETag != null)
                 {
-                    msg.Headers.Add("If-Match", operation.ETag);
+                    msg.Headers.Add(Constants.HeaderConstants.IfMatch, operation.ETag);
                 }
             }
 
             // Prefer header
             if (operation.OperationType == TableOperationType.Insert)
             {
-                msg.Headers.Add("Prefer", operation.EchoContent ? "return-content" : "return-no-content");
+                msg.Headers.Add(Constants.HeaderConstants.Prefer, operation.EchoContent ? Constants.HeaderConstants.PreferReturnContent : Constants.HeaderConstants.PreferReturnNoContent);
             }
             
             if (operation.OperationType == TableOperationType.Insert ||
@@ -138,7 +138,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             ITableEntity entityToWrite = (operation.OperationType == TableOperationType.RotateEncryptionKey) ? GetInnerMergeOperationForKeyRotationOperation(operation, options) : operation.Entity;
             Dictionary<string, object> propertyDictionary = new Dictionary<string, object>();
 
-            string odataTypeString = "@odata.type";
 
             foreach (KeyValuePair<string, object> kvp in GetPropertiesWithKeys(entityToWrite, ctx, operation.OperationType, options, operation.OperationType == TableOperationType.RotateEncryptionKey))
             {
@@ -150,28 +149,28 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 if (kvp.Value.GetType() == typeof(DateTime))
                 {
                     propertyDictionary[kvp.Key] = ((DateTime)kvp.Value).ToUniversalTime().ToString("o", System.Globalization.CultureInfo.InvariantCulture);
-                    propertyDictionary[kvp.Key + odataTypeString] = @"Edm.DateTime";
+                    propertyDictionary[kvp.Key + Constants.OdataTypeString] = Constants.EdmDateTime;
                     continue;
                 }
 
                 if (kvp.Value.GetType() == typeof(byte[]))
                 {
                     propertyDictionary[kvp.Key] = Convert.ToBase64String((byte[])kvp.Value);
-                    propertyDictionary[kvp.Key + odataTypeString] = @"Edm.Binary";
+                    propertyDictionary[kvp.Key + Constants.OdataTypeString] = Constants.EdmBinary;
                     continue;
                 }
 
                 if (kvp.Value.GetType() == typeof(Int64))
                 {
                     propertyDictionary[kvp.Key] = kvp.Value.ToString();
-                    propertyDictionary[kvp.Key + odataTypeString] = @"Edm.Int64";
+                    propertyDictionary[kvp.Key + Constants.OdataTypeString] = Constants.EdmInt64;
                     continue;
                 }
 
                 if (kvp.Value.GetType() == typeof(Guid))
                 {
                     propertyDictionary[kvp.Key] = kvp.Value.ToString();
-                    propertyDictionary[kvp.Key + odataTypeString] = @"Edm.Guid";
+                    propertyDictionary[kvp.Key + Constants.OdataTypeString] = Constants.EdmGuid;
                     continue;
                 }
 
@@ -196,23 +195,23 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 string batchID = Guid.NewGuid().ToString();
                 string changesetID = Guid.NewGuid().ToString();
 
-                msg.Headers.Add(@"DataServiceVersion", @"3.0;");
-                msg.ContentType = @"multipart/mixed; boundary=batch_" + batchID;
+                msg.Headers.Add(Constants.HeaderConstants.DataServiceVersion, Constants.HeaderConstants.DataServiceVersionValue);
+                msg.ContentType = Constants.BatchBoundaryMarker + batchID;
 
-                string batchSeparator = @"--batch_" + batchID;
-                string changesetSeparator = @"--changeset_" + changesetID;
-                string acceptHeader = @"Accept: application/json;odata=";
+                string batchSeparator = Constants.BatchSeparator + batchID;
+                string changesetSeparator = Constants.ChangesetSeparator + changesetID;
+                string acceptHeader = "Accept: ";
 
                 switch (payloadFormat)
                 {
                     case TablePayloadFormat.Json:
-                        acceptHeader = acceptHeader + "minimalmetadata";
+                        acceptHeader = acceptHeader + Constants.JsonLightAcceptHeaderValue;
                         break;
                     case TablePayloadFormat.JsonFullMetadata:
-                        acceptHeader = acceptHeader + "fullmetadata";
+                        acceptHeader = acceptHeader + Constants.JsonFullMetadataAcceptHeaderValue;
                         break;
                     case TablePayloadFormat.JsonNoMetadata:
-                        acceptHeader = acceptHeader + "nometadata";
+                        acceptHeader = acceptHeader + Constants.JsonNoMetadataAcceptHeaderValue;
                         break;
                 }
 
@@ -224,7 +223,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 if (!isQuery)
                 {
                     // Start Operation
-                    contentWriter.WriteLine(@"Content-Type: multipart/mixed; boundary=changeset_" + changesetID);
+                    contentWriter.WriteLine(Constants.ChangesetBoundaryMarker + changesetID);
                     contentWriter.WriteLine();
                 }
 
@@ -248,8 +247,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         contentWriter.WriteLine(changesetSeparator);
                     }
 
-                    contentWriter.WriteLine(@"Content-Type: application/http");
-                    contentWriter.WriteLine(@"Content-Transfer-Encoding: binary");
+                    contentWriter.WriteLine(Constants.ContentTypeApplicationHttp);
+                    contentWriter.WriteLine(Constants.ContentTransferEncodingBinary);
                     contentWriter.WriteLine();
 
                     string tableURI = Uri.EscapeUriString(operation.GenerateRequestURI(uri, tableName).ToString());
@@ -259,16 +258,16 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     // This corrects for that.
                     tableURI = tableURI.Replace(@"%25", @"%");
 
-                    contentWriter.WriteLine(httpMethod + " " + tableURI + " HTTP/1.1");
+                    contentWriter.WriteLine(httpMethod + " " + tableURI + " " + Constants.HTTP1_1);
                     contentWriter.WriteLine(acceptHeader);
-                    contentWriter.WriteLine(@"Content-Type: application/json");
+                    contentWriter.WriteLine(Constants.ContentTypeApplicationJson);
 
                     if (operation.OperationType == TableOperationType.Insert)
                     {
-                        contentWriter.WriteLine(@"Prefer: " + (operation.EchoContent ? "return-content" : "return-no-content"));
+                        contentWriter.WriteLine(Constants.HeaderConstants.Prefer + @": " + (operation.EchoContent ? Constants.HeaderConstants.PreferReturnContent : Constants.HeaderConstants.PreferReturnNoContent));
                     }
 
-                    contentWriter.WriteLine(@"DataServiceVersion: 3.0;");
+                    contentWriter.WriteLine(Constants.HeaderConstants.DataServiceVersion+ ": " + Constants.HeaderConstants.DataServiceVersionValue);
 
                     // etag
                     if (operation.OperationType == TableOperationType.Delete ||
@@ -276,7 +275,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         operation.OperationType == TableOperationType.Merge ||
                         operation.OperationType == TableOperationType.RotateEncryptionKey)
                     {
-                        contentWriter.WriteLine(@"If-Match: " + operation.ETag);
+                        contentWriter.WriteLine(Constants.HeaderConstants.IfMatch + @": " + operation.ETag);
                     }
 
                     contentWriter.WriteLine();

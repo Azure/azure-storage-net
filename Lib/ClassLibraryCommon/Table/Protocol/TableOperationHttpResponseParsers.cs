@@ -148,12 +148,18 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
                 }
 
+                // The first line of the response looks like this:
+                // HTTP/1.1 204 No Content
+                // The HTTP status code is chars 9 - 11.
                 int statusCode = Int32.Parse(currentLine.Substring(9, 3));
 
                 Dictionary<string, string> headers = new Dictionary<string, string>();
                 currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
                 while (!string.IsNullOrWhiteSpace(currentLine))
                 {
+                    // The headers all look like this:
+                    // Cache-Control: no-cache
+                    // This code below parses out the header names and values, by noting the location of the colon.
                     int colonIndex = currentLine.IndexOf(':');
                     headers[currentLine.Substring(0, colonIndex)] = currentLine.Substring(colonIndex + 2);
                     currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
@@ -368,30 +374,30 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                             properties.Add(key, null);
                             continue;
                         }
-                        Type t = results[key].GetType();
-                        if (t == typeof(string))
+
+                        if (results[key] is string)
                         {
                             properties.Add(key, (string)results[key]);
                         }
-                        else if (t == typeof(DateTime))
+                        else if (results[key] is DateTime)
                         {
                             properties.Add(key, ((DateTime)results[key]).ToUniversalTime().ToString("o"));
                         }
-                        else if (t == typeof(bool))
+                        else if (results[key] is bool)
                         {
                             properties.Add(key, ((bool)results[key]).ToString());
                         }
-                        else if (t == typeof(double))
+                        else if (results[key] is double)
                         {
                             properties.Add(key, ((double)results[key]).ToString());
                         }
-                        else if (t == typeof(int))
+                        else if (results[key] is int)
                         {
                             properties.Add(key, ((int)results[key]).ToString());
                         }
                         else
                         {
-                            throw new StorageException();
+                            throw new StorageException(string.Format(CultureInfo.InvariantCulture, SR.InvalidTypeInJsonDictionary, results[key].GetType().ToString()));
                         }
                     }
 
