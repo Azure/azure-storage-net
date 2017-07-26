@@ -252,23 +252,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="blobType">A <see cref="BlobType" /> indicating the type of blob.</param>
         /// <param name="blobTierString">The blob tier as a string</param>
-        /// <param name="blockBlobTier">A nullable <see cref="BlockBlobTier"/>. This value will be populated if the blob type is unspecified or is a block blob.</param>
+        /// <param name="standardBlobTier">A nullable <see cref="StandardBlobTier"/>. This value will be populated if the blob type is unspecified or is a block blob.</param>
         /// <param name="premiumPageBlobTier">A nullable <see cref="PageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
-        internal static void GetBlobTier(BlobType blobType, string blobTierString, out BlockBlobTier? blockBlobTier, out PremiumPageBlobTier? premiumPageBlobTier)
+        internal static void GetBlobTier(BlobType blobType, string blobTierString, out StandardBlobTier? standardBlobTier, out PremiumPageBlobTier? premiumPageBlobTier)
         {
-            blockBlobTier = null;
+            standardBlobTier = null;
             premiumPageBlobTier = null;
 
             if (blobType.Equals(BlobType.BlockBlob))
             {
-                BlockBlobTier blockBlobTierFromResponse;
-                if (Enum.TryParse(blobTierString, true, out blockBlobTierFromResponse))
+                StandardBlobTier standardBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out standardBlobTierFromResponse))
                 {
-                    blockBlobTier = blockBlobTierFromResponse;
+                    standardBlobTier = standardBlobTierFromResponse;
                 }
                 else
                 {
-                    blockBlobTier = BlockBlobTier.Unknown;
+                    standardBlobTier = StandardBlobTier.Unknown;
                 }
             }
             else if (blobType.Equals(BlobType.PageBlob))
@@ -285,11 +285,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
             else if (blobType.Equals(BlobType.Unspecified))
             {
-                BlockBlobTier blockBlobTierFromResponse;
+                StandardBlobTier standardBlobTierFromResponse;
                 PremiumPageBlobTier pageBlobTierFromResponse;
-                if (Enum.TryParse(blobTierString, true, out blockBlobTierFromResponse))
+                if (Enum.TryParse(blobTierString, true, out standardBlobTierFromResponse))
                 {
-                    blockBlobTier = blockBlobTierFromResponse;
+                    standardBlobTier = standardBlobTierFromResponse;
                 }
                 else if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
                 {
@@ -297,7 +297,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 }
                 else
                 {
-                    blockBlobTier = BlockBlobTier.Unknown;
+                    standardBlobTier = StandardBlobTier.Unknown;
                     premiumPageBlobTier = PremiumPageBlobTier.Unknown;
                 }
             }

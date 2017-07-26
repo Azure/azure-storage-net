@@ -403,10 +403,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             if (!string.IsNullOrEmpty(blobTierString))
             {
-                BlockBlobTier? blockBlobTier;
+                StandardBlobTier? standardBlobTier;
                 PremiumPageBlobTier? premiumPageBlobTier;
-                BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, blobTierString, out blockBlobTier, out premiumPageBlobTier);
-                blob.Properties.BlockBlobTier = blockBlobTier;
+                BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, blobTierString, out standardBlobTier, out premiumPageBlobTier);
+                blob.Properties.StandardBlobTier = standardBlobTier;
                 blob.Properties.PremiumPageBlobTier = premiumPageBlobTier;
                 blob.Properties.BlobTierInferred = false;
             }

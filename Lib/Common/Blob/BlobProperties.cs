@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.IsServerEncrypted = other.IsServerEncrypted;
             this.IsIncrementalCopy = other.IsIncrementalCopy;
             this.PremiumPageBlobTier = other.PremiumPageBlobTier;
-            this.BlockBlobTier = other.BlockBlobTier;
+            this.StandardBlobTier = other.StandardBlobTier;
             this.RehydrationStatus = other.RehydrationStatus;
         }
 
@@ -178,8 +178,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a value indicating the tier of the block blob.
         /// </summary>
-        /// <value>A <see cref="BlockBlobTier"/> object that indicates the block blob tier.</value>
-        public BlockBlobTier? BlockBlobTier { get; internal set; }
+        /// <value>A <see cref="StandardBlobTier"/> object that indicates the block blob tier.</value>
+        public StandardBlobTier? StandardBlobTier { get; internal set; }
 
         /// <summary>
         /// Gets a value indicating that the blob is being rehdrated and the tier of the blob once

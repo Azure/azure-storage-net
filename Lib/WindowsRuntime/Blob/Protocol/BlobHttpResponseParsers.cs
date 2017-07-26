@@ -132,10 +132,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
             
             string blobTierString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierHeader);
-            BlockBlobTier? blockBlobTier;
+            StandardBlobTier? standardBlobTier;
             PremiumPageBlobTier? premiumPageBlobTier;
-            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out blockBlobTier, out premiumPageBlobTier);
-            properties.BlockBlobTier = blockBlobTier;
+            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out standardBlobTier, out premiumPageBlobTier);
+            properties.StandardBlobTier = standardBlobTier;
             properties.PremiumPageBlobTier = premiumPageBlobTier;
 
             // Get the rehydration status
