@@ -115,6 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidResourceReservedName = "Invalid {0} name. This {0} name is reserved.";
         public const string InvalidSASVersion = "SAS Version invalid. Valid versions include 2012-02-12 and 2013-08-15.";
         public const string InvalidStorageService = "Invalid storage service specified.";
+        public const string InvalidTypeInJsonDictionary = "Invalid type in JSON object. Detected type is {0}, which is not a valid JSON type.";
         public const string IPAddressOrRangeMustBeNullInOldVersion = "IPAddressOrRange must be null when creating a SAS token with an older service version parameter.";
         public const string IPMustBeIPV4InSAS = "When specifying an IP Address in a SAS token, it must be an IPv4 address. Input address was {0}.";
         public const string IQueryableExtensionObjectMustBeTableQuery = "Query must be a TableQuery<T>";

@@ -291,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <summary>
         /// Make a shallow copy of this TableQuery object.
         /// </summary>
-        /// <returns>The copy.</returns>
+        /// <returns>The newly created shallow copy.</returns>
         public TableQuery Copy()
         {
             TableQuery copy = new TableQuery();
