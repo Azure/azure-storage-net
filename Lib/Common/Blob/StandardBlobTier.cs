@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------
-// <copyright file="BlockBlobTier.cs" company="Microsoft">
+// <copyright file="StandardBlobTier.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,12 @@
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     /// <summary>
-    /// The tier of the block blob.
+    /// The tier of the block blob on a standard storage account.
     /// </summary>
-    public enum BlockBlobTier
+    public enum StandardBlobTier
     {
         /// <summary>
-        /// The block blob tier is unknown
+        /// The tier is not recognized by this version of the library
         /// </summary>
         Unknown,
 

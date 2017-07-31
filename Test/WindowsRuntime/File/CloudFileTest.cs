@@ -32,6 +32,8 @@ using Windows.Security.Cryptography.Core;
 using Microsoft.WindowsAzure.Storage.Core;
 #endif
 
+using Microsoft.WindowsAzure.Storage.Core;
+
 namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]

@@ -844,7 +844,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "8.1.1";
+            public const string UserAgentProductVersion = "8.2.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -1010,6 +1010,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header for the archive status.
             /// </summary>
             public const string ArchiveStatusHeader = PrefixForStorageHeader + "archive-status";
+
+            /// <summary>
+            /// Header for the blob tier inferred.
+            /// </summary>
+            public const string AccessTierInferredHeader = PrefixForStorageHeader + "access-tier-inferred";
 
             /// <summary>
             /// Header that specifies blob caching control.

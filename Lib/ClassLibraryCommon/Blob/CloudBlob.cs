@@ -2611,11 +2611,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual string StartCopy(Uri source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
+            return this.StartCopy(source, null /* premiumPageBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying another blob's contents, properties, and metadata to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        internal virtual string StartCopy(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
             CommonUtility.AssertNotNull("source", source);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2631,7 +2651,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(Uri source, AsyncCallback callback, object state)
         {
-            return this.BeginStartCopy(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginStartCopy(source, null /* premiumPageBlobTier */, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -2648,11 +2668,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginStartCopy(source, null /* premiumPageBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another blob's contents, properties, and metadata to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        internal virtual ICancellableAsyncResult BeginStartCopy(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
             CommonUtility.AssertNotNull("source", source);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -3500,6 +3538,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAttributes">The attributes.</param>
         /// <param name="source">The URI of the source blob.</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -3507,7 +3546,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// A <see cref="RESTCommand{T}"/> that starts to copy.
         /// </returns>
         /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-        internal RESTCommand<string> StartCopyImpl(BlobAttributes blobAttributes, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes blobAttributes, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -3517,7 +3556,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, incrementalCopy, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, incrementalCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, blobAttributes.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -3526,6 +3565,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(blobAttributes, resp, false);
                 CopyState state = BlobHttpResponseParsers.GetCopyAttributes(resp);
                 blobAttributes.CopyState = state;
+
+                if (premiumPageBlobTier.HasValue)
+                {
+                    this.attributes.Properties.PremiumPageBlobTier = premiumPageBlobTier;
+                    this.attributes.Properties.BlobTierInferred = false;
+                }
+
                 return state.CopyId;
             };
 

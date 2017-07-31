@@ -134,13 +134,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
 
             // Get the tier of the blob
+            string premiumPageBlobTierInferredString = response.Headers[Constants.HeaderConstants.AccessTierInferredHeader];
+            if (!string.IsNullOrEmpty(premiumPageBlobTierInferredString))
+            {
+                properties.BlobTierInferred = Convert.ToBoolean(premiumPageBlobTierInferredString);
+            }
+            
             string blobTierString = response.Headers[Constants.HeaderConstants.AccessTierHeader];
 
-            BlockBlobTier? blockBlobTier;
-            PageBlobTier? pageBlobTier;
-            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out blockBlobTier, out pageBlobTier);
-            properties.BlockBlobTier = blockBlobTier;
-            properties.PageBlobTier = pageBlobTier;
+            StandardBlobTier? standardBlobTier;
+            PremiumPageBlobTier? premiumPageBlobTier;
+            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out standardBlobTier, out premiumPageBlobTier);
+            properties.StandardBlobTier = standardBlobTier;
+            properties.PremiumPageBlobTier = premiumPageBlobTier;
+            
+            if (properties.PremiumPageBlobTier.HasValue && !properties.BlobTierInferred.HasValue)
+            {
+                properties.BlobTierInferred = false;
+            }
 
             // Get the rehydration status
             string rehydrationStatusString = response.Headers[Constants.HeaderConstants.ArchiveStatusHeader];

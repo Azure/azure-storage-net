@@ -65,7 +65,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 try
                 {
-                    this.FetchAttributes(accessCondition, options, operationContext);
+                    // If the accessCondition is IsIfNotExists, the fetch call will always return 400
+                    this.FetchAttributes(accessCondition.Clone().RemoveIsIfNotExistsCondition(), options, operationContext);
+
+                    // In case the blob already exists and the access condition is "IfNotExists", we should fail fast before uploading any content for the blob 
+                    if (accessCondition.IsIfNotExists)
+                    {
+                        throw GenerateExceptionForConflictFailure();
+                    }
                 }
                 catch (StorageException e)
                 {
@@ -154,7 +161,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if ((accessCondition != null) && accessCondition.IsConditional)
             {
                 ICancellableAsyncResult result = this.BeginFetchAttributes(
-                    accessCondition,
+                    // If the accessCondition is IsIfNotExists, the fetch call will always return 400
+                    accessCondition.Clone().RemoveIsIfNotExistsCondition(),
                     options,
                     operationContext,
                     ar =>
@@ -164,6 +172,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         try
                         {
                             this.EndFetchAttributes(ar);
+
+                            // In case the blob already exists and the access condition is "IfNotExists", we should fail fast before uploading any content for the blob 
+                            if (accessCondition.IsIfNotExists)
+                            {
+                                storageAsyncResult.OnComplete(GenerateExceptionForConflictFailure());
+                            }
                         }
                         catch (StorageException e)
                         {
@@ -1029,9 +1043,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUploadFromFile(IAsyncResult asyncResult)
         {
-            if (asyncResult is CancellableAsyncResultTaskWrapper)
+            CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
+            if (cancellableAsyncResult != null)
             {
-                CancellableAsyncResultTaskWrapper cancellableAsyncResult = asyncResult as CancellableAsyncResultTaskWrapper;
                 cancellableAsyncResult.Wait();
             }
             else
@@ -1838,41 +1852,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
-        /// Sets the tier of the blob.
+        /// Sets the tier of the blob on a standard storage account.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        public virtual void SetBlobTier(BlockBlobTier blobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void SetStandardBlobTier(StandardBlobTier standardBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             Executor.ExecuteSync(
-                this.SetBlobTierImpl(blobTier, accessCondition, modifiedOptions),
+                this.SetStandardBlobTierImpl(standardBlobTier, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
 #endif
 
         /// <summary>
-        /// Begins an asynchronous operation to set the tier of the blob.
+        /// Begins an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginSetBlobTier(BlockBlobTier blobTier, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginSetStandardBlobTier(StandardBlobTier standardBlobTier, AsyncCallback callback, object state)
         {
-            return this.BeginSetBlobTier(blobTier, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginSetStandardBlobTier(standardBlobTier, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
-        /// Begins an asynchronous operation to set the tier of the blob.
+        /// Begins an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1880,12 +1894,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginSetBlobTier(BlockBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginSetStandardBlobTier(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.SetBlobTierImpl(blobTier, accessCondition, modifiedOptions),
+                this.SetStandardBlobTierImpl(standardBlobTier, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -1893,65 +1907,65 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
-        /// Ends an asynchronous operation to the set the tier of the blob.
+        /// Ends an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
-        public virtual void EndSetBlobTier(IAsyncResult asyncResult)
+        public virtual void EndSetStandardBlobTier(IAsyncResult asyncResult)
         {
             Executor.EndExecuteAsync<NullType>(asyncResult);
         }
 
 #if TASK
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(BlockBlobTier blobTier)
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier)
         {
-            return this.SetBlobTierAsync(blobTier, CancellationToken.None);
+            return this.SetStandardBlobTierAsync(standardBlobTier, CancellationToken.None);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(BlockBlobTier blobTier, CancellationToken cancellationToken)
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetBlobTier, this.EndSetBlobTier, blobTier, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetStandardBlobTier, this.EndSetStandardBlobTier, standardBlobTier, cancellationToken);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(BlockBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.SetBlobTierAsync(blobTier, accessCondition, options, operationContext, CancellationToken.None);
+            return this.SetStandardBlobTierAsync(standardBlobTier, accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to set the tier of the blob.
+        /// Initiates an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetBlobTierAsync(BlockBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetBlobTier, this.EndSetBlobTier, blobTier, accessCondition, options, operationContext, cancellationToken);
+            return AsyncExtensions.TaskFromVoidApm(this.BeginSetStandardBlobTier, this.EndSetStandardBlobTier, standardBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -2528,7 +2542,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.SendStream = stream;
             putCmd.SendStreamLength = length ?? stream.Length - offset;
             putCmd.RecoveryAction = (cmd, ex, ctx) => RecoveryActions.SeekStream(cmd, offset);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, null /* premiumPageBlobTier */, accessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, this.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -2702,16 +2716,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Implementation method for the SetBlobTier methods.
         /// </summary>
-        /// <param name="blobTier">A <see cref="BlockBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that sets the blob tier.</returns>
-        private RESTCommand<NullType> SetBlobTierImpl(BlockBlobTier blobTier, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> SetStandardBlobTierImpl(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetBlobTier(uri, serverTimeout, blobTier.ToString(), accessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetBlobTier(uri, serverTimeout, standardBlobTier.ToString(), useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -2721,6 +2735,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 expectedHttpStatusCodes[1] = HttpStatusCode.Accepted;
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(expectedHttpStatusCodes, resp, null, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+
+                this.attributes.Properties.RehydrationStatus = null;
+                if (resp.StatusCode.Equals(HttpStatusCode.OK))
+                {
+                    this.attributes.Properties.StandardBlobTier = standardBlobTier;
+                }
+                else
+                {
+                    // If the status code is accepted, then the blob is currently in the archive state and being rehydrated to the new tier.
+                    this.attributes.Properties.StandardBlobTier = StandardBlobTier.Archive;
+                }
 
                 return NullType.Value;
             };
@@ -2782,9 +2807,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             // If we got a 404 and the access condition was not an If-Match, continue.  (We don't want an if-none-match to interfere with the case where the blob doesn't exist)
             if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) && string.IsNullOrEmpty(accessCondition.IfMatchETag)) return true;
-
-            // If we got a 400 and the access condition was If-None-Match-*, continue.  (There is a special case:  If-None-Match-*, on a blob that doesn't exist, will return a 400 on a read operation, because it's an impossible condition.
-            if ((exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.BadRequest) && !string.IsNullOrEmpty(accessCondition.IfNoneMatchETag) && (accessCondition.IfNoneMatchETag == "*")) return true;
 
             // If we got a 403, continue.  This is to account for the case where our credentials give write, but not read permission.
             if (exception.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Forbidden) return true;

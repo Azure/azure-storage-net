@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="ShareListingDetails.cs" company="Microsoft">
+// <copyright file="StructEntity.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,29 +15,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.Table.Entities
 {
-    using System;
-
-    /// <summary>
-    /// Specifies which details to include when listing the shares in this storage account.
-    /// </summary>
-    [Flags]
-    public enum ShareListingDetails
+	public struct StructEntity
     {
-        /// <summary>
-        /// No additional details.
-        /// </summary>
-        None = 0x0,
+        public string Name { get; set; }
+        public int Length { get; set; }
+        public int Breadth { get; set; }
 
-        /// <summary>
-        /// Retrieve share metadata.
-        /// </summary>
-        Metadata = 0x1,
-
-        /// <summary>
-        /// Retrieve all available details.
-        /// </summary>
-        All = Metadata
+        public ComplexEntity ComplextEntity { get; set; }
     }
 }

@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -3707,35 +3708,59 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Set blob tier and fetch attributes")]
+        [Description("Set blob tier when creating a premium page blob and fetch attributes")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Premium)]
-        public void CloudPageBlobSetBlobTier()
+        public void CloudPageBlobSetPremiumBlobTierOnCreate()
         {
-            CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
             try
             {
                 container.Create();
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.Create(0);
-                blob.SetBlobTier(PageBlobTier.P4);
-                Assert.AreEqual(PageBlobTier.P4, blob.Properties.PageBlobTier);
-                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                blob.Create(0, PremiumPageBlobTier.P40, null, null, null);
+                Assert.AreEqual(PremiumPageBlobTier.P40, blob.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 blob2.FetchAttributes();
-                Assert.AreEqual(PageBlobTier.P4, blob2.Properties.PageBlobTier);
-                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                Assert.AreEqual(PremiumPageBlobTier.P40, blob2.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob2.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
 
-                CloudPageBlob blob3 = (CloudPageBlob)container.ListBlobs().ToList().First();
-                Assert.AreEqual(PageBlobTier.P4, blob3.Properties.PageBlobTier);
-                Assert.IsFalse(blob3.Properties.BlockBlobTier.HasValue);
+                byte[] data = GetRandomBuffer(512);
+
+                CloudPageBlob blob3 = container.GetPageBlobReference("blob3");
+                blob3.UploadFromByteArray(data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null);
+                Assert.AreEqual(PremiumPageBlobTier.P10, blob3.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob3.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
+
+                string inputFileName = "i_" + Path.GetRandomFileName();
+                using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(data, 0, data.Length);
+                }
+
+                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                blob4.UploadFromFile(inputFileName, PremiumPageBlobTier.P20, null, null, null);
+                Assert.AreEqual(PremiumPageBlobTier.P20, blob4.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob4.Properties.BlobTierInferred.Value);
+
+                using (MemoryStream memStream = new MemoryStream(data))
+                {
+                    CloudPageBlob blob5 = container.GetPageBlobReference("blob5");
+                    blob5.UploadFromStream(memStream, PremiumPageBlobTier.P30, null, null, null);
+                    Assert.AreEqual(PremiumPageBlobTier.P30, blob5.Properties.PremiumPageBlobTier);
+                    Assert.IsFalse(blob5.Properties.BlobTierInferred.Value);
+                }
             }
             finally
             {
@@ -3744,14 +3769,198 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
-        [Description("Set blob tier and fetch attributes")]
+        [Description("Set blob tier when creating a premium page blob and fetch attributes - APM")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Premium)]
-        public void CloudPageBlobSetBlobTierAPM()
+        public void CloudPageBlobSetPremiumBlobTierOnCreateAPM()
         {
-            CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                container.Create();
+
+                IAsyncResult result;
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    result = blob.BeginCreate(0, PremiumPageBlobTier.P50, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndCreate(result);
+                    Assert.AreEqual(PremiumPageBlobTier.P50, blob.Properties.PremiumPageBlobTier);
+
+                    CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                    result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob2.EndFetchAttributes(result);
+                    Assert.AreEqual(PremiumPageBlobTier.P50, blob2.Properties.PremiumPageBlobTier);
+
+                    byte[] data = GetRandomBuffer(512);
+
+                    CloudPageBlob blob3 = container.GetPageBlobReference("blob3");
+                    result = blob3.BeginUploadFromByteArray(data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob3.EndUploadFromByteArray(result);
+                    Assert.AreEqual(PremiumPageBlobTier.P10, blob3.Properties.PremiumPageBlobTier);
+
+                    string inputFileName = "i_" + Path.GetRandomFileName();
+                    using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                    {
+                        fs.Write(data, 0, data.Length);
+                    }
+
+                    CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                    result = blob4.BeginUploadFromFile(inputFileName, PremiumPageBlobTier.P20, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob4.EndUploadFromFile(result);
+                    Assert.AreEqual(PremiumPageBlobTier.P20, blob4.Properties.PremiumPageBlobTier);
+
+                    using (MemoryStream memStream = new MemoryStream(data))
+                    {
+                        CloudPageBlob blob5 = container.GetPageBlobReference("blob5");
+                        result = blob5.BeginUploadFromStream(memStream, PremiumPageBlobTier.P30, null, null, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        blob5.EndUploadFromStream(result);
+                        Assert.AreEqual(PremiumPageBlobTier.P30, blob5.Properties.PremiumPageBlobTier);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Set blob tier on creating a premium page blob and fetch attributes - TASK")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetPremiumBlobTierOnCreateTask()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                blob.CreateAsync(0, PremiumPageBlobTier.P60, null, null, null, CancellationToken.None).Wait();
+                Assert.AreEqual(PremiumPageBlobTier.P60, blob.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                blob2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(PremiumPageBlobTier.P60, blob2.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
+
+                byte[] data = GetRandomBuffer(512);
+
+                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                blob4.UploadFromByteArrayAsync(data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null, CancellationToken.None).Wait();
+                Assert.AreEqual(PremiumPageBlobTier.P10, blob4.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob4.Properties.BlobTierInferred.Value);
+
+                string inputFileName = "i_" + Path.GetRandomFileName();
+                using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.WriteAsync(data, 0, data.Length).Wait();
+                }
+
+                CloudPageBlob blob5 = container.GetPageBlobReference("blob5");
+                blob5.UploadFromFileAsync(inputFileName, PremiumPageBlobTier.P20, null, null, null, CancellationToken.None).Wait();
+                Assert.AreEqual(PremiumPageBlobTier.P20, blob5.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob5.Properties.BlobTierInferred.Value);
+
+                using (MemoryStream memStream = new MemoryStream(data))
+                {
+                    CloudPageBlob blob6 = container.GetPageBlobReference("blob6");
+                    blob6.UploadFromStreamAsync(memStream, PremiumPageBlobTier.P30, null, null, null, CancellationToken.None).Wait();
+                    Assert.AreEqual(PremiumPageBlobTier.P30, blob6.Properties.PremiumPageBlobTier);
+                    Assert.IsFalse(blob6.Properties.BlobTierInferred.Value);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Set premium blob tier and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetPremiumBlobTier()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                blob.Create(1024);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.HasValue);
+                blob.FetchAttributes();
+                Assert.IsTrue(blob.Properties.BlobTierInferred.Value);
+                Assert.AreEqual(PremiumPageBlobTier.P10, blob.Properties.PremiumPageBlobTier);
+
+                blob.SetPremiumBlobTier(PremiumPageBlobTier.P30);
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                blob2.FetchAttributes();
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob2.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob blob3 = (CloudPageBlob)container.ListBlobs().ToList().First();
+                Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+
+                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                blob4.Create(125 * Constants.GB);
+                try
+                {
+                    blob4.SetPremiumBlobTier(PremiumPageBlobTier.P6);
+                    Assert.Fail("Expected failure when setting blob tier size to be less than content length");
+                }
+                catch (StorageException e)
+                {
+                    Assert.IsFalse(blob4.Properties.BlobTierInferred.HasValue);
+                    Assert.AreEqual("The remote server returned an error: (409) Conflict.", e.Message);
+                }
+
+                try
+                {
+                    blob2.SetPremiumBlobTier(PremiumPageBlobTier.P4);
+                    Assert.Fail("Expected failure when attempted to set the tier to a lower value than previously");
+                }
+                catch (StorageException e)
+                {
+                    Assert.AreEqual("The remote server returned an error: (409) Conflict.", e.Message);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set premium blob tier and fetch attributes - APM")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetPremiumBlobTierAPM()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
             try
             {
                 container.Create();
@@ -3765,19 +3974,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     waitHandle.WaitOne();
                     blob.EndCreate(result);
 
-                    result = blob.BeginSetBlobTier(PageBlobTier.P6, ar => waitHandle.Set(), null);
+                    result = blob.BeginSetPremiumBlobTier(PremiumPageBlobTier.P6, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
-                    blob.EndSetBlobTier(result);
-                    Assert.AreEqual(PageBlobTier.P6, blob.Properties.PageBlobTier);
-                    Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                    blob.EndSetPremiumBlobTier(result);
+                    Assert.AreEqual(PremiumPageBlobTier.P6, blob.Properties.PremiumPageBlobTier);
+                    Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                     CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                     result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob2.EndFetchAttributes(result);
-                    Assert.AreEqual(PageBlobTier.P6, blob2.Properties.PageBlobTier);
-                    Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                    Assert.AreEqual(PremiumPageBlobTier.P6, blob2.Properties.PremiumPageBlobTier);
+                    Assert.IsFalse(blob2.Properties.StandardBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
                 }
             }
@@ -3789,14 +3998,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if TASK
         [TestMethod]
-        [Description("Set blob tier and fetch attributes")]
+        [Description("Set premium blob tier and fetch attributes - TASK")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Premium)]
-        public void CloudPageBlobSetBlobTierTask()
+        public void CloudPageBlobSetPremiumBlobTierTask()
         {
-            CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
             try
             {
                 container.CreateAsync().Wait();
@@ -3804,16 +4013,144 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 blob.CreateAsync(0).Wait();
 
-                blob.SetBlobTierAsync(PageBlobTier.P20).Wait();
-                Assert.AreEqual(PageBlobTier.P20, blob.Properties.PageBlobTier);
-                Assert.IsFalse(blob.Properties.BlockBlobTier.HasValue);
+                blob.SetPremiumBlobTierAsync(PremiumPageBlobTier.P20).Wait();
+                Assert.AreEqual(PremiumPageBlobTier.P20, blob.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 blob2.FetchAttributesAsync().Wait();
-                Assert.AreEqual(PageBlobTier.P20, blob.Properties.PageBlobTier);
-                Assert.IsFalse(blob2.Properties.BlockBlobTier.HasValue);
+                Assert.AreEqual(PremiumPageBlobTier.P20, blob.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(blob2.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Set premium blob tier when copying from an existing blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetPremiumBlobTierOnCopy()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudPageBlob source = container.GetPageBlobReference("source");
+                source.Create(1024, PremiumPageBlobTier.P10, null, null, null);
+
+                // copy to larger disk
+                CloudPageBlob copy = container.GetPageBlobReference("copy");
+                Assert.IsFalse(copy.Properties.BlobTierInferred.HasValue);
+
+                string copyId = copy.StartCopy(TestHelper.Defiddler(source), PremiumPageBlobTier.P30);
+                Assert.AreEqual(BlobType.PageBlob, copy.BlobType);
+                Assert.AreEqual(PremiumPageBlobTier.P30, copy.Properties.PremiumPageBlobTier);
+                Assert.AreEqual(PremiumPageBlobTier.P10, source.Properties.PremiumPageBlobTier);
+                Assert.IsFalse(source.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(copy.Properties.BlobTierInferred.Value);
+                WaitForCopy(copy);
+
+                CloudPageBlob copyRef = container.GetPageBlobReference("copy");
+                copyRef.FetchAttributes();
+                Assert.IsFalse(copyRef.Properties.BlobTierInferred.Value);
+                Assert.AreEqual(PremiumPageBlobTier.P30, copyRef.Properties.PremiumPageBlobTier);
+
+                // copy where source does not have a tier
+                CloudPageBlob source2 = container.GetPageBlobReference("source2");
+                try
+                {
+                    source2.Create(1024);
+                    CloudPageBlob copy3 = container.GetPageBlobReference("copy3");
+                    string copyId3 = copy3.StartCopy(TestHelper.Defiddler(source2), PremiumPageBlobTier.P60);
+                    Assert.AreEqual(BlobType.PageBlob, copy3.BlobType);
+                    Assert.AreEqual(PremiumPageBlobTier.P60, copy3.Properties.PremiumPageBlobTier);
+                    Assert.IsFalse(copy3.Properties.BlobTierInferred.Value);
+                }
+                finally
+                {
+                    source2.FetchAttributes();
+                    Assert.IsTrue(source2.Properties.BlobTierInferred.Value);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set premium blob tier when copying from an existing blob - APM")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetPremiumBlobTierOnCopyAPM()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                container.Create();
+
+                IAsyncResult result;
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    CloudPageBlob blob = container.GetPageBlobReference("source");
+                    result = blob.BeginCreate(0, PremiumPageBlobTier.P10, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndCreate(result);
+
+                    CloudPageBlob copy = container.GetPageBlobReference("copy");
+                    result = copy.BeginStartCopy(TestHelper.Defiddler(blob), PremiumPageBlobTier.P30, null, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    copy.EndStartCopy(result);
+
+                    result = copy.BeginFetchAttributes(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    copy.EndFetchAttributes(result);
+                    Assert.AreEqual(PremiumPageBlobTier.P30, copy.Properties.PremiumPageBlobTier);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Set premium blob tier when copying from an existing blob - TASK")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Premium)]
+        public void CloudPageBlobSetPremiumBlobTierOnCopyTask()
+        {
+            CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                CloudPageBlob blob = container.GetPageBlobReference("source");
+                blob.CreateAsync(0, PremiumPageBlobTier.P4, null, null, null, CancellationToken.None).Wait();
+
+                CloudPageBlob copy = container.GetPageBlobReference("copy");
+                copy.StartCopyAsync(blob, PremiumPageBlobTier.P60, null, null, null, null, CancellationToken.None).Wait();
+                Assert.AreEqual(PremiumPageBlobTier.P4, blob.Properties.PremiumPageBlobTier);
+                Assert.AreEqual(PremiumPageBlobTier.P60, copy.Properties.PremiumPageBlobTier);
+
+                CloudPageBlob copy2 = container.GetPageBlobReference("copy");
+                copy2.FetchAttributesAsync().Wait();
+                Assert.AreEqual(PremiumPageBlobTier.P60, copy2.Properties.PremiumPageBlobTier);
             }
             finally
             {
