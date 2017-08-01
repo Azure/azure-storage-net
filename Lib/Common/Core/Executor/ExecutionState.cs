@@ -139,6 +139,28 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         internal ExecutorOperation CurrentOperation { get; set; }
 
+        internal TimeSpan ServerTimeout
+        {
+            get
+            {
+                if (Cmd.ServerTimeoutInSeconds.HasValue)
+                {
+                    var timeout = Cmd.ServerTimeoutInSeconds.Value;
+
+                    if (timeout == 0)
+                    {
+                        return Constants.DefaultClientSideTimeout;
+                    }
+
+                    return TimeSpan.FromSeconds(timeout);
+                }
+                else
+                {
+                    return Constants.DefaultClientSideTimeout;
+                }
+            }
+        }
+
         internal TimeSpan RemainingTimeout
         {
             get

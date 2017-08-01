@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     Executor.EndGetRequestStream<T>,
                     Executor.AbortRequest<T>,
                     executionState,
-                    executionState.RemainingTimeout);
+                    executionState.ServerTimeout);
             }
             catch (Exception ex)
             {
@@ -245,7 +245,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     Executor.EndGetResponse<T>,
                     Executor.AbortRequest<T>,
                     executionState,
-                    executionState.RemainingTimeout);
+                    executionState.ServerTimeout);
             }
             catch (Exception ex)
             {
@@ -641,7 +641,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         {
                             executionState.CurrentOperation = ExecutorOperation.BeginGetRequestStream;
                             Logger.LogInformational(executionState.OperationContext, SR.TracePrepareUpload);
-                            executionState.Req.Timeout = (int)executionState.RemainingTimeout.TotalMilliseconds;
+                            executionState.Req.Timeout = (int)executionState.ServerTimeout.TotalMilliseconds;
                             executionState.ReqStream = executionState.Req.GetRequestStream();
 
                             executionState.CurrentOperation = ExecutorOperation.BeginUploadRequest;
@@ -676,7 +676,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         {
                             executionState.CurrentOperation = ExecutorOperation.BeginGetResponse;
                             Logger.LogInformational(executionState.OperationContext, SR.TraceGetResponse);
-                            executionState.Req.Timeout = (int)executionState.RemainingTimeout.TotalMilliseconds;
+                            executionState.Req.Timeout = (int)executionState.ServerTimeout.TotalMilliseconds;
                             executionState.Resp = (HttpWebResponse)executionState.Req.GetResponse();
                             executionState.CurrentOperation = ExecutorOperation.EndGetResponse;
                         }
@@ -886,7 +886,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             }
 #if SYNC
             // 4. Set timeout (this is actually not honored by asynchronous requests)
-            executionState.Req.Timeout = (int)executionState.RemainingTimeout.TotalMilliseconds;
+            executionState.Req.Timeout = (int)executionState.ServerTimeout.TotalMilliseconds;
 #endif
         }
 
