@@ -680,13 +680,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.Version = "1.0";
-
+#if !FACADE_NETCORE
             props.Cors.CorsRules = new List<CorsRule>();
-
+#endif
             props.DefaultServiceVersion = "2013-08-15";
 
             return props;
         }
-        #endregion
+#endregion
     }
 }

@@ -124,6 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<CloudFileStream> OpenWriteAsync(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient, false);
             operationContext = operationContext ?? new OperationContext();
             bool createNew = size.HasValue;
@@ -282,6 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 length = sourceAsStream.Length - sourceAsStream.Position;
             }
 
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
@@ -882,6 +884,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task CreateAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
@@ -975,6 +978,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task DeleteAsync()
         {
+            this.AssertNoSnapshot();
             return this.DeleteAsync(null /* accessCondition */, null /* options */, null /* operationContext */);
         }
 
@@ -1047,12 +1051,6 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
-                if (!exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);
@@ -1239,6 +1237,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
@@ -1253,7 +1252,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5)
@@ -1267,7 +1266,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
@@ -1284,7 +1283,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">A stream providing the range data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
@@ -1294,6 +1293,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             CommonUtility.AssertNotNull("rangeData", rangeData);
 
+            this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
@@ -1392,6 +1392,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task ClearRangeAsync(long startOffset, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                 this.ClearRangeImpl(startOffset, length, accessCondition, modifiedOptions),
@@ -1480,6 +1481,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsync<string>(
                 this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
@@ -1541,6 +1543,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [DoesServiceRequest]
         public virtual Task AbortCopyAsync(string copyId, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
                this.AbortCopyImpl(copyId, accessCondition, modifiedOptions),
@@ -1560,7 +1563,6 @@ namespace Microsoft.WindowsAzure.Storage.File
             string lockedETag = null;
             AccessCondition lockedAccessCondition = null;
 
-            bool isRangeGet = offset.HasValue;
             bool arePropertiesPopulated = false;
             string storedMD5 = null;
 
@@ -1575,7 +1577,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.RetrieveResponseStream = true;
             getCmd.DestinationStream = destStream;
             getCmd.CalculateMd5ForResponseStream = !options.DisableContentMD5Validation.Value;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value, this.Share.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.RecoveryAction = (cmd, ex, ctx) =>
             {
                 if ((lockedAccessCondition == null) && !string.IsNullOrEmpty(lockedETag))
@@ -1596,7 +1598,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     }
                 }
 
-                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, this.Share.SnapshotTime, accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             };
 
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -1605,7 +1607,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 if (!arePropertiesPopulated)
                 {
-                    this.UpdateAfterFetchAttributes(resp, isRangeGet);
+                    this.UpdateAfterFetchAttributes(resp);
 
                     if (resp.Content.Headers.ContentMD5 != null)
                     {
@@ -1680,6 +1682,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
                 this.Properties.Length = sizeInBytes;
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1698,11 +1701,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetProperties(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                this.UpdateAfterFetchAttributes(resp, false);
+                this.UpdateAfterFetchAttributes(resp);
                 return NullType.Value;
             };
 
@@ -1720,7 +1723,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetProperties(uri, serverTimeout, null /* accessCondition */, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, null /* accessCondition */, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
@@ -1729,7 +1732,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
-                this.UpdateAfterFetchAttributes(resp, false);
+                this.UpdateAfterFetchAttributes(resp);
                 return true;
             };
 
@@ -1768,7 +1771,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.ListRanges(uri, serverTimeout, offset, length, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.ListRanges(uri, serverTimeout, offset, length, this.Share.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -1809,6 +1812,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1860,6 +1864,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1872,8 +1877,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="rangeData">The range data.</param>
         /// <param name="startOffset">The start offset.</param> 
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <code>null</code> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <code>null</code>, no condition is used.</param>
+        /// on the file. May be <c>null</code> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that writes the range.</returns>
         private RESTCommand<NullType> PutRangeImpl(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options)
@@ -1898,6 +1903,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 this.UpdateETagLMTAndLength(resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -2009,21 +2015,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         internal static Uri SourceFileToUri(CloudFile source)
         {
             CommonUtility.AssertNotNull("source", source);
-            return source.ServiceClient.Credentials.TransformUri(source.Uri);
+            return source.ServiceClient.Credentials.TransformUri(source.SnapshotQualifiedUri);
         }
 
         /// <summary>
         /// Updates this file with the given attributes a the end of a fetch attributes operation.
         /// </summary>
-        /// <param name="attributes">The new attributes.</param>
-        private void UpdateAfterFetchAttributes(HttpResponseMessage response, bool ignoreMD5)
+        /// <param name="response">The response to parse.</param>
+        private void UpdateAfterFetchAttributes(HttpResponseMessage response)
         {
             FileProperties properties = FileHttpResponseParsers.GetProperties(response);
-
-            if (ignoreMD5)
-            {
-                properties.ContentMD5 = this.attributes.Properties.ContentMD5;
-            }
 
             this.attributes.Properties = properties;
             this.attributes.Metadata = FileHttpResponseParsers.GetMetadata(response);

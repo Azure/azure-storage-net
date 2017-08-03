@@ -50,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="acl">The string to convert.</param>
         /// <returns>The resulting <see cref="BlobContainerPermissions"/> object.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.String.ToLower", Justification = "ToLower(CultureInfo) is not present in RT and ToLowerInvariant() also violates FxCop")]      
-        private static BlobContainerPublicAccessType GetContainerAcl(string acl)
+        internal static BlobContainerPublicAccessType GetContainerAcl(string acl)
         {
             BlobContainerPublicAccessType accessType = BlobContainerPublicAccessType.Off;
 
@@ -67,8 +67,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                         break;
 
                     default:
-                        string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.InvalidAclType, acl);
-                        throw new InvalidOperationException(errorMessage);
+                        accessType = BlobContainerPublicAccessType.Unknown;
+                        break;
                 }
             }
 

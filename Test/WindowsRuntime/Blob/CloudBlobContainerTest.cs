@@ -158,9 +158,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             await container.CreateAsync();
             OperationContext operationContext = new OperationContext();
+#if !FACADE_NETCORE
             Assert.ThrowsException<AggregateException>(
                 () => container.CreateAsync(null, operationContext).Wait(),
                 "Creating already exists container should fail");
+#else
+            Assert.ThrowsException<AggregateException>(
+            () => container.CreateAsync(BlobContainerPublicAccessType.Blob, null, operationContext).Wait(),
+                "Creating already exists container should fail");
+#endif
             Assert.AreEqual((int)HttpStatusCode.Conflict, operationContext.LastResult.HttpStatusCode);
             await container.DeleteAsync();
         }

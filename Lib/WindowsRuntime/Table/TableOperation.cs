@@ -109,7 +109,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             insertCmd.RetrieveResponseStream = true;
-            insertCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            insertCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
@@ -125,7 +125,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             deleteCmd.RetrieveResponseStream = false;
-            deleteCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            deleteCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
@@ -139,7 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             mergeCmd.RetrieveResponseStream = false;
-            mergeCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            mergeCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             mergeCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             mergeCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
@@ -153,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TableResult result = new TableResult() { Result = operation.Entity };
             replaceCmd.RetrieveResponseStream = false;
-            replaceCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            replaceCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             replaceCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             replaceCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
@@ -173,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             retrieveCmd.CommandLocationMode = operation.isPrimaryOnlyRetrieve ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
             retrieveCmd.RetrieveResponseStream = true;
-            retrieveCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retrieveCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>

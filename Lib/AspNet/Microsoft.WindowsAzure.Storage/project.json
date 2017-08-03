@@ -1,11 +1,11 @@
-﻿{
-    "version": "7.2.0.0",
+{
+    "version": "8.2.0.0",
+
     "authors": [ "Microsoft Corporation" ],
-    "description": "Azure Storage SDK for CoreCLR Preview",
+    "description": "Azure Storage SDK for NetCore",
     "dependencies": {
-        "Microsoft.Data.OData": "5.6.4",
-        "Microsoft.Data.Services.Client": "5.6.4",
-        "System.Spatial": "5.6.4",
+        "Microsoft.Data.OData": "5.8.2",
+        "System.Spatial": "5.8.2",
         "Newtonsoft.Json": "9.0.1"
     },
 
@@ -14,10 +14,7 @@
             "dependencies": {
                 "NETStandard.Library": "1.6.0"
             },
-            "imports": [
-                "dnxcore50",
-                "portable-net451+win8"
-            ]
+            "imports": "dnxcore50" 
         }
 
     },

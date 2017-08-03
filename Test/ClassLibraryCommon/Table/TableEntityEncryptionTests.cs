@@ -21,12 +21,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Table.Entities;
+    using Newtonsoft.Json;
+    using Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
 
     [TestClass]
@@ -1210,6 +1213,397 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 testTable.DeleteIfExists();
             }
         }
+
+        #region KeyRotationTests
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - success case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateSyncSuccess()
+        {
+            RunCloudTableEncryptionRotateSync(true);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - failure case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateSyncFailure()
+        {
+            RunCloudTableEncryptionRotateSync(false);
+        }
+
+        private void RunCloudTableEncryptionRotateSync(bool success)
+        {
+            CloudTableEncryptionRotateHelper((table, query, options) => { return table.ExecuteQueryForKeyRotation(query, options).ToList(); }, (table, operation, options) => { table.Execute(operation, options); }, (_table, _options) => { }, success);
+
+            TableBatchOperation batch = new TableBatchOperation();
+            CloudTableEncryptionRotateHelper((table, query, options) => { return table.ExecuteQueryForKeyRotation(query, options).ToList(); }, (_table, operation, _options) => { batch.Add(operation); }, (table, options) => { try { table.ExecuteBatch(batch, options); } finally { batch.Clear(); } }, success);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - success case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateAPMSuccess()
+        {
+            RunCloudTableEncryptionRotateAPM(true);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - failure case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateAPMFailure()
+        {
+            RunCloudTableEncryptionRotateAPM(false);
+        }
+
+        private void RunCloudTableEncryptionRotateAPM(bool success)
+        {
+            Func<CloudTable, TableQuery, TableRequestOptions, IEnumerable<KeyRotationEntity>> queryToRun = (table, query, options) =>
+            {
+                List<KeyRotationEntity> results = new List<KeyRotationEntity>();
+                TableContinuationToken token = null;
+                do
+                {
+                    TableQuerySegment<KeyRotationEntity> resultSegment = table.EndExecuteQueryForKeyRotationSegmented(table.BeginExecuteQueryForKeyRotationSegmented(query, token, options, null, null, null));
+                    results.AddRange(resultSegment.Results);
+                    token = resultSegment.ContinuationToken;
+                } while (token != null);
+                return results;
+            };
+            CloudTableEncryptionRotateHelper(queryToRun, 
+            (table, operation, options) => 
+            {
+                table.EndExecute(table.BeginExecute(operation, options, null, null, null));
+            }, (_table, _options) => { }, success);
+
+            TableBatchOperation batch = new TableBatchOperation();
+            CloudTableEncryptionRotateHelper(queryToRun, (_table, operation, _options) => { batch.Add(operation); }, (table, options) => { try { table.EndExecuteBatch(table.BeginExecuteBatch(batch, options, null, null, null)); } finally { batch.Clear(); } }, success);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - success case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateAsyncSuccess()
+        {
+            RunCloudTableEncryptionRotateAsync(true);
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - failure case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateAsyncFailure()
+        {
+            RunCloudTableEncryptionRotateAsync(false);
+        }
+
+        private void RunCloudTableEncryptionRotateAsync(bool success)
+        {
+            Func<CloudTable, TableQuery, TableRequestOptions, IEnumerable<KeyRotationEntity>> queryToRun = (table, query, options) =>
+            {
+                try
+                {
+                    List<KeyRotationEntity> results = new List<KeyRotationEntity>();
+                    TableContinuationToken token = null;
+                    do
+                    {
+                        TableQuerySegment<KeyRotationEntity> resultSegment = table.ExecuteQueryForKeyRotationSegmentedAsync(query, token, options, null, CancellationToken.None).Result;
+                        results.AddRange(resultSegment.Results);
+                        token = resultSegment.ContinuationToken;
+                    } while (token != null);
+                    return results;
+                }
+                catch (AggregateException ex)
+                {
+                    throw ex.InnerException;
+                }
+            };
+            CloudTableEncryptionRotateHelper(queryToRun,
+            (table, operation, options) =>
+            {
+                try
+                {
+                    table.ExecuteAsync(operation, options, null, CancellationToken.None).Wait();
+                }
+                catch (AggregateException ex)
+                {
+                    throw ex.InnerException;
+                }
+            }, (_table, _options) => { }, success);
+
+            TableBatchOperation batch = new TableBatchOperation();
+            CloudTableEncryptionRotateHelper(queryToRun, (_table, operation, _options) => { batch.Add(operation); }, (table, options) => 
+            {
+                try
+                {
+                    table.ExecuteBatchAsync(batch, options, null, CancellationToken.None).Wait();
+                }
+                catch (AggregateException ex)
+                {
+                    throw ex.InnerException;
+                }
+                finally
+                {
+                    batch.Clear();
+                }
+            }, success);
+        }
+
+        private void CloudTableEncryptionRotateHelper(Func<CloudTable, TableQuery, TableRequestOptions, IEnumerable<KeyRotationEntity>> queryToRun, Action<CloudTable, TableOperation, TableRequestOptions> rotateKeyOperation, Action<CloudTable, TableRequestOptions> finalizeRotation, bool successCase)
+        {
+            if (successCase)
+            {
+                this.DoCloudTableEncryptionRotateSuccessCase(queryToRun, rotateKeyOperation, finalizeRotation);
+            }
+            else
+            {
+                this.DoCloudTableEncryptionRotateFailureCase(queryToRun, rotateKeyOperation, finalizeRotation);
+            }
+        }
+
+        private void DoCloudTableEncryptionRotateSuccessCase(Func<CloudTable, TableQuery, TableRequestOptions, IEnumerable<KeyRotationEntity>> runQuery, Action<CloudTable, TableOperation, TableRequestOptions> rotateKeyOperation, Action<CloudTable, TableRequestOptions> finalizeRotation)
+        {
+
+            // Setup
+            List<DynamicTableEntity> dteList = new List<DynamicTableEntity>();
+            string pkValue = Guid.NewGuid().ToString();
+            string encryptedEntity1Name = "encryptedEntityName1";
+            string encryptedEntity1ValuePrefix = "encryptedEntity1ValuePrefix";
+            string encryptedEntity2Name = "encryptedEntityName2";
+            string encryptedEntity2ValuePrefix = "encryptedEntity2ValuePrefix";
+            string nonEncryptedEntityName = "nonEncryptedEntityName";
+            string nonEncryptedEntityValuePrefix = "nonEncryptedEntityValuePrefix";
+            TableBatchOperation batchInsert = new TableBatchOperation();
+            int entityCount = 20;
+            for (int i = 0; i < entityCount; i++)
+            {
+                DynamicTableEntity dte = new DynamicTableEntity();
+                dte.PartitionKey = pkValue;
+                dte.RowKey = i.ToString("00");
+                dte[encryptedEntity1Name] = new EntityProperty(encryptedEntity1ValuePrefix + i);
+                dte[encryptedEntity2Name] = new EntityProperty(encryptedEntity2ValuePrefix + i);
+                dte[nonEncryptedEntityName] = new EntityProperty(nonEncryptedEntityValuePrefix + i);
+                batchInsert.Add(TableOperation.Insert(dte));
+                dteList.Add(dte);
+            }
+
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+            SymmetricKey aesKey2 = new SymmetricKey("symencryptionkey2");
+            DictionaryKeyResolver resolverBothKeys = new DictionaryKeyResolver();
+            resolverBothKeys.Add(aesKey);
+            resolverBothKeys.Add(aesKey2);
+
+            TableRequestOptions options = new TableRequestOptions();
+            options.EncryptionPolicy = new TableEncryptionPolicy(aesKey, null);
+
+            // For purposes of test, only encrypt the even-numbered entities.
+            options.EncryptionResolver = (pk, rk, propName) =>
+            {
+                return ((int.Parse(rk) % 2 == 0) && (propName.StartsWith("encrypted")));
+            };
+            currentTable.ExecuteBatch(batchInsert, options);
+
+            // Rotate
+
+            // Should we test specific types of queries?
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", pkValue));
+            options.EncryptionPolicy = new TableEncryptionPolicy(aesKey2, resolverBothKeys);
+            foreach (KeyRotationEntity krEntity in runQuery(currentTable, query, options))
+            {
+                // Rotate the key on every third entity.
+                // This way, some entites will have the rotated key, some will not, and we will try
+                // to rotate the key on entities that are not encrypted.  (This should be a no-op).
+                if (int.Parse(krEntity.RowKey) % 3 == 0)
+                {
+                    rotateKeyOperation(currentTable, TableOperation.RotateEncryptionKey(krEntity), options);
+                }
+            }
+
+            finalizeRotation(currentTable, options);
+
+            // Verify we can successfully decrypt and read all entities
+            int entityIndex = 0;
+            foreach (DynamicTableEntity dte in currentTable.ExecuteQuery(new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", pkValue)), options))
+            {
+                int rowKey = int.Parse(dte.RowKey);
+                Assert.AreEqual(entityIndex, rowKey);
+                Assert.AreEqual(dteList[rowKey][encryptedEntity1Name].StringValue, dte[encryptedEntity1Name].StringValue);
+                Assert.AreEqual(dteList[rowKey][encryptedEntity2Name].StringValue, dte[encryptedEntity2Name].StringValue);
+                Assert.AreEqual(dteList[rowKey][nonEncryptedEntityName].StringValue, dte[nonEncryptedEntityName].StringValue);
+                entityIndex++;
+            }
+            Assert.AreEqual(entityIndex, 20);
+
+            // Verify that all entities are encrypted with the correct key (or not at all)
+            entityIndex = 0;
+            foreach (DynamicTableEntity dte in currentTable.ExecuteQuery(new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", pkValue)), null))
+            {
+                int rowKey = int.Parse(dte.RowKey);
+                Assert.AreEqual(entityIndex, rowKey);
+
+                if (entityIndex % 2 == 0)
+                {
+                    // Assert that it's encrypted with the correct key
+                    EncryptionData encryptionData = JsonConvert.DeserializeObject<EncryptionData>(dte[Constants.EncryptionConstants.TableEncryptionKeyDetails].StringValue);
+                    if (entityIndex % 3 == 0)
+                    {
+                        Assert.AreEqual(aesKey2.Kid, encryptionData.WrappedContentKey.KeyId);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(aesKey.Kid, encryptionData.WrappedContentKey.KeyId);
+                    }
+                }
+                else
+                {
+                    // Assert that it's not encrypted
+                    Assert.AreEqual(dteList[rowKey][encryptedEntity1Name].StringValue, dte[encryptedEntity1Name].StringValue);
+                    Assert.AreEqual(dteList[rowKey][encryptedEntity2Name].StringValue, dte[encryptedEntity2Name].StringValue);
+                    Assert.AreEqual(dteList[rowKey][nonEncryptedEntityName].StringValue, dte[nonEncryptedEntityName].StringValue);
+                }
+                entityIndex++;
+            }
+            Assert.AreEqual(entityIndex, 20);
+        }
+
+        private void DoCloudTableEncryptionRotateFailureCase(Func<CloudTable, TableQuery, TableRequestOptions, IEnumerable<KeyRotationEntity>> runQuery, Action<CloudTable, TableOperation, TableRequestOptions> rotateKeyOperation, Action<CloudTable, TableRequestOptions> finalizeRotation)
+        {
+            // Setup
+            List<DynamicTableEntity> dteList = new List<DynamicTableEntity>();
+            string pkValue = Guid.NewGuid().ToString();
+            string encryptedEntity1Name = "encryptedEntityName1";
+            string encryptedEntity1ValuePrefix = "encryptedEntity1ValuePrefix";
+            string encryptedEntity2Name = "encryptedEntityName2";
+            string encryptedEntity2ValuePrefix = "encryptedEntity2ValuePrefix";
+            string nonEncryptedEntityName = "nonEncryptedEntityName";
+            string nonEncryptedEntityValuePrefix = "nonEncryptedEntityValuePrefix";
+            TableBatchOperation batchInsert = new TableBatchOperation();
+            int entityCount = 20;
+            for (int i = 0; i < entityCount; i++)
+            {
+                DynamicTableEntity dte = new DynamicTableEntity();
+                dte.PartitionKey = pkValue;
+                dte.RowKey = i.ToString("00");
+                dte[encryptedEntity1Name] = new EntityProperty(encryptedEntity1ValuePrefix + i);
+                dte[encryptedEntity2Name] = new EntityProperty(encryptedEntity2ValuePrefix + i);
+                dte[nonEncryptedEntityName] = new EntityProperty(nonEncryptedEntityValuePrefix + i);
+                batchInsert.Add(TableOperation.Insert(dte));
+                dteList.Add(dte);
+            }
+
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+            SymmetricKey aesKey2 = new SymmetricKey("symencryptionkey2");
+            DictionaryKeyResolver resolverBothKeys = new DictionaryKeyResolver();
+            resolverBothKeys.Add(aesKey);
+            resolverBothKeys.Add(aesKey2);
+
+            TableRequestOptions options = new TableRequestOptions();
+            options.EncryptionPolicy = new TableEncryptionPolicy(aesKey, null);
+
+            // For purposes of test, only encrypt the even-numbered entities.
+            options.EncryptionResolver = (pk, rk, propName) =>
+            {
+                return ((int.Parse(rk) % 2 == 0) && (propName.StartsWith("encrypted")));
+            };
+            currentTable.ExecuteBatch(batchInsert, options);
+
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", pkValue));
+            Action<TableRequestOptions> runQueryAndRotate = requestOptions =>
+            {
+                foreach (KeyRotationEntity krEntity in runQuery(currentTable, query, requestOptions))
+                {
+                    if (int.Parse(krEntity.RowKey) % 3 == 0)
+                    {
+                        rotateKeyOperation(currentTable, TableOperation.RotateEncryptionKey(krEntity), requestOptions);
+                    }
+                }
+
+                finalizeRotation(currentTable, requestOptions);
+            };
+
+            // Test no encryption policy
+            options.EncryptionPolicy = null;
+            TestHelper.ExpectedException<StorageException>(() => runQueryAndRotate(options), "Key rotation should fail if there's no Encryption Policy.");
+
+            // Test no encryption key
+            options.EncryptionPolicy = new TableEncryptionPolicy(null, resolverBothKeys);
+            TestHelper.ExpectedException<StorageException>(() => runQueryAndRotate(options), "Key rotation should fail if there's no Encryption Key.");
+
+            // Test no encryption resolver
+            options.EncryptionPolicy = new TableEncryptionPolicy(aesKey2, null);
+            TestHelper.ExpectedException<StorageException>(() => runQueryAndRotate(options), "Key rotation should fail if there's no Encryption Resolver.");
+
+            // Test where the resolver can't resolve a key
+            options.EncryptionPolicy = new TableEncryptionPolicy(aesKey2, new DictionaryKeyResolver());
+            TestHelper.ExpectedException<StorageException>(() => runQueryAndRotate(options), "Key rotation should fail if the encryption key can't be resolved.");
+
+            DynamicTableEntity unencryptedDTE = new DynamicTableEntity();
+            unencryptedDTE.PartitionKey = pkValue;
+            unencryptedDTE.RowKey = "sample";
+            currentTable.Execute(TableOperation.Insert(unencryptedDTE));
+            options.EncryptionPolicy = new TableEncryptionPolicy(aesKey2, resolverBothKeys);
+            options.RequireEncryption = false;
+            runQueryAndRotate(options); // Should succeed, as RequireEncryption is false.
+
+            options.RequireEncryption = true;
+            TestHelper.ExpectedException<InvalidOperationException>(() => runQuery(currentTable, query, options), "Key rotation should fail if an entity isn't encrypted and RequireEncryption is true.");
+        }
+
+        [TestMethod]
+        [Description("Test rotating the encryption key on table entities - success case.")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableEncryptionRotateSyncSuccessDefaultRequestOptions()
+        {
+            TableRequestOptions oldOptions = null;
+            this.DoCloudTableEncryptionRotateSuccessCase((table, query, options) =>
+            {
+                oldOptions = table.ServiceClient.DefaultRequestOptions;
+                table.ServiceClient.DefaultRequestOptions = options;
+                return table.ExecuteQueryForKeyRotation(query, null).ToList();
+            },
+            (table, operation, options) =>
+            {
+                table.ServiceClient.DefaultRequestOptions = options;
+                table.Execute(operation, null);
+            },
+            (table, options) => { table.ServiceClient.DefaultRequestOptions = oldOptions; });
+        }
+
+        #endregion
 
         private List<CloudTable> ListAllTables(CloudTableClient tableClient, string prefix, TableRequestOptions options)
         {

@@ -66,7 +66,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.AreEqual(0, TestBase.FileBufferManager.OutstandingBufferCount);
             }
         }
-        
+
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Test Set/Get Service Properties Async")]
         [TestCategory(ComponentCategory.File)]
@@ -112,7 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             TestHelper.AssertFileServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
-
+#endif
         private static FileServiceProperties DefaultServiceProperties()
         {
             FileServiceProperties props = new FileServiceProperties(new MetricsProperties(), new MetricsProperties(), new CorsProperties());
@@ -124,9 +125,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.Version = "1.0";
-
+#if !FACADE_NETCORE
             props.Cors.CorsRules = new List<CorsRule>();
-
+#endif
             return props;
         }
     }

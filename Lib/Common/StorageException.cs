@@ -463,6 +463,7 @@ namespace Microsoft.WindowsAzure.Storage
                 if (this.RequestInformation.ExtendedErrorInformation != null)
                 {
                     sb.AppendLine("ErrorCode:" + this.RequestInformation.ExtendedErrorInformation.ErrorCode);
+                    sb.AppendLine("ErrorMessage:" + this.RequestInformation.ExtendedErrorInformation.ErrorMessage);
                 }
             }
 

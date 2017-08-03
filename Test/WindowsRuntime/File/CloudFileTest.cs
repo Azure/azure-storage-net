@@ -31,6 +31,8 @@ using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 #endif
 
+using Microsoft.WindowsAzure.Storage.Core;
+
 namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
@@ -234,6 +236,15 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.IsNull(file2.Properties.ContentLanguage);
                 Assert.AreEqual("application/octet-stream", file2.Properties.ContentType);
                 Assert.IsNull(file2.Properties.ContentMD5);
+
+                CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsNull(file3.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                FileRequestOptions options = new FileRequestOptions();
+                options.UseTransactionalMD5 = true;
+                file3.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                await file3.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options, null);
+                Assert.IsNull(file3.Properties.ContentMD5);
             }
             finally
             {
@@ -290,9 +301,15 @@ namespace Microsoft.WindowsAzure.Storage.File
                 AssertAreEqual(file2.Properties, file3.Properties);
 
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
-                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null);
+                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null, null);
                 CloudFile file4 = (CloudFile)results.First();
                 Assert.AreEqual(file2.Properties.Length, file4.Properties.Length);
+
+                CloudFile file5 = share.GetRootDirectoryReference().GetFileReference("file1");
+                Assert.IsNull(file5.Properties.ContentMD5);
+                byte[] target = new byte[4];
+                await file5.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
+                Assert.AreEqual("MDAwMDAwMDA=", file5.Properties.ContentMD5);
             }
             finally
             {
@@ -909,6 +926,130 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 share.DeleteIfExistsAsync().Wait();
             }
+        }
+
+        [TestMethod]
+        [Description("Test CloudFile APIs within a share snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileApisInShareSnapshotAsync()
+        {
+            CloudFileClient client = GenerateCloudFileClient();
+            string name = GetRandomShareName();
+            CloudFileShare share = client.GetShareReference(name);
+            await share.CreateAsync();
+            CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+            await dir.CreateAsync();
+
+            CloudFile file = dir.GetFileReference("file");
+            await file.CreateAsync(1024);
+            file.Metadata["key1"] = "value1";
+            await file.SetMetadataAsync();
+            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFile snapshotFile = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1").GetFileReference("file");
+            file.Metadata["key2"] = "value2";
+            await file.SetMetadataAsync();
+            await snapshotFile.FetchAttributesAsync();
+
+            Assert.IsTrue(snapshotFile.Metadata.Count == 1 && snapshotFile.Metadata["key1"].Equals("value1"));
+            Assert.IsNotNull(snapshotFile.Properties.ETag);
+
+            await file.FetchAttributesAsync();
+            Assert.IsTrue(file.Metadata.Count == 2 && file.Metadata["key2"].Equals("value2"));
+            Assert.IsNotNull(file.Properties.ETag);
+            Assert.AreNotEqual(file.Properties.ETag, snapshotFile.Properties.ETag);
+
+            CloudFile snapshotFile2 = new CloudFile(snapshotFile.SnapshotQualifiedStorageUri, client.Credentials);
+            Assert.IsTrue(snapshotFile2.ExistsAsync().Result);
+            Assert.IsTrue(snapshotFile2.Share.SnapshotTime.HasValue);
+
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
+        }
+
+        [TestMethod]
+        [Description("Test invalid CloudFile APIs within a share snapshot - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileInvalidApisInShareSnapshotAsync()
+        {
+            CloudFileClient client = GenerateCloudFileClient();
+            string name = GetRandomShareName();
+            CloudFileShare share = client.GetShareReference(name);
+            await share.CreateAsync();
+
+            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFile file = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1").GetFileReference("file");
+            try
+            {
+                await file.CreateAsync(1024);
+                Assert.Fail("API should fail in a snapshot");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                await file.DeleteAsync();
+                Assert.Fail("API should fail in a snapshot");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                await file.SetMetadataAsync();
+                Assert.Fail("API should fail in a snapshot");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                await file.AbortCopyAsync(null);
+                Assert.Fail("API should fail in a snapshot");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                await file.ClearRangeAsync(0, 1024);
+                Assert.Fail("API should fail in a snapshot");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                await file.StartCopyAsync(file);
+                Assert.Fail("API should fail in a snapshot");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+            try
+            {
+                await file.UploadFromByteArrayAsync(new byte[1024], 0, 1024);
+                Assert.Fail("API should fail in a snapshot");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
+            }
+
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
     }
 }

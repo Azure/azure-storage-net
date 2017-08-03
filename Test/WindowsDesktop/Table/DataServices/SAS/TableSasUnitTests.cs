@@ -25,6 +25,7 @@ using System.Data.Services.Client;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 {
@@ -190,9 +191,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
             }
             finally
             {
@@ -234,9 +237,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 expectedPermissions.SharedAccessPolicies.Add(policy);
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
             }
             finally
             {
@@ -278,18 +283,22 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 expectedPermissions.SharedAccessPolicies.Add(policy);
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
-                Assert.AreEqual(true, expectedPermissions.SharedAccessPolicies.Contains(policy));
-                Assert.AreEqual(true, expectedPermissions.SharedAccessPolicies.ContainsKey(key));
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                    Assert.AreEqual(true, expectedPermissions.SharedAccessPolicies.Contains(policy));
+                    Assert.AreEqual(true, expectedPermissions.SharedAccessPolicies.ContainsKey(key));
+                });
 
                 expectedPermissions.SharedAccessPolicies.Clear();
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                Assert.AreEqual(0, expectedPermissions.SharedAccessPolicies.Count);
-                AssertPermissionsEqual(new TablePermissions(), testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    Assert.AreEqual(0, expectedPermissions.SharedAccessPolicies.Count);
+                    AssertPermissionsEqual(new TablePermissions(), testPermissions);
+                });
             }
             finally
             {
@@ -390,7 +399,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 
                 expectedPermissions.SharedAccessPolicies.Add(policy);
                 expectedPermissions.SharedAccessPolicies.Add(policy2);
-            
+
                 Assert.AreEqual(2, expectedPermissions.SharedAccessPolicies.Count);
                 expectedPermissions.SharedAccessPolicies.Remove(policy2);
                 table.SetPermissions(expectedPermissions);
@@ -664,23 +673,24 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                     table.EndSetPermissions(result);
                 }
 
-                Thread.Sleep(30 * 1000);
-
-                using (ManualResetEvent evt = new ManualResetEvent(false))
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
                 {
-                    IAsyncResult result = null;
-                    table.BeginGetPermissions((res) =>
+                    using (ManualResetEvent evt = new ManualResetEvent(false))
                     {
-                        result = res;
-                        evt.Set();
-                    }, null);
+                        IAsyncResult result = null;
+                        table.BeginGetPermissions((res) =>
+                        {
+                            result = res;
+                            evt.Set();
+                        }, null);
 
-                    evt.WaitOne();
+                        evt.WaitOne();
 
-                    testPermissions = table.EndGetPermissions(result);
-                }
+                        testPermissions = table.EndGetPermissions(result);
+                    }
 
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
             }
             finally
             {
@@ -722,9 +732,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 });
 
                 table.SetPermissionsAsync(expectedPermissions).Wait();
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissionsAsync(null, new OperationContext()).Result;
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissionsAsync(null, new OperationContext()).Result;
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
             }
             finally
             {
@@ -736,59 +748,25 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
 
         #region SAS Operations
 
+        /// <summary>
+        /// Normally it's better to separate out a test like this into multiple smaller tests, but here we parallelize because 
+        /// each of these tests takes a very long time.
+        /// </summary>
         [TestMethod]
         [Description("Tests table SAS with query permissions.")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasQueryTest()
+        public void TableSasPermsTest()
         {
-            TestTableSas(SharedAccessTablePermissions.Query);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with delete permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasDeleteTest()
-        {
-            TestTableSas(SharedAccessTablePermissions.Delete);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with process and update permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasUpdateTest()
-        {
-            TestTableSas(SharedAccessTablePermissions.Update);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with add permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasAddTest()
-        {
-            TestTableSas(SharedAccessTablePermissions.Add);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with full permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasFullTest()
-        {
-            TestTableSas(SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Add);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Query)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Delete)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Update)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Add)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Add)));
+            Task.WaitAll(tasks.ToArray());
         }
 
         /// <summary>
@@ -803,32 +781,35 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
             string endPk = "S";
             string endRk = "T";
 
+            List<Task> tasks = new List<Task>();
             // No ranges specified
-            TestTableSasWithRange(accessPermissions, null, null, null, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, null, null, null, null)));
 
             // All ranges specified
-            TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, endRk);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, endRk)));
 
             // StartPk & StartRK specified
-            TestTableSasWithRange(accessPermissions, startPk, startRk, null, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, startRk, null, null)));
 
             // StartPk specified
-            TestTableSasWithRange(accessPermissions, startPk, null, null, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, null, null, null)));
 
             // EndPk & EndRK specified
-            TestTableSasWithRange(accessPermissions, null, null, endPk, endRk);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, null, null, endPk, endRk)));
 
             // EndPk specified
-            TestTableSasWithRange(accessPermissions, null, null, endPk, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, null, null, endPk, null)));
 
             // StartPk and EndPk specified
-            TestTableSasWithRange(accessPermissions, startPk, null, endPk, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, null, endPk, null)));
 
             // StartRk and StartRK and EndPk specified
-            TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, null)));
 
             // StartRk and EndPK and EndPk specified
-            TestTableSasWithRange(accessPermissions, startPk, null, endPk, endRk);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, null, endPk, endRk)));
+
+            Task.WaitAll(tasks.ToArray());
         }
 
         /// <summary>
@@ -864,7 +845,6 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                     SharedAccessExpiryTime = DateTimeOffset.Now.AddDays(1)
                 });
                 table.SetPermissions(permissions);
-                Thread.Sleep(30 * 1000);
 
                 // Prepare SAS authentication using access identifier
                 string sasString = table.GetSharedAccessSignature(new SharedAccessTablePolicy(), identifier, startPk, startRk, endPk, endRk);
@@ -886,31 +866,31 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 CloudTableClient explicitSasClient = new CloudTableClient(tableClient.BaseUri, new StorageCredentials(sasString));
 
                 // Point query
-                TestPointQuery(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestPointQuery(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk));
                 TestPointQuery(explicitSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
 
                 // Add row
-                TestAdd(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestAdd(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk));
                 TestAdd(explicitSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
 
                 // Update row (merge)
-                TestUpdateMerge(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestUpdateMerge(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk));
                 TestUpdateMerge(explicitSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
 
                 // Update row (replace)
-                TestUpdateReplace(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestUpdateReplace(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk));
                 TestUpdateReplace(explicitSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
 
                 // Delete row
-                TestDelete(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestDelete(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk));
                 TestDelete(explicitSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
 
                 // Upsert row (merge)
-                TestUpsertMerge(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestUpsertMerge(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk));
                 TestUpsertMerge(explicitSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
 
                 // Upsert row (replace)
-                TestUpsertReplace(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => TestUpsertReplace(identifierSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk));
                 TestUpsertReplace(explicitSasClient, table.Name, accessPermissions, startPk, startRk, endPk, endRk);
             }
             finally
@@ -963,7 +943,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
                 "point query",
                 expectSuccess,
                 expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound,
-                false, 
+                false,
                 expectSuccess);
         }
 
@@ -1569,7 +1549,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices.SAS
             {
                 table.DeleteIfExists();
             }
-        }   
+        }
         #endregion
 
         #region Test Helpers

@@ -25,12 +25,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System;
     using System.IO;
     using System.Net;
-
+    using System.Threading;
+    using System.Threading.Tasks;    
+    
     /// <summary>
     /// Represents a single table operation.
     /// </summary>
     public partial class TableOperation
     {
+
 #if SYNC
         internal TableResult Execute(CloudTableClient client, CloudTable table, TableRequestOptions requestOptions, OperationContext operationContext)
         {
@@ -71,8 +74,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 if (!this.isTableEntity && this.OperationType != TableOperationType.Insert)
                 {
-                    CommonUtility.AssertNotNull("Upserts require a valid PartitionKey", this.Entity.PartitionKey);
-                    CommonUtility.AssertNotNull("Upserts require a valid RowKey", this.Entity.RowKey);
+                    CommonUtility.AssertNotNull("Upserts require a valid PartitionKey", this.PartitionKey);
+                    CommonUtility.AssertNotNull("Upserts require a valid RowKey", this.RowKey);
                 }
 
                 return InsertImpl(this, client, table, modifiedOptions);
@@ -81,26 +84,34 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 if (!this.isTableEntity)
                 {
-                    CommonUtility.AssertNotNullOrEmpty("Delete requires a valid ETag", this.Entity.ETag);
-                    CommonUtility.AssertNotNull("Delete requires a valid PartitionKey", this.Entity.PartitionKey);
-                    CommonUtility.AssertNotNull("Delete requires a valid RowKey", this.Entity.RowKey);
+                    CommonUtility.AssertNotNullOrEmpty("Delete requires a valid ETag", this.ETag);
+                    CommonUtility.AssertNotNull("Delete requires a valid PartitionKey", this.PartitionKey);
+                    CommonUtility.AssertNotNull("Delete requires a valid RowKey", this.RowKey);
                 }
 
                 return DeleteImpl(this, client, table, modifiedOptions);
             }
             else if (this.OperationType == TableOperationType.Merge)
             {
-                CommonUtility.AssertNotNullOrEmpty("Merge requires a valid ETag", this.Entity.ETag);
-                CommonUtility.AssertNotNull("Merge requires a valid PartitionKey", this.Entity.PartitionKey);
-                CommonUtility.AssertNotNull("Merge requires a valid RowKey", this.Entity.RowKey);
+                CommonUtility.AssertNotNullOrEmpty("Merge requires a valid ETag", this.ETag);
+                CommonUtility.AssertNotNull("Merge requires a valid PartitionKey", this.PartitionKey);
+                CommonUtility.AssertNotNull("Merge requires a valid RowKey", this.RowKey);
+
+                return MergeImpl(this, client, table, modifiedOptions);
+            }
+            else if (this.OperationType == TableOperationType.RotateEncryptionKey)
+            {
+                CommonUtility.AssertNotNullOrEmpty("RotateEncryptionKey requires a valid ETag", this.ETag);
+                CommonUtility.AssertNotNull("RotateEncryptionKey requires a valid PartitionKey", this.PartitionKey);
+                CommonUtility.AssertNotNull("RotateEncryptionKey requires a valid RowKey", this.RowKey);
 
                 return MergeImpl(this, client, table, modifiedOptions);
             }
             else if (this.OperationType == TableOperationType.Replace)
             {
-                CommonUtility.AssertNotNullOrEmpty("Replace requires a valid ETag", this.Entity.ETag);
-                CommonUtility.AssertNotNull("Replace requires a valid PartitionKey", this.Entity.PartitionKey);
-                CommonUtility.AssertNotNull("Replace requires a valid RowKey", this.Entity.RowKey);
+                CommonUtility.AssertNotNullOrEmpty("Replace requires a valid ETag", this.ETag);
+                CommonUtility.AssertNotNull("Replace requires a valid PartitionKey", this.PartitionKey);
+                CommonUtility.AssertNotNull("Replace requires a valid RowKey", this.RowKey);
 
                 return ReplaceImpl(this, client, table, modifiedOptions);
             }
@@ -122,11 +133,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableResult result = new TableResult() { Result = operation.Entity };
             insertCmd.RetrieveResponseStream = true;
             insertCmd.SignRequest = client.AuthenticationHandler.SignRequest;
-            insertCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            insertCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             insertCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName);
                 insertCmd.SendStream = res.Item2;
+                insertCmd.StreamToDispose = res.Item2;
                 return res.Item1;
             };
 
@@ -145,7 +157,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableResult result = new TableResult() { Result = operation.Entity };
             deleteCmd.RetrieveResponseStream = false;
             deleteCmd.SignRequest = client.AuthenticationHandler.SignRequest;
-            deleteCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            deleteCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             deleteCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName).Item1;
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
@@ -160,11 +172,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableResult result = new TableResult() { Result = operation.Entity };
             mergeCmd.RetrieveResponseStream = false;
             mergeCmd.SignRequest = client.AuthenticationHandler.SignRequest;
-            mergeCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            mergeCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             mergeCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName);
                 mergeCmd.SendStream = res.Item2;
+                mergeCmd.StreamToDispose = res.Item2;
                 return res.Item1;
             };
 
@@ -181,11 +194,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableResult result = new TableResult() { Result = operation.Entity };
             replaceCmd.RetrieveResponseStream = false;
             replaceCmd.SignRequest = client.AuthenticationHandler.SignRequest;
-            replaceCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            replaceCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             replaceCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) =>
             {
                 Tuple<HttpWebRequest, Stream> res = TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName);
                 replaceCmd.SendStream = res.Item2;
+                replaceCmd.StreamToDispose = res.Item2;
                 return res.Item1;
             };
 
@@ -217,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retrieveCmd.CommandLocationMode = operation.isPrimaryOnlyRetrieve ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
             retrieveCmd.RetrieveResponseStream = true;
             retrieveCmd.SignRequest = client.AuthenticationHandler.SignRequest;
-            retrieveCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retrieveCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retrieveCmd.BuildRequestDelegate = (uri, builder, timeout, useVersionHeader, ctx) => TableOperationHttpWebRequestFactory.BuildRequestForTableOperation(uri, builder, client.BufferManager, timeout, operation, useVersionHeader, ctx, requestOptions, client.AccountName).Item1;
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
             retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
@@ -244,6 +258,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         return "POST";
                     case TableOperationType.Merge:
                     case TableOperationType.InsertOrMerge:
+                    case TableOperationType.RotateEncryptionKey:
                         return "POST"; // Post tunneling for merge
                     case TableOperationType.Replace:
                     case TableOperationType.InsertOrReplace:

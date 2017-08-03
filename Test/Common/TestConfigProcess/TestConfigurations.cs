@@ -25,6 +25,7 @@ namespace Microsoft.WindowsAzure.Storage
     {
         public const string DefaultTestConfigFilePath = @"TestConfigurations.xml";
         public string TargetTenantName { get; private set; }
+        public string TargetPremiumBlobTenantName { get; private set; }
         public IEnumerable<TenantConfiguration> TenantConfigurations { get; private set; }
 
         public static TestConfigurations ReadFromXml(XDocument testConfigurationsDoc)
@@ -37,6 +38,7 @@ namespace Microsoft.WindowsAzure.Storage
         {
             TestConfigurations result = new TestConfigurations();
             result.TargetTenantName = (string)testConfigurationsElement.Element("TargetTestTenant");
+            result.TargetPremiumBlobTenantName = (string)testConfigurationsElement.Element("TargetPremiumBlobTenant");
 
             List<TenantConfiguration> tenantConfigurationList = new List<TenantConfiguration>();
             foreach (XElement tenantConfigurationElement in testConfigurationsElement.Element("TenantConfigurations").Elements("TenantConfiguration"))

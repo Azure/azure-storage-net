@@ -1,0 +1,15 @@
+﻿{
+  "version": "8.2.0.0",
+  "supports": {},
+  "dependencies": {
+    "WindowsAzure.Storage": "8.2.0-facade"
+  },
+  "frameworks": {
+    ".NETPortable,Version=v4.5,Profile=Profile259": {}
+  },
+
+  "buildOptions": {
+    "delaySign": true,
+    "keyFile": "MSSharedLibKey.snk"
+  }
+}

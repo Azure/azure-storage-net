@@ -287,6 +287,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
             this.FilterString = filter;
             return this;
         }
+
+        public TableQuery Copy()
+        {
+            TableQuery copy = new TableQuery();
+            copy.TakeCount = this.TakeCount;
+            copy.FilterString = this.FilterString;
+            copy.SelectColumns = this.SelectColumns;
+            return copy;
+        }
         #endregion
 
         #region Impl

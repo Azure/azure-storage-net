@@ -25,6 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
 
+#if !FACADE_NETCORE
     [TestClass]
     public class WriteToAsyncTests : TestBase
     {
@@ -60,8 +61,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
             stream1.Dispose();
             stream2.Dispose();
         }
-        
-        [TestMethod]
+
+    [TestMethod]
         [Description("Copy between a MemoryStream using WriteToSync at different lengths.")]
         [TestCategory(ComponentCategory.Core)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -150,5 +151,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
             stream1.Dispose();
             stream2.Dispose();
         }
-    }
+}
+#endif
 }

@@ -66,9 +66,22 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 
             properties.ContentDisposition = response.Headers[Constants.HeaderConstants.ContentDispositionResponseHeader];
             properties.ContentEncoding = response.Headers[HttpResponseHeader.ContentEncoding];
-            properties.ContentMD5 = response.Headers[HttpResponseHeader.ContentMd5];
+
+            // For range gets, only look at 'x-ms-content-md5' for overall MD5
+            if (response.Headers[HttpResponseHeader.ContentRange] != null)
+            {
+                properties.ContentMD5 = response.Headers[Constants.HeaderConstants.FileContentMD5Header];
+            }
+            else
+            {
+                properties.ContentMD5 = response.Headers[HttpResponseHeader.ContentMd5];
+            }
+
             properties.ContentType = response.Headers[HttpResponseHeader.ContentType];
             properties.CacheControl = response.Headers[HttpResponseHeader.CacheControl];
+
+            string fileEncryption = response.Headers[Constants.HeaderConstants.ServerEncrypted];
+            properties.IsServerEncrypted = string.Equals(fileEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
             // Get the content length. Prioritize range and x-ms over content length for the special cases.
             string rangeHeader = response.Headers[HttpResponseHeader.ContentRange];

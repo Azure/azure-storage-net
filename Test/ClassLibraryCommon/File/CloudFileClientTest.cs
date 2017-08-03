@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
@@ -358,42 +359,55 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric)]
-        public void CloudFileClientListManySharesSegmentedWithPrefix()
+        public async Task CloudFileClientListManySharesSegmentedWithPrefix()
         {
             string name = GetRandomShareName();
             List<string> shareNames = new List<string>();
             CloudFileClient fileClient = GenerateCloudFileClient();
 
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < 5050; i++)
             {
                 string shareName = name + i.ToString();
                 shareNames.Add(shareName);
-                fileClient.GetShareReference(shareName).Create();
+                tasks.Add(Task.Run(() => fileClient.GetShareReference(shareName).Create()));
+                while (tasks.Count > 50)
+                {
+                    Task t = await Task.WhenAny(tasks);
+                    await t;
+                    tasks.Remove(t);
+                }
             }
+            await Task.WhenAll(tasks);
 
             List<string> listedShareNames = new List<string>();
             FileContinuationToken token = null;
             do
             {
-                ShareResultSegment resultSegment = fileClient.ListSharesSegmented(name, ShareListingDetails.None, 1, token);
+                ShareResultSegment resultSegment = fileClient.ListSharesSegmented(name, ShareListingDetails.None, null, token);
                 token = resultSegment.ContinuationToken;
 
-                int count = 0;
                 foreach (CloudFileShare share in resultSegment.Results)
                 {
-                    count++;
                     listedShareNames.Add(share.Name);
                 }
-                Assert.IsTrue(count <= 1);
             }
             while (token != null);
 
             Assert.AreEqual(shareNames.Count, listedShareNames.Count);
+            tasks = new List<Task>();
             foreach (string shareName in listedShareNames)
             {
                 Assert.IsTrue(shareNames.Remove(shareName));
-                fileClient.GetShareReference(shareName).Delete();
+                tasks.Add(Task.Run(() => fileClient.GetShareReference(shareName).Delete()));
+                while (tasks.Count > 50)
+                {
+                    Task t = await Task.WhenAny(tasks);
+                    await t;
+                    tasks.Remove(t);
+                }
             }
+            await Task.WhenAll(tasks);
         }
 
         [TestMethod]
@@ -1007,7 +1021,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 share.Create();
 
-                fileClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(30);
+                fileClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(2);
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file");
                 file.StreamWriteSizeInBytes = 1024 * 1024;
                 file.StreamMinimumReadSizeInBytes = 1024 * 1024;
@@ -1131,5 +1145,190 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
             }
         }
+
+        [TestMethod]
+        [Description("Test list shares with a snapshot")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileListSharesWithSnapshot()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.Create();
+            share.Metadata["key1"] = "value1";
+            share.SetMetadata();
+
+            CloudFileShare snapshot = share.Snapshot();
+            share.Metadata["key2"] = "value2";
+            share.SetMetadata();
+
+            CloudFileClient client = GenerateCloudFileClient();
+            IEnumerable<CloudFileShare> listResult = client.ListShares(share.Name, ShareListingDetails.All, null, null);
+
+            int count = 0;
+            bool originalFound = false;
+            bool snapshotFound = false;
+            foreach (CloudFileShare listShareItem in listResult)
+            {
+                if (listShareItem.Name.Equals(share.Name) && !listShareItem.IsSnapshot && !originalFound)
+                {
+                    count++;
+                    originalFound = true;
+                    Assert.AreEqual(2, listShareItem.Metadata.Count);
+                    Assert.AreEqual("value2", listShareItem.Metadata["key2"]);
+                    Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                    Assert.AreEqual(share.StorageUri, listShareItem.StorageUri);
+                }
+                else if (listShareItem.Name.Equals(share.Name) &&
+                        listShareItem.IsSnapshot && !snapshotFound)
+                {
+                    count++;
+                    snapshotFound = true;
+                    Assert.AreEqual(1, listShareItem.Metadata.Count);
+                    Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                    Assert.AreEqual(snapshot.StorageUri, listShareItem.StorageUri);
+                }
+            }
+
+            Assert.AreEqual(2, count);
+
+            snapshot.Delete();
+            share.Delete();
+        }
+
+        [TestMethod]
+        [Description("Test list shares with a snapshot - APM")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileListSharesWithSnapshotAPM()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                IAsyncResult result = share.BeginCreate(
+                    ar => waitHandle.Set(),
+                    null);
+                waitHandle.WaitOne();
+                share.EndCreate(result);
+
+                share.Metadata["key1"] = "value1";
+                result = share.BeginSetMetadata(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                share.EndSetMetadata(result);
+
+                result = share.BeginSnapshot(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                CloudFileShare snapshot = share.EndSnapshot(result);
+
+
+                share.Metadata["key2"] = "value2";
+                result = share.BeginSetMetadata(ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                share.EndSetMetadata(result);
+
+                CloudFileClient client = GenerateCloudFileClient();
+                result = client.BeginListSharesSegmented(share.Name, ShareListingDetails.All, null, null, null, null, ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                IEnumerable<CloudFileShare> listResult = client.EndListSharesSegmented(result).Results;
+
+                int count = 0;
+                bool originalFound = false;
+                bool snapshotFound = false;
+                foreach (CloudFileShare listShareItem in listResult)
+                {
+                    if (listShareItem.Name.Equals(share.Name) && !listShareItem.IsSnapshot && !originalFound)
+                    {
+                        count++;
+                        originalFound = true;
+                        Assert.AreEqual(2, listShareItem.Metadata.Count);
+                        Assert.AreEqual("value2", listShareItem.Metadata["key2"]);
+                        Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                        Assert.AreEqual(share.StorageUri, listShareItem.StorageUri);
+                    }
+                    else if (listShareItem.Name.Equals(share.Name) &&
+                            listShareItem.IsSnapshot && !snapshotFound)
+                    {
+                        count++;
+                        snapshotFound = true;
+                        Assert.AreEqual(1, listShareItem.Metadata.Count);
+                        Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                        Assert.AreEqual(snapshot.StorageUri, listShareItem.StorageUri);
+                    }
+                }
+
+                Assert.AreEqual(2, count);
+
+                snapshot.Delete();
+                share.Delete();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Test list shares with a snapshot - TASK")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileListSharesWithSnapshotTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            share.CreateAsync().Wait();
+            share.Metadata["key1"] = "value1";
+            share.SetMetadataAsync().Wait();
+
+            CloudFileShare snapshot = share.Snapshot();
+            share.Metadata["key2"] = "value2";
+            share.SetMetadataAsync().Wait();
+
+            CloudFileClient client = GenerateCloudFileClient();
+            List<CloudFileShare> listedShares = new List<CloudFileShare>();
+            FileContinuationToken token = null;
+            do
+            {
+                ShareResultSegment resultSegment = client.ListSharesSegmentedAsync(share.Name, ShareListingDetails.All, null, token, null, null).Result;
+                token = resultSegment.ContinuationToken;
+
+                foreach (CloudFileShare listResultShare in resultSegment.Results)
+                {
+                    listedShares.Add(listResultShare);
+                }
+            }
+            while (token != null);
+
+            int count = 0;
+            bool originalFound = false;
+            bool snapshotFound = false;
+            foreach (CloudFileShare listShareItem in listedShares)
+            {
+                if (listShareItem.Name.Equals(share.Name) && !listShareItem.IsSnapshot && !originalFound)
+                {
+                    count++;
+                    originalFound = true;
+                    Assert.AreEqual(2, listShareItem.Metadata.Count);
+                    Assert.AreEqual("value2", listShareItem.Metadata["key2"]);
+                    Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                    Assert.AreEqual(share.StorageUri, listShareItem.StorageUri);
+                }
+                else if (listShareItem.Name.Equals(share.Name) &&
+                        listShareItem.IsSnapshot && !snapshotFound)
+                {
+                    count++;
+                    snapshotFound = true;
+                    Assert.AreEqual(1, listShareItem.Metadata.Count);
+                    Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
+                    Assert.AreEqual(snapshot.StorageUri, listShareItem.StorageUri);
+                }
+            }
+
+            Assert.AreEqual(2, count);
+
+            snapshot.DeleteAsync().Wait();
+            share.DeleteAsync().Wait();
+        }
+#endif
     }
 }

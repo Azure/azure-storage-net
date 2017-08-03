@@ -35,18 +35,22 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string BatchErrorInOperation = "Element {0} in the batch returned an unexpected response code.";
         public const string BinaryMessageShouldUseBase64Encoding = "EncodeMessage should be true for binary message.";
         public const string Blob = "blob";
+        public const string BlobAlreadyExists = "The specified blob already exists.";
         public const string BlobDataCorrupted = "Blob data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
         public const string BlobEndPointNotConfigured = "No blob endpoint configured.";
         public const string BlobInvalidSequenceNumber = "The sequence number may not be specified for an increment operation.";
+        public const string BlobOverMaxBlockLimit = "The total blocks required for this upload exceeds the maximum block limit. Please increase the block size if applicable and ensure the Blob size is not greater than the maximum Blob size limit.";
         public const string BlobStreamAlreadyCommitted = "Blob stream has already been committed once.";
         public const string BlobStreamFlushPending = "Blob stream has a pending flush operation. Please call EndFlush first.";
         public const string BlobStreamReadPending = "Blob stream has a pending read operation. Please call EndRead first.";
+        public const string BlobTierNotSupported = "Blob tier cannot be set by this API on an existing blob. Please call SetBlobTier for existing blobs.";
         public const string BlobTypeMismatch = "Blob type of the blob reference doesn't match blob type of the blob.";
         public const string BufferTooSmall = "The provided buffer is too small to fit in the blob data given the offset.";
         public const string BufferManagerProvidedIncorrectLengthBuffer = "The IBufferManager provided an incorrect length buffer to the stream, Expected {0}, received {1}. Buffer length should equal the value returned by IBufferManager.GetDefaultBufferSize().";
         public const string CannotCreateSASSignatureForGivenCred = "Cannot create Shared Access Signature as the credentials does not have account name information. Please check that the credentials used support creating Shared Access Signature.";
         public const string CannotCreateSASWithoutAccountKey = "Cannot create Shared Access Signature unless Account Key credentials are used.";
         public const string CannotModifySnapshot = "Cannot perform this operation on a blob representing a snapshot.";
+        public const string CannotModifyShareSnapshot = "Cannot perform this operation on a share representing a snapshot.";
         public const string CannotTransformNonHttpsUriWithHttpsOnlyCredentials = "Cannot transform a Uri object using a StorageCredentials object that is marked HTTPS only.";
         public const string CannotUpdateKeyWithoutAccountKeyCreds = "Cannot update key unless Account Key credentials are used.";
         public const string CannotUpdateSasWithoutSasCreds = "Cannot update Shared Access Signature unless Sas credentials are used.";
@@ -118,9 +122,18 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string IQueryableExtensionObjectMustBeTableQuery = "Query must be a TableQuery<T>";
         public const string JsonNotSupportedOnRT = "JSON payloads are not supported in Windows Runtime.";
         public const string JsonReaderNotInCompletedState = "The JSON reader has not yet reached the completed state.";
+        public const string KeyAndResolverMissingError = "Key and Resolver are not initialized. Decryption requires either of them to be initialized.";
         public const string KeyMismatch = "Key mismatch. The key id stored on the service does not match the specified key.";
         public const string KeyMissingError = "Key is not initialized. Encryption requires it to be initialized.";
-        public const string KeyAndResolverMissingError = "Key and Resolver are not initialized. Decryption requires either of them to be initialized.";
+        public const string KeyResolverCannotResolveExistingKey = "KeyResolver is not able to resolve the existing encryption key used to encrypt this blob.";
+        public const string KeyRotationInvalidAccessCondition = @"Cannot supply an AccessCondition with an ETag or Modified-Since condition for key rotation.  An If-Match condition will be automatically applied.";
+        public const string KeyRotationNoEncryptionKey = "Must supply a new encryption key as the Encryption Policy's \"Key\" parameter when rotating encryption keys.";
+        public const string KeyRotationNoEncryptionKeyResolver = "Must supply a key resolver on the encryption policy when rotating encryption keys.";
+        public const string KeyRotationNoEncryptionMetadata = "Cannot rotate the encryption key when encryption metadata is not available on the blob.  Either the blob is not encrypted, or you need to call FetchAttributes before calling this method.";
+        public const string KeyRotationNoEncryptionPolicy = "Encryption Policy on the Request Options cannot be null for an encryption key rotation call.";
+        public const string KeyRotationNoEtag = "Cannot rotate the encryption key when the ETag is not available on the blob.  You need to call FetchAttributes before calling this method.";
+        public const string KeyRotationNoKeyID = "Cannot rotate encryption key when the encryption metadata does not contain a KeyID.";
+        public const string KeyRotationPreconditionFailed = "Precondition failed.  If this is due to an incorrect ETag value, call FetchAttributes on the local blob object and retry rotating the encryption key.";
         public const string LeaseConditionOnSource = "A lease condition cannot be specified on the source of a copy.";
         public const string LeaseTimeNotReceived = "Valid lease time expected but not received from the service.";
         public const string LengthNotInRange = "The length provided is out of range. The range must be between 0 and the length of the byte array.";
@@ -148,6 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string StorageUriMustMatch = "Primary and secondary location URIs in a StorageUri must point to the same resource.";
         public const string MultipleCredentialsProvided = "Cannot provide credentials as part of the address and as constructor parameter. Either pass in the address or use a different constructor.";
         public const string MultipleSnapshotTimesProvided = "Multiple different snapshot times provided as part of query '{0}' and as constructor parameter '{1}'.";
+        public const string NegativeBytesRequestedInCopy = "Internal Error - negative copyLength requested when attempting to copy a stream.  CopyLength = {0}, totalBytes = {1}, total bytes recorded so far = {2}.";
         public const string NoPropertyResolverAvailable = "No property resolver available. Deserializing the entity properties as strings.";
         public const string OffsetNotInRange = "The offset provided is out of range. The range must be between 0 and the length of the byte array.";
         public const string ODataReaderNotInCompletedState = "OData Reader state expected to be Completed state. Actual state: {0}.";
@@ -159,6 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string PreconditionFailed = "The condition specified using HTTP conditional header(s) is not met.";
         public const string PreconditionFailureIgnored = "Pre-condition failure on a retry is being ignored since the request should have succeeded in the first attempt.";
         public const string PrimaryOnlyCommand = "This operation can only be executed against the primary storage location.";
+        public const string PropertyDelimiterExistsInPropertyName = "Property delimiter: {0} exists in property name: {1}. Object Path: {2}";
         public const string PropertyResolverCacheDisabled = "Property resolver cache is disabled.";
         public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details.";
         public const string ProtocolsMustBeNullInOldVersion = "SharedAccessProtocol must be null when creating a SAS token with an older service version parameter.";
@@ -167,6 +182,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string Queue = "queue";
         public const string QueueEndPointNotConfigured = "No queue endpoint configured.";
         public const string RangeDownloadNotPermittedOnPhone = "Windows Phone does not support downloading closed ranges from an encrypted blob. Please download the full blob or an open range (by specifying length as null)";
+        public const string RecursiveReferencedObject = "Recursive reference detected. Object Path: {0} Property Type: {1}.";
         public const string RelativeAddressNotPermitted = "Address '{0}' is a relative address. Only absolute addresses are permitted.";
         public const string ResourceConsumed = "Resource consumed";
         public const string ResourceNameEmpty = "Invalid {0} name. The {0} name may not be null, empty, or whitespace only.";
@@ -208,6 +224,9 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceMissingDictionaryEntry = "Omitting property '{0}' from de-serialization because there is no corresponding entry in the dictionary provided.";
         public const string TraceNextLocation = "The next location has been set to {0}, based on the location mode.";
         public const string TraceNonPublicGetSet = "Omitting property '{0}' from serialization/de-serialization because the property's getter/setter are not public.";
+        public const string TraceNonExistingGetter = "Omitting property: {0} from serialization/de-serialization because the property does not have a getter. Object path: {1}";
+        public const string TraceNonExistingSetter = "Omitting property: {0} from serialization/de-serialization because the property does not have a setter."
+            + " The property needs to have at least a private setter. Object Path: {1}";
         public const string TracePrepareUpload = "Preparing to write request data.";
         public const string TracePrepareUploadError = "Exception thrown while preparing to write request data: {0}.";
         public const string TracePreProcessDone = "Response headers were processed successfully, proceeding with the rest of the operation.";
@@ -221,6 +240,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceRetryDecisionTimeout = "Operation cannot be retried because the maximum execution time has been reached. Failing with {0}.";
         public const string TraceRetryDelay = "Operation will be retried after {0}ms.";
         public const string TraceRetryError = "Exception thrown while retrying operation: {0}.";
+        public const string TraceSetPropertyError = "Exception thrown while trying to set property value. Property Path: {0} Property Value: {1}. Exception Message: {2}";
         public const string TraceStartRequestAsync = "Starting asynchronous request to {0}.";
         public const string TraceStartRequestSync = "Starting synchronous request to {0}.";
         public const string TraceStringToSign = "StringToSign = {0}.";
@@ -230,10 +250,12 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string UndefinedBlobType = "The blob type cannot be undefined.";
         public const string UnexpectedElement = "Unexpected Element '{0}'";
         public const string UnexpectedEmptyElement = "Unexpected Empty Element '{0}'";
+        public const string UnexpectedParameterInSAS = "The parameter `api-version` should not be included in the SAS token. Please allow the library to set the  `api-version` parameter.";
         public const string UnexpectedContinuationType = "Unexpected Continuation Type";
         public const string UnexpectedLocation = "Unexpected Location '{0}'";
         public const string UnexpectedResponseCode = "Unexpected response code, Expected:{0}, Received:{1}";
         public const string UnsupportedPropertyTypeForEncryption = "Unsupported type : {0} encountered during encryption. Only string properties can be encrypted on the client side.";
+        public const string UnsupportedPropertyTypeForEntityPropertyConversion = "Unsupported type : {0} encountered during conversion to EntityProperty. Object Path: {1}";
         public const string UpdateMessageVisibilityRequired = "Calls to UpdateMessage must include the Visibility flag.";
         public const string UsingDefaultPropertyResolver = "Using the default property resolver to deserialize the entity.";
         public const string UsingUserProvidedPropertyResolver = "Using the property resolver provided via TableRequestOptions to deserialize the entity.";

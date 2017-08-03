@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage
     {
         private const AuthenticationScheme DefaultAuthenticationScheme = AuthenticationScheme.SharedKey;
 
-        public static byte[] GetRandomBuffer(int size)
+        public static byte[] GetRandomBuffer(long size)
         {
             byte[] buffer = new byte[size];
             Random random = new Random();
@@ -180,15 +180,30 @@ namespace Microsoft.WindowsAzure.Storage
 
         public static TenantConfiguration TargetTenantConfig { get; private set; }
 
+        public static TenantConfiguration PremiumBlobTenantConfig { get; private set; }
+
         public static TenantType CurrentTenantType { get; private set; }
 
         public static StorageCredentials StorageCredentials { get; private set; }
+
+        public static StorageCredentials PremiumBlobStorageCredentials { get; private set; }
 
         private static void Initialize(TestConfigurations configurations)
         {
             TestBase.TargetTenantConfig = configurations.TenantConfigurations.Single(config => config.TenantName == configurations.TargetTenantName);
             TestBase.StorageCredentials = new StorageCredentials(TestBase.TargetTenantConfig.AccountName, TestBase.TargetTenantConfig.AccountKey);
             TestBase.CurrentTenantType = TargetTenantConfig.TenantType;
+
+            try
+            {
+                TestBase.PremiumBlobTenantConfig = configurations.TenantConfigurations.Single(config => config.TenantName == configurations.TargetPremiumBlobTenantName);
+                TestBase.PremiumBlobStorageCredentials = new StorageCredentials(TestBase.PremiumBlobTenantConfig.AccountName, TestBase.PremiumBlobTenantConfig.AccountKey);
+            }
+            catch (InvalidOperationException e) { }
+
+#if WINDOWS_DESKTOP
+            System.Threading.ThreadPool.SetMinThreads(100, 100);
+#endif
         }
     }
 }

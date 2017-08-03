@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -115,7 +116,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsWithPrefix()
+        public async Task CloudBlobClientListBlobsWithPrefix()
         {
             string name = "bb" + GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -127,8 +128,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 rootContainer.CreateIfNotExists();
                 container.Create();
 
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.BlockBlob);
-                List<string> rootBlobNames = CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.BlockBlob);
+                List<string> rootBlobNames = await CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
 
                 IEnumerable<IListBlobItem> results = blobClient.ListBlobs("bb");
                 foreach (CloudBlockBlob blob in results)
@@ -159,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedWithPrefix()
+        public async Task CloudBlobClientListBlobsSegmentedWithPrefix()
         {
             string name = "bb" + GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -171,8 +172,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 rootContainer.CreateIfNotExists();
                 container.Create();
 
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.BlockBlob);
-                List<string> rootBlobNames = CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.BlockBlob);
+                List<string> rootBlobNames = await CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
 
                 BlobResultSegment results;
                 BlobContinuationToken token = null;
@@ -224,7 +225,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedWithEmptyPrefix()
+        public async Task CloudBlobClientListBlobsSegmentedWithEmptyPrefix()
         {
             string name = "bb" + GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -237,8 +238,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.Create();
                 List<Uri> preExistingBlobs = rootContainer.ListBlobs().Select(b => b.Uri).ToList();
 
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.BlockBlob);
-                List<string> rootBlobNames = CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.BlockBlob);
+                List<string> rootBlobNames = await CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
 
                 BlobResultSegment results;
                 BlobContinuationToken token = null;
@@ -314,7 +315,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedWithPrefixAPM()
+        public async Task CloudBlobClientListBlobsSegmentedWithPrefixAPM()
         {
             string name = "bb" + GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -326,8 +327,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 rootContainer.CreateIfNotExists();
                 container.Create();
 
-                List<string> blobNames = CreateBlobs(container, 3, BlobType.BlockBlob);
-                List<string> rootBlobNames = CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobs(container, 3, BlobType.BlockBlob);
+                List<string> rootBlobNames = await CreateBlobs(rootContainer, 2, BlobType.BlockBlob);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -732,6 +733,74 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Create a container with public access. Check public access is populated for Exists")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientCreateBlobAndCheckExistsWithPublicAccess()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            BlobContainerPublicAccessType[] accessValues = {BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob};
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                string name = GetRandomContainerName();
+                CloudBlobContainer container = blobClient.GetContainerReference(name);
+                container.Create(access);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                Assert.AreEqual(access, container2.GetPermissions().PublicAccess);
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                container3.Exists();
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                container.Delete();
+            }
+        }
+
+        [TestMethod]
+        [Description("List containers and fetch attributes with public access")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientListContainersAndFetchAttributesWithPublicAccess()
+        {
+            string name = GetRandomContainerName();
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(name);
+            container.Create();
+
+            BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
+            BlobContainerPermissions permissions = new BlobContainerPermissions();
+            foreach (BlobContainerPublicAccessType access in accessValues)
+            {
+                permissions.PublicAccess = access;
+                container.SetPermissions(permissions);
+                Assert.AreEqual(access, container.Properties.PublicAccess);
+
+                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                Assert.IsFalse(container2.Properties.PublicAccess.HasValue);
+                container2.FetchAttributes();
+                Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                Assert.AreEqual(access, container3.GetPermissions().PublicAccess);
+                Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                IEnumerable<CloudBlobContainer> results = blobClient.ListContainers(name, ContainerListingDetails.None, null, null);
+                Assert.AreEqual(1, results.Count());
+                Assert.AreEqual(access, results.First().Properties.PublicAccess);
+            }
+
+            container.Delete();
+        }
+
+        [TestMethod]
         [Description("List containers with prefix using segmented listing")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -922,42 +991,56 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric)]
-        public void CloudBlobClientListManyContainersSegmentedWithPrefix()
+        public async Task CloudBlobClientListManyContainersSegmentedWithPrefix()
         {
             string name = GetRandomContainerName();
             List<string> containerNames = new List<string>();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
 
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < 5050; i++)
             {
                 string containerName = name + i.ToString();
                 containerNames.Add(containerName);
-                blobClient.GetContainerReference(containerName).Create();
+                tasks.Add(Task.Run(() => blobClient.GetContainerReference(containerName).Create()));
+                while (tasks.Count > 50)
+                {
+                    Task t = await Task.WhenAny(tasks);
+                    await t;
+                    tasks.Remove(t);
+                }
             }
+            await Task.WhenAll(tasks);
 
             List<string> listedContainerNames = new List<string>();
             BlobContinuationToken token = null;
             do
             {
-                ContainerResultSegment resultSegment = blobClient.ListContainersSegmented(name, ContainerListingDetails.None, 1, token);
+                ContainerResultSegment resultSegment = blobClient.ListContainersSegmented(name, ContainerListingDetails.None, null, token);
                 token = resultSegment.ContinuationToken;
 
-                int count = 0;
                 foreach (CloudBlobContainer container in resultSegment.Results)
                 {
-                    count++;
                     listedContainerNames.Add(container.Name);
                 }
-                Assert.IsTrue(count <= 1);
             }
             while (token != null);
 
             Assert.AreEqual(containerNames.Count, listedContainerNames.Count);
+
+            tasks = new List<Task>();
             foreach (string containerName in listedContainerNames)
             {
                 Assert.IsTrue(containerNames.Remove(containerName));
-                blobClient.GetContainerReference(containerName).Delete();
+                tasks.Add(Task.Run(() => blobClient.GetContainerReference(containerName).Delete()));
+                while (tasks.Count > 50)
+                {
+                    Task t = await Task.WhenAny(tasks);
+                    await t;
+                    tasks.Remove(t);
+                }
             }
+            await Task.WhenAll(tasks);
         }
 
         [TestMethod]
@@ -1540,7 +1623,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 List<string> listedContainerNames = new List<string>();
                 ContainerResultSegment resultSegment = blobClient.ListContainersSegmented(name, ContainerListingDetails.None, 1, null);
                 Assert.AreEqual(StorageLocation.Primary, resultSegment.ContinuationToken.TargetLocation);
-                
+
                 BlobRequestOptions options = new BlobRequestOptions()
                 {
                     LocationMode = LocationMode.SecondaryOnly,
@@ -1577,6 +1660,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.Create();
                 blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(5);
+                blobClient.DefaultRequestOptions.SingleBlobUploadThresholdInBytes = 2 * 1024 * 1024;
 
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
                 blockBlob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
@@ -1639,106 +1723,76 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.Create();
 
-                blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(30);
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
-                CloudPageBlob pageBlob = container.GetPageBlobReference("blob2");
-                blockBlob.StreamWriteSizeInBytes = 1024 * 1024;
-                blockBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
-                pageBlob.StreamWriteSizeInBytes = 1024 * 1024;
-                pageBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
-
-                using (CloudBlobStream bos = blockBlob.OpenWrite())
+                blobClient.DefaultRequestOptions.MaximumExecutionTime = TimeSpan.FromSeconds(2);
+                CloudBlob[] blobs = new CloudBlob[] {
+                container.GetBlockBlobReference("blob1"),
+                container.GetPageBlobReference("blob2"),
+                container.GetAppendBlobReference("blob3") };
+                Func<CloudBlob, CloudBlobStream>[] generateWriteStream = new Func<CloudBlob, CloudBlobStream>[]
                 {
-                    DateTime start = DateTime.Now;
+                    blob => ((CloudBlockBlob)blob).OpenWrite(),
+                    blob => ((CloudPageBlob)blob).OpenWrite(8 * 1024 * 1024),
+                    blob => ((CloudAppendBlob)blob).OpenWrite(true),
+                };
+                List<Task> tasks = new List<Task>();
 
-                    for (int i = 0; i < 7; i++)
-                    {
-                        bos.Write(buffer, 0, buffer.Length);
-                    }
-
-                    // Sleep to ensure we are over the Max execution time when we do the last write
-                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
-
-                    if (msRemaining > 0)
-                    {
-                        Thread.Sleep(msRemaining);
-                    }
-
-                    bos.Write(buffer, 0, buffer.Length);
-                }
-
-                using (Stream bis = blockBlob.OpenRead())
+                for (int blobID = 0; blobID < 3; blobID++)
                 {
-                    DateTime start = DateTime.Now;
-
-                    int total = 0;
-                    while (total < 7 * 1024 * 1024)
+                    int curBlobID = blobID;
+                    CloudBlob blob = blobs[curBlobID];
+                    ((dynamic)blob).StreamWriteSizeInBytes = 1024 * 1024;
+                    blob.StreamMinimumReadSizeInBytes = 1024 * 1024;
+                    tasks.Add(Task.Run(() =>
                     {
-                        total += bis.Read(buffer, 0, buffer.Length);
-                    }
+                        using (CloudBlobStream bos = generateWriteStream[curBlobID](blob))
+                        {
+                            DateTime start = DateTime.Now;
 
-                    // Sleep to ensure we are over the Max execution time when we do the last read
-                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+                            for (int i = 0; i < 7; i++)
+                            {
+                                bos.Write(buffer, 0, buffer.Length);
+                            }
 
-                    if (msRemaining > 0)
-                    {
-                        Thread.Sleep(msRemaining);
-                    }
+                            // Sleep to ensure we are over the Max execution time when we do the last write
+                            int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
 
-                    while (true)
-                    {
-                        int count = bis.Read(buffer, 0, buffer.Length);
-                        total += count;
-                        if (count == 0)
-                            break;
-                    }
+                            if (msRemaining > 0)
+                            {
+                                Thread.Sleep(msRemaining);
+                            }
+
+                            bos.Write(buffer, 0, buffer.Length);
+                        }
+
+                        using (Stream bis = blob.OpenRead())
+                        {
+                            DateTime start = DateTime.Now;
+
+                            int total = 0;
+                            while (total < 7 * 1024 * 1024)
+                            {
+                                total += bis.Read(buffer, 0, buffer.Length);
+                            }
+
+                            // Sleep to ensure we are over the Max execution time when we do the last read
+                            int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
+
+                            if (msRemaining > 0)
+                            {
+                                Thread.Sleep(msRemaining);
+                            }
+
+                            while (true)
+                            {
+                                int count = bis.Read(buffer, 0, buffer.Length);
+                                total += count;
+                                if (count == 0)
+                                    break;
+                            }
+                        }
+                    }));
                 }
-
-                using (CloudBlobStream bos = pageBlob.OpenWrite(8 * 1024 * 1024))
-                {
-                    DateTime start = DateTime.Now;
-
-                    for (int i = 0; i < 7; i++)
-                    {
-                        bos.Write(buffer, 0, buffer.Length);
-                    }
-
-                    // Sleep to ensure we are over the Max execution time when we do the last write
-                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
-
-                    if (msRemaining > 0)
-                    {
-                        Thread.Sleep(msRemaining);
-                    }
-
-                    bos.Write(buffer, 0, buffer.Length);
-                }
-
-                using (Stream bis = pageBlob.OpenRead())
-                {
-                    DateTime start = DateTime.Now;
-                    int total = 0;
-                    while (total < 7 * 1024 * 1024)
-                    {
-                        total += bis.Read(buffer, 0, buffer.Length);
-                    }
-
-                    // Sleep to ensure we are over the Max execution time when we do the last read
-                    int msRemaining = (int)(blobClient.DefaultRequestOptions.MaximumExecutionTime.Value - (DateTime.Now - start)).TotalMilliseconds;
-
-                    if (msRemaining > 0)
-                    {
-                        Thread.Sleep(msRemaining);
-                    }
-
-                    while (true)
-                    {
-                        int count = bis.Read(buffer, 0, buffer.Length);
-                        total += count;
-                        if (count == 0)
-                            break;
-                    }
-                }
+                Task.WaitAll(tasks.ToArray());
             }
 
             finally

@@ -238,7 +238,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -377,7 +377,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
-            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => HttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;

@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Auth;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
@@ -466,7 +467,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadDownloadFile(blob, 4097, true),
                 "Page blobs must be 512-byte aligned");
- 
+
             TestHelper.ExpectedException<IOException>(
                 () => blob.BeginUploadFromFile("non_existent.file", null, null),
                 "UploadFromFile requires an existing file");
@@ -629,7 +630,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudPageBlob nullBlob = this.testContainer.GetPageBlobReference("null");
             this.DoUploadDownloadFileTask(blob, 0);
             this.DoUploadDownloadFileTask(blob, 4096);
-            
+
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadDownloadFileTask(blob, 4097),
                 "Page blobs must be 512-byte aligned");
@@ -728,6 +729,68 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Assert.IsTrue(e.InnerException is StorageException);
             Assert.IsTrue(File.Exists("garbage.file"));
             File.Delete("garbage.file");
+        }
+
+        [TestMethod]
+        [Description("Upload from file to a block blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobUploadBasicFunctionality()
+        {
+            string accountName = this.testContainer.ServiceClient.Credentials.AccountName;
+            string accountKey = this.testContainer.ServiceClient.Credentials.ExportBase64EncodedKey();
+            string containerName = this.testContainer.Name + "copy";
+            string blobName = "myBlob";
+            string inputFileName = Path.GetTempFileName();
+            File.WriteAllText(inputFileName, @"Sample file text here.");
+
+            try
+            {
+                #region sample_UploadBlob_EndToEnd
+                // This is one common way of creating a CloudStorageAccount object. You can get 
+                // your Storage Account Name and Key from the Azure Portal.
+                StorageCredentials credentials = new StorageCredentials(accountName, accountKey);
+                CloudStorageAccount storageAccount = new CloudStorageAccount(credentials, useHttps: true);
+
+                // Another common way to create a CloudStorageAccount object is to use a connection string:
+                // CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connectionString);
+
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+                // This call creates a local CloudBlobContainer object, but does not make a network call
+                // to the Azure Storage Service. The container on the service that this object represents may
+                // or may not exist at this point. If it does exist, the properties will not yet have been
+                // popluated on this object.
+                CloudBlobContainer blobContainer = blobClient.GetContainerReference(containerName);
+
+                // This makes an actual service call to the Azure Storage service. Unless this call fails,
+                // the container will have been created.
+                blobContainer.Create();
+
+                // This also does not make a service call, it only creates a local object.
+                CloudBlockBlob blob = blobContainer.GetBlockBlobReference(blobName);
+
+                // This transfers data in the file to the blob on the service.
+                blob.UploadFromFile(inputFileName);
+                #endregion
+
+                Assert.AreEqual(File.ReadAllText(inputFileName), blob.DownloadText());
+            }
+            finally
+            {
+                StorageCredentials credentials = new StorageCredentials(accountName, accountKey);
+                CloudStorageAccount storageAccount = new CloudStorageAccount(credentials, true);
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+                CloudBlobContainer blobContainer = blobClient.GetContainerReference(containerName);
+                blobContainer.DeleteIfExists();
+
+                if (File.Exists(inputFileName))
+                {
+                    File.Delete(inputFileName);
+                }
+            }
         }
 
         private void DoUploadDownloadFileTask(ICloudBlob blob, int fileSize)
@@ -925,6 +988,206 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test blob upload using parallel multi-filestream upload strategy.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobTestParallelUploadFromFileStream()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            string inputFileName = "i_" + Path.GetRandomFileName();
+            string outputFileName = "o_" + Path.GetRandomFileName();
+
+            try
+            {                
+                container.Create();
+
+                BlobRequestOptions options = new BlobRequestOptions()
+                {
+                    StoreBlobContentMD5 = false,
+                    ParallelOperationThreadCount = 1
+                };
+
+                byte[] buffer = GetRandomBuffer(25 * 1024 * 1024);
+ 
+                using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(buffer, 0, buffer.Length);
+                }
+
+                CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
+
+                blob1.StreamWriteSizeInBytes = 5 * 1024 * 1024;
+                blob1.UploadFromFile(inputFileName, null, options, null);
+                blob1.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+               
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                     outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("unittestblob"); // This one is used in the unit test samples, hence the name "blob", not "blob2".
+                blob.StreamWriteSizeInBytes = 5 * 1024 * 1024;
+
+                #region sample_BlobRequestOptions_ParallelOperationThreadCount
+
+                BlobRequestOptions parallelThreadCountOptions = new BlobRequestOptions();
+
+                // Allow up to four simultaneous I/O operations.
+                parallelThreadCountOptions.ParallelOperationThreadCount = 4;
+                blob.UploadFromFile(inputFileName, accessCondition: null, options: parallelThreadCountOptions, operationContext: null);
+
+                #endregion
+
+                options.ParallelOperationThreadCount = 4;
+                blob.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                     outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }
+
+                CloudBlockBlob blob3 = container.GetBlockBlobReference("blob3");
+                blob3.StreamWriteSizeInBytes = 6 * 1024 * 1024 + 1;
+                options.ParallelOperationThreadCount = 1;
+                blob3.UploadFromFile(inputFileName, null, options, null);
+                blob3.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                     outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }
+
+                CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
+                blob4.StreamWriteSizeInBytes = 6 * 1024 * 1024 + 1;
+                options.ParallelOperationThreadCount = 3;
+                blob4.UploadFromFile(inputFileName, null, options, null);
+                blob4.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+
+                using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read), 
+                    outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                {
+                    TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                }
+            }
+            finally
+            {
+                File.Delete(inputFileName);
+                File.Delete(outputFileName);
+                container.Delete();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test blob upload using multi-filestream upload strategy - APM.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobTestParallelUploadFromFileStreamAPM()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            string inputFileName = "i_" + Path.GetRandomFileName();
+            string outputFileName = "o_" + Path.GetRandomFileName();
+
+            try
+            {
+                container.Create();
+
+                BlobRequestOptions options = new BlobRequestOptions()
+                {
+                    UseTransactionalMD5 = false,
+                    StoreBlobContentMD5 = false,
+                    ParallelOperationThreadCount = 1
+                };
+
+                byte[] buffer = GetRandomBuffer(20 * 1024 * 1024);
+
+                using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(buffer, 0, buffer.Length);
+                }
+
+                CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
+                CloudBlockBlob blob3 = container.GetBlockBlobReference("blob3");
+                CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    blob1.StreamWriteSizeInBytes = 5 * 1024 * 1024;
+                    IAsyncResult result = blob1.BeginUploadFromFile(inputFileName, null, options, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob1.EndUploadFromFile(result);
+                    blob1.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+
+                    using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                         outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                    {
+                        TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                    }
+
+                    blob2.StreamWriteSizeInBytes = 5 * 1024 * 1024;
+                    options.ParallelOperationThreadCount = 3;
+                    result = blob2.BeginUploadFromFile(inputFileName, null, options, null, 
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob2.EndUploadFromFile(result);
+                    blob2.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+
+                    using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                         outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                    {
+                        TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                    }
+
+                    blob3.StreamWriteSizeInBytes = 6 * 1024 * 1024 + 1;
+                    options.ParallelOperationThreadCount = 1;
+                    result = blob3.BeginUploadFromFile(inputFileName, null, options, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob3.EndUploadFromFile(result);
+                    blob3.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+
+                    using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                         outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                    {
+                        TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                    }
+
+                    blob4.StreamWriteSizeInBytes = 6 * 1024 * 1024 + 1;
+                    options.ParallelOperationThreadCount = 5;
+                    result = blob4.BeginUploadFromFile(inputFileName, null, options, null,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    blob4.EndUploadFromFile(result);
+                    blob4.DownloadToFile(outputFileName, FileMode.Create, null, options, null);
+
+                    using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                         outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+                    {
+                        TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+                    }
+                }
+            }
+            finally
+            {
+                File.Delete(inputFileName);
+                File.Delete(outputFileName);
+                container.Delete();
+            }
+        }
+
+        [TestMethod]
         [Description("Upload a block blob using a byte array")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1088,7 +1351,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 0, 2 * 512);
             this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 1 * 512, 2 * 512);
             this.DoUploadFromByteArrayTestTask(blob, 4 * 512, 2 * 512, 2 * 512);
-            
+
             TestHelper.ExpectedException<ArgumentException>(
                 () => this.DoUploadFromByteArrayTestTask(blob, 512, 0, 511),
                 "Page blobs must be 512-byte aligned");
@@ -1186,10 +1449,97 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDownloadToByteArray()
         {
+            AssertSecondaryEndpoint();
+
             CloudBlockBlob blob = this.testContainer.GetBlockBlobReference("blob1");
             this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 0, 0);
             this.DoDownloadToByteArrayTest(blob, 1 * 512, 2 * 512, 1 * 512, 0);
             this.DoDownloadToByteArrayTest(blob, 2 * 512, 4 * 512, 1 * 512, 0);
+
+            byte[] bytes = new byte[] { 1, 2, 3, 4 };
+            byte[] destinationArray = new byte[4];
+            blob.UploadFromByteArray(bytes, 0, bytes.Length);
+
+            // Wait until the data has been replicated to the secondary tenant.
+            try
+            {
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => blob.FetchAttributes(null, new BlobRequestOptions() { LocationMode = RetryPolicies.LocationMode.SecondaryOnly }, null));
+            }
+            catch (Exception)
+            {
+                Assert.Inconclusive("Data took more than 30 seconds to replicate to the secondary; aborting test.");
+            }
+
+            #region sample_RequestOptions_RetryPolicy
+
+            // Create a Linear Retry Policy.
+            // This retry policy will instruct the Storage Client to retry the request in a linear fashion.
+            // This particular retry policy will retry the request every 20 seconds, up to a maximum of 4 retries.
+            BlobRequestOptions optionsWithRetryPolicy = new BlobRequestOptions() { RetryPolicy = new RetryPolicies.LinearRetry(TimeSpan.FromSeconds(20), 4) };
+
+            int byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: optionsWithRetryPolicy);
+
+            // This retry policy will never retry.
+            optionsWithRetryPolicy = new BlobRequestOptions() { RetryPolicy = new RetryPolicies.NoRetry() };
+            byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: optionsWithRetryPolicy);
+
+            #endregion
+
+
+            #region sample_RequestOptions_LocationMode
+            // The PrimaryOnly LocationMode directs the request and all potential retries to go to the primary endpoint.
+            BlobRequestOptions locationModeRequestOptions = new BlobRequestOptions() { LocationMode = RetryPolicies.LocationMode.PrimaryOnly };
+            byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: locationModeRequestOptions);
+
+            // The PrimaryThenSecondary LocationMode directs the first request to go to the primary location.
+            // If this request fails with a retryable error, the retry will next hit the secondary location.
+            // Retries will switch back and forth between primary and secondary until the request succeeds, 
+            // or retry attempts have been exhausted.
+            locationModeRequestOptions = new BlobRequestOptions() { LocationMode = RetryPolicies.LocationMode.PrimaryThenSecondary };
+            byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: locationModeRequestOptions);
+
+            // The SecondaryOnly LocationMode directs the request and all potential retries to go to the secondary endpoint.
+            locationModeRequestOptions = new BlobRequestOptions() { LocationMode = RetryPolicies.LocationMode.SecondaryOnly };
+            byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: locationModeRequestOptions);
+
+            // The SecondaryThenPrimary LocationMode directs the first request to go to the secondary location.
+            // If this request fails with a retryable error, the retry will next hit the primary location.
+            // Retries will switch back and forth between secondary and primary until the request succeeds, or retry attempts
+            // have been exhausted.
+            locationModeRequestOptions = new BlobRequestOptions() { LocationMode = RetryPolicies.LocationMode.SecondaryThenPrimary };
+            byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: locationModeRequestOptions);
+            #endregion
+
+            #region sample_RequestOptions_ServerTimeout_MaximumExecutionTime
+
+            BlobRequestOptions timeoutRequestOptions = new BlobRequestOptions()
+            {
+                // Each REST operation will timeout after 5 seconds.
+                ServerTimeout = TimeSpan.FromSeconds(5),
+
+                // Allot 30 seconds for this API call, including retries
+                MaximumExecutionTime = TimeSpan.FromSeconds(30)
+            };
+
+            byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: timeoutRequestOptions);
+
+            #endregion
+
+            bool exceptionThrown = false;
+            try
+            {
+                #region sample_RequestOptions_RequireEncryption
+                // Instruct the client library to fail if data read from the service is not encrypted.
+                BlobRequestOptions requireEncryptionRequestOptions = new BlobRequestOptions() { RequireEncryption = true };
+
+                byteCount = blob.DownloadToByteArray(destinationArray, index: 0, accessCondition: null, options: requireEncryptionRequestOptions);
+                #endregion
+            }
+            catch (InvalidOperationException)
+            {
+                exceptionThrown = true;
+            }
+            Assert.IsTrue(exceptionThrown);
         }
 
         [TestMethod]
@@ -2074,6 +2424,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             int resultBufSize = 1024;
             byte[] buffer = GetRandomBuffer(blobLength);
             byte[] resultBuffer = new byte[resultBufSize];
+            blob.ServiceClient.DefaultRequestOptions.RetryPolicy = null;
 
             using (MemoryStream stream = new MemoryStream(buffer))
             {

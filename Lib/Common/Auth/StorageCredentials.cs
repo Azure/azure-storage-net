@@ -15,6 +15,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System.Collections.Generic;
+
 namespace Microsoft.WindowsAzure.Storage.Auth
 {
     using Microsoft.WindowsAzure.Storage.Core;
@@ -100,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         }
 
         /// <summary>
-        /// Gets the value of the shared access signature token's <code>sig</code> parameter.
+        /// Gets the value of the shared access signature token's <c>sig</c> parameter.
         /// </summary>
         public string SASSignature
         {
@@ -373,8 +375,13 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         {
             SasQueryBuilder newQueryBuilder = new SasQueryBuilder(this.SASToken);
 
+            if(newQueryBuilder.ContainsQueryStringName(Constants.QueryConstants.ApiVersion))
+            {
+                string errorMessage = string.Format(SR.UnexpectedParameterInSAS);
+                throw new ArgumentException(errorMessage);
+            }
+            
             newQueryBuilder.Add(Constants.QueryConstants.ApiVersion, Constants.HeaderConstants.TargetStorageVersion);
-
             this.queryBuilder = newQueryBuilder;
         }
     }
