@@ -1,5 +1,7 @@
-Changes in 8.2.0
+Changes in 8.2.1 :
+- All: Fixed a bug where empty metadata headers would lead to an infinite loop when trying to list blobs on a container.
 
+Changes in 8.2.0 :
 - All: Support for 2017-04-17 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.4.
 - Files: Added support for server side encryption.
 - PageBlobs: For Premium Accounts only, added support for getting and setting the tier on a page blob. The tier can also be set when creating or copying from an existing page blob.
