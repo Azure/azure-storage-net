@@ -14,8 +14,8 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <PackageCertificateKeyFile>RT_Test_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <PackageCertificateThumbprint>B5B21C28168D08574A37185106B2A4319FD4331C</PackageCertificateThumbprint>
+    <PackageCertificateKeyFile>Microsoft.WindowsAzure.Storage.RT.Test_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateThumbprint>C6306A6B27B4138AE1AE2ECE3AC0FF655376E964</PackageCertificateThumbprint>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -164,6 +164,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Microsoft.WindowsAzure.Storage.RT.Test_TemporaryKey.pfx" />
     <None Include="MSSharedLibKey.snk" />
     <None Include="RT_Test_TemporaryKey.pfx" />
   </ItemGroup>
