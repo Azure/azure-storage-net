@@ -15,7 +15,7 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>RT_Test_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <PackageCertificateThumbprint>B5B21C28168D08574A37185106B2A4319FD4331C</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>7439A8A53DE85A82C0D106973170847C18D74A2D</PackageCertificateThumbprint>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -164,6 +164,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <None Include="RT_Test_TemporaryKey.pfx" />
     <None Include="MSSharedLibKey.snk" />
     <None Include="RT_Test_TemporaryKey.pfx" />
   </ItemGroup>
