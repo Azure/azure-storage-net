@@ -66,7 +66,8 @@ namespace Microsoft.WindowsAzure.Storage
                 return null;
             }
 
-            if (response.ContentType.Contains(@"xml")) // Some table operations respond with XML - request body too large, for example.
+            // Some table operations respond with XML - request body too large, for example.
+            if (response.ContentType.Contains(@"xml"))
             {
                 return StorageExtendedErrorInformation.ReadFromStream(inputStream);
             }

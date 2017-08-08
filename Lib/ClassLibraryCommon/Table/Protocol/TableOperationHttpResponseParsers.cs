@@ -137,7 +137,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             StreamReader streamReader = new StreamReader(responseStream);
             string currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
             currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
-            int index = 0;
+
+            // Index of the currently-being-parsed entity in the batch.  Used for parsing errors, if one entity fails but prior ones succeed..
+            int index = 0; 
             bool failError = false;
             bool failUnexpected = false;
 
@@ -362,8 +364,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                 foreach (JToken token in dataTable)
                 {
-                    string temp;
-                    Dictionary<string, object> results = ReadSingleItem(token, out temp);
+                    Dictionary<string, object> results = ReadSingleItem(token, out _);
 
                     Dictionary<string, string> properties = new Dictionary<string, string>();
 
@@ -383,17 +384,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         {
                             properties.Add(key, ((DateTime)results[key]).ToUniversalTime().ToString("o"));
                         }
-                        else if (results[key] is bool)
+                        // This should never be a long; if requires a 64-bit number the service will send it as a string instead.
+                        else if (results[key] is bool || results[key] is double || results[key] is int)
                         {
-                            properties.Add(key, ((bool)results[key]).ToString());
-                        }
-                        else if (results[key] is double)
-                        {
-                            properties.Add(key, ((double)results[key]).ToString());
-                        }
-                        else if (results[key] is int)
-                        {
-                            properties.Add(key, ((int)results[key]).ToString());
+                            properties.Add(key, (results[key]).ToString());
                         }
                         else
                         {
@@ -476,11 +470,15 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 properties.Remove(odataPropName);
             }
 
+            // We have to special-case timestamp here, because in the 'minimalmetadata' case, 
+            // Timestamp doesn't have an "@odata.type" property - the assumption is that you know
+            // the type.
             if (properties.ContainsKey(@"Timestamp") && properties[@"Timestamp"].GetType() == typeof(string))
             {
                 properties[@"Timestamp"] = DateTime.Parse((string)properties[@"Timestamp"], CultureInfo.InvariantCulture);
             }
 
+            // In the full metadata case, this property will exist, and we need to remove it.
             if (properties.ContainsKey(@"Timestamp@odata.type"))
             {
                 properties.Remove(@"Timestamp@odata.type");
