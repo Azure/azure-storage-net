@@ -1,10 +1,16 @@
-Changes in 8.2.0
+Changes in 8.3.0 :
+- All(Netstandard): Updated the hashing algorithm to IncrementalHash instead of the original method which required buffering the data for MD5 calculations.
+- All: Fixed a race condition in the resume-download logic where a failure during downloads could lead to corrupted data.
 
-- All: Support for 2017-04-17 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.4.
+Changes in 8.2.1 :
+- All: Fixed a bug where empty metadata headers would lead to an infinite loop when trying to list blobs on a container.
+
+Changes in 8.2.0 :
+- All: Support for 2017-04-17 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.2.
 - Files: Added support for server side encryption.
 - PageBlobs: For Premium Accounts only, added support for getting and setting the tier on a page blob. The tier can also be set when creating or copying from an existing page blob.
-- Tables (NetCore): Fixed a bug where the empty etag added to the table delete operation would throw exception on Xamarin/Mono. 
-- All: Fixed a bug where calling OpenWrite with an IfNotExists access condition on an existing block blob only fails when the blob is committed, now it fails with error 409 as soon as OpenWrite is called.
+- Tables (NetCore): Fixed a bug where the empty etag added to the table delete operation would throw an exception on Xamarin/Mono. 
+- All: Fixed a bug where calling OpenWrite with an IfNotExists access condition on an existing block blob only fails when the blob is committed. Now it fails with error 409 as soon as OpenWrite is called.
 - Files (WinRT/NetCore): Calling CreateIfNotExistsAsync on a root directory no longer throws the error 405. It returns false if the share exists, or throws 404 if not.
 - All: Connection string support expanded to allow AccountName to be specified with SharedAccessSignature and DefaultEndpointsProtocol.  In this case, SharedAccessSignature is used for credentials, while having both DefaultEndpointsProtocol and AccountName allows the library to infer a set of default endpoints.  Additionally, we have added support for BlobSecondaryEndpoint, QueueSecondaryEndpoint, TableSecondaryEndpoint, and FileSecondaryEndpoint.  Specifying a secondary endpoint requires the specification of the corresponding primary.
 - All: The use of DefaultEndpointsProtocol in a connection string is now optional in the case where endpoints would be automatically generated; if missing, a value of https will be inferred.  When the parsed account settings in such a case are used to generate a connection string, the value of DefaultEndpointsProtocol will be explicitly included.
@@ -18,7 +24,7 @@ Changes in 8.1.3 :
 - All(Desktop) : Fixed a memory leak issue where the SendStream was not being disposed during retries, cancellations and Table Operations.
 
 Changes in 8.1.1 :
-- All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard
+- All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard.
 
 Changes in 8.1.0 :
 - All: Updated OData references to the latest Netstandard friendly package version 5.8.2.
@@ -28,7 +34,6 @@ Changes in 8.0.1 :
 - (NetStandard/Xamarin) : Fix for a break in Xamarin Apps with Streaming APIs caused by NotImplemented IncrementalHash APIs in Xamarin Runtime.
 
 Changes in 8.0.0 :
-
 - All: Support for 2016-05-31 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 4.6.
 - All: (Desktop) Updated the desktop library to target .Net 4.5.0.
 - All: Added a new Netstandard 1.0 Target Framework (facade) as PCL support.
