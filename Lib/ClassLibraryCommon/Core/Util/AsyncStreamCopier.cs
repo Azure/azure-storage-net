@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
+    using System.Runtime.ExceptionServices;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -217,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 this.cancellationTokenSourceCombined = this.cancellationTokenSourceAbort;
             }
-            
+
             await this.StartCopyStreamAsyncHelper(copyLength, maxLength, this.cancellationTokenSourceCombined.Token).ConfigureAwait(false);
         }
 
@@ -253,7 +254,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             byte[] swap;
 
             int bytesToCopy = CalculateBytesToCopy(copyLength, 0);
-            int bytesCopied = await this.src.ReadAsync(readBuff, 0, bytesToCopy, token).ConfigureAwait(false);
+            int bytesCopied = await this.src.ReadAsync(readBuff, 0, bytesToCopy, token).ConfigureAwait(false);            
 
             long totalBytes = bytesCopied;
             CheckMaxLength(maxLength, totalBytes);
@@ -261,6 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             swap = readBuff;
             readBuff = writeBuff;
             writeBuff = swap;
+            ExceptionDispatchInfo readException = null;
 
             while (bytesCopied > 0)
             {
@@ -269,10 +271,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                 Task writeTask = this.dest.WriteAsync(writeBuff, 0, bytesCopied, token);
 
                 bytesToCopy = CalculateBytesToCopy(copyLength, totalBytes);
-                Task<int> readTask;
+                Task<int> readTask = null;
                 if (bytesToCopy > 0)
                 {
-                    readTask = this.src.ReadAsync(readBuff, 0, bytesToCopy, token);
+                    try
+                    {
+                        readTask = this.src.ReadAsync(readBuff, 0, bytesToCopy, token);
+                    }
+                    catch(Exception ex)
+                    {
+                        readException = ExceptionDispatchInfo.Capture(ex);
+                    }
                 }
                 else
                 {
@@ -283,7 +292,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
                 UpdateStreamCopyState(writeBuff, bytesCopied);
 
+                if (readException != null)
+                {
+                    readException.Throw();
+                }
+
                 bytesCopied = await readTask.WithCancellation(token).ConfigureAwait(false);
+
                 totalBytes = totalBytes + bytesCopied;
 
                 CheckMaxLength(maxLength, totalBytes);
