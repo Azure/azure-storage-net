@@ -137,9 +137,19 @@ Test/Common/TestConfigurations.xml
 buildfre.*
 objfre/
 *.playlist
-Test/AspNet/Microsoft.WindowsAzure.Storage.Test/TestConfigurations.xml
+
+# NetCore Dependency
 Lib/AspNet/Microsoft.WindowsAzure.Storage/project.lock.json
+Lib/AspNet/Microsoft.WindowsAzure.Storage.Facade/project.lock.json
+Test/AspNet/Microsoft.WindowsAzure.Storage.Test/TestConfigurations.xml
+Test/AspNet/Facade/Microsoft.WindowsAzure.Storage.Facade.NetCore.Test/TestConfigurations.xml
 Test/AspNet/Microsoft.WindowsAzure.Storage.Test/project.lock.json
 Test/AspNet/XUnitForMsTest/project.lock.json
+Test/AspNet/Facade/Microsoft.WindowsAzure.Storage.Facade.NetCore.Test/project.lock.json
+Test/AspNet/Facade/Microsoft.WindowsAzure.Storage.Facade.PhoneSilverlight81.Test/project.lock.json
+Test/AspNet/Facade/Microsoft.WindowsAzure.Storage.Facade.Portable/project.lock.json
+
+# VS14 Misc.
 UpgradeLog.htm
 .vs/
+.cr/

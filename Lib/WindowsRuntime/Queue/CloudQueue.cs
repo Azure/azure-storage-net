@@ -84,7 +84,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// Creates the queue if it does not already exist.
         /// </summary>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise, <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync()
         {
@@ -97,7 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext)
         {
@@ -111,7 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise <c>false</c>.</returns>
-        /// <remarks>This API performs an existence check and therefore requires read permissions.</remarks>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -120,13 +120,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-
-                if (exists)
-                {
-                    return false;
-                }
-
                 try
                 {
                     await this.CreateAsync(modifiedOptions, operationContext, cancellationToken);
@@ -239,11 +232,20 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             return Task.Run(async () =>
             {
-                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-
-                if (!exists)
+                try
                 {
-                    return false;
+                    bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
+                    if (!exists)
+                    {
+                        return false;
+                    }
+                }
+                catch (StorageException e)
+                {
+                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                    {
+                        throw;
+                    }
                 }
 
                 try
@@ -505,6 +507,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="message">The message to add.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message)
         {
@@ -521,6 +524,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext)
         {
@@ -538,6 +542,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
@@ -1122,14 +1127,19 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(putCmd);
+            putCmd.RetrieveResponseStream = true;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
-            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+            putCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                GetMessageCountAndMetadataFromResponse(resp);
-                return NullType.Value;
+                return Task.Factory.StartNew(() =>
+                {
+                    GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
+                    CopyMessage(message, messageResponse.Messages.ToList().First());
+                    return NullType.Value;
+                });
             };
 
             return putCmd;

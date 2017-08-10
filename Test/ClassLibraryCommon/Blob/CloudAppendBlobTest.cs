@@ -25,6 +25,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -1132,15 +1133,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         using (ManualResetEvent waitHandle = new ManualResetEvent(false))
                         {
 
-                                ICancellableAsyncResult result = blob.BeginAppendBlock(
-                                    sourceStream, null, accessCondition, options, null, ar => waitHandle.Set(), null);
-                                waitHandle.WaitOne();
-                                blob.EndAppendBlock(result);
+                            ICancellableAsyncResult result = blob.BeginAppendBlock(
+                                sourceStream, null, accessCondition, options, null, ar => waitHandle.Set(), null);
+                            waitHandle.WaitOne();
+                            blob.EndAppendBlock(result);
                         }
                     }
                     else
                     {
-                            blob.AppendBlock(sourceStream, null, accessCondition, options);
+                        blob.AppendBlock(sourceStream, null, accessCondition, options);
                     }
                 }
 
@@ -1200,7 +1201,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     blob.FetchAttributesAsync().Wait();
-               
+
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
                         blob.DownloadToStreamAsync(downloadedBlob).Wait();
@@ -2518,14 +2519,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobMethodsOnBlockBlob()
+        public async Task CloudAppendBlobMethodsOnBlockBlob()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
 
-                List<string> blobs = CreateBlobs(container, 1, BlobType.BlockBlob);
+                List<string> blobs = await CreateBlobs(container, 1, BlobType.BlockBlob);
                 CloudAppendBlob blob = container.GetAppendBlobReference(blobs.First());
 
                 using (MemoryStream stream = new MemoryStream())
@@ -2550,7 +2551,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobMethodsOnAppendBlob()
+        public async Task CloudBlockBlobMethodsOnAppendBlob()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -2558,7 +2559,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.Create();
 
                 List<string> blocks = GetBlockIdList(1);
-                List<string> blobs = CreateBlobs(container, 1, BlobType.AppendBlob);
+                List<string> blobs = await CreateBlobs(container, 1, BlobType.AppendBlob);
                 CloudBlockBlob blob = container.GetBlockBlobReference(blobs.First());
 
                 TestHelper.ExpectedException(
@@ -2579,14 +2580,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobMethodsOnAppendBlob()
+        public async Task CloudPageBlobMethodsOnAppendBlob()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
 
-                List<string> blobs = CreateBlobs(container, 1, BlobType.AppendBlob);
+                List<string> blobs = await CreateBlobs(container, 1, BlobType.AppendBlob);
                 CloudPageBlob blob = container.GetPageBlobReference(blobs.First());
 
                 using (MemoryStream stream = new MemoryStream())
@@ -2991,7 +2992,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
             }
 
-            CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+            CloudAppendBlob blob = container.GetAppendBlobReference("blob" + Guid.NewGuid().ToString());
             blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
 
             using (MemoryStream originalBlobStream = new MemoryStream())
@@ -3086,6 +3087,54 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             blob.Delete();
+        }
+
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TestAppendBlobAbsorbConditionalErrorsOnRetry()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.Create();
+            try
+            {
+                byte[] inputData = new byte[10*1024*1024];
+                new Random().NextBytes(inputData);
+
+                #region sample_BlobRequestOptions_AbsorbConditionalErrorsOnRetry
+                using (MemoryStream inputDataStream = new MemoryStream(inputData))
+                {
+                    BlobRequestOptions conditionalErrorRequestOptions = new BlobRequestOptions() { AbsorbConditionalErrorsOnRetry = true };
+
+                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("appendBlob");
+                    appendBlob.UploadFromStream(inputDataStream, accessCondition: null, options: conditionalErrorRequestOptions);
+                }
+                #endregion
+
+                using (MemoryStream dataStream = new MemoryStream())
+                using (MemoryStream expectedDataStream = new MemoryStream(inputData))
+                {
+                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("appendBlob");
+                    appendBlob.DownloadToStream(dataStream);
+
+                    dataStream.Seek(0, SeekOrigin.Begin);
+                    Assert.AreEqual(dataStream.Length, expectedDataStream.Length);
+                    TestHelper.AssertStreamsAreEqualAtIndex(
+                        dataStream,
+                        expectedDataStream,
+                        0,
+                        0,
+                        (int)dataStream.Length);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
         }
     }
 }

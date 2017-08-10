@@ -69,7 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A <see cref="TableResult"/> containing the result of executing the operation on the table.</returns>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         [DoesServiceRequest]
-        public Task<TableResult> ExecuteAsync(TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<TableResult> ExecuteAsync(TableOperation operation, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("operation", operation);
 
@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="batch">The <see cref="TableBatchOperation"/> object representing the operations to execute on the table.</param>
         /// <returns>An enumerable collection of <see cref="TableResult"/> objects that contains the results, in order, of each operation in the <see cref="TableBatchOperation"/> on the table.</returns>
         [DoesServiceRequest]
-        public Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch)
+        public virtual Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch)
         {
             return this.ExecuteBatchAsync(batch, null /* RequestOptions */, null /* OperationContext */);
         }
@@ -98,7 +98,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         /// <returns>An enumerable collection of <see cref="TableResult"/> objects that contains the results, in order, of each operation in the <see cref="TableBatchOperation"/> on the table.</returns>
         [DoesServiceRequest]
-        public Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch, TableRequestOptions requestOptions, OperationContext operationContext)
+        public virtual Task<IList<TableResult>> ExecuteBatchAsync(TableBatchOperation batch, TableRequestOptions requestOptions, OperationContext operationContext)
         {
             return this.ExecuteBatchAsync(batch, requestOptions, operationContext, CancellationToken.None);
         }
@@ -264,36 +264,29 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return Task.Run(async () =>
             {
-                if (await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
+                try
                 {
-                    return false;
+                    await this.CreateAsync(requestOptions, operationContext, cancellationToken);
+                    return true;
                 }
-                else
+                catch (Exception)
                 {
-                    try
+                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
                     {
-                        await this.CreateAsync(requestOptions, operationContext, cancellationToken);
-                        return true;
-                    }
-                    catch (Exception)
-                    {
-                        if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                        if ((extendedInfo == null) ||
+                            (extendedInfo.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
                         {
-                            StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                            if ((extendedInfo == null) ||
-                                (extendedInfo.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
-                            {
-                                return false;
-                            }
-                            else
-                            {
-                                throw;
-                            }
+                            return false;
                         }
                         else
                         {
                             throw;
                         }
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
             }, cancellationToken);
@@ -381,41 +374,48 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public virtual Task<bool> DeleteIfExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
-
             operationContext = operationContext ?? new OperationContext();
 
             return Task.Run(async () =>
             {
-                if (!await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
+                try
                 {
-                    return false;
-                }
-                else
-                {
-                    try
+                    if (!await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
                     {
-                        await this.DeleteAsync(requestOptions, operationContext, cancellationToken);
-                        return true;
+                        return false;
                     }
-                    catch (Exception)
+                }
+                catch (StorageException e)
+                {
+                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
                     {
-                        if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                        throw;
+                    }
+                }
+
+                try
+                {
+                    await this.DeleteAsync(requestOptions, operationContext, cancellationToken);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    {
+                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                        if ((extendedInfo == null) ||
+                            (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                         {
-                            StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                            if ((extendedInfo == null) ||
-                                (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                            {
-                                return false;
-                            }
-                            else
-                            {
-                                throw;
-                            }
+                            return false;
                         }
                         else
                         {
                             throw;
                         }
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
             }, cancellationToken);
@@ -548,7 +548,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             requestOptions.ApplyToStorageCommand(putCmd);
-            putCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            putCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
@@ -614,7 +614,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             requestOptions.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            getCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableHttpRequestMessageFactory.GetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);

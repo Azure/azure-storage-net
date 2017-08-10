@@ -21,6 +21,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if FACADE_NETCORE
+using System.Threading;
+#endif
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
@@ -208,13 +211,22 @@ namespace Microsoft.WindowsAzure.Storage.Table
             DynamicTableEntity ent = new DynamicTableEntity() { PartitionKey = "partition'key", RowKey = "row'key" };
             ent.Properties.Add("stringprop", new EntityProperty("string'value"));
             await currentTable.ExecuteAsync(TableOperation.InsertOrReplace(ent));
-
+#if !FACADE_NETCORE
             TableQuery<DynamicTableEntity> query = new TableQuery<DynamicTableEntity>().Where(TableQuery.CombineFilters(
                 (TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, ent.PartitionKey)),
                 TableOperators.And,
                 (TableQuery.GenerateFilterCondition("stringprop", QueryComparisons.Equal, ent.Properties["stringprop"].StringValue))));
-
+#else
+            TableQuery query = new TableQuery().Where(TableQuery.CombineFilters(
+                (TableQuery.GenerateFilterCondition("PartitionKey", "eq", ent.PartitionKey)),
+                "and",
+                (TableQuery.GenerateFilterCondition("stringprop", "eq", ent.Properties["stringprop"].StringValue))));
+#endif
+#if !FACADE_NETCORE
             TableQuerySegment<DynamicTableEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, null);
+#else
+            TableQuerySegment<DynamicTableEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<DynamicTableEntity>(query, (pk, rk, ts, prop, etag) => new DynamicTableEntity(pk, rk, ts, etag, prop), null);
+#endif
 
             foreach (DynamicTableEntity retrievedEntity in seg)
             {
@@ -227,12 +239,23 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ComplexEntity complexEntity = new ComplexEntity() { PartitionKey = "partition'key", RowKey = "row'key" };
             await currentTable.ExecuteAsync(TableOperation.InsertOrReplace(complexEntity));
 
+#if !FACADE_NETCORE
             TableQuery<ComplexEntity> query2 = new TableQuery<ComplexEntity>().Where(TableQuery.CombineFilters(
               (TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, ent.PartitionKey)),
               TableOperators.And,
               (TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, ent.RowKey))));
+#else
+           TableQuery query2 = new TableQuery().Where(TableQuery.CombineFilters(
+            (TableQuery.GenerateFilterCondition("PartitionKey", "eq", ent.PartitionKey)),
+              "and",
+              (TableQuery.GenerateFilterCondition("RowKey", "eq", ent.RowKey))));
+#endif
 
+#if !FACADE_NETCORE
             TableQuerySegment<ComplexEntity> seg2 = await currentTable.ExecuteQuerySegmentedAsync(query2, null);
+#else
+            TableQuerySegment<ComplexEntity> seg2 = await currentTable.ExecuteQuerySegmentedAsync<ComplexEntity>(query2, (pk, rk, ts, prop, etag) => new ComplexEntity(pk, rk), null);
+#endif
             foreach (ComplexEntity retrievedComplexEntity in seg2)
             {
                 Assert.IsNotNull(retrievedComplexEntity);
@@ -280,9 +303,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Insert Or Merge
+#region Insert Or Merge
 
         [TestMethod]
         [Description("TableOperation Insert Or Merge")]
@@ -328,9 +351,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(mergeEntity.Properties["prop2"], retrievedEntity.Properties["prop2"]);
         }
 
-        #endregion
+#endregion
 
-        #region Insert Or Replace
+#region Insert Or Replace
 
         [TestMethod]
         [Description("TableOperation Insert Or Replace")]
@@ -373,9 +396,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(replaceEntity.Properties["prop2"], retrievedEntity.Properties["prop2"]);
         }
 
-        #endregion
+#endregion
 
-        #region Delete
+#region Delete
 
         [TestMethod]
         [Description("TableOperation Delete")]
@@ -475,9 +498,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Merge
+#region Merge
 
         [TestMethod]
         [Description("TableOperation Merge")]
@@ -584,9 +607,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.NotFound, new string[] { "ResourceNotFound" }, "The specified resource does not exist.");
             }
         }
-        #endregion
+#endregion
 
-        #region Replace
+#region Replace
 
         [TestMethod]
         [Description("TableOperation Replace")]
@@ -692,9 +715,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
-        #endregion
+#endregion
 
-        #region Retrieve
+#region Retrieve
 
         [TestMethod]
         [Description("A test to check batch retrieve functionality")]
@@ -1010,8 +1033,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
             };
 
             // Query entity
+#if !FACADE_NETCORE
             TableQuery<DynamicTableEntity> query = new TableQuery<DynamicTableEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, sendEnt.PartitionKey)).Select(selectedColumns);
             TableQuerySegment<DynamicTableEntity> retrievedEntityByQuery = await currentTable.ExecuteQuerySegmentedAsync(query, null, options, null);
+#else
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", sendEnt.PartitionKey)).Select(selectedColumns);
+            TableQuerySegment<DynamicTableEntity> retrievedEntityByQuery = await currentTable.ExecuteQuerySegmentedAsync<DynamicTableEntity>(query, (pk, rk, ts, prop, etag) => new DynamicTableEntity(pk, rk, ts, etag, prop), null, options, null);
+#endif
 
             // Retrieve entity
             TableResult result = await currentTable.ExecuteAsync(TableOperation.Retrieve(sendEnt.PartitionKey, sendEnt.RowKey, selectedColumns), options, null);
@@ -1169,6 +1197,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.IsFalse(retrievedEntity.Properties.ContainsKey("DateTimeOffset"));
             Assert.IsFalse(retrievedEntity.Properties.ContainsKey("DateTimeOffsetNull"));
             Assert.AreEqual(sendEnt.DateTimeOffsetN, retrievedEntity.Properties["DateTimeOffsetN"].DateTimeOffsetValue);
+#if !FACADE_NETCORE
             Assert.AreEqual(sendEnt.DateTime, retrievedEntity.Properties["DateTime"].DateTime);
             Assert.AreEqual(sendEnt.DateTimeN, retrievedEntity.Properties["DateTimeN"].DateTime);
         }
@@ -1236,9 +1265,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(sendEnt.Properties["DateTimeOffsetN"].DateTimeOffsetValue, retrievedEntity.DateTimeOffsetN);
             Assert.AreNotEqual(sendEnt.Properties["DateTimeOffsetNull"].DateTimeOffsetValue, retrievedEntity.DateTimeOffsetNull);
             Assert.IsNull(retrievedEntity.DateTimeOffsetNull);
+
             Assert.AreEqual(sendEnt.Properties["DateTime"].DateTime, retrievedEntity.DateTime);
             Assert.AreEqual(sendEnt.Properties["DateTimeN"].DateTime, retrievedEntity.DateTimeN);
             Assert.AreEqual(sendEnt.Properties["DateTimeNull"].DateTime, retrievedEntity.DateTimeNull);
+#endif
         }
 
         [TestMethod]
@@ -1283,10 +1314,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             sendEnt.DateTimeOffsetNull = DateTimeOffset.Now.AddMinutes(1);
 
             await currentTable.ExecuteAsync(TableOperation.Insert(sendEnt));
-
+#if !FACADE_NETCORE
             TableQuery<IgnoreEntity> query = new TableQuery<IgnoreEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, pk));
-
             IEnumerable<IgnoreEntity> result = await currentTable.ExecuteQuerySegmentedAsync(query, null);
+
             IgnoreEntity retrievedEntity = result.ToList().First() as IgnoreEntity;
 
             Assert.AreEqual(sendEnt.BoolPrimitive, retrievedEntity.BoolPrimitive);
@@ -1303,10 +1334,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(sendEnt.DateTime, retrievedEntity.DateTime);
             Assert.AreEqual(sendEnt.DateTimeN, retrievedEntity.DateTimeN);
             Assert.AreEqual(sendEnt.DateTimeNull, retrievedEntity.DateTimeNull);
+#else
+            TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", pk));
+            IEnumerable<IgnoreEntity> result = await currentTable.ExecuteQuerySegmentedAsync<IgnoreEntity>(query, (pk1, rk1, ts, prop, etag) => new IgnoreEntity(pk1, rk1), null);
+#endif
         }
-        #endregion
+#endregion
 
-        #region Empty Keys Test
+#region Empty Keys Test
 
         [TestMethod]
         [Description("TableOperations with Empty keys")]
@@ -1401,7 +1436,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         #endregion
 
         #region Insert Negative Tests
-
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("TableOperation Insert Entity over 1 MB")]
         [TestCategory(ComponentCategory.Table)]
@@ -1438,6 +1473,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "EntityTooLarge" }, "The entity is larger than the maximum allowed size (1MB).");
             }
         }
+#endif
         #endregion
 
         #region Serialization/De-serialization tests
@@ -1473,6 +1509,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Flattens and recomposes simple object")]
         [TestCategory(ComponentCategory.Table)]
@@ -1568,6 +1605,55 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 TableEntity.ConvertBack<ComplexEntityWithNestedComplexProperties>(flattenedProperties, entityPropertyConverterOptions, operationContext);
 
             ComplexEntityWithNestedComplexProperties.AssertEquality(complexEntityWithNestedComplexProperties, recomposedObject);
+        }
+
+        [TestMethod]
+        [Description("Tests reading and writing a complex object with multiple layers of nested object hierarchy using TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeNestedComplexObjectWithTableEntityAdapter()
+        {
+            string pk = Guid.NewGuid().ToString();
+            Random rd = new Random();
+            ComplexEntityWithNestedComplexProperties complexEntityWithNestedComplexProperties = CreateComplexEntityWithNestedComplexProperties(pk, rd.Next());
+            OperationContext operationContext = new OperationContext();
+
+            TableEntityAdapter<ComplexEntityWithNestedComplexProperties> writtenEntityAdapter = new TableEntityAdapter<ComplexEntityWithNestedComplexProperties>();
+            writtenEntityAdapter.OriginalEntity = complexEntityWithNestedComplexProperties;
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+
+            TableEntityAdapter<ComplexEntityWithNestedComplexProperties> readEntityAdapter = new TableEntityAdapter<ComplexEntityWithNestedComplexProperties>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+            ComplexEntityWithNestedComplexProperties.AssertEquality(complexEntityWithNestedComplexProperties, readEntityAdapter.OriginalEntity);
+        }
+
+        [TestMethod]
+        [Description("Tests writing and reading complex struct with TableEntityAdapter")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void FlattenAndRecomposeComplexStructWithTableEntityAdapter()
+        {
+            StructEntity structEntity = new StructEntity { Breadth = 12, Length = 10, Name = "ComplexStructEntity" };
+
+            ComplexEntity originalComplexEntity = CreateComplexEntity(Guid.NewGuid().ToString(), 123);
+            structEntity.ComplextEntity = originalComplexEntity;
+
+            OperationContext operationContext = new OperationContext();
+
+            TableEntityAdapter<StructEntity> writtenEntityAdapter = new TableEntityAdapter<StructEntity>(structEntity, "partitionKey", "rowKey");
+            IDictionary<string, EntityProperty> properties = writtenEntityAdapter.WriteEntity(operationContext);
+
+            TableEntityAdapter<StructEntity> readEntityAdapter = new TableEntityAdapter<StructEntity>();
+            readEntityAdapter.ReadEntity(properties, operationContext);
+
+            Assert.AreEqual(structEntity.Name, readEntityAdapter.OriginalEntity.Name);
+            Assert.AreEqual(structEntity.Length, readEntityAdapter.OriginalEntity.Length);
+            Assert.AreEqual(structEntity.Breadth, readEntityAdapter.OriginalEntity.Breadth);
+            ComplexEntity.AssertEquality(structEntity.ComplextEntity, readEntityAdapter.OriginalEntity.ComplextEntity);
         }
 
         [TestMethod]
@@ -1668,7 +1754,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             return complexEntityWithNestedComplexProperties;
         }
-
-        #endregion
+#endif
+#endregion
     }
 }

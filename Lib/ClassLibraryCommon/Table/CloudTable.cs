@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -889,6 +890,179 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
 
+        #region EncryptionKeyRotation
+#if SYNC
+        /// <summary>
+        /// Executes a query on a table and returns an enumerable collection of <see cref="KeyRotationEntity"/> objects.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An enumerable collection of <see cref="KeyRotationEntity"/> objects, representing table entities returned by the query.</returns>
+        [DoesServiceRequest]
+        public virtual IEnumerable<KeyRotationEntity> ExecuteQueryForKeyRotation(TableQuery query, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            return this.ExecuteQuery(queryCopy, modifiedOptions, operationContext).Select(dte => new KeyRotationEntity(dte));
+        }
+
+        /// <summary>
+        /// Executes a segmented query on a table and returns a <see cref="TableQuerySegment{TResult}"/> containing <see cref="KeyRotationEntity"/> objects.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="TableQuerySegment{TResult}"/> object of type <see cref="KeyRotationEntity"/> containing the results of executing the query.</returns>
+        [DoesServiceRequest]
+        public virtual TableQuerySegment<KeyRotationEntity> ExecuteQueryForKeyRotationSegmented(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions = null, OperationContext operationContext = null)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            TableQuerySegment<DynamicTableEntity> segmentDTEs = this.ExecuteQuerySegmented(queryCopy, token, modifiedOptions, operationContext);
+            TableQuerySegment<KeyRotationEntity> result = new TableQuerySegment<KeyRotationEntity>(segmentDTEs.Results.Select(dte => new KeyRotationEntity(dte)).ToList());
+            result.ContinuationToken = segmentDTEs.ContinuationToken;
+            return result;
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginExecuteQueryForKeyRotationSegmented(TableQuery query, TableContinuationToken token, AsyncCallback callback, object state)
+        {
+            return this.BeginExecuteQueryForKeyRotationSegmented(query, token, null /* RequestOptions */, null /* OperationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginExecuteQueryForKeyRotationSegmented(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            return this.BeginExecuteQuerySegmented(queryCopy, token, modifiedOptions, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous segmented query on a table. 
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="TableQuerySegment{TResult}"/> object of type <see cref="KeyRotationEntity"/> containing the results of executing the query.</returns>
+        public virtual TableQuerySegment<KeyRotationEntity> EndExecuteQueryForKeyRotationSegmented(IAsyncResult asyncResult)
+        {
+            TableQuerySegment<DynamicTableEntity> segmentDTEs = Executor.EndExecuteAsync<TableQuerySegment<DynamicTableEntity>>(asyncResult);
+            TableQuerySegment<KeyRotationEntity> result = new TableQuerySegment<KeyRotationEntity>(segmentDTEs.Results.Select(dte => new KeyRotationEntity(dte)).ToList());
+            result.ContinuationToken = segmentDTEs.ContinuationToken;
+            return result;
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token)
+        {
+            return this.ExecuteQueryForKeyRotationSegmentedAsync(query, token, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token, CancellationToken cancellationToken)
+        {
+            return this.ExecuteQueryForKeyRotationSegmentedAsync(query, token, null /* RequestOptions */, null /* OperationContext */, cancellationToken);
+
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext)
+        {
+            return this.ExecuteQueryForKeyRotationSegmentedAsync(query, token, requestOptions, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to perform a segmented query on a table.
+        /// </summary>
+        /// <param name="query">A <see cref="TableQuery"/> representing the query to execute.</param>
+        /// <param name="token">A <see cref="TableContinuationToken"/> object representing a continuation token from the server when the operation returns a partial result.</param>
+        /// <param name="requestOptions">A <see cref="TableRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TableQuerySegment{KeyRotationEntity}"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual async Task<TableQuerySegment<KeyRotationEntity>> ExecuteQueryForKeyRotationSegmentedAsync(TableQuery query, TableContinuationToken token, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            TableQuery queryCopy = ModifyQueryForEncryptionKeyRotation(query, requestOptions);
+            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaultsAndClearEncryption(requestOptions, this.ServiceClient);
+            modifiedOptions.PayloadFormat = TablePayloadFormat.JsonFullMetadata;
+            TableQuerySegment<DynamicTableEntity> segmentDTEs = await this.ExecuteQuerySegmentedAsync(queryCopy, token, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+            TableQuerySegment<KeyRotationEntity> result = new TableQuerySegment<KeyRotationEntity>(segmentDTEs.Results.Select(dte => new KeyRotationEntity(dte)).ToList());
+            result.ContinuationToken = segmentDTEs.ContinuationToken;
+            return result;
+        }
+#endif
+        private TableQuery ModifyQueryForEncryptionKeyRotation(TableQuery query, TableRequestOptions requestOptions)
+        {
+            TableQuery queryCopy = query.Copy();
+            if (queryCopy.SelectColumns != null)
+            {
+                queryCopy.SelectColumns.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails);
+            }
+
+            // If the caller specifies requireEncryption = false, we want to filter out non-encrypted columns on the service.
+            // If requireEncryption = true, we don't want to filter them out, so that we can throw if any are not encrypted.
+            if (!((requestOptions != null) && requestOptions.RequireEncryption.HasValue && requestOptions.RequireEncryption.Value))
+            {
+                string filter = TableQuery.GenerateFilterCondition(Constants.EncryptionConstants.TableEncryptionKeyDetails, QueryComparisons.NotEqual, "any");
+                if (!string.IsNullOrEmpty(queryCopy.FilterString))
+                {
+                    queryCopy.FilterString = TableQuery.CombineFilters(queryCopy.FilterString, TableOperators.And, filter);
+                }
+                else
+                {
+                    queryCopy.FilterString = filter;
+                }
+            }
+
+            return queryCopy;
+        }
+        #endregion
         #endregion
 
         #region Create
@@ -1019,41 +1193,26 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [DoesServiceRequest]
         public virtual bool CreateIfNotExists(TableRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            if (this.Exists(true, modifiedOptions, operationContext))
+            try
             {
-                return false;
+                this.Create(requestOptions, operationContext);
+                return true;
             }
-            else
+            catch (StorageException e)
             {
-                try
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists)))
                 {
-                    this.Create(modifiedOptions, operationContext);
-                    return true;
+                    return false;
                 }
-                catch (StorageException e)
+                else
                 {
-                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
-                    {
-                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    throw;
                 }
             }
         }
+        
 #endif
 
         /// <summary>
@@ -1079,96 +1238,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         /// <remarks>This API performs an existence check and therefore requires list permissions.</remarks>
         [DoesServiceRequest]
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(TableRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-
-            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.CreateIfNotExistHandler, storageAsyncResult);
-
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = currentRes.Cancel;
-            return storageAsyncResult;
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void CreateIfNotExistHandler(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<bool> storageAsyncResult = asyncResult.AsyncState as StorageAsyncResult<bool>;
-            bool exists = false;
-
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                storageAsyncResult.CancelDelegate = null;
-                storageAsyncResult.UpdateCompletedSynchronously(asyncResult.CompletedSynchronously);
-
-                try
+            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
+                modifiedOptions,
+                operationContext,
+                createResult => 
                 {
-                    exists = this.EndExists(asyncResult);
-
-                    if (exists)
+                    if (callback != null)
                     {
-                        storageAsyncResult.Result = false;
-                        storageAsyncResult.OnComplete();
+                        callback(createResult);
                     }
-                    else
-                    {
-                        ICancellableAsyncResult currentRes = this.BeginCreate(
-                             (TableRequestOptions)storageAsyncResult.RequestOptions,
-                             storageAsyncResult.OperationContext,
-                             createRes =>
-                             {
-                                 storageAsyncResult.CancelDelegate = null;
-                                 storageAsyncResult.UpdateCompletedSynchronously(storageAsyncResult.CompletedSynchronously);
-
-                                 try
-                                 {
-                                     this.EndCreate(createRes);
-                                     storageAsyncResult.Result = true;
-                                     storageAsyncResult.OnComplete();
-                                 }
-                                 catch (StorageException e)
-                                 {
-                                     if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict)
-                                     {
-                                         if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                             (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
-                                         {
-                                             storageAsyncResult.Result = false;
-                                             storageAsyncResult.OnComplete();
-                                         }
-                                         else
-                                         {
-                                             storageAsyncResult.OnComplete(e);
-                                         }
-                                     }
-                                     else
-                                     {
-                                         storageAsyncResult.OnComplete(e);
-                                     }
-                                 }
-                                 catch (Exception createEx)
-                                 {
-                                     storageAsyncResult.OnComplete(createEx);
-                                 }
-                             },
-                             null);
-
-                        storageAsyncResult.CancelDelegate = currentRes.Cancel;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    storageAsyncResult.OnComplete(ex);
-                }
-            }
+                },
+                null);
+            
+            return savedCreateResult;
         }
 
         /// <summary>
@@ -1178,10 +1266,30 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns><c>true</c> if table was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = asyncResult as StorageAsyncResult<bool>;
-            CommonUtility.AssertNotNull("AsyncResult", res);
-            res.End();
-            return res.Result;
+            ExecutionState<TableResult> executionResult = asyncResult as ExecutionState<TableResult>;
+            CommonUtility.AssertNotNull("AsyncResult", executionResult);
+            try
+            {
+                this.EndCreate(executionResult);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == TableErrorCodeStrings.TableAlreadyExists)))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }            
         }
 
 #if TASK
@@ -1368,38 +1476,47 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            if (!this.Exists(true, modifiedOptions, operationContext))
+            try
             {
-                return false;
-            }
-            else
-            {
-                try
+                bool exists = this.Exists(true, modifiedOptions, operationContext);
+                if (!exists)
                 {
-                    this.Delete(modifiedOptions, operationContext);
-                    return true;
+                    return false;
                 }
-                catch (StorageException e)
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
                 {
-                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    throw;
+                }
+            }
+
+            try
+            {
+                this.Delete(modifiedOptions, operationContext);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    if ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                     {
-                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        return false;
                     }
                     else
                     {
                         throw;
                     }
                 }
+                else
+                {
+                    throw;
+                }
             }
-        }
+        }  
 #endif
 
         /// <summary>
@@ -1434,84 +1551,94 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 OperationContext = operationContext
             };
 
-            ICancellableAsyncResult currentRes = this.BeginExists(true, modifiedOptions, operationContext, this.DeleteIfExistsHandler, storageAsyncResult);
+            this.DeleteIfExistsHandler(modifiedOptions, operationContext, storageAsyncResult);
 
             // We do not need to do this inside a lock, as storageAsyncResult is
             // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = currentRes.Cancel;
             return storageAsyncResult;
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void DeleteIfExistsHandler(IAsyncResult asyncResult)
+        private void DeleteIfExistsHandler(TableRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
         {
-            StorageAsyncResult<bool> storageAsyncResult = asyncResult.AsyncState as StorageAsyncResult<bool>;
-            bool exists = false;
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                storageAsyncResult.CancelDelegate = null;
-                storageAsyncResult.UpdateCompletedSynchronously(asyncResult.CompletedSynchronously);
+            ICancellableAsyncResult savedExistsResult = this.BeginExists(
+               true,
+               options,
+               operationContext,
+               existsResult =>
+               {
+                   storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
+                   lock (storageAsyncResult.CancellationLockerObject)
+                   {
+                       storageAsyncResult.CancelDelegate = null;
+                       try
+                       {
+                           bool exists = this.EndExists(existsResult);
 
-                try
-                {
-                    exists = this.EndExists(asyncResult);
+                           if (!exists)
+                           {
+                               storageAsyncResult.Result = false;
+                               storageAsyncResult.OnComplete();
+                           }
+                       }
+                       catch (StorageException e)
+                       {
+                           if ((e.RequestInformation != null) &&
+                               (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden))
+                           {
+                               storageAsyncResult.OnComplete(e);
+                           }
+                       }
+                       catch (Exception e)
+                       {
+                           storageAsyncResult.OnComplete(e);
+                           return;
+                       }
 
-                    if (!exists)
-                    {
-                        storageAsyncResult.Result = false;
-                        storageAsyncResult.OnComplete();
-                    }
-                    else
-                    {
-                        ICancellableAsyncResult currentRes = this.BeginDelete(
-                            (TableRequestOptions)storageAsyncResult.RequestOptions,
-                            storageAsyncResult.OperationContext,
-                            (deleteRes) =>
-                            {
-                                storageAsyncResult.CancelDelegate = null;
-                                storageAsyncResult.UpdateCompletedSynchronously(deleteRes.CompletedSynchronously);
+                       ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
+                           (TableRequestOptions)storageAsyncResult.RequestOptions,
+                           storageAsyncResult.OperationContext,
+                           deleteResult =>
+                           {
+                               storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
+                               storageAsyncResult.CancelDelegate = null;
+                               try
+                               {
+                                   this.EndDelete(deleteResult);
+                                   storageAsyncResult.Result = true;
+                                   storageAsyncResult.OnComplete();
+                               }
+                               catch (StorageException e)
+                               {
+                                   if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) && 
+                                       ((e.RequestInformation.ExtendedErrorInformation == null) || 
+                                       (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound)))
+                                   {
+                                       storageAsyncResult.Result = false;
+                                       storageAsyncResult.OnComplete();
+                                   }
+                                   else
+                                   {
+                                       storageAsyncResult.OnComplete(e);
+                                   }
+                               }
+                               catch (Exception createEx)
+                               {
+                                   storageAsyncResult.OnComplete(createEx);
+                               }
+                           },
+                           null);
 
-                                try
-                                {
-                                    this.EndDelete(deleteRes);
-                                    storageAsyncResult.Result = true;
-                                    storageAsyncResult.OnComplete();
-                                }
-                                catch (StorageException e)
-                                {
-                                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                                    {
-                                        if ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                                        {
-                                            storageAsyncResult.Result = false;
-                                            storageAsyncResult.OnComplete();
-                                        }
-                                        else
-                                        {
-                                            storageAsyncResult.OnComplete(e);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                }
-                                catch (Exception createEx)
-                                {
-                                    storageAsyncResult.OnComplete(createEx);
-                                }
-                            },
-                            null);
+                       storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
+                       if (storageAsyncResult.CancelRequested)
+                       {
+                           storageAsyncResult.Cancel();
+                       }
+                   }
+               },
+               null);
 
-                        storageAsyncResult.CancelDelegate = currentRes.Cancel;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    storageAsyncResult.OnComplete(ex);
-                }
-            }
+            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
         }
 
         /// <summary>
@@ -1844,7 +1971,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             retCmd.BuildRequestDelegate = TableHttpWebRequestFactory.GetAcl;
             retCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(System.Net.HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
@@ -1988,7 +2115,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.StreamToDispose = str;
             retCmd.RecoveryAction = RecoveryActions.RewindStream;
             retCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            retCmd.ParseError = StorageExtendedErrorInformation.ReadFromStreamUsingODataLib;
+            retCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 

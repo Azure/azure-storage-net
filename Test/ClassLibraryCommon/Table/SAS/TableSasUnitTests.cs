@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace Microsoft.WindowsAzure.Storage.Table
@@ -199,9 +200,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
-                testPermissions = table.GetPermissions();
-                AssertPermissionsEqual(expectedPermissions, testPermissions);
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
+                {
+                    testPermissions = table.GetPermissions();
+                    AssertPermissionsEqual(expectedPermissions, testPermissions);
+                });
             }
             finally
             {
@@ -238,44 +241,48 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 });
 
                 table.SetPermissions(expectedPermissions);
-                Thread.Sleep(30 * 1000);
 
                 // Generate the sasToken the user should use
                 string sasToken = table.GetSharedAccessSignature(null, expectedPermissions.SharedAccessPolicies.First().Key, "AAAA", null, "AAAA", null);
 
                 CloudTable sasTable = new CloudTable(table.Uri, new StorageCredentials(sasToken));
 
-                sasTable.Execute(TableOperation.Insert(new DynamicTableEntity("AAAA", "foo")));
-
-                TableResult result = sasTable.Execute(TableOperation.Retrieve("AAAA", "foo"));
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => sasTable.Execute(TableOperation.Insert(new DynamicTableEntity("AAAA", "foo"))));
+                TableResult result = null;
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() => result = sasTable.Execute(TableOperation.Retrieve("AAAA", "foo")));
 
                 Assert.IsNotNull(result.Result);
 
                 // revoke table permissions
                 table.SetPermissions(new TablePermissions());
-                Thread.Sleep(30 * 1000);
 
-                OperationContext opContext = new OperationContext();
-                try
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
                 {
-                    sasTable.Execute(TableOperation.Insert(new DynamicTableEntity("AAAA", "foo2")), null, opContext);
-                    Assert.Fail();
-                }
-                catch (Exception)
+                    OperationContext opContext = new OperationContext();
+                    try
+                    {
+                        sasTable.Execute(TableOperation.Insert(new DynamicTableEntity("AAAA", "foo2")), null, opContext);
+                        Assert.Fail();
+                    }
+                    catch (Exception)
+                    {
+                        Assert.AreEqual(opContext.LastResult.HttpStatusCode, (int)HttpStatusCode.Forbidden);
+                    }
+                });
+                TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
                 {
-                    Assert.AreEqual(opContext.LastResult.HttpStatusCode, (int)HttpStatusCode.Forbidden);
-                }
 
-                opContext = new OperationContext();
-                try
-                {
-                    result = sasTable.Execute(TableOperation.Retrieve("AAAA", "foo"), null, opContext);
-                    Assert.Fail();
-                }
-                catch (Exception)
-                {
-                    Assert.AreEqual(opContext.LastResult.HttpStatusCode, (int)HttpStatusCode.Forbidden);
-                }
+                    OperationContext opContext = new OperationContext();
+                    try
+                    {
+                        result = sasTable.Execute(TableOperation.Retrieve("AAAA", "foo"), null, opContext);
+                        Assert.Fail();
+                    }
+                    catch (Exception)
+                    {
+                        Assert.AreEqual(opContext.LastResult.HttpStatusCode, (int)HttpStatusCode.Forbidden);
+                    }
+                });
             }
             finally
             {
@@ -286,59 +293,25 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #region SAS Operations
 
+        /// <summary>
+        /// Normally it's better to separate out a test like this into multiple smaller tests, but here we parallelize because 
+        /// each of these tests takes a very long time.
+        /// </summary>
         [TestMethod]
         [Description("Tests table SAS with query permissions.")]
         [TestCategory(ComponentCategory.Table)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasQueryTestSync()
+        public void TableSasPermsTestSync()
         {
-            TestTableSas(SharedAccessTablePermissions.Query);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with delete permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasDeleteTestSync()
-        {
-            TestTableSas(SharedAccessTablePermissions.Delete);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with process and update permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasUpdateTestSync()
-        {
-            TestTableSas(SharedAccessTablePermissions.Update);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with add permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasAddTestSync()
-        {
-            TestTableSas(SharedAccessTablePermissions.Add);
-        }
-
-        [TestMethod]
-        [Description("Tests table SAS with full permissions.")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableSasFullTestSync()
-        {
-            TestTableSas(SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Add);
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Query)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Delete)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Update)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Add)));
+            tasks.Add(Task.Run(() => TestTableSas(SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Add)));
+            Task.WaitAll(tasks.ToArray());
         }
 
         /// <summary>
@@ -353,32 +326,35 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string endPk = "S";
             string endRk = "T";
 
+            List<Task> tasks = new List<Task>();
+
             // No ranges specified
-            TestTableSasWithRange(accessPermissions, null, null, null, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, null, null, null, null)));
 
             // All ranges specified
-            TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, endRk);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, endRk)));
 
             // StartPk & StartRK specified
-            TestTableSasWithRange(accessPermissions, startPk, startRk, null, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, startRk, null, null)));
 
             // StartPk specified
-            TestTableSasWithRange(accessPermissions, startPk, null, null, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, null, null, null)));
 
             // EndPk & EndRK specified
-            TestTableSasWithRange(accessPermissions, null, null, endPk, endRk);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, null, null, endPk, endRk)));
 
             // EndPk specified
-            TestTableSasWithRange(accessPermissions, null, null, endPk, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, null, null, endPk, null)));
 
             // StartPk and EndPk specified
-            TestTableSasWithRange(accessPermissions, startPk, null, endPk, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, null, endPk, null)));
 
             // StartRk and StartRK and EndPk specified
-            TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, null);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, startRk, endPk, null)));
 
             // StartRk and EndPK and EndPk specified
-            TestTableSasWithRange(accessPermissions, startPk, null, endPk, endRk);
+            tasks.Add(Task.Run(() => TestTableSasWithRange(accessPermissions, startPk, null, endPk, endRk)));
+            Task.WaitAll(tasks.ToArray());
         }
 
         /// <summary>
@@ -514,7 +490,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 queryDelegate,
                 "point query",
                 expectSuccess,
-                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound, 
+                expectSuccess ? HttpStatusCode.OK : HttpStatusCode.NotFound,
                 false,
                 expectSuccess);
         }
@@ -837,18 +813,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             HttpStatusCode expectedStatusCode,
             bool isRangeQuery)
         {
-                        TestOperationWithRange(
-                tableName,
-                startPk,
-                startRk,
-                endPk,
-                endRk,
-                runOperationDelegate,
-                opName,
-                expectSuccess,
-                expectedStatusCode,
-                isRangeQuery,
-                false /* isPointQuery */);
+            TestOperationWithRange(
+    tableName,
+    startPk,
+    startRk,
+    endPk,
+    endRk,
+    runOperationDelegate,
+    opName,
+    expectSuccess,
+    expectedStatusCode,
+    isRangeQuery,
+    false /* isPointQuery */);
         }
 
         /// <summary>
@@ -1250,7 +1226,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
                 };
 
-                DynamicTableEntity entity = new DynamicTableEntity("PK", "RK", null, new Dictionary<string, EntityProperty>() {{"prop", new EntityProperty(4)}});
+                DynamicTableEntity entity = new DynamicTableEntity("PK", "RK", null, new Dictionary<string, EntityProperty>() { { "prop", new EntityProperty(4) } });
                 table.Execute(new TableOperation(entity, TableOperationType.Insert));
 
                 // The plan then is to use an incorrect IP address to make a call to the service
@@ -1300,7 +1276,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 retrieveOp.RetrievePartitionKey = entity.PartitionKey;
                 retrieveOp.RetrieveRowKey = entity.RowKey;
                 resultEntity = (DynamicTableEntity)tableWithSAS.Execute(retrieveOp).Result;
-    
+
                 Assert.AreEqual(entity.Properties["prop"].PropertyType, resultEntity.Properties["prop"].PropertyType);
                 Assert.AreEqual(entity.Properties["prop"].Int32Value.Value, resultEntity.Properties["prop"].Int32Value.Value);
                 Assert.IsTrue(table.StorageUri.PrimaryUri.Equals(tableWithSAS.Uri));

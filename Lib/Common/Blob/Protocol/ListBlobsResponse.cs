@@ -208,6 +208,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copyProgress = null;
             string copySource = null;
             string copyStatusDescription = null;
+            string copyDestinationSnapshotTime = null;
+
+            string premiumPageBlobTierString = null;
 
             this.reader.ReadStartElement();
             while (this.reader.IsStartElement())
@@ -335,6 +338,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             blob.Properties.IsServerEncrypted = BlobHttpResponseParsers.GetServerEncrypted(reader.ReadElementContentAsString());
                                             break;
 
+                                        case Constants.IncrementalCopy:
+                                            blob.Properties.IsIncrementalCopy = BlobHttpResponseParsers.GetIncrementalCopyStatus(reader.ReadElementContentAsString());
+                                            break;
+
+                                        case Constants.CopyDestinationSnapshotElement:
+                                            copyDestinationSnapshotTime = reader.ReadElementContentAsString();
+                                            break;
+
+                                        case Constants.AccessTierElement:
+                                            premiumPageBlobTierString = reader.ReadElementContentAsString();
+                                            break;
+
                                         default:
                                             reader.Skip();
                                             break;
@@ -377,7 +392,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                     copySource,
                     copyProgress,
                     copyCompletionTime,
-                    copyStatusDescription);
+                    copyStatusDescription,
+                    copyDestinationSnapshotTime);
+            }
+
+            if (!string.IsNullOrEmpty(premiumPageBlobTierString))
+            {
+                PremiumPageBlobTier? premiumPageBlobTier;
+                BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, premiumPageBlobTierString, out premiumPageBlobTier);
+                blob.Properties.PremiumPageBlobTier = premiumPageBlobTier;
+                blob.Properties.BlobTierInferred = false;
             }
 
             return new ListBlobEntry(name, blob);

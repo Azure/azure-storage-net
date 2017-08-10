@@ -255,19 +255,20 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             ListingContext listingContext = new ListingContext("default", null);
             cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, cloudSetup.ShareName);
 
-            cloudSetup.CreateShare("newshare1");
-            cloudSetup.CreateShare("newshare2");
+            string prefix = Guid.NewGuid().ToString();
+            cloudSetup.CreateShare(prefix + "newshare1");
+            cloudSetup.CreateShare(prefix + "newshare2");
 
             try
             {
                 cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, cloudSetup.ShareName);
-                listingContext = new ListingContext("n", 10);
-                cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, "newshare1", "newshare2");
+                listingContext = new ListingContext(prefix, 10);
+                cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, prefix + "newshare1", prefix + "newshare2");
             }
             finally
             {
-                cloudSetup.DeleteShare("newshare1");
-                cloudSetup.DeleteShare("newshare2");
+                cloudSetup.DeleteShare(prefix + "newshare1");
+                cloudSetup.DeleteShare(prefix + "newshare2");
             }
         }
 

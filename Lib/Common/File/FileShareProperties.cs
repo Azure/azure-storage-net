@@ -26,8 +26,6 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// </summary>
     public sealed class FileShareProperties
     {
-        private int? quota;
-
         /// <summary>
         /// Gets the ETag value for the share.
         /// </summary>
@@ -43,22 +41,6 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Gets or sets the maximum size for the share, in gigabytes.
         /// </summary>
-        public int? Quota
-        {
-            get
-            {
-                return this.quota;
-            }
-
-            set
-            {
-                if (value.HasValue)
-                {
-                    CommonUtility.AssertInBounds("Quota", value.Value, 1);
-                }
-                
-                this.quota = value;
-            }
-        }
+        public int? Quota { get; set; }
     }
 }

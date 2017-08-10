@@ -60,9 +60,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="blobType">The type of the blob.</param>
         /// <param name="pageBlobSize">For a page blob, the size of the blob. This parameter is ignored
         /// for block blobs.</param>
+        /// <param name="pageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, PremiumPageBlobTier? pageBlobTier, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (blobType == BlobType.Unspecified)
             {
@@ -97,11 +102,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 {
                     content.Headers.ContentEncoding.Add(properties.ContentEncoding);
                 }
+            }
 
-                if (properties.ContentDisposition != null)
-                {
-                    content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse(properties.ContentDisposition);
-                }
+            if (properties.ContentDisposition != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentDispositionRequestHeader, properties.ContentDisposition);
             }
 
             if (blobType == BlobType.PageBlob)
@@ -109,6 +114,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 request.Headers.Add(Constants.HeaderConstants.BlobType, Constants.HeaderConstants.PageBlob);
                 request.Headers.Add(Constants.HeaderConstants.BlobContentLengthHeader, pageBlobSize.ToString(NumberFormatInfo.InvariantInfo));
                 properties.Length = pageBlobSize;
+
+                if (pageBlobTier.HasValue)
+                {
+                    request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, pageBlobTier.Value.ToString());
+                }
             }
             else if (blobType == BlobType.BlockBlob)
             {
@@ -145,6 +155,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="offset">The starting offset of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
         /// <param name="count">The length of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage GetPageRanges(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -173,7 +187,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="offset">The starting offset of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
         /// <param name="count">The length of the data range over which to list page ranges, in bytes. Must be a multiple of 512.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage GetPageRangesDiff(Uri uri, int? timeout, DateTimeOffset? snapshot, DateTimeOffset previousSnapshotTime, long? offset, long? count, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -228,6 +245,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request for performing the operation.</returns>
         public static StorageRequestMessage GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -246,6 +267,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="properties">The blob's properties.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage SetProperties(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -275,6 +300,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="newBlobSize">The new blob size, if the blob is a page blob. Set this parameter to <c>null</c> to keep the existing blob size.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage Resize(Uri uri, int? timeout, long newBlobSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -297,6 +326,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="sequenceNumberAction">A value of type <see cref="SequenceNumberAction"/>, indicating the operation to perform on the sequence number.</param>
         /// <param name="sequenceNumber">The sequence number. Set this parameter to <c>null</c> if this operation is an increment action.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage SetSequenceNumber(Uri uri, int? timeout, SequenceNumberAction sequenceNumberAction, long? sequenceNumber, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -336,6 +369,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request for performing the operation.</returns>
         public static StorageRequestMessage GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -353,6 +390,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request for performing the operation.</returns>
         public static StorageRequestMessage SetMetadata(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -388,8 +429,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="deleteSnapshotsOption">A set of options indicating whether to delete only blobs, only snapshots, or both.</param>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -432,6 +477,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage Snapshot(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -456,6 +505,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="leaseBreakPeriod">The amount of time to wait, in seconds, after a break operation before the lease is broken.
         /// If this is null then the default time is used. This should be null for acquire, renew, change, and release operations.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage Lease(Uri uri, int? timeout, LeaseAction action, string proposedLeaseId, int? leaseDuration, int? leaseBreakPeriod, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -521,6 +574,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="blockId">The block ID for this block.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage PutBlock(Uri uri, int? timeout, string blockId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -540,6 +597,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="properties">The properties to set for the blob.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request for performing the operation.</returns>
         public static StorageRequestMessage PutBlockList(Uri uri, int? timeout, BlobProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {          
@@ -571,6 +632,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="typesOfBlocks">The types of blocks to include in the list: committed, uncommitted, or both.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage GetBlockList(Uri uri, int? timeout, DateTimeOffset? snapshot, BlockListingFilter typesOfBlocks, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -591,6 +656,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="properties">The blob's properties.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage PutPage(Uri uri, int? timeout, PageRange pageRange, PageWrite pageWrite, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -613,16 +682,53 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the destination blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
+            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, null /* pageBlobTier */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+        }
+
+        /// <summary>
+        /// Generates a web request to copy a blob.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the destination blob.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
+        /// <param name="pageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
+        /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = null;
+            if (incrementalCopy)
+            {
+                builder = new UriQueryBuilder();
+                builder.Add(Constants.QueryConstants.Component, "incrementalcopy");
+            }
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
             request.ApplyAccessCondition(destAccessCondition);
             request.ApplyAccessConditionToSource(sourceAccessCondition);
+
+            if (premiumPageBlobTier.HasValue)
+            {
+                request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier.Value.ToString());
+            }
 
             return request;
         }
@@ -635,6 +741,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="copyId">The ID string of the copy operation to be aborted.</param>
         /// <param name="accessCondition">The access condition to apply to the request.
         ///     Only lease conditions are supported for this operation.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request for performing the operation.</returns>
         public static StorageRequestMessage AbortCopy(Uri uri, int? timeout, string copyId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -657,6 +767,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">The snapshot version, if the blob is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request for performing the operation.</returns>
         public static StorageRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -680,6 +794,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or null to return all bytes through the end of the blob.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, bool rangeContentMD5, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -710,6 +828,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A StorageRequestMessage to get the service properties.</returns>
         public static StorageRequestMessage GetServiceProperties(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -721,6 +842,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to set the service properties.</returns>
         internal static StorageRequestMessage SetServiceProperties(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -732,10 +857,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
         /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A StorageRequestMessage to get the service stats.</returns>
         public static StorageRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             return HttpRequestMessageFactory.GetServiceStats(uri, timeout, operationContext, canonicalizer, credentials);
+        }
+
+        /// <summary>
+        /// Constructs a web request to set the tier on a page blob.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the blob.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="premiumBlobTier">The blob tier to set.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string premiumBlobTier, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "tier");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumBlobTier);
+
+            return request;
         }
     }
 }

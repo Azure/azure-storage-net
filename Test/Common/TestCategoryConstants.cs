@@ -57,5 +57,7 @@ namespace Microsoft.WindowsAzure.Storage
         public const string DevFabric = "DevFabric";
 
         public const string Cloud = "Cloud";
+
+        public const string Premium = "Premium";
     }
 }

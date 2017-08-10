@@ -107,6 +107,15 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         /// <summary>
+        /// Determines whether the query string name exists in the query string.
+        /// </summary>
+        /// <param name="name">The query string name</param>
+        public bool ContainsQueryStringName(string name)
+        {
+            return this.Parameters.ContainsKey(name);
+        }
+
+        /// <summary>
         /// Returns a <see cref="System.String"/> containing the URI.
         /// </summary>
         /// <returns>

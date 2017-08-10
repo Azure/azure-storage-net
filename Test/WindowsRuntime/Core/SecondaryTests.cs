@@ -69,6 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             Assert.IsInstanceOfType(e.InnerException, typeof(InvalidOperationException));
         }
 
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Blob requests should be sent to the correct location")]
         [TestCategory(ComponentCategory.Blob)]
@@ -245,6 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                     HttpStatusCode.NotFound);
             }
         }
+#endif
 
         private class MultiLocationTestHelper : IDisposable
         {
@@ -259,6 +261,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             public IExtendedRetryPolicy RetryPolicy { get; private set; }
 
+#if !FACADE_NETCORE
             public MultiLocationTestHelper(StorageUri storageUri, StorageLocation initialLocation, IList<RetryContext> retryContextList, IList<RetryInfo> retryInfoList)
             {
                 this.storageUri = storageUri;
@@ -271,7 +274,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
                 this.RetryPolicy = new AlwaysRetry(this.retryContextList, this.retryInfoList);
             }
-
             private void SendingRequest(object sender, RequestEventArgs e)
             {
                 if (this.error == null)
@@ -286,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
                 this.requestCounter++;
             }
-
+#endif
             public void Dispose()
             {
                 TimeSpan epsilon = TimeSpan.FromMilliseconds(2.0);
@@ -296,9 +298,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 for (int i = 0; i < this.retryInfoList.Count; i++)
                 {
                     Assert.AreEqual(this.retryInfoList[i].TargetLocation, this.OperationContext.RequestResults[i + 1].TargetLocation);
-
+#if !FACADE_NETCORE
                     TimeSpan retryInterval = this.OperationContext.RequestResults[i + 1].StartTime - this.OperationContext.RequestResults[i].EndTime;
                     Assert.IsTrue(this.retryInfoList[i].RetryInterval <= retryInterval.Add(epsilon));
+#endif
                 }
             }
         }

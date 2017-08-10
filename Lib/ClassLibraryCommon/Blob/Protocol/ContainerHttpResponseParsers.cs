@@ -60,7 +60,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             containerProperties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(response);
             containerProperties.LeaseState = BlobHttpResponseParsers.GetLeaseState(response);
             containerProperties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(response);
-
+            // Reading public access
+            containerProperties.PublicAccess = GetAcl(response);
             return containerProperties;
         }
 

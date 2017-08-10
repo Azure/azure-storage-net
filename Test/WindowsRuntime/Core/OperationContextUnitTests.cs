@@ -25,6 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
     [TestClass]
     public class OperationContextUnitTests : TestBase
     {
+#if !FACADE_NETCORE
         [TestMethod]
         [Description("Test start / end time on OperationContext")]
         [TestCategory(ComponentCategory.Core)]
@@ -44,5 +45,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
             Assert.IsNotNull(ctx.EndTime, "EndTime not set");
             Assert.IsTrue(ctx.EndTime <= DateTime.Now, "EndTime not set correctly");
         }
+#endif
     }
 }

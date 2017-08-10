@@ -53,15 +53,22 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                     properties.ContentDisposition = response.Content.Headers.ContentDisposition.ToString();
                 }
 
-                if (response.Content.Headers.ContentMD5 != null)
+                if (response.Content.Headers.ContentMD5 != null && response.Content.Headers.ContentRange == null)
                 {
                     properties.ContentMD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
+                }
+                else if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentMD5Header)))
+                {
+                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentMD5Header);
                 }
 
                 if (response.Content.Headers.ContentType != null)
                 {
                     properties.ContentType = response.Content.Headers.ContentType.ToString();
                 }
+
+                string fileEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
+                properties.IsServerEncrypted = string.Equals(fileEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
                 // Get the content length. Prioritize range and x-ms over content length for the special cases.
                 string contentLengthHeader = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentLengthHeader);
