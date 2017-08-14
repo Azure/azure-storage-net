@@ -1,6 +1,5 @@
-Changes in 8.4.0:
+Changes in 8.4.0 :
 - BlockBlobs: For Blob Storage Accounts, added support for getting and setting the tier on a block blob.
-- Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
 
 Changes in 8.2.1 :
 - All: Fixed a bug where empty metadata headers would lead to an infinite loop when trying to list blobs on a container.
