@@ -39,6 +39,7 @@ public static class HeaderConstants
     public const string SnapshotHeader = "x-ms-snapshot";
     public const string DeleteSnapshotHeader = "x-ms-delete-snapshots";
     public const string AccessTierHeader = "x-ms-access-tier";
+    public const string ArchiveStatusHeader = "x-ms-archive-status";
     public const string AccessTierInferredHeader = "x-ms-access-tier-inferred";
     public const string BlobCacheControlHeader = "x-ms-blob-cache-control";
     public const string BlobContentDispositionRequestHeader = "x-ms-blob-content-disposition";
