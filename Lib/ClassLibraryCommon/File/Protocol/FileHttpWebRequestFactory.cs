@@ -152,7 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        internal static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             FileHttpWebRequestFactory.AddShareSnapshot(builder, shareSnapshot);
@@ -186,7 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             FileHttpWebRequestFactory.AddShareSnapshot(builder, shareSnapshot);
@@ -289,7 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpWebRequest ListRanges(Uri uri, int? timeout, long? offset, long? count, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        internal static HttpWebRequest ListRanges(Uri uri, int? timeout, long? offset, long? count, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             if (offset.HasValue)
             {
@@ -386,7 +386,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request for performing the operation.</returns>
-        public static HttpWebRequest Get(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        internal static HttpWebRequest Get(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             FileHttpWebRequestFactory.AddShareSnapshot(builder, shareSnapshot);
@@ -442,7 +442,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static HttpWebRequest Get(Uri uri, int? timeout, long? offset, long? count, bool rangeContentMD5, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        internal static HttpWebRequest Get(Uri uri, int? timeout, long? offset, long? count, bool rangeContentMD5, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             if (offset.HasValue && offset.Value < 0)
             {
