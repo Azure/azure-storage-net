@@ -1,6 +1,6 @@
 {
   "title": "Microsoft.WindowsAzure.Storage.Facade.NetCore.Test",
-  "version": "8.3.0.0",
+  "version": "8.4.0.0",
   "testRunner": "xunit",
 
   "dependencies": {
