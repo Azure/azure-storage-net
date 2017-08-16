@@ -688,7 +688,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 blobClient.GetContainerReference(containerName).Create();
             }
 
-            IEnumerable<CloudBlobContainer> results = blobClient.ListContainers();
+            //            IEnumerable<CloudBlobContainer> results = blobClient.ListContainers();
+            string accountSAS = new CloudStorageAccount(blobClient.Credentials, false).GetSharedAccessSignature(new SharedAccessAccountPolicy() { Services = SharedAccessAccountServices.Blob, Permissions = SharedAccessAccountPermissions.Read | SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.List | SharedAccessAccountPermissions.Delete, SharedAccessExpiryTime = DateTime.Now + TimeSpan.FromDays(3), Protocols = SharedAccessProtocol.HttpsOrHttp, ResourceTypes = SharedAccessAccountResourceTypes.Service | SharedAccessAccountResourceTypes.Container | SharedAccessAccountResourceTypes.Object });
+            IEnumerable<CloudBlobContainer> results = new CloudStorageAccount(new StorageCredentials(accountSAS), "xclientdev2", "core.windows.net", false).CreateCloudBlobClient().ListContainers();
+
 
             foreach (CloudBlobContainer container in results)
             {
