@@ -1,3 +1,6 @@
+Changes in 9.x.x:
+- Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
+
 Changes in 8.4.0 :
 - BlockBlobs: For Blob Storage Accounts, added support for getting and setting the tier on a block blob.
 - All: Added a property called CustomUserAgent to the OperationContext class to provide the option for users to prepend a customized value to the existing UserAgent header value.

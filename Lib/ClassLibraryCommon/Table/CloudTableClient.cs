@@ -32,10 +32,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Threading;
     using System.Threading.Tasks;
 
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Microsoft.WindowsAzure.Storage.Table.DataServices;
-#endif
-
     /// <summary>
     /// Provides a client-side logical representation of the Microsoft Azure Table Service. This client is used to configure and execute requests against the Table Service.
     /// </summary>
@@ -50,8 +46,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <remarks>
         /// <para>This property is set only when Shared Key or Shared Key Lite credentials are used; it does not apply to authentication via a shared access signature 
         /// or anonymous access.</para>
-        /// <para>Note that if you are using the legacy Table service API, which is based on WCF Data Services, the authentication scheme used by the <see cref="TableServiceContext"/>
-        /// object will always be Shared Key Lite, regardless of the value of this property.</para>
         /// </remarks>
         public AuthenticationScheme AuthenticationScheme
         {
@@ -736,20 +730,5 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         #endregion
 
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Creates a new <see cref="TableServiceContext"/> object for performing operations against the Table service.
-        /// </summary>
-        /// <returns>A service context to use for performing operations against the Table service.</returns>
-        [Obsolete("Support for accessing Windows Azure Tables via WCF Data Services is now obsolete. It's recommended that you use the Microsoft.WindowsAzure.Storage.Table namespace for working with tables.")]
-        [SuppressMessage(
-            "Microsoft.Design",
-            "CA1024:UsePropertiesWhereAppropriate",
-            Justification = "This method creates a new object each time.")]
-        public TableServiceContext GetTableServiceContext()
-        {
-            return new TableServiceContext(this);
-        }
-#endif
     }
 }

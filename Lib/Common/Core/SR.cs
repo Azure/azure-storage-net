@@ -117,6 +117,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidResourceReservedName = "Invalid {0} name. This {0} name is reserved.";
         public const string InvalidSASVersion = "SAS Version invalid. Valid versions include 2012-02-12 and 2013-08-15.";
         public const string InvalidStorageService = "Invalid storage service specified.";
+        public const string InvalidTypeInJsonDictionary = "Invalid type in JSON object. Detected type is {0}, which is not a valid JSON type.";
         public const string IPAddressOrRangeMustBeNullInOldVersion = "IPAddressOrRange must be null when creating a SAS token with an older service version parameter.";
         public const string IPMustBeIPV4InSAS = "When specifying an IP Address in a SAS token, it must be an IPv4 address. Input address was {0}.";
         public const string IQueryableExtensionObjectMustBeTableQuery = "Query must be a TableQuery<T>";
@@ -248,6 +249,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TraceUpload = "Writing request data.";
         public const string TraceUploadError = "Exception thrown while writing request data: {0}.";
         public const string UndefinedBlobType = "The blob type cannot be undefined.";
+        public const string UnexpectedEDMType = "Unexpected EDM type from the Table Service: {0}.";
         public const string UnexpectedElement = "Unexpected Element '{0}'";
         public const string UnexpectedEmptyElement = "Unexpected Empty Element '{0}'";
         public const string UnexpectedParameterInSAS = "The parameter `api-version` should not be included in the SAS token. Please allow the library to set the  `api-version` parameter.";

@@ -344,69 +344,10 @@ namespace Microsoft.WindowsAzure.Storage
                 reqResult.ExtendedErrorInformation = null;
                 return new StorageException(reqResult, ex.Message, ex);
             }
-#elif WINDOWS_DESKTOP && !WINDOWS_PHONE
-            else
-            {
-                // Should never get to this one since we will call TranslateDataServiceException for DataService operations.
-                StorageException tableEx = TableUtilities.TranslateDataServiceException(ex, reqResult, null);
-
-                if (tableEx != null)
-                {
-                    return tableEx;
-                }
-            }
 #endif
             // return null and check in the caller
             return null;
         }
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        /// <summary>
-        /// Translates the specified exception into a storage exception.
-        /// </summary>
-        /// <param name="ex">The exception to translate.</param>
-        /// <param name="reqResult">The request result.</param>
-        /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
-        /// <returns>The storage exception.</returns>
-        internal static StorageException TranslateDataServiceException(Exception ex, RequestResult reqResult, Func<Stream, IDictionary<string, string>, StorageExtendedErrorInformation> parseError)
-        {
-            CommonUtility.AssertNotNull("reqResult", reqResult);
-            CommonUtility.AssertNotNull("ex", ex);
-            CommonUtility.AssertNotNull("parseError", parseError);
-
-            // Dont re-wrap storage exceptions
-            if (ex is StorageException)
-            {
-                return (StorageException)ex;
-            }
-            else if (ex is TimeoutException)
-            {
-                reqResult.HttpStatusMessage = null;
-                reqResult.HttpStatusCode = (int)HttpStatusCode.RequestTimeout;
-                reqResult.ExtendedErrorInformation = null;
-                return new StorageException(reqResult, ex.Message, ex);
-            }
-            else if (ex is ArgumentException)
-            {
-                reqResult.HttpStatusMessage = null;
-                reqResult.HttpStatusCode = (int)HttpStatusCode.Unused;
-                reqResult.ExtendedErrorInformation = null;
-                return new StorageException(reqResult, ex.Message, ex) { IsRetryable = false };
-            }
-            else
-            {
-                StorageException tableEx = TableUtilities.TranslateDataServiceException(ex, reqResult, parseError);
-
-                if (tableEx != null)
-                {
-                    return tableEx;
-                }
-            }
-
-            // Just wrap in StorageException
-            return new StorageException(reqResult, ex.Message, ex);
-        }
-#endif
 
         /// <summary>
         /// Populate the RequestResult.
