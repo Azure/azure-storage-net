@@ -59,6 +59,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal const string MinuteMetricsName = "MinuteMetrics";
 
         /// <summary>
+        /// The name of the delete retention policy XML element.
+        /// </summary>
+        internal const string DeleteRetentionPolicyName = "DeleteRetentionPolicy";
+
+        /// <summary>
         /// The name of the version XML element.
         /// </summary>
         internal const string VersionName = "Version";
@@ -134,6 +139,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal const string AllowedHeadersName = "AllowedHeaders";
 
         /// <summary>
+        /// The name of the RetainedVersionsPerBlob XML element.
+        /// </summary>
+        internal const string RetainedVersionsPerBlob = "RetainedVersionsPerBlob";
+
+        /// <summary>
         /// Initializes a new instance of the ServiceProperties class.
         /// </summary>
         public ServiceProperties()
@@ -143,12 +153,13 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// Initializes a new instance of the ServiceProperties class.
         /// </summary>
-        public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null)
+        public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null, DeleteRetentionPolicyProperties deleteRetentionProperties = null)
         {
             this.Logging = logging;
             this.HourMetrics = hourMetrics;
             this.MinuteMetrics = minuteMetrics;
             this.Cors = cors;
+            this.DeleteRetentionProperties = deleteRetentionProperties;
         }
 
         /// <summary>
@@ -202,6 +213,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Gets or sets the delete retention policy properties.
+        /// </summary>
+        /// <value>The delete retention policy properties.</value>
+        public DeleteRetentionPolicyProperties DeleteRetentionProperties
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Constructs a <c>ServiceProperties</c> object from an XML document received from the service.
         /// </summary>
         /// <param name="servicePropertiesDocument">The XML document.</param>
@@ -214,7 +235,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 Logging = ReadLoggingPropertiesFromXml(servicePropertiesElement.Element(LoggingName)),
                 HourMetrics = ReadMetricsPropertiesFromXml(servicePropertiesElement.Element(HourMetricsName)),
                 MinuteMetrics = ReadMetricsPropertiesFromXml(servicePropertiesElement.Element(MinuteMetricsName)),
-                Cors = ReadCorsPropertiesFromXml(servicePropertiesElement.Element(CorsName))
+                Cors = ReadCorsPropertiesFromXml(servicePropertiesElement.Element(CorsName)),
+                DeleteRetentionProperties = ReadDeleteRetentionPolicyFromXml(servicePropertiesElement.Element(DeleteRetentionPolicyName))
             };
 
             XElement defaultServiceVersionXml = servicePropertiesElement.Element(DefaultServiceVersionName);
@@ -233,7 +255,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "SetServiceProperties", Justification = "API name is properly spelled")]
         internal XDocument ToServiceXml()
         {
-            if (this.Logging == null && this.HourMetrics == null && this.MinuteMetrics == null && this.Cors == null && this.DefaultServiceVersion == null)
+            if (this.Logging == null && this.HourMetrics == null && this.MinuteMetrics == null && this.Cors == null && this.DeleteRetentionProperties == null && this.DefaultServiceVersion == null)
             {
                 throw new InvalidOperationException(SR.SetServicePropertiesRequiresNonNullSettings);
             }
@@ -263,6 +285,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             if (this.DefaultServiceVersion != null)
             {
                 storageServiceElement.Add(new XElement(DefaultServiceVersionName, this.DefaultServiceVersion));
+            }
+
+            if (this.DeleteRetentionProperties != null)
+            {
+                storageServiceElement.Add(GenerateDeleteRetentionPolicyXml(this.DeleteRetentionProperties));
             }
 
             return new XDocument(storageServiceElement);
@@ -381,6 +408,39 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Generates XML representing the given delete retention policy.
+        /// </summary>
+        /// <param name="deleteRetentionProperties">The DeleteRetentionPolicy properties.</param>
+        /// <returns>An XML logging element.</returns>
+        private static XElement GenerateDeleteRetentionPolicyXml(DeleteRetentionPolicyProperties deleteRetentionProperties)
+        {
+            CommonUtility.AssertNotNull("deleteRetentionProperties", deleteRetentionProperties);
+
+            bool enabled = deleteRetentionProperties.Enabled;
+            var xml = new XElement(DeleteRetentionPolicyName, new XElement(EnabledName, enabled));
+
+            if (!enabled) return xml;
+
+            if (!deleteRetentionProperties.Days.HasValue || deleteRetentionProperties.Days.Value < 1)
+            {
+                throw new InvalidOperationException(SR.InvalidDeleteRetentionDaysValue);
+            }
+
+            xml.Add(new XElement(DaysName, (int)deleteRetentionProperties.Days));
+
+            if (!deleteRetentionProperties.RetainedVersionsPerBlob.HasValue ||
+                deleteRetentionProperties.RetainedVersionsPerBlob.Value < 1 ||
+                deleteRetentionProperties.RetainedVersionsPerBlob.Value > Constants.MaxRetainedVersionsPerBlob)
+            {
+                throw new InvalidOperationException(SR.InvalidRetainedVersionsPerBlobValue);
+            }
+
+            xml.Add(new XElement(RetainedVersionsPerBlob , (int)deleteRetentionProperties.RetainedVersionsPerBlob));
+
+            return xml;
+        }
+
+        /// <summary>
         /// Constructs a <c>LoggingProperties</c> object from an XML element.
         /// </summary>
         /// <param name="element">The XML element.</param>
@@ -489,6 +549,36 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                     }).ToList();
 
             return ret;
+        }
+
+        /// <summary>
+        /// Constructs a <c>DeleteRetentionPolicyProperties</c> object from an XML element.
+        /// </summary>
+        /// <param name="element">the XML element</param>
+        /// <returns>A <c>DeleteRetentionPolicyProperties</c> object containing the properties in the element</returns>
+        internal static DeleteRetentionPolicyProperties ReadDeleteRetentionPolicyFromXml(XElement element)
+        {
+            if (element == null)
+            {
+                return null;
+            }
+
+            var deleteRetentionPolicy = new DeleteRetentionPolicyProperties()
+            {
+                Enabled = false,
+                Days = null,
+                RetainedVersionsPerBlob = null
+            };
+
+            deleteRetentionPolicy.Enabled = bool.Parse(element.Element(EnabledName).Value);
+
+            if (deleteRetentionPolicy.Enabled)
+            {
+                deleteRetentionPolicy.Days = int.Parse(element.Element(DaysName).Value, CultureInfo.InvariantCulture);
+                deleteRetentionPolicy.RetainedVersionsPerBlob = int.Parse(element.Element(RetainedVersionsPerBlob).Value, CultureInfo.InvariantCulture);
+            }
+
+            return deleteRetentionPolicy;
         }
 
         /// <summary>

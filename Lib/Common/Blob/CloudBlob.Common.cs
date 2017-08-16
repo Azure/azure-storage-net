@@ -240,6 +240,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Gets a value indicating whether or not this blob has been deleted.
+        /// </summary>
+        /// <value>A bool representing if the has been deleted.</value>
+        public bool IsDeleted
+        {
+            get
+            {
+                return this.attributes.IsDeleted;
+            }
+
+            private set
+            {
+                this.attributes.IsDeleted = value;  
+            }
+        }
+
+        /// <summary>
         /// Gets the absolute URI to the blob, including query string information if the blob is a snapshot.
         /// </summary>
         /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the blob, including snapshot query information if the blob is a snapshot.</value>

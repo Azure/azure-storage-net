@@ -570,6 +570,18 @@ namespace Microsoft.WindowsAzure.Storage
                 Assert.IsNull(propsA.Cors);
                 Assert.IsNull(propsB.Cors);
             }
+
+            if (propsA.DeleteRetentionProperties != null && propsB.DeleteRetentionProperties != null)
+            {
+                Assert.AreEqual(propsA.DeleteRetentionProperties.Enabled, propsB.DeleteRetentionProperties.Enabled);
+                Assert.AreEqual(propsA.DeleteRetentionProperties.Days, propsB.DeleteRetentionProperties.Days);
+                Assert.AreEqual(propsA.DeleteRetentionProperties.RetainedVersionsPerBlob, propsB.DeleteRetentionProperties.RetainedVersionsPerBlob);
+            }
+            else
+            {
+                Assert.IsNull(propsA.DeleteRetentionProperties);
+                Assert.IsNull(propsA.DeleteRetentionProperties);
+            }
         }
 
         internal static void SpinUpTo30SecondsIgnoringFailures(Action test)
