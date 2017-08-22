@@ -59,5 +59,7 @@ namespace Microsoft.WindowsAzure.Storage
         public const string Cloud = "Cloud";
 
         public const string Premium = "Premium";
+
+        public const string BlockBlobOnly = "BlockBlobOnly";
     }
 }

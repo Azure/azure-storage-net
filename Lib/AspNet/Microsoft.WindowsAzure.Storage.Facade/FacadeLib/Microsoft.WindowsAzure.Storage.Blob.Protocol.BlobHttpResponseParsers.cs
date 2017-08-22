@@ -46,7 +46,11 @@ internal static class BlobHttpResponseParsers
     {
         throw new System.NotImplementedException();
     }
-    internal static void GetBlobTier(BlobType blobType, string blobTierString, out PremiumPageBlobTier? premiumPageBlobTier)
+    internal static void GetBlobTier(BlobType blobType, string blobTierString, out StandardBlobTier? standardBlobTier, out PremiumPageBlobTier? premiumPageBlobTier)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal static RehydrationStatus? GetRehydrationStatus(string rehydrationStatus)
     {
         throw new System.NotImplementedException();
     }
