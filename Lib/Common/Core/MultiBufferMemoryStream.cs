@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <summary>
         /// The underlying buffer blocks for the stream.
         /// </summary>
-        private List<byte[]> bufferBlocks;
+        private List<ArraySegment<byte>> bufferBlocks;
 
         /// <summary>
         /// The currently used length.
@@ -83,7 +83,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// <param name="bufferSize">The buffer size to use for each block. The default size is 64 KB. Note that this parameter is disregarded when an <see cref="IBufferManager"/> is specified.</param>
         public MultiBufferMemoryStream(IBufferManager bufferManager, int bufferSize = MultiBufferMemoryStream.DefaultSmallBufferSize)
         {
-            this.bufferBlocks = new List<byte[]>();
+            this.bufferBlocks = new List<ArraySegment<byte>>();
             this.bufferManager = bufferManager;
 
             this.bufferSize = this.bufferManager == null ? bufferSize : this.bufferManager.GetDefaultBufferSize();
@@ -643,10 +643,10 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// </summary>
         private void AddBlock()
         {
-            byte[] newBuff = this.bufferManager == null ? new byte[this.bufferSize] : this.bufferManager.TakeBuffer(this.bufferSize);
-            if (newBuff.Length != this.bufferSize)
+            var newBuff = this.bufferManager == null ? new ArraySegment<byte>(new byte[this.bufferSize]) : this.bufferManager.TakeBuffer(this.bufferSize);
+            if (newBuff.Count != this.bufferSize)
             {
-                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.BufferManagerProvidedIncorrectLengthBuffer, this.bufferSize, newBuff.Length));
+                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.BufferManagerProvidedIncorrectLengthBuffer, this.bufferSize, newBuff.Count));
             }
 
             this.bufferBlocks.Add(newBuff);
@@ -738,9 +738,9 @@ namespace Microsoft.WindowsAzure.Storage.Core
             // Calculate the block and position in a block
             int blockID = (int)(this.position / this.bufferSize);
             int blockPosition = (int)(this.position % this.bufferSize);
-            byte[] currentBlock = this.bufferBlocks[blockID];
+            var currentBlock = this.bufferBlocks[blockID];
 
-            return new ArraySegment<byte>(currentBlock, blockPosition, currentBlock.Length - blockPosition);
+            return new ArraySegment<byte>(currentBlock.Array, currentBlock.Offset + blockPosition, currentBlock.Count - blockPosition);
         }
 
         private volatile bool disposed = false;
@@ -758,7 +758,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 {
                     if (this.bufferManager != null)
                     {
-                        foreach (byte[] buff in this.bufferBlocks)
+                        foreach (var buff in this.bufferBlocks)
                         {
                             this.bufferManager.ReturnBuffer(buff);
                         }

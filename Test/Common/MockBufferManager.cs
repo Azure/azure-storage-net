@@ -53,16 +53,16 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
 
-        public void ReturnBuffer(byte[] buffer)
+        public void ReturnBuffer(ArraySegment<byte> buffer)
         {
             Interlocked.Decrement(ref outstandingBufferCount);
             // no op
         }
 
-        public byte[] TakeBuffer(int bufferSize)
+        public ArraySegment<byte> TakeBuffer(int bufferSize)
         {
             Interlocked.Increment(ref outstandingBufferCount);
-            return new byte[bufferSize];
+            return new ArraySegment<byte>(new byte[bufferSize]);
         }
 
         public int GetDefaultBufferSize()
