@@ -493,6 +493,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string CopyFailedValue = "failed";
 
         /// <summary>
+        /// Constant for rehydrating an archived blob to hot storage.
+        /// </summary>
+        public const string RehydratePendingToHot = "rehydrate-pending-to-hot";
+
+        /// <summary>
+        /// Constant for rehydrating an archived blob to cool storage.
+        /// </summary>
+        public const string RehydratePendingToCool = "rehydrate-pending-to-cool";
+
+        /// <summary>
         /// Constant for unavailable geo-replication status.
         /// </summary>
         public const string GeoUnavailableValue = "unavailable";
@@ -511,6 +521,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Constant for the blob tier.
         /// </summary>
         public const string AccessTierElement = "AccessTier";
+
+        /// <summary>
+        /// Constant for the archive status.
+        /// </summary>
+        public const string ArchiveStatusElement = "ArchiveStatus";
 
         /// <summary>
         /// XML element for blob types.
@@ -829,7 +844,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "8.3.0";
+            public const string UserAgentProductVersion = "8.4.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -990,6 +1005,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header for the blob tier.
             /// </summary>
             public const string AccessTierHeader = PrefixForStorageHeader + "access-tier";
+
+            /// <summary>
+            /// Header for the archive status.
+            /// </summary>
+            public const string ArchiveStatusHeader = PrefixForStorageHeader + "archive-status";
 
             /// <summary>
             /// Header for the blob tier inferred.

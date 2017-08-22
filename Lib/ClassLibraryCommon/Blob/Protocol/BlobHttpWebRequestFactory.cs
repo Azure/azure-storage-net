@@ -1210,11 +1210,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval, in seconds.</param>
-        /// <param name="premiumPageBlobTier">The blob tier to set as a string.</param>
+        /// <param name="blobTier">The blob tier to set as a string.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpWebRequest SetBlobTier(Uri uri, int? timeout, string premiumPageBlobTier, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest SetBlobTier(Uri uri, int? timeout, string blobTier, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "tier");
@@ -1222,7 +1222,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
 
             // Add the blob tier header
-            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier);
+            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
 
             return request;
         }
