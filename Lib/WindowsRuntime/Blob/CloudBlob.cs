@@ -367,6 +367,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="target">The target byte array.</param>
         /// <param name="index">The starting offset in the byte array.</param>
         /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
+        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The total number of bytes read into the buffer.</returns>
+        [DoesServiceRequest]
+        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, CancellationToken cancellationToken)
+        {
+            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, null /* accessCondition */, null /* options */, null /* operationContext */, cancellationToken);
+        }
+
+        /// <summary>
+        /// Downloads a range of bytes from a blob to a byte array.
+        /// </summary>
+        /// <param name="target">The target byte array.</param>
+        /// <param name="index">The starting offset in the byte array.</param>
+        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
         /// <param name="length">The length of the data range, in bytes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
