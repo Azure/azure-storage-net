@@ -31,12 +31,14 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         private const int DefaultClientRetryCount = 3;
         private static readonly TimeSpan DefaultClientBackoff = TimeSpan.FromSeconds(4);
         private static readonly TimeSpan MaxBackoff = TimeSpan.FromSeconds(120);
-        private static readonly TimeSpan MinBackoff = TimeSpan.FromSeconds(3);
+        private static readonly TimeSpan MinBackoff = TimeSpan.FromSeconds(3);        
 
         private TimeSpan deltaBackoff;
         private int maximumAttempts;
         private DateTimeOffset? lastPrimaryAttempt = null;
         private DateTimeOffset? lastSecondaryAttempt = null;
+        private readonly Random random = new Random();
+        private readonly object randomLock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExponentialRetry"/> class.
@@ -86,8 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
 
             if (currentRetryCount < this.maximumAttempts)
             {
-                Random r = new Random();
-                double increment = (Math.Pow(2, currentRetryCount) - 1) * r.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2));
+                double increment = CalculateIncrement(currentRetryCount);
                 retryInterval = (increment < 0) ?
                     ExponentialRetry.MaxBackoff :
                     TimeSpan.FromMilliseconds(Math.Min(ExponentialRetry.MaxBackoff.TotalMilliseconds, ExponentialRetry.MinBackoff.TotalMilliseconds + increment));
@@ -95,6 +96,14 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
             }
 
             return false;
+        }
+
+        private double CalculateIncrement(int currentRetryCount)
+        {
+            lock (randomLock)
+            {
+                return Math.Pow(2, currentRetryCount) - 1) * random.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2);
+            }
         }
 
         /// <summary>
