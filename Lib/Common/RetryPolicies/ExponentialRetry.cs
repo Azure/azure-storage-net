@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         private const int DefaultClientRetryCount = 3;
         private static readonly TimeSpan DefaultClientBackoff = TimeSpan.FromSeconds(4);
         private static readonly TimeSpan MaxBackoff = TimeSpan.FromSeconds(120);
-        private static readonly TimeSpan MinBackoff = TimeSpan.FromSeconds(3);        
+        private static readonly TimeSpan MinBackoff = TimeSpan.FromSeconds(3);
 
         private TimeSpan deltaBackoff;
         private int maximumAttempts;
