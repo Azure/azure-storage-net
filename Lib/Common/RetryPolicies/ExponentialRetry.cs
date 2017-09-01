@@ -102,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         {
             lock (randomLock)
             {
-                return Math.Pow(2, currentRetryCount) - 1) * random.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2);
+                return (Math.Pow(2, currentRetryCount) - 1) * r.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2));
             }
         }
 
