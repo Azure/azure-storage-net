@@ -134,6 +134,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
             set { binary = value; }
         }
 
+        private byte singleByte = 0;
+        public byte SingleByte
+        {
+            get { return singleByte; }
+            set { singleByte = value; }
+        }
+
         private Byte[] binaryNull = null;
         public Byte[] BinaryNull
         {
@@ -353,6 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
             Assert.AreEqual(a.DateTime, b.DateTime);
             Assert.AreEqual(a.DateTimeN, b.DateTimeN);
             Assert.AreEqual(a.DateTimeNull, b.DateTimeNull);
+            Assert.AreEqual(a.SingleByte, b.SingleByte);
         }
 
         public static EdmType ComplexEntityPropertyResolver(string pk, string rk, string propName, string propValue)
