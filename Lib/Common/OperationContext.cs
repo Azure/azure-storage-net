@@ -55,6 +55,15 @@ namespace Microsoft.WindowsAzure.Storage
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "ID", Justification = "Back compatibility.")]
         public string ClientRequestID { get; set; }
 
+        /// <summary>
+        /// Gets or sets a custom UserAgent value to be prepended to the existing library UserAgent.
+        /// </summary>
+        /// <value>A string containing the specified UserAgent value.</value>
+#if WINDOWS_DESKTOP
+        /// <remarks>This value will be overridden if the UserAgent value is modified via SendingRequestEvent (per instance or global).</remarks>
+#endif
+        public string CustomUserAgent { get; set; }
+
         #endregion
 
         #region Logging
@@ -239,5 +248,6 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
         #endregion
+
     }
 }

@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Security.Cryptography;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -1851,6 +1852,70 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 // Compare that the decrypted contents match the input data.
                 byte[] outputArray = outputStream.ToArray();
                 TestHelper.AssertBuffersAreEqualUptoIndex(outputArray, buffer, size - 1);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Attempt to download unencrypted blob with encryption policy.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore)]
+        [TestCategory(TenantTypeCategory.DevFabric)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobDownloadUnencryptedBlobWithEncryptionPolicy()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+
+                string message = "Sample initial text";
+                blob.UploadText(message);
+
+                // Create the Key to be used for wrapping.
+                SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+                // Create the resolver to be used for unwrapping.
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Download the encrypted blob.
+                // Create the decryption policy to be used for download. There is no need to specify the
+                // key when the policy is only going to be used for downloads. Resolver is sufficient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+
+                // Set the decryption policy on the request options.
+                BlobRequestOptions downloadOptions = new BlobRequestOptions()
+                {
+                    EncryptionPolicy = downloadPolicy,
+                    RequireEncryption = true
+                };
+
+                try
+                {
+                    blob.DownloadText(null, null, downloadOptions, null);
+                }
+                catch (StorageException e)
+                {
+                    Assert.AreEqual(SR.EncryptionDataNotPresentError, e.Message);
+                }
+
+                byte[] buffer = new byte[message.Length + 5];
+                try
+                {
+                    blob.DownloadRangeToByteArray(buffer, 0, 0, message.Length, null, downloadOptions, null);
+                }
+                catch (StorageException e)
+                {
+                    Assert.AreEqual(SR.EncryptionDataNotPresentError, e.Message);
+                }
             }
             finally
             {

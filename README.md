@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (8.3.0)
+# Microsoft Azure Storage SDK for .NET (8.4.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -35,11 +35,11 @@ For the best development experience, developers should use the official Microsof
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
 - Netstandard1.3: Storage Client Libraries for .NET are available to support Netstandard application development including Xamarin/UWP applications. 
-- Netstandard1.0: Storage Client Libraries support PCL through a Netstandard Façade targeting netstandard1.0.
+- Netstandard1.0: Storage Client Libraries support PCL through a Netstandard FaÃ§ade targeting netstandard1.0.
 
-### Netstandard1.0 (Façade)
+### Netstandard1.0 (FaÃ§ade)
 
-As the lowest TFM supported by all our implementations, 1.0 is selected to provide support for maximum platforms. The support is provided through a façade reference assembly targeting netstandard1.0. This assembly consists of a common set of APIs between Win8, Wp8 and Wpa with no API implementations.
+As the lowest TFM supported by all our implementations, 1.0 is selected to provide support for maximum platforms. The support is provided through a faÃ§ade reference assembly targeting netstandard1.0. This assembly consists of a common set of APIs between Win8, Wp8 and Wpa with no API implementations.
 Through the bait and switch technique, the reference assembly enables other portable class libraries to reference Storage Client Library, while the correct implementation assembly will be picked when the package is referenced by the project.json file.
 
 
@@ -205,4 +205,4 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 
 - [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/)
 - [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/wa_storage_30_reference_home.aspx)
-- [Azure Storage Team Blog] (http://blogs.msdn.com/b/windowsazurestorage/)
+- [Azure Storage Team Blog](http://blogs.msdn.com/b/windowsazurestorage/)

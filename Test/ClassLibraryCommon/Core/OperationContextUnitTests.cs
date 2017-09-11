@@ -283,6 +283,38 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         [TestMethod]
+        [Description("Test prepended user agent on blob request")]
+        [TestCategory(ComponentCategory.Core)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void OpContextTestCustomUserAgent()
+        {
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference("test");
+
+            string uniqueID = Guid.NewGuid().ToString();
+
+            OperationContext ctx = new OperationContext();
+            ctx.CustomUserAgent = "product-info-correct-format";
+            string userAgentValue = ctx.CustomUserAgent + " " + Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
+
+            Action act = () => container.Exists(null, ctx);
+
+            TestHelper.VerifyHeaderWasSent("User-Agent", userAgentValue, AzureStorageSelectors.BlobTraffic().IfHostNameContains(blobClient.Credentials.AccountName), act);
+
+            act = () => container.EndExists(container.BeginExists(null, ctx, null, null));
+
+            TestHelper.VerifyHeaderWasSent("User-Agent", userAgentValue, AzureStorageSelectors.BlobTraffic().IfHostNameContains(blobClient.Credentials.AccountName), act);
+
+#if TASK
+            act = () => container.ExistsAsync(null, ctx).Wait();
+
+            TestHelper.VerifyHeaderWasSent("User-Agent", userAgentValue, AzureStorageSelectors.BlobTraffic().IfHostNameContains(blobClient.Credentials.AccountName), act);
+#endif
+        }
+
+        [TestMethod]
         [Description("Test start / end time on OperationContext")]
         [TestCategory(ComponentCategory.Core)]
         [TestCategory(TestTypeCategory.UnitTest)]

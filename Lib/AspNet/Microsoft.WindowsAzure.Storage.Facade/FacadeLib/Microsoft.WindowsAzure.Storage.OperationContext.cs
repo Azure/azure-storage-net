@@ -16,6 +16,11 @@ public sealed class OperationContext
         get; set;
     }
 
+    public string CustomUserAgent
+    {
+        get; set;
+    }
+
     public static LogLevel DefaultLogLevel
     {
         get; set;
