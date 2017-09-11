@@ -871,15 +871,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
-        /// <param name="premiumBlobTier">The blob tier to set.</param>
+        /// <param name="blobTier">The blob tier to set.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string premiumBlobTier, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string blobTier, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "tier");
 
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
-            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumBlobTier);
+            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
 
             return request;
         }

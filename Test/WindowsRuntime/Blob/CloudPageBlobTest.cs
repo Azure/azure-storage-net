@@ -1468,23 +1468,32 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 await blob.CreateAsync(0);
+
                 Assert.IsFalse(blob.Properties.BlobTierInferred.HasValue);
                 await blob.FetchAttributesAsync();
                 Assert.IsTrue(blob.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                 await blob.SetPremiumBlobTierAsync(PremiumPageBlobTier.P30);
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob2.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob2.Properties.StandardBlobTier.HasValue);
+                Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
 
                 BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
                 CloudPageBlob blob3 = (CloudPageBlob)results.Results.ToList().First();
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob3.Properties.StandardBlobTier.HasValue);
+                Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
 
                 CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
                 await blob4.CreateAsync(125 * Constants.GB);
