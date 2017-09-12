@@ -1703,23 +1703,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                     await CreateForTestAsync(blob, 0, 0);
+                    await blob.FetchAttributesAsync();
+                    Assert.IsTrue(blob.Properties.StandardBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
+                    Assert.IsTrue(blob.Properties.BlobTierInferred.Value);
+
+                    BlobResultSegment listBlobsResult = await container.ListBlobsSegmentedAsync(null);
+                    CloudBlockBlob listBlob = (CloudBlockBlob)listBlobsResult.Results.ToList().First();
+                    Assert.IsTrue(listBlob.Properties.StandardBlobTier.HasValue);
+                    Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
+                    Assert.IsTrue(listBlob.Properties.BlobTierInferred.Value);
 
                     await blob.SetStandardBlobTierAsync(blobTier);
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     await blob2.FetchAttributesAsync();
                     Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
 
                     BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
                     CloudBlockBlob blob3 = (CloudBlockBlob)results.Results.ToList().First();
                     Assert.AreEqual(blobTier, blob3.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob3.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob3.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob3.Properties.BlobTierInferred.HasValue);
+                    Assert.AreEqual(blob2.Properties.BlobTierLastModifiedTime.Value, blob3.Properties.BlobTierLastModifiedTime);
 
                     await blob.DeleteAsync();
                 }
@@ -1745,31 +1762,47 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 await CreateForTestAsync(blob, 0, 0);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.HasValue);
+                Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
+                await blob.FetchAttributesAsync();
+                Assert.IsTrue(blob.Properties.BlobTierInferred.HasValue);
+                Assert.IsTrue(blob.Properties.StandardBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+
                 await blob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
                 Assert.IsNull(blob.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+
                 CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
                 await CreateForTestAsync(blob2, 0, 0);
                 await blob2.SetStandardBlobTierAsync(StandardBlobTier.Archive);
+                Assert.IsFalse(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                 await blob.SetStandardBlobTierAsync(StandardBlobTier.Cool);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
                 Assert.IsNull(blob.Properties.RehydrationStatus);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+
                 await blob.FetchAttributesAsync();
                 Assert.AreEqual(RehydrationStatus.PendingToCool, blob.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
+                Assert.IsTrue(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                 await blob2.SetStandardBlobTierAsync(StandardBlobTier.Hot);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
                 Assert.IsNull(blob2.Properties.RehydrationStatus);
+
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual(RehydrationStatus.PendingToHot, blob2.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
+                Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                 CloudBlockBlob listBlob =  (CloudBlockBlob)container.ListBlobsSegmentedAsync(null).Result.Results.ToList().ElementAt(0);
                 Assert.AreEqual(StandardBlobTier.Archive, listBlob.Properties.StandardBlobTier.Value);
                 Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToCool, listBlob.Properties.RehydrationStatus.Value);
+                Assert.IsTrue(listBlob.Properties.BlobTierLastModifiedTime.HasValue);
 
                 CloudBlockBlob listBlob2 = (CloudBlockBlob)container.ListBlobsSegmentedAsync(null).Result.Results.ToList().ElementAt(1);
                 Assert.AreEqual(StandardBlobTier.Archive, listBlob2.Properties.StandardBlobTier.Value);

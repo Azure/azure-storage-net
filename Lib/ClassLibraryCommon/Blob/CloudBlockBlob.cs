@@ -2737,6 +2737,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
 
                 this.attributes.Properties.RehydrationStatus = null;
+                this.attributes.Properties.BlobTierInferred = false;
                 if (resp.StatusCode.Equals(HttpStatusCode.OK))
                 {
                     this.attributes.Properties.StandardBlobTier = standardBlobTier;
