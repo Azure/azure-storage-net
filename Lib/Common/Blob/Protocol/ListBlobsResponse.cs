@@ -234,6 +234,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                             blob.SnapshotTime = reader.ReadElementContentAsString().ToUTCTime();
                             break;
 
+                        case Constants.DeletedElement:
+                            blob.IsDeleted = BlobHttpResponseParsers.GetDeletionStatus(reader.ReadElementContentAsString());
+                            break;
+
                         case Constants.PropertiesElement:
                             this.reader.ReadStartElement();
                             while (this.reader.IsStartElement())
@@ -357,6 +361,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             rehydrationStatusString = reader.ReadElementContentAsString();
                                             break;
 
+
                                         case Constants.AccessTierInferred:
                                             blobTierInferred = reader.ReadElementContentAsBoolean();
                                             break;
@@ -364,6 +369,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                         case Constants.AccessTierChangeTimeElement:
                                             string t = reader.ReadElementContentAsString();
                                             blobTierLastModifiedTime = DateTimeOffset.Parse(t, CultureInfo.InvariantCulture);
+
+                                        case Constants.DeletedTimeElement:
+                                            blob.Properties.DeletedTime = reader.ReadElementContentAsString().ToUTCTime();
+                                            break;
+
+                                        case Constants.RemainingRetentionDaysElement:
+                                            blob.Properties.RemainingDaysBeforePermanentDelete = int.Parse(reader.ReadElementContentAsString());
                                             break;
 
                                         default:

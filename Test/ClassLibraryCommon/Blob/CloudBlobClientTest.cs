@@ -229,6 +229,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             string name = "bb" + GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
+            blobClient.SetServiceProperties(new ServiceProperties()
+            {
+                DeleteRetentionProperties = new DeleteRetentionPolicyProperties()
+                {
+                    Days = 10,
+                    Enabled = true,
+                    RetainedVersionsPerBlob = 3
+                }
+            });
             CloudBlobContainer rootContainer = blobClient.GetRootContainerReference();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 

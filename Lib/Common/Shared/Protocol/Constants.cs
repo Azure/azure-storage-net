@@ -87,6 +87,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int MinLargeBlockSize = (int)(4 * Constants.MB) + 1;
 
         /// <summary>
+        /// The maximum number of retained versions per blob.
+        /// </summary>
+        public const int MaxRetainedVersionsPerBlob = 10;
+
+        /// <summary>
         /// Constant for the max value of MaximumExecutionTime.
         /// </summary>
         public static readonly TimeSpan MaxMaximumExecutionTime = TimeSpan.FromDays(24.0);
@@ -391,6 +396,21 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for destination snapshot time.
         /// </summary>
         public const string CopyDestinationSnapshotElement = "CopyDestinationSnapshot";
+
+        /// <summary>
+        /// XML element for deleted flag indicating the retention policy on the blob.
+        /// </summary>
+        public const string DeletedElement = "Deleted";
+
+        /// <summary>
+        /// XML element for the time the retained blob was deleted.
+        /// </summary>
+        public const string DeletedTimeElement = "DeletedTime";
+
+        /// <summary>
+        /// XML element for the remaining days before the retained blob will be permenantly deleted.
+        /// </summary>
+        public const string RemainingRetentionDaysElement = "RemainingRetentionDays";
 
         /// <summary>
         /// Constant signaling a page blob.
@@ -1165,7 +1185,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2017-04-17";
+            public const string TargetStorageVersion = "2017-07-29";
 
             /// <summary>
             /// Specifies the file type.
@@ -1485,6 +1505,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Query component for the copy ID.
             /// </summary>
             public const string CopyId = "copyid";
+            
+            /// <summary>
+            /// Query component for the permanent delete type.
+            /// </summary>
+            public const string DeleteType = "deletetype";
+
         }
 
         /// <summary>
