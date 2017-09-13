@@ -211,7 +211,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             string copyDestinationSnapshotTime = null;
 
             string blobTierString = null;
+            bool? blobTierInferred = null;
             string rehydrationStatusString = null;
+            DateTimeOffset? blobTierLastModifiedTime = null;
 
             this.reader.ReadStartElement();
             while (this.reader.IsStartElement())
@@ -355,6 +357,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             rehydrationStatusString = reader.ReadElementContentAsString();
                                             break;
 
+                                        case Constants.AccessTierInferred:
+                                            blobTierInferred = reader.ReadElementContentAsBoolean();
+                                            break;
+
+                                        case Constants.AccessTierChangeTimeElement:
+                                            string t = reader.ReadElementContentAsString();
+                                            blobTierLastModifiedTime = DateTimeOffset.Parse(t, CultureInfo.InvariantCulture);
+                                            break;
+
                                         default:
                                             reader.Skip();
                                             break;
@@ -408,10 +419,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 BlobHttpResponseParsers.GetBlobTier(blob.Properties.BlobType, blobTierString, out standardBlobTier, out premiumPageBlobTier);
                 blob.Properties.StandardBlobTier = standardBlobTier;
                 blob.Properties.PremiumPageBlobTier = premiumPageBlobTier;
-                blob.Properties.BlobTierInferred = false;
             }
 
             blob.Properties.RehydrationStatus = BlobHttpResponseParsers.GetRehydrationStatus(rehydrationStatusString);
+            blob.Properties.BlobTierLastModifiedTime = blobTierLastModifiedTime;
+            blob.Properties.BlobTierInferred = blobTierInferred;
 
             return new ListBlobEntry(name, blob);
         }

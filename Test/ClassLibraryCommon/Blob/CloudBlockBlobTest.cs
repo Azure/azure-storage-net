@@ -3180,21 +3180,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                     CreateForTestTask(blob, 2, 1024);
+                    blob.FetchAttributes();
+                    Assert.IsTrue(blob.Properties.StandardBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
+                    Assert.IsTrue(blob.Properties.BlobTierInferred.Value);
+
+                    CloudBlockBlob listBlob = (CloudBlockBlob)container.ListBlobs().ToList().First();
+                    Assert.IsTrue(listBlob.Properties.StandardBlobTier.HasValue);
+                    Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
+                    Assert.IsTrue(listBlob.Properties.BlobTierInferred.Value);
+
                     blob.SetStandardBlobTier(blobTier);
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     blob2.FetchAttributes();
                     Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
 
                     CloudBlockBlob blob3 = (CloudBlockBlob)container.ListBlobs().ToList().First();
                     Assert.AreEqual(blobTier, blob3.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob3.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob3.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob3.Properties.BlobTierInferred.HasValue);
 
                     blob.Delete();
                 }
@@ -3220,38 +3236,55 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 CreateForTestTask(blob, 2, 1024);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.HasValue);
+                Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
+                blob.FetchAttributes();
+                Assert.IsTrue(blob.Properties.BlobTierInferred.HasValue);
+                Assert.IsTrue(blob.Properties.StandardBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+
                 blob.SetStandardBlobTier(StandardBlobTier.Archive);
                 Assert.IsNull(blob.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+
                 CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
                 CreateForTestTask(blob2, 2, 1024);
                 blob2.SetStandardBlobTier(StandardBlobTier.Archive);
                 Assert.IsNull(blob2.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
+                Assert.IsFalse(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                 blob.SetStandardBlobTier(StandardBlobTier.Cool);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
                 Assert.IsNull(blob2.Properties.RehydrationStatus);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
                 blob.FetchAttributes();
                 Assert.AreEqual(RehydrationStatus.PendingToCool, blob.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
+                Assert.IsTrue(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                 blob2.SetStandardBlobTier(StandardBlobTier.Hot);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
                 Assert.IsNull(blob2.Properties.RehydrationStatus);
+                Assert.IsFalse(blob2.Properties.BlobTierLastModifiedTime.HasValue);
                 blob2.FetchAttributes();
                 Assert.AreEqual(RehydrationStatus.PendingToHot, blob2.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
+                Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                 CloudBlockBlob listBlob = (CloudBlockBlob)container.ListBlobs().ToList().ElementAt(0);
                 Assert.AreEqual(StandardBlobTier.Archive, listBlob.Properties.StandardBlobTier.Value);
                 Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToCool, listBlob.Properties.RehydrationStatus.Value);
+                Assert.IsTrue(listBlob.Properties.BlobTierLastModifiedTime.HasValue);
+                Assert.AreEqual(listBlob.Properties.BlobTierLastModifiedTime.Value, blob.Properties.BlobTierLastModifiedTime.Value);
 
                 CloudBlockBlob listBlob2 = (CloudBlockBlob)container.ListBlobs().ToList().ElementAt(1);
                 Assert.AreEqual(StandardBlobTier.Archive, listBlob2.Properties.StandardBlobTier.Value);
                 Assert.IsFalse(listBlob2.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToHot, listBlob2.Properties.RehydrationStatus.Value);
+                Assert.AreEqual(listBlob2.Properties.BlobTierLastModifiedTime.Value, blob2.Properties.BlobTierLastModifiedTime.Value);
 
                 blob.Delete();
                 blob2.Delete();
@@ -3294,6 +3327,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                         Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                         Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+                        Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                         CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                         result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
@@ -3302,6 +3336,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                         Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                         Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                        Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                         blob.Delete();
                     }
@@ -3341,12 +3376,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     blob2.FetchAttributesAsync().Wait();
                     Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
                 }
             }
             finally
