@@ -8,6 +8,7 @@ Changes in 8.4.0 :
 Changes in 8.3.0 :
 - All(Netstandard): Updated the hashing algorithm to IncrementalHash instead of the original method which required buffering the data for MD5 calculations.
 - All: Fixed a race condition in the resume-download logic where a failure during downloads could lead to corrupted data.
+- Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
 
 Changes in 8.2.1 :
 - All: Fixed a bug where empty metadata headers would lead to an infinite loop when trying to list blobs on a container.

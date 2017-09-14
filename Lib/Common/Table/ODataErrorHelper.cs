@@ -21,19 +21,21 @@ namespace Microsoft.WindowsAzure.Storage
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Microsoft.WindowsAzure.Storage.Table.Protocol;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
 #if WINDOWS_RT   || NETCORE
     using System.Net.Http;
 #endif
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using System.Threading.Tasks;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
-    using System.Threading;
 #elif WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
@@ -66,8 +68,14 @@ namespace Microsoft.WindowsAzure.Storage
                 return null;
             }
 
+
+#if WINDOWS_RT || NETCORE
+            string actualContentType = response.Content.Headers.ContentType.ToString();
+#else
+            string actualContentType = response.ContentType;
+#endif
             // Some table operations respond with XML - request body too large, for example.
-            if (response.ContentType.Contains(@"xml"))
+            if (actualContentType.Contains(@"xml"))
             {
                 return StorageExtendedErrorInformation.ReadFromStream(inputStream);
             }

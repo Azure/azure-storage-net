@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
-    using Microsoft.Data.OData;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using System.Globalization;
@@ -32,6 +31,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Reflection;
+    using System.Threading;
+    using System.Text;
 
     internal static class TableOperationHttpResponseParsers
     {
@@ -90,9 +91,51 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return result;
         }
 
-        internal static Task<TableResult> TableOperationPostProcess(TableResult result, TableOperation operation, RESTCommand<TableResult> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, string accountName)
+        internal static async Task<TableResult> TableOperationPostProcess(TableResult result, TableOperation operation, RESTCommand<TableResult> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options)
         {
-            return Task.Run(() =>
+            if (operation.OperationType != TableOperationType.Retrieve && operation.OperationType != TableOperationType.Insert)
+            {
+                result.Etag = resp.Headers.ETag.ToString();
+                operation.Entity.ETag = result.Etag;
+            }
+            else if (operation.OperationType == TableOperationType.Insert && (!operation.EchoContent))
+            {
+                if (resp.Headers.ETag != null)
+                {
+                    result.Etag = resp.Headers.ETag.ToString();
+                    operation.Entity.ETag = result.Etag;
+                    operation.Entity.Timestamp = ParseETagForTimestamp(result.Etag);
+                }
+            }
+            else
+            {
+                // Parse entity
+                IEnumerable<string> contentType;
+                resp.Content.Headers.TryGetValues(Constants.HeaderConstants.PayloadContentTypeHeader, out contentType);
+
+                if (contentType != null && contentType.FirstOrDefault() != null && contentType.FirstOrDefault().Contains(Constants.JsonContentTypeHeaderValue) &&
+                        contentType.FirstOrDefault().Contains(Constants.NoMetadata))
+                {
+                    IEnumerable<string> etag;
+                    resp.Headers.TryGetValues(Constants.HeaderConstants.EtagHeader, out etag);
+                    if (etag != null)
+                    {
+                        result.Etag = etag.FirstOrDefault();
+                    }
+
+                    await ReadEntityUsingJsonParserAsync(result, operation, cmd.ResponseStream, ctx, options, CancellationToken.None).ConfigureAwait(false);
+                }
+                else
+                {
+                    await ReadOdataEntityAsync(result, operation, cmd.ResponseStream, ctx, options, CancellationToken.None).ConfigureAwait(false);
+                }
+            }
+
+            return result;
+
+
+
+            /*            return Task.Run(() =>
             {
                 if (operation.OperationType != TableOperationType.Retrieve && operation.OperationType != TableOperationType.Insert)
                 {
@@ -136,190 +179,251 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                 return result;
             });
+ * */
         }
 
-        internal static Task<IList<TableResult>> TableBatchOperationPostProcess(IList<TableResult> result, TableBatchOperation batch, RESTCommand<IList<TableResult>> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, string accountName)
+        internal static async Task<IList<TableResult>> TableBatchOperationPostProcess(IList<TableResult> result, TableBatchOperation batch, RESTCommand<IList<TableResult>> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, CancellationToken cancellationToken)
         {
-            return Task.Run(() =>
+            //            return Task.Run(() =>
+            //            {
+/*            ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
+            readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
+
+            //                using (ODataMessageReader responseReader = new ODataMessageReader(new HttpResponseAdapterMessage(resp, cmd.ResponseStream), readerSettings))
+            //              {
+            // create a reader
+            ODataBatchReader reader = responseReader.CreateODataBatchReader();
+
+            // Initial => changesetstart 
+            if (reader.State == ODataBatchReaderState.Initial)
             {
-                ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
-                readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
+                reader.Read();
+            }
 
-                using (ODataMessageReader responseReader = new ODataMessageReader(new HttpResponseAdapterMessage(resp, cmd.ResponseStream), readerSettings))
+            if (reader.State == ODataBatchReaderState.ChangesetStart)
+            {
+                // ChangeSetStart => Operation
+                reader.Read();
+            }*/
+
+            Stream responseStream = cmd.ResponseStream;
+            StreamReader streamReader = new StreamReader(responseStream);
+            string currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+            currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+
+            int index = 0;
+            bool failError = false;
+            bool failUnexpected = false;
+
+            while ((currentLine != null) && !(currentLine.StartsWith(@"--batchresponse")))
+                //while (reader.State == ODataBatchReaderState.Operation)
+            {
+                while (!(currentLine.StartsWith("HTTP")))
                 {
-                    // create a reader
-                    ODataBatchReader reader = responseReader.CreateODataBatchReader();
+                    currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                }
 
-                    // Initial => changesetstart 
-                    if (reader.State == ODataBatchReaderState.Initial)
+                // The first line of the response looks like this:
+                // HTTP/1.1 204 No Content
+                // The HTTP status code is chars 9 - 11.
+                int statusCode = Int32.Parse(currentLine.Substring(9, 3));
+
+                Dictionary<string, string> headers = new Dictionary<string, string>();
+                currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                while (!string.IsNullOrWhiteSpace(currentLine))
+                {
+                    // The headers all look like this:
+                    // Cache-Control: no-cache
+                    // This code below parses out the header names and values, by noting the location of the colon.
+                    int colonIndex = currentLine.IndexOf(':');
+                    headers[currentLine.Substring(0, colonIndex)] = currentLine.Substring(colonIndex + 2);
+                    currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                }
+
+                MemoryStream bodyStream = null;
+
+                currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                if (statusCode != 204)
+                {
+                    bodyStream = new MemoryStream(Encoding.UTF8.GetBytes(currentLine));
+                }
+
+                currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                
+                TableOperation currentOperation = batch[index];
+                TableResult currentResult = new TableResult() { Result = currentOperation.Entity };
+                result.Add(currentResult);
+
+/*                ODataBatchOperationResponseMessage mimePartResponseMessage = reader.CreateOperationResponseMessage();
+                string contentType = mimePartResponseMessage.GetHeader(Constants.ContentTypeElement);
+
+                currentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
+ * */
+                string contentType = null;
+
+                if (headers.ContainsKey(Constants.ContentTypeElement))
+                {
+                    contentType = headers[Constants.ContentTypeElement];
+                }
+
+                currentResult.HttpStatusCode = statusCode;
+
+                // Validate Status Code 
+                if (currentOperation.OperationType == TableOperationType.Insert)
+                {
+                    failError = statusCode == (int)HttpStatusCode.Conflict;
+                    if (currentOperation.EchoContent)
                     {
-                        reader.Read();
+                        failUnexpected = statusCode != (int)HttpStatusCode.Created;
                     }
-
-                    if (reader.State == ODataBatchReaderState.ChangesetStart)
+                    else
                     {
-                        // ChangeSetStart => Operation
-                        reader.Read();
+                        failUnexpected = statusCode != (int)HttpStatusCode.NoContent;
                     }
-
-                    int index = 0;
-                    bool failError = false;
-                    bool failUnexpected = false;
-
-                    while (reader.State == ODataBatchReaderState.Operation)
+                }
+                else if (currentOperation.OperationType == TableOperationType.Retrieve)
+                {
+                    if (statusCode == (int)HttpStatusCode.NotFound)
                     {
-                        TableOperation currentOperation = batch[index];
-                        TableResult currentResult = new TableResult() { Result = currentOperation.Entity };
-                        result.Add(currentResult);
-
-                        ODataBatchOperationResponseMessage mimePartResponseMessage = reader.CreateOperationResponseMessage();
-                        string contentType = mimePartResponseMessage.GetHeader(Constants.ContentTypeElement);
-
-                        currentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
-
-                        // Validate Status Code 
-                        if (currentOperation.OperationType == TableOperationType.Insert)
-                        {
-                            failError = mimePartResponseMessage.StatusCode == (int)HttpStatusCode.Conflict;
-                            if (currentOperation.EchoContent)
-                            {
-                                failUnexpected = mimePartResponseMessage.StatusCode != (int)HttpStatusCode.Created;
-                            }
-                            else
-                            {
-                                failUnexpected = mimePartResponseMessage.StatusCode != (int)HttpStatusCode.NoContent;
-                            }
-                        }
-                        else if (currentOperation.OperationType == TableOperationType.Retrieve)
-                        {
-                            if (mimePartResponseMessage.StatusCode == (int)HttpStatusCode.NotFound)
-                            {
-                                index++;
-
-                                // Operation => next
-                                reader.Read();
-                                continue;
-                            }
-
-                            failUnexpected = mimePartResponseMessage.StatusCode != (int)HttpStatusCode.OK;
-                        }
-                        else
-                        {
-                            failError = mimePartResponseMessage.StatusCode == (int)HttpStatusCode.NotFound;
-                            failUnexpected = mimePartResponseMessage.StatusCode != (int)HttpStatusCode.NoContent;
-                        }
-
-                        if (failError)
-                        {
-                            // If the parse error is null, then don't get the extended error information and the StorageException will contain SR.ExtendedErrorUnavailable message.
-                            if (cmd.ParseError != null)
-                            {
-                                cmd.CurrentResult.ExtendedErrorInformation = cmd.ParseError(mimePartResponseMessage.GetStream(), resp, contentType);
-                            }
-                            else
-                            {
-                                cmd.CurrentResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(mimePartResponseMessage.GetStream());
-                            }
-
-                            cmd.CurrentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
-                            if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
-                            {
-                                string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
-                                cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n"));
-                            }
-                            else
-                            {
-                                cmd.CurrentResult.HttpStatusMessage = mimePartResponseMessage.StatusCode.ToString();
-                            }
-                            
-                            throw new StorageException(
-                                   cmd.CurrentResult,
-                                   cmd.CurrentResult.ExtendedErrorInformation != null ? cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage : SR.ExtendedErrorUnavailable,
-                                   null)
-                            {
-                                IsRetryable = false
-                            };
-                        }
-
-                        if (failUnexpected)
-                        {
-                            // If the parse error is null, then don't get the extended error information and the StorageException will contain SR.ExtendedErrorUnavailable message.
-                            if (cmd.ParseError != null)
-                            {
-                                cmd.CurrentResult.ExtendedErrorInformation = cmd.ParseError(mimePartResponseMessage.GetStream(), resp, contentType);
-                            }
-
-                            cmd.CurrentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
-                            if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
-                            {
-                                string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
-                                cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n"));
-                            }
-                            else
-                            {
-                                cmd.CurrentResult.HttpStatusMessage = mimePartResponseMessage.StatusCode.ToString();
-                            }
-
-                            string indexString = Convert.ToString(index);
-
-                            // Attempt to extract index of failing entity from extended error info
-                            if (cmd.CurrentResult.ExtendedErrorInformation != null &&
-                                !string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
-                            {
-                                string tempIndex = TableRequest.ExtractEntityIndexFromExtendedErrorInformation(cmd.CurrentResult);
-                                if (!string.IsNullOrEmpty(tempIndex))
-                                {
-                                    indexString = tempIndex;
-                                }
-                            }
-
-                            throw new StorageException(cmd.CurrentResult, string.Format(SR.BatchErrorInOperation, indexString), null) { IsRetryable = true };
-                        }
-
-                        // Update etag
-                        if (!string.IsNullOrEmpty(mimePartResponseMessage.GetHeader("ETag")))
-                        {
-                            currentResult.Etag = mimePartResponseMessage.GetHeader("ETag");
-
-                            if (currentOperation.Entity != null)
-                            {
-                                currentOperation.Entity.ETag = currentResult.Etag;
-                            }
-                        }
-
-                        // Parse Entity if needed
-                        if (currentOperation.OperationType == TableOperationType.Retrieve || (currentOperation.OperationType == TableOperationType.Insert && currentOperation.EchoContent))
-                        {
-                            if (mimePartResponseMessage.GetHeader(Constants.ContentTypeElement).Contains(Constants.JsonContentTypeHeaderValue) &&
-                                mimePartResponseMessage.GetHeader(Constants.ContentTypeElement).Contains(Constants.NoMetadata))
-                            {
-                                ReadEntityUsingJsonParser(currentResult, currentOperation, mimePartResponseMessage.GetStream(), ctx, options);
-                            }
-                            else
-                            {
-                                ReadOdataEntity(currentResult, currentOperation, mimePartResponseMessage, ctx, readerSettings, accountName);
-                            }
-                        }
-                        else if (currentOperation.OperationType == TableOperationType.Insert)
-                        {
-                            currentOperation.Entity.Timestamp = ParseETagForTimestamp(currentResult.Etag);
-                        }
-
                         index++;
 
-                        // Operation =>
-                        reader.Read();
+                        // Operation => next
+//                        reader.Read();
+                        continue;
+                    }
+
+                    failUnexpected = statusCode != (int)HttpStatusCode.OK;
+                }
+                else
+                {
+                    failError = statusCode == (int)HttpStatusCode.NotFound;
+                    failUnexpected = statusCode != (int)HttpStatusCode.NoContent;
+                }
+
+                if (failError)
+                {
+                    // If the parse error is null, then don't get the extended error information and the StorageException will contain SR.ExtendedErrorUnavailable message.
+                    if (cmd.ParseError != null)
+                    {
+                        cmd.CurrentResult.ExtendedErrorInformation = cmd.ParseError(bodyStream, resp, contentType);
+                    }
+                    else
+                    {
+                        cmd.CurrentResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(bodyStream);
+                    }
+
+                    cmd.CurrentResult.HttpStatusCode = statusCode;
+                    if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
+                    {
+                        string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
+                        cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n"));
+                    }
+                    else
+                    {
+                        cmd.CurrentResult.HttpStatusMessage = statusCode.ToString();
+                    }
+
+                    throw new StorageException(
+                           cmd.CurrentResult,
+                           cmd.CurrentResult.ExtendedErrorInformation != null ? cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage : SR.ExtendedErrorUnavailable,
+                           null)
+                    {
+                        IsRetryable = false
+                    };
+                }
+
+                if (failUnexpected)
+                {
+                    // If the parse error is null, then don't get the extended error information and the StorageException will contain SR.ExtendedErrorUnavailable message.
+                    if (cmd.ParseError != null)
+                    {
+                        cmd.CurrentResult.ExtendedErrorInformation = cmd.ParseError(bodyStream, resp, contentType);
+                    }
+
+                    cmd.CurrentResult.HttpStatusCode = statusCode;
+                    if (!string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
+                    {
+                        string msg = cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage;
+                        cmd.CurrentResult.HttpStatusMessage = msg.Substring(0, msg.IndexOf("\n"));
+                    }
+                    else
+                    {
+                        cmd.CurrentResult.HttpStatusMessage = statusCode.ToString(CultureInfo.InvariantCulture);
+                    }
+
+                    string indexString = Convert.ToString(index);
+
+                    // Attempt to extract index of failing entity from extended error info
+                    if (cmd.CurrentResult.ExtendedErrorInformation != null &&
+                        !string.IsNullOrEmpty(cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage))
+                    {
+                        string tempIndex = TableRequest.ExtractEntityIndexFromExtendedErrorInformation(cmd.CurrentResult);
+                        if (!string.IsNullOrEmpty(tempIndex))
+                        {
+                            indexString = tempIndex;
+                        }
+                    }
+
+                    throw new StorageException(cmd.CurrentResult, string.Format(SR.BatchErrorInOperation, indexString), null) { IsRetryable = true };
+                }
+
+                // Update etag
+                //if (!string.IsNullOrEmpty(mimePartResponseMessage.GetHeader("ETag")))
+                if ((headers.ContainsKey(Constants.HeaderConstants.EtagHeader)) && (!string.IsNullOrEmpty(headers[Constants.HeaderConstants.EtagHeader])))
+                {
+//                    currentResult.Etag = mimePartResponseMessage.GetHeader("ETag");
+                    currentResult.Etag = headers[Constants.HeaderConstants.EtagHeader];
+
+                    if (currentOperation.Entity != null)
+                    {
+                        currentOperation.Entity.ETag = currentResult.Etag;
                     }
                 }
 
-                return result;
-            });
+                // Parse Entity if needed
+                if (currentOperation.OperationType == TableOperationType.Retrieve || (currentOperation.OperationType == TableOperationType.Insert && currentOperation.EchoContent))
+                {
+                    /*
+                    if (mimePartResponseMessage.GetHeader(Constants.ContentTypeElement).Contains(Constants.JsonContentTypeHeaderValue) &&
+                        mimePartResponseMessage.GetHeader(Constants.ContentTypeElement).Contains(Constants.NoMetadata))
+                    {
+                        ReadEntityUsingJsonParser(currentResult, currentOperation, mimePartResponseMessage.GetStream(), ctx, options);
+                    }
+                    else
+                    {
+                        ReadOdataEntity(currentResult, currentOperation, mimePartResponseMessage, ctx, readerSettings, accountName);
+                    }
+                     * */
+                    if (headers[Constants.ContentTypeElement].Contains(Constants.JsonNoMetadataAcceptHeaderValue))
+                    {
+                        await ReadEntityUsingJsonParserAsync(currentResult, currentOperation, bodyStream, ctx, options, cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await ReadOdataEntityAsync(currentResult, currentOperation, bodyStream, ctx, options, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                else if (currentOperation.OperationType == TableOperationType.Insert)
+                {
+                    currentOperation.Entity.Timestamp = ParseETagForTimestamp(currentResult.Etag);
+                }
+
+                index++;
+
+                // Operation =>
+//                reader.Read();
+            }
+            //                }
+
+            return result;
+            //            });
         }
 
-        internal static Task<ResultSegment<TElement>> TableQueryPostProcessGeneric<TElement>(Stream responseStream, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, HttpResponseMessage resp, TableRequestOptions options, OperationContext ctx, string accountName)
+        internal static async Task<ResultSegment<TElement>> TableQueryPostProcessGeneric<TElement>(Stream responseStream, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, HttpResponseMessage resp, TableRequestOptions options, OperationContext ctx, string accountName)
         {
-            return Task.Run(() =>
-            {
+//            return Task.Run(() =>
+  //          {
                 ResultSegment<TElement> retSeg = new ResultSegment<TElement>(new List<TElement>());
                 retSeg.ContinuationToken = ContinuationFromResponse(resp);
                 IEnumerable<string> contentType;
@@ -332,10 +436,20 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 string ETag = eTag != null ? eTag.FirstOrDefault() : null;
                 if (ContentType.Contains(Constants.JsonContentTypeHeaderValue) && ContentType.Contains(Constants.NoMetadata))
                 {
-                    ReadQueryResponseUsingJsonParser(retSeg, responseStream, ETag, resolver, options.PropertyResolver, typeof(TElement), null);
+                    await ReadQueryResponseUsingJsonParserAsync(retSeg, responseStream, ETag, resolver, options.PropertyResolver, typeof(TElement), null, options, System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+//                    ReadQueryResponseUsingJsonParser(retSeg, responseStream, ETag, resolver, options.PropertyResolver, typeof(TElement), null);
                 }
                 else
                 {
+                    List<KeyValuePair<string, Dictionary<string, object>>> results = await ReadQueryResponseUsingJsonParserMetadataAsync(responseStream, System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+                    foreach (KeyValuePair<string, Dictionary<string, object>> kvp in results)
+                    {
+                        retSeg.Results.Add(ReadAndResolve(kvp.Key, kvp.Value, resolver, options));
+                    }
+                    Logger.LogInformational(ctx, SR.RetrieveWithContinuationToken, retSeg.Results.Count, retSeg.ContinuationToken);
+                    /*
                     ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
                     readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
 
@@ -371,13 +485,187 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                         DrainODataReader(reader);
                     }
+                     * */
                 }
 
                 return retSeg;
-            });
+//            });
         }
 
-        private static void DrainODataReader(ODataReader reader)
+        public static async Task ReadQueryResponseUsingJsonParserAsync<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx, TableRequestOptions options, System.Threading.CancellationToken cancellationToken)
+        {
+            StreamReader streamReader = new StreamReader(responseStream);
+
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
+            if (TableEntity.DisablePropertyResolverCache)
+            {
+                disablePropertyResolverCache = TableEntity.DisablePropertyResolverCache;
+                Logger.LogVerbose(ctx, SR.PropertyResolverCacheDisabled);
+            }
+#endif
+            using (JsonReader reader = new JsonTextReader(streamReader))
+            {
+                reader.DateParseHandling = DateParseHandling.None;
+                JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
+                JToken dataTable = dataSet["value"];
+
+                foreach (JToken token in dataTable)
+                {
+                    string unused;
+                    Dictionary<string, object> results = ReadSingleItem(token, out unused);
+
+                    Dictionary<string, string> properties = new Dictionary<string, string>();
+
+                    foreach (string key in results.Keys)
+                    {
+                        if (results[key] == null)
+                        {
+                            properties.Add(key, null);
+                            continue;
+                        }
+
+                        if (results[key] is string)
+                        {
+                            properties.Add(key, (string)results[key]);
+                        }
+                        else if (results[key] is DateTime)
+                        {
+                            properties.Add(key, ((DateTime)results[key]).ToUniversalTime().ToString("o"));
+                        }
+                        // This should never be a long; if requires a 64-bit number the service will send it as a string instead.
+                        else if (results[key] is bool || results[key] is double || results[key] is int)
+                        {
+                            properties.Add(key, (results[key]).ToString());
+                        }
+                        else
+                        {
+                            throw new StorageException(string.Format(CultureInfo.InvariantCulture, SR.InvalidTypeInJsonDictionary, results[key].GetType().ToString()));
+                        }
+                    }
+
+                    retSeg.Results.Add(ReadAndResolveWithEdmTypeResolver(properties, resolver, propertyResolver, etag, type, ctx));
+                }
+
+                if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.JsonReaderNotInCompletedState));
+                }
+            }
+        }
+
+        public static async Task<List<KeyValuePair<string, Dictionary<string, object>>>> ReadQueryResponseUsingJsonParserMetadataAsync(Stream responseStream, System.Threading.CancellationToken cancellationToken)
+        {
+            List<KeyValuePair<string, Dictionary<string, object>>> results = new List<KeyValuePair<string, Dictionary<string, object>>>();
+            StreamReader streamReader = new StreamReader(responseStream);
+            using (JsonReader reader = new JsonTextReader(streamReader))
+            {
+                reader.DateParseHandling = DateParseHandling.None;
+                JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
+                JToken dataTable = dataSet["value"];
+
+                foreach (JToken token in dataTable)
+                {
+                    string etag;
+                    Dictionary<string, object> properties = ReadSingleItem(token, out etag);
+
+                    results.Add(new KeyValuePair<string, Dictionary<string, object>>(etag, properties));
+                }
+
+                if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.JsonReaderNotInCompletedState));
+                }
+            }
+
+            return results;
+        }
+
+        public static async Task<KeyValuePair<string, Dictionary<string, object>>> ReadSingleItemResponseUsingJsonParserMetadataAsync(Stream responseStream, System.Threading.CancellationToken cancellationToken)
+        {
+            StreamReader streamReader = new StreamReader(responseStream);
+            using (JsonReader reader = new JsonTextReader(streamReader))
+            {
+                reader.DateParseHandling = DateParseHandling.None;
+                JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
+
+                string etag;
+                Dictionary<string, object> properties = ReadSingleItem(dataSet, out etag);
+
+                if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.JsonReaderNotInCompletedState));
+                }
+                return new KeyValuePair<string, Dictionary<string, object>>(etag, properties);
+            }
+        }
+
+        private static Dictionary<string, object> ReadSingleItem(JToken token, out string etag)
+        {
+            Dictionary<string, object> properties = token.ToObject<Dictionary<string, object>>();
+
+            // Parse the etag, and remove all the "odata.*" properties we don't use.
+            if (properties.ContainsKey(@"odata.etag"))
+            {
+                etag = (string)properties[@"odata.etag"];
+            }
+            else
+            {
+                etag = null;
+            }
+
+            foreach (string odataPropName in properties.Keys.Where(key => key.StartsWith(@"odata.", StringComparison.Ordinal)).ToArray())
+            {
+                properties.Remove(odataPropName);
+            }
+
+            // We have to special-case timestamp here, because in the 'minimalmetadata' case, 
+            // Timestamp doesn't have an "@odata.type" property - the assumption is that you know
+            // the type.
+            if (properties.ContainsKey(@"Timestamp") && properties[@"Timestamp"].GetType() == typeof(string))
+            {
+                properties[@"Timestamp"] = DateTime.Parse((string)properties[@"Timestamp"], CultureInfo.InvariantCulture);
+            }
+
+            // In the full metadata case, this property will exist, and we need to remove it.
+            if (properties.ContainsKey(@"Timestamp@odata.type"))
+            {
+                properties.Remove(@"Timestamp@odata.type");
+            }
+
+            // Replace all the 'long's with 'int's (the JSON parser parses all integer types into longs, but the odata spec specifies that they're int's.
+            foreach (KeyValuePair<string, object> odataProp in properties.Where(kvp => (kvp.Value != null) && (kvp.Value.GetType() == typeof(long))).ToArray())
+            {
+                // We first have to unbox the value into a "long", then downcast into an "int".  C# will not combine the operations.
+                properties[odataProp.Key] = (int)(long)odataProp.Value;
+            }
+
+            foreach (KeyValuePair<string, object> typeAnnotation in properties.Where(kvp => kvp.Key.EndsWith(@"@odata.type", StringComparison.Ordinal)).ToArray())
+            {
+                properties.Remove(typeAnnotation.Key);
+                string propName = typeAnnotation.Key.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries)[0];
+                switch ((string)typeAnnotation.Value)
+                {
+                    case @"Edm.DateTime":
+                        properties[propName] = DateTime.Parse((string)properties[propName], null, DateTimeStyles.AdjustToUniversal);
+                        break;
+                    case @"Edm.Binary":
+                        properties[propName] = Convert.FromBase64String((string)properties[propName]);
+                        break;
+                    case @"Edm.Guid":
+                        properties[propName] = Guid.Parse((string)properties[propName]);
+                        break;
+                    case @"Edm.Int64":
+                        properties[propName] = Int64.Parse((string)properties[propName], CultureInfo.InvariantCulture);
+                        break;
+                    default:
+                        throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.UnexpectedEDMType, typeAnnotation.Value));
+                }
+            }
+
+            return properties;
+        }
+        
+        /*private static void DrainODataReader(ODataReader reader)
         {
             if (reader.State == ODataReaderState.FeedEnd)
             {
@@ -388,7 +676,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             {
                 throw new InvalidOperationException(string.Format(SR.ODataReaderNotInCompletedState, reader.State));
             }
-        }
+        }*/
 
         /// <summary>
         /// Gets the table continuation from response.
@@ -426,6 +714,28 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return newContinuationToken;
         }
 
+        private static async Task ReadOdataEntityAsync(TableResult result, TableOperation operation, Stream responseStream, OperationContext ctx, TableRequestOptions options, System.Threading.CancellationToken cancellationToken)
+        {
+            KeyValuePair<string, Dictionary<string, object>> rawEntity = await ReadSingleItemResponseUsingJsonParserMetadataAsync(responseStream, cancellationToken).ConfigureAwait(false);
+
+
+            if (operation.OperationType == TableOperationType.Retrieve)
+            {
+                result.Result = ReadAndResolve(rawEntity.Key, rawEntity.Value, operation.RetrieveResolver, options);
+                result.Etag = rawEntity.Key;
+            }
+            else
+            {
+                result.Etag = ReadAndUpdateTableEntity(
+                                                        operation.Entity,
+                                                        rawEntity.Key,
+                                                        rawEntity.Value,
+                                                        EntityReadFlags.Timestamp | EntityReadFlags.Etag,
+                                                        ctx);
+            }
+        }
+        
+        /*
         private static void ReadOdataEntity(TableResult result, TableOperation operation, IODataResponseMessage respMsg, OperationContext ctx, ODataMessageReaderSettings readerSettings, string accountName)
         {
             using (ODataMessageReader messageReader = new ODataMessageReader(respMsg, readerSettings, new TableStorageModel(accountName)))
@@ -454,8 +764,77 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 DrainODataReader(reader);
             }
         }
+        */
+        private static async Task ReadEntityUsingJsonParserAsync(TableResult result, TableOperation operation, Stream stream, OperationContext ctx, TableRequestOptions options, System.Threading.CancellationToken cancellationToken)
+        {
+            StreamReader streamReader = new StreamReader(stream);
+            using (JsonReader reader = new JsonTextReader(streamReader))
+            {
+                JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
 
-        private static void ReadQueryResponseUsingJsonParser<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx)
+                // We can't use dataSet.ToObject<Dictionary<string, string>>() here, as it doesn't handle
+                // DateTime objects properly.
+
+                string temp;
+                Dictionary<string, object> results = ReadSingleItem(dataSet, out temp);
+
+                Dictionary<string, string> properties = new Dictionary<string, string>();
+
+                foreach (string key in results.Keys)
+                {
+                    if (results[key] == null)
+                    {
+                        properties.Add(key, null);
+                        continue;
+                    }
+                    Type type = results[key].GetType();
+                    if (type == typeof(string))
+                    {
+                        properties.Add(key, (string)results[key]);
+                    }
+                    else if (type == typeof(DateTime))
+                    {
+                        properties.Add(key, ((DateTime)results[key]).ToUniversalTime().ToString("o"));
+                    }
+                    else if (type == typeof(bool))
+                    {
+                        properties.Add(key, ((bool)results[key]).ToString());
+                    }
+                    else if (type == typeof(double))
+                    {
+                        properties.Add(key, ((double)results[key]).ToString());
+                    }
+                    else if (type == typeof(int))
+                    {
+                        properties.Add(key, ((int)results[key]).ToString());
+                    }
+                    else
+                    {
+                        throw new StorageException();
+                    }
+                }
+
+                if (operation.OperationType == TableOperationType.Retrieve)
+                {
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
+                    result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx, TableEntity.DisablePropertyResolverCache, options);
+#else
+                    // doesn't matter what is passed for disablePropertyResolverCache for windows phone because it is not read.
+                    result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx);
+#endif
+                }
+                else
+                {
+                    ReadAndUpdateTableEntityWithEdmTypeResolver(operation.Entity, properties, EntityReadFlags.Timestamp | EntityReadFlags.Etag, options.PropertyResolver, ctx);
+                }
+
+                if (reader.Read())
+                {
+                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.JsonReaderNotInCompletedState));
+                }
+            }
+        }
+        /*private static void ReadQueryResponseUsingJsonParser<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx)
         {
             StreamReader streamReader = new StreamReader(responseStream);
             using (JsonReader reader = new JsonTextReader(streamReader))
@@ -476,6 +855,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
             }
         }
+         
 
         private static void ReadEntityUsingJsonParser(TableResult result, TableOperation operation, Stream stream, OperationContext ctx, TableRequestOptions options)
         {
@@ -499,6 +879,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
             }
         }
+         * */
 
         internal static void ReadAndUpdateTableEntityWithEdmTypeResolver(ITableEntity entity, Dictionary<string, string> entityAttributes, EntityReadFlags flags, Func<string, string, string, string, EdmType> propertyResolver, OperationContext ctx)
         {
@@ -585,34 +966,36 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
         }
 
-        private static T ReadAndResolve<T>(ODataEntry entry, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver)
+//        private static T ReadAndResolve<T>(ODataEntry entry, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver)
+        private static T ReadAndResolve<T>(string etag, Dictionary<string, object> props, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, TableRequestOptions options)
         {
             string pk = null;
             string rk = null;
             DateTimeOffset ts = new DateTimeOffset();
             Dictionary<string, EntityProperty> properties = new Dictionary<string, EntityProperty>();
 
-            foreach (ODataProperty prop in entry.Properties)
+            foreach (KeyValuePair<string, object> prop in props)
+                //foreach (ODataProperty prop in entry.Properties)
             {
-                if (prop.Name == TableConstants.PartitionKey)
+                if (prop.Key == TableConstants.PartitionKey)
                 {
                     pk = (string)prop.Value;
                 }
-                else if (prop.Name == TableConstants.RowKey)
+                else if (prop.Key == TableConstants.RowKey)
                 {
                     rk = (string)prop.Value;
                 }
-                else if (prop.Name == TableConstants.Timestamp)
+                else if (prop.Key == TableConstants.Timestamp)
                 {
                     ts = new DateTimeOffset((DateTime)prop.Value);
                 }
                 else
                 {
-                    properties.Add(prop.Name, EntityProperty.CreateEntityPropertyFromObject(prop.Value));
+                    properties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value));
                 }
             }
 
-            return resolver(pk, rk, ts, properties, entry.ETag);
+            return resolver(pk, rk, ts, properties, etag);
         }
 
         private static T ReadAndResolveWithEdmTypeResolver<T>(Dictionary<string, string> entityAttributes, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, Func<string, string, string, string, EdmType> propertyResolver, string etag, Type type, OperationContext ctx)
@@ -696,20 +1079,21 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         }
 
         // returns etag
-        internal static string ReadAndUpdateTableEntity(ITableEntity entity, ODataEntry entry, EntityReadFlags flags, OperationContext ctx)
+        internal static string ReadAndUpdateTableEntity(ITableEntity entity, string etag, Dictionary<string, object> props, EntityReadFlags flags, OperationContext ctx)
         {
             if ((flags & EntityReadFlags.Etag) > 0)
             {
-                entity.ETag = entry.ETag;
+                entity.ETag = etag;
             }
 
             Dictionary<string, EntityProperty> entityProperties = (flags & EntityReadFlags.Properties) > 0 ? new Dictionary<string, EntityProperty>() : null;
 
             if (flags > 0)
             {
-                foreach (ODataProperty prop in entry.Properties)
+                foreach (KeyValuePair<string, object> prop in props)
+                    //foreach (ODataProperty prop in entry.Properties)
                 {
-                    if (prop.Name == TableConstants.PartitionKey)
+                    if (prop.Key == TableConstants.PartitionKey)
                     {
                         if ((flags & EntityReadFlags.PartitionKey) == 0)
                         {
@@ -718,7 +1102,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                         entity.PartitionKey = (string)prop.Value;
                     }
-                    else if (prop.Name == TableConstants.RowKey)
+                    else if (prop.Key == TableConstants.RowKey)
                     {
                         if ((flags & EntityReadFlags.RowKey) == 0)
                         {
@@ -727,7 +1111,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                         entity.RowKey = (string)prop.Value;
                     }
-                    else if (prop.Name == TableConstants.Timestamp)
+                    else if (prop.Key == TableConstants.Timestamp)
                     {
                         if ((flags & EntityReadFlags.Timestamp) == 0)
                         {
@@ -738,7 +1122,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     }
                     else if ((flags & EntityReadFlags.Properties) > 0)
                     {
-                        entityProperties.Add(prop.Name, EntityProperty.CreateEntityPropertyFromObject(prop.Value));
+                        entityProperties.Add(prop.Key, EntityProperty.CreateEntityPropertyFromObject(prop.Value));
                     }
                 }
 
@@ -748,7 +1132,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 }
             }
 
-            return entry.ETag;
+            return etag;
         }
 
         private static DateTimeOffset ParseETagForTimestamp(string etag)

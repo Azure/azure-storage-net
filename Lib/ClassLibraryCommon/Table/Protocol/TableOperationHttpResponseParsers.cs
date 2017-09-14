@@ -364,7 +364,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
                 foreach (JToken token in dataTable)
                 {
-                    Dictionary<string, object> results = ReadSingleItem(token, out _);
+                    string unused;
+                    Dictionary<string, object> results = ReadSingleItem(token, out unused);
 
                     Dictionary<string, string> properties = new Dictionary<string, string>();
 

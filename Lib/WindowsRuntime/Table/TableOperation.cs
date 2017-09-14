@@ -113,7 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             insertCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
 
-            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
+            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions);
 
             return insertCmd;
         }
@@ -184,7 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                             return result;
                         }
 
-                        result = await TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
+                        result = await TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions);
                         return result;
                     });
             return retrieveCmd;

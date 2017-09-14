@@ -2124,47 +2124,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric)]
         public async Task CloudBlobContainerListManyBlobs()
         {
-            for (int i = 0; i < 20; i++)
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
             {
-                CloudBlobContainer container = GetRandomContainerReference();
-                try
-                {
-                    container.Create();
-                    List<string> pageBlobNames = await CreateBlobs(container, 2000, BlobType.PageBlob);
-                    List<string> blockBlobNames = await CreateBlobs(container, 2000, BlobType.BlockBlob);
-                    List<string> appendBlobNames = await CreateBlobs(container, 2000, BlobType.AppendBlob);
+                container.Create();
+                List<string> pageBlobNames = await CreateBlobs(container, 2000, BlobType.PageBlob);
+                List<string> blockBlobNames = await CreateBlobs(container, 2000, BlobType.BlockBlob);
+                List<string> appendBlobNames = await CreateBlobs(container, 2000, BlobType.AppendBlob);
 
-                    int count = 0;
-                    IEnumerable<IListBlobItem> results = container.ListBlobs();
-                    foreach (IListBlobItem blobItem in results)
+                int count = 0;
+                IEnumerable<IListBlobItem> results = container.ListBlobs();
+                foreach (IListBlobItem blobItem in results)
+                {
+                    count++;
+                    Assert.IsInstanceOfType(blobItem, typeof(CloudBlob));
+                    CloudBlob blob = (CloudBlob)blobItem;
+                    if (pageBlobNames.Remove(blob.Name))
                     {
-                        count++;
-                        Assert.IsInstanceOfType(blobItem, typeof(CloudBlob));
-                        CloudBlob blob = (CloudBlob)blobItem;
-                        if (pageBlobNames.Remove(blob.Name))
-                        {
-                            Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
-                        }
-                        else if (blockBlobNames.Remove(blob.Name))
-                        {
-                            Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
-                        }
-                        else if (appendBlobNames.Remove(blob.Name))
-                        {
-                            Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
-                        }
-                        else
-                        {
-                            Assert.Fail("Unexpected blob: " + blob.Uri.AbsoluteUri);
-                        }
+                        Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
                     }
+                    else if (blockBlobNames.Remove(blob.Name))
+                    {
+                        Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
+                    }
+                    else if (appendBlobNames.Remove(blob.Name))
+                    {
+                        Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                    }
+                    else
+                    {
+                        Assert.Fail("Unexpected blob: " + blob.Uri.AbsoluteUri);
+                    }
+                }
 
-                    Assert.AreEqual(6000, count);
-                }
-                finally
-                {
-                    container.DeleteIfExists();
-                }
+                Assert.AreEqual(6000, count);
+            }
+            finally
+            {
+                container.DeleteIfExists();
             }
         }
 
