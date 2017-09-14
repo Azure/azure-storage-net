@@ -1,4 +1,3 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
 using System;
 namespace Microsoft.WindowsAzure.Storage.File
 {
@@ -17,14 +16,7 @@ public sealed class FileShareProperties
 
     public int? Quota
     {
-        get
-        {
-            throw new System.NotImplementedException();
-        }
-        set
-        {
-            throw new System.NotImplementedException();
-        }
+        get; set;
     }
 }
 

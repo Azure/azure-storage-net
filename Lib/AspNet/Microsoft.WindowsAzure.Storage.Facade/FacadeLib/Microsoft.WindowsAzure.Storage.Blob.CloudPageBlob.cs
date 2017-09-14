@@ -102,12 +102,18 @@ public class CloudPageBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task UploadFromStreamAsync(Stream source, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task UploadFromStreamAsync(Stream source, long length, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count)
     {
         throw new System.NotImplementedException();
@@ -122,7 +128,10 @@ public class CloudPageBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task CreateAsync(long size)
     {
         throw new System.NotImplementedException();
@@ -137,7 +146,10 @@ public class CloudPageBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
+    public virtual Task CreateAsync(long size, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task ResizeAsync(long size)
     {
         throw new System.NotImplementedException();
@@ -256,11 +268,27 @@ public class CloudPageBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
+    public virtual Task<string> StartCopyAsync(CloudPageBlob source, PremiumPageBlobTier? premiumBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob sourceSnapshot, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }
-    private RESTCommand<NullType> CreateImpl(long sizeInBytes, AccessCondition accessCondition, BlobRequestOptions options)
+    public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumBlobTier)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumBlobTier, BlobRequestOptions options, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task SetPremiumBlobTierAsync(PremiumPageBlobTier premiumBlobTier, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> CreateImpl(long sizeInBytes, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
     {
         throw new System.NotImplementedException();
     }
@@ -285,6 +313,10 @@ public class CloudPageBlob : CloudBlob, ICloudBlob, IListBlobItem
         throw new System.NotImplementedException();
     }
     private RESTCommand<NullType> ClearPageImpl(long startOffset, long length, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> SetBlobTierImpl(PremiumPageBlobTier premiumBlobTier, BlobRequestOptions options)
     {
         throw new System.NotImplementedException();
     }

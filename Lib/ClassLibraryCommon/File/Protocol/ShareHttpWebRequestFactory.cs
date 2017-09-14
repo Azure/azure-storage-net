@@ -23,6 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Net;
     using System.Text;
 
@@ -77,7 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static HttpWebRequest Delete(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
-            return ShareHttpWebRequestFactory.Delete(uri, timeout, null /* snapshot */, accessCondition, useVersionHeader, operationContext);
+            return ShareHttpWebRequestFactory.Delete(uri, timeout, null /* snapshot */, DeleteShareSnapshotsOption.None, accessCondition, useVersionHeader, operationContext);
         }
 
         /// <summary>
@@ -86,16 +87,34 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="uri">The absolute URI to the share.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteShareSnapshotsOption"/> object indicating whether to only delete the share or delete the share and all snapshots.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        internal static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
-            UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            ShareHttpWebRequestFactory.AddSnapshot(shareBuilder, snapshot);
+            if ((snapshot != null) && (deleteSnapshotsOption != DeleteShareSnapshotsOption.None))
+            {
+                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.DeleteSnapshotsNotValidError, "deleteSnapshotsOption", "snapshot"));
+            }
 
+            UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
+            ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
             HttpWebRequest request = HttpWebRequestFactory.Delete(uri, shareBuilder, timeout, useVersionHeader, operationContext);
+
+            switch (deleteSnapshotsOption)
+            {
+                case DeleteShareSnapshotsOption.None:
+                    break; // nop
+
+                case DeleteShareSnapshotsOption.IncludeSnapshots:
+                    request.Headers.Add(
+                        Constants.HeaderConstants.DeleteSnapshotHeader,
+                        Constants.HeaderConstants.IncludeSnapshotsValue);
+                    break;
+            }
+
             request.ApplyAccessCondition(accessCondition);
             return request;
         }
@@ -127,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            ShareHttpWebRequestFactory.AddSnapshot(shareBuilder, snapshot);
+            ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetMetadata(uri, timeout, shareBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -161,7 +180,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         internal static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
-            ShareHttpWebRequestFactory.AddSnapshot(shareBuilder, snapshot);
+            ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
 
             HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, shareBuilder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
@@ -324,6 +343,21 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                     sb.Append("metadata");
                 }
 
+                //TODO: Enable with ShareSnapshot
+                //if ((detailsIncluded & ShareListingDetails.Snapshots) == ShareListingDetails.Snapshots)
+                //{
+                //    if (!started)
+                //    {
+                //        started = true;
+                //    }
+                //    else
+                //    {
+                //        sb.Append(",");
+                //    }
+
+                //    sb.Append("snapshots");
+                //}
+
                 builder.Add("include", sb.ToString());
             }
 
@@ -366,15 +400,15 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         }
 
         /// <summary>
-        /// Adds the snapshot.
+        /// Adds the share snapshot.
         /// </summary>
         /// <param name="builder">An object of type <see cref="UriQueryBuilder"/> that contains additional parameters to add to the URI query string.</param>
         /// <param name="snapshot">The snapshot version, if the share is a snapshot.</param>
-        private static void AddSnapshot(UriQueryBuilder builder, DateTimeOffset? snapshot)
+        private static void AddShareSnapshot(UriQueryBuilder builder, DateTimeOffset? snapshot)
         {
             if (snapshot.HasValue)
             {
-                builder.Add(Constants.QueryConstants.Snapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
+                builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
             }
         }
 

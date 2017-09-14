@@ -172,6 +172,42 @@ namespace Microsoft.WindowsAzure.Storage
         }
 
         /// <summary>
+        /// Determines whether the access condition is IfNotExists.
+        /// </summary>
+        /// <value><c>true</c> if the access condition is a IfNotExists; otherwise, <c>false</c>.</value>
+        internal bool IsIfNotExists
+        {
+            get
+            {
+                return string.Equals("*", this.IfNoneMatchETag, StringComparison.Ordinal);
+
+            }
+        }
+
+        /// <summary>
+        /// Remove the IfNotExists condition.
+        /// </summary>
+        /// <value>The reference to the <see cref="AccessCondition"/> is returned, to allow chained usage</value>
+        internal AccessCondition RemoveIsIfNotExistsCondition()
+        {
+            if (this.IsIfNotExists)
+            {
+                this.IfNoneMatchETag = null;
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Provide a shallow copy of the current access condition
+        /// </summary>
+        /// <returns>A shallow copy of the <see cref="AccessCondition"/> object</returns>
+        public AccessCondition Clone()
+        {
+            return (AccessCondition)this.MemberwiseClone();
+        }
+
+        /// <summary>
         /// Constructs an empty access condition.
         /// </summary>
         /// <returns>An empty <see cref="AccessCondition"/> object.</returns>

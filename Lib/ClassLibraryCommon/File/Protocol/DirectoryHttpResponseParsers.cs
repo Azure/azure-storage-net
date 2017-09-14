@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using System;
     using System.Collections.Generic;
     using System.Net;
 
@@ -48,6 +49,8 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 
             FileDirectoryProperties directoryProperties = new FileDirectoryProperties();
             directoryProperties.ETag = HttpResponseParsers.GetETag(response);
+            string directoryEncryption = response.Headers[Constants.HeaderConstants.ServerEncrypted];
+            directoryProperties.IsServerEncrypted = string.Equals(directoryEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
 #if WINDOWS_PHONE 
             directoryProperties.LastModified = HttpResponseParsers.GetLastModified(response);

@@ -60,13 +60,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="blobType">The type of the blob.</param>
         /// <param name="pageBlobSize">For a page blob, the size of the blob. This parameter is ignored
         /// for block blobs.</param>
+        /// <param name="pageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, PremiumPageBlobTier? pageBlobTier, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (blobType == BlobType.Unspecified)
             {
@@ -113,6 +114,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 request.Headers.Add(Constants.HeaderConstants.BlobType, Constants.HeaderConstants.PageBlob);
                 request.Headers.Add(Constants.HeaderConstants.BlobContentLengthHeader, pageBlobSize.ToString(NumberFormatInfo.InvariantInfo));
                 properties.Length = pageBlobSize;
+
+                if (pageBlobTier.HasValue)
+                {
+                    request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, pageBlobTier.Value.ToString());
+                }
             }
             else if (blobType == BlobType.BlockBlob)
             {
@@ -423,7 +429,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="snapshot">The snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="deleteSnapshotsOption">A set of options indicating whether to delete only blobs, only snapshots, or both.</param>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -686,6 +692,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
+            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, null /* pageBlobTier */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+        }
+
+        /// <summary>
+        /// Generates a web request to copy a blob.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the destination blob.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
+        /// <param name="pageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
+        /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
             UriQueryBuilder builder = null;
             if (incrementalCopy)
             {
@@ -698,6 +724,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
             request.ApplyAccessCondition(destAccessCondition);
             request.ApplyAccessConditionToSource(sourceAccessCondition);
+
+            if (premiumPageBlobTier.HasValue)
+            {
+                request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier.Value.ToString());
+            }
 
             return request;
         }
@@ -833,6 +864,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         public static StorageRequestMessage GetServiceStats(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             return HttpRequestMessageFactory.GetServiceStats(uri, timeout, operationContext, canonicalizer, credentials);
+        }
+
+        /// <summary>
+        /// Constructs a web request to set the tier on a page blob.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the blob.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="blobTier">The blob tier to set.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string blobTier, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "tier");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
+
+            return request;
         }
     }
 }

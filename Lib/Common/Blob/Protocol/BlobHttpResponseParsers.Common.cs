@@ -246,5 +246,85 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         {
             return string.Equals(header, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
+
+        /// <summary>
+        /// Determines the tier of the blob.
+        /// </summary>
+        /// <param name="blobType">A <see cref="BlobType" /> indicating the type of blob.</param>
+        /// <param name="blobTierString">The blob tier as a string</param>
+        /// <param name="standardBlobTier">A nullable <see cref="StandardBlobTier"/>. This value will be populated if the blob type is unspecified or is a block blob.</param>
+        /// <param name="premiumPageBlobTier">A nullable <see cref="PageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
+        internal static void GetBlobTier(BlobType blobType, string blobTierString, out StandardBlobTier? standardBlobTier, out PremiumPageBlobTier? premiumPageBlobTier)
+        {
+            standardBlobTier = null;
+            premiumPageBlobTier = null;
+
+            if (blobType.Equals(BlobType.BlockBlob))
+            {
+                StandardBlobTier standardBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out standardBlobTierFromResponse))
+                {
+                    standardBlobTier = standardBlobTierFromResponse;
+                }
+                else
+                {
+                    standardBlobTier = StandardBlobTier.Unknown;
+                }
+            }
+            else if (blobType.Equals(BlobType.PageBlob))
+            {
+                PremiumPageBlobTier pageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
+                {
+                    premiumPageBlobTier = pageBlobTierFromResponse;
+                }
+                else
+                {
+                    premiumPageBlobTier = PremiumPageBlobTier.Unknown;
+                }
+            }
+            else if (blobType.Equals(BlobType.Unspecified))
+            {
+                StandardBlobTier standardBlobTierFromResponse;
+                PremiumPageBlobTier pageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out standardBlobTierFromResponse))
+                {
+                    standardBlobTier = standardBlobTierFromResponse;
+                }
+                else if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
+                {
+                    premiumPageBlobTier = pageBlobTierFromResponse;
+                }
+                else
+                {
+                    standardBlobTier = StandardBlobTier.Unknown;
+                    premiumPageBlobTier = PremiumPageBlobTier.Unknown;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines the rehydration status of the blob.
+        /// </summary>
+        /// <param name="rehydrationStatus">The rehydration status as a string.</param>
+        /// <returns>A <see cref="RehydrationStatus"/> representing the rehydration status of the blob.</returns>
+        internal static RehydrationStatus? GetRehydrationStatus(string rehydrationStatus)
+        {
+            if (!string.IsNullOrEmpty(rehydrationStatus))
+            {
+                if (Constants.RehydratePendingToHot.Equals(rehydrationStatus))
+                {
+                    return RehydrationStatus.PendingToHot;
+                }
+                else if (Constants.RehydratePendingToCool.Equals(rehydrationStatus))
+                {
+                    return RehydrationStatus.PendingToCool;
+                }
+
+                return RehydrationStatus.Unknown;
+            }
+
+            return null;
+        }
     }
 }

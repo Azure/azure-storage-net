@@ -104,19 +104,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     try
                     {
-                        await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken);
+                        // If the accessCondition is IsIfNotExists, the fetch call will always return 400
+                        await this.FetchAttributesAsync(accessCondition.Clone().RemoveIsIfNotExistsCondition(), options, operationContext, cancellationToken);
+
+                        // In case the blob already exists and the access condition is "IfNotExists", we should fail fast before uploading any content for the blob 
+                        if (accessCondition.IsIfNotExists)
+                        {
+                            throw GenerateExceptionForConflictFailure();
+                        }
                     }
                     catch (Exception)
                     {
                         if ((operationContext.LastResult != null) && 
                             (((operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound) && 
                             string.IsNullOrEmpty(accessCondition.IfMatchETag)) || 
-                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Forbidden) ||
-                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.BadRequest) &&
-                            (!string.IsNullOrEmpty(accessCondition.IfNoneMatchETag) && (accessCondition.IfNoneMatchETag == "*"))))
+                            (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Forbidden)))
                         {
                             // If we got a 404 and the condition was not an If-Match OR if we got a 403,
-                            // If we got a 400 and the access condition was If-None-Match-*, continue.  (There is a special case:  If-None-Match-*, on a blob that doesn't exist, will return a 400 on a read operation, because it's an impossible condition.
                             // we should continue with the operation.
                         }
                         else
@@ -946,6 +950,52 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Sets the tier for a blob.
+        /// </summary>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier)
+        {
+            return this.SetStandardBlobTierAsync(standardBlobTier, null /* accessCondition */, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Sets the tier for a blob.
+        /// </summary>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.SetStandardBlobTierAsync(standardBlobTier, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Sets the tier for a blob.
+        /// </summary>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+            return Task.Run(async () => await Executor.ExecuteAsync(
+                this.SetStandardBlobTierImpl(standardBlobTier, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken), cancellationToken);
+        }
+
+        /// <summary>
         /// Implementation for the CreateSnapshot method.
         /// </summary>
         /// <param name="metadata">A collection of name-value pairs defining the metadata of the snapshot, or null.</param>
@@ -1003,7 +1053,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(cappedStream, offset, length, null /* md5 */, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.BlockBlob, 0, null, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -1011,7 +1061,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = length.Value;
                 return NullType.Value;
             };
@@ -1041,7 +1091,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
 
@@ -1082,7 +1132,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
-                cmd.CurrentResult.IsRequestServerEncrypted = CloudBlob.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 this.Properties.Length = -1;
                 return NullType.Value;
             };
@@ -1118,6 +1168,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             };
 
             return getCmd;
+        }
+
+        /// <summary>
+        /// Implementation method for the SetStandardBlobTier methods.
+        /// </summary>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand"/> that sets the blob tier.</returns>
+        private RESTCommand<NullType> SetStandardBlobTierImpl(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
+        {
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, standardBlobTier.ToString(), cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                // OK is returned when the tier on the blob is done immediately while accepted occurs when the process of setting the tier has started but not completed.
+                HttpStatusCode[] expectedHttpStatusCodes = new HttpStatusCode[2];
+                expectedHttpStatusCodes[0] = HttpStatusCode.OK;
+                expectedHttpStatusCodes[1] = HttpStatusCode.Accepted;
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(expectedHttpStatusCodes, resp, NullType.Value, cmd, ex);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
+
+                this.attributes.Properties.RehydrationStatus = null;
+                if (resp.StatusCode.Equals(HttpStatusCode.OK))
+                {
+                    this.attributes.Properties.StandardBlobTier = standardBlobTier;
+                }
+                else
+                {
+                    this.attributes.Properties.StandardBlobTier = StandardBlobTier.Archive;
+                }
+
+                return NullType.Value;
+            };
+
+            return putCmd;
         }
     }
 }

@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (8.1.4)
+# Microsoft Azure Storage SDK for .NET (8.4.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -25,7 +25,7 @@ complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http:
 
 The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://azure.microsoft.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
 
-Please review [Get started with Azure Storage in five minutes](http://azure.microsoft.com/en-us/documentation/articles/storage-getting-started-guide/) if you are not familiar with Azure Storage.
+Please review [Get started with Azure Storage](https://docs.microsoft.com/en-us/azure/storage/storage-dotnet-how-to-use-blobs) if you are not familiar with Azure Storage.
 
 For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
 
@@ -35,11 +35,11 @@ For the best development experience, developers should use the official Microsof
 - Windows 8 and 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8 and 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
 - Netstandard1.3: Storage Client Libraries for .NET are available to support Netstandard application development including Xamarin/UWP applications. 
-- Netstandard1.0: Storage Client Libraries support PCL through a Netstandard Façade targeting netstandard1.0.
+- Netstandard1.0: Storage Client Libraries support PCL through a Netstandard FaÃ§ade targeting netstandard1.0.
 
-### Netstandard1.0 (Façade)
+### Netstandard1.0 (FaÃ§ade)
 
-As the lowest TFM supported by all our implementations, 1.0 is selected to provide support for maximum platforms. The support is provided through a façade reference assembly targeting netstandard1.0. This assembly consists of a common set of APIs between Win8, Wp8 and Wpa with no API implementations.
+As the lowest TFM supported by all our implementations, 1.0 is selected to provide support for maximum platforms. The support is provided through a faÃ§ade reference assembly targeting netstandard1.0. This assembly consists of a common set of APIs between Win8, Wp8 and Wpa with no API implementations.
 Through the bait and switch technique, the reference assembly enables other portable class libraries to reference Storage Client Library, while the correct implementation assembly will be picked when the package is referenced by the project.json file.
 
 
@@ -56,13 +56,13 @@ Through the bait and switch technique, the reference assembly enables other port
 ## Use with the Azure Storage Emulator
 
 - The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
-- Currently, the minimum version of the Azure Storage Emulator needed for this library is 4.6. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.2. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-This version of the Storage Client Library ships with the storage version 2016-05-31.
+This version of the Storage Client Library ships with the storage version 2017-04-17.
 
 ### Via Git
 
@@ -205,4 +205,4 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 
 - [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/)
 - [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/wa_storage_30_reference_home.aspx)
-- [Azure Storage Team Blog] (http://blogs.msdn.com/b/windowsazurestorage/)
+- [Azure Storage Team Blog](http://blogs.msdn.com/b/windowsazurestorage/)

@@ -139,7 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, AccessCondition accessCondition, OperationContext operationContext)
         {
-            return BlobHttpWebRequestFactory.Put(uri, timeout, properties, blobType, pageBlobSize, accessCondition, true /* useVersionHeader */, operationContext);
+            return BlobHttpWebRequestFactory.Put(uri, timeout, properties, blobType, pageBlobSize, null /* premiumPageBlobTier */, accessCondition, true /* useVersionHeader */, operationContext);
         }
 
         /// <summary>
@@ -152,11 +152,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="blobType">A <see cref="BlobType"/> enumeration value.</param>
         /// <param name="pageBlobSize">For a page blob, the size of the blob. This parameter is ignored
         /// for block blobs.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpWebRequest Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest Put(Uri uri, int? timeout, BlobProperties properties, BlobType blobType, long pageBlobSize, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("properties", properties);
 
@@ -203,6 +204,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 request.Headers[Constants.HeaderConstants.BlobType] = Constants.HeaderConstants.PageBlob;
                 request.Headers[Constants.HeaderConstants.BlobContentLengthHeader] = pageBlobSize.ToString(NumberFormatInfo.InvariantInfo);
                 properties.Length = pageBlobSize;
+
+                if (premiumPageBlobTier.HasValue)
+                {
+                    request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier.Value.ToString());
+                }
             }
             else if (blobType == BlobType.BlockBlob)
             {
@@ -399,6 +405,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             HttpWebRequest request = HttpWebRequestFactory.GetProperties(uri, timeout, builder, useVersionHeader, operationContext);
             request.ApplyAccessCondition(accessCondition);
+
             return request;
         }
 
@@ -634,7 +641,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="deleteSnapshotsOption">A set of options indicating whether to delete only blobs, only snapshots, or both.</param>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
@@ -649,7 +656,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="deleteSnapshotsOption">A set of options indicating whether to delete only blobs, only snapshots, or both.</param>
+        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1023,6 +1030,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return BlobHttpWebRequestFactory.CopyFrom(uri, timeout, source, incrementalCopy, null /* pageBlobTier */, sourceAccessCondition, destAccessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to copy a blob or file to another blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the destination blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="source">A <see cref="System.Uri"/> specifying the absolute URI to the source object, including any necessary authentication parameters.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the source object in order for the request to proceed.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the destination blob in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             CommonUtility.AssertNotNull("source", source);
 
             UriQueryBuilder builder = null;
@@ -1035,6 +1060,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
 
             request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
+
+            if (premiumPageBlobTier.HasValue)
+            {
+                request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier.Value.ToString());
+            }
 
             request.ApplyAccessCondition(destAccessCondition);
             request.ApplyAccessConditionToSource(sourceAccessCondition);
@@ -1171,6 +1201,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             {
                 request.Headers.Add(Constants.HeaderConstants.RangeContentMD5Header, Constants.HeaderConstants.TrueHeader);
             }
+
+            return request;
+        }
+
+        /// <summary>
+        /// Generates a web request to set the tier for a blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="blobTier">The blob tier to set as a string.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest SetBlobTier(Uri uri, int? timeout, string blobTier, bool useVersionHeader, OperationContext operationContext)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "tier");
+
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
+
+            // Add the blob tier header
+            request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
 
             return request;
         }

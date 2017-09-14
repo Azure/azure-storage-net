@@ -124,6 +124,43 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
             }
 
+            // Get the tier of the blob
+            string premiumBlobTierInferredString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierInferredHeader);
+            if (!string.IsNullOrEmpty(premiumBlobTierInferredString))
+            {
+                properties.BlobTierInferred = Convert.ToBoolean(premiumBlobTierInferredString);
+            }
+            
+            string blobTierString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.AccessTierHeader);
+            StandardBlobTier? standardBlobTier;
+            PremiumPageBlobTier? premiumPageBlobTier;
+            BlobHttpResponseParsers.GetBlobTier(properties.BlobType, blobTierString, out standardBlobTier, out premiumPageBlobTier);
+            properties.StandardBlobTier = standardBlobTier;
+            properties.PremiumPageBlobTier = premiumPageBlobTier;
+
+            // Get the rehydration status
+            string rehydrationStatusString = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ArchiveStatusHeader);
+            if (!string.IsNullOrEmpty(rehydrationStatusString))
+            {
+                if (Constants.RehydratePendingToHot.Equals(rehydrationStatusString))
+                {
+                    properties.RehydrationStatus = RehydrationStatus.PendingToHot;
+                }
+                else if (Constants.RehydratePendingToCool.Equals(rehydrationStatusString))
+                {
+                    properties.RehydrationStatus = RehydrationStatus.PendingToCool;
+                }
+                else
+                {
+                    properties.RehydrationStatus = RehydrationStatus.Unknown;
+                }
+            }
+            
+            if (properties.PremiumPageBlobTier.HasValue && !properties.BlobTierInferred.HasValue)
+            {
+                properties.BlobTierInferred = false;
+            }
+
             return properties;
         }
 

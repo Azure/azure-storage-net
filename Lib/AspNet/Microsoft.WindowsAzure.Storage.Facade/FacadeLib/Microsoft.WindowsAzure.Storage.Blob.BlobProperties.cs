@@ -89,6 +89,26 @@ public sealed class BlobProperties
         get; internal set;
     }
 
+    public Microsoft.WindowsAzure.Storage.Blob.StandardBlobTier? StandardBlobTier
+    {
+        get; internal set;
+    }
+
+    public Microsoft.WindowsAzure.Storage.Blob.RehydrationStatus? RehydrationStatus
+    {
+        get; internal set;
+    }
+
+    public Microsoft.WindowsAzure.Storage.Blob.PremiumPageBlobTier? PremiumPageBlobTier
+    {
+        get; internal set;
+    }
+
+    public bool? BlobTierInferred
+    {
+        get; internal set;
+    }
+
     public BlobProperties()
     {
         throw new System.NotImplementedException();

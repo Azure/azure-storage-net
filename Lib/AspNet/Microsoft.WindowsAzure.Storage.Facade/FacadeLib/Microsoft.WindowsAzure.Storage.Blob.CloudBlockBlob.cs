@@ -243,6 +243,18 @@ public class CloudBlockBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
+    public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     internal RESTCommand<CloudBlockBlob> CreateSnapshotImpl(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options)
     {
         throw new System.NotImplementedException();
@@ -263,7 +275,10 @@ public class CloudBlockBlob : CloudBlob, ICloudBlob, IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-
+    private RESTCommand<NullType> SetStandardBlobTierImpl(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
     private IEnumerable<Stream> OpenMultiSubStream(Stream wrappedStream, long? length, SemaphoreSlim mutex)
     {
         throw new System.NotImplementedException();

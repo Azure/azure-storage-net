@@ -95,9 +95,13 @@ internal static class Constants
     public const string CopySuccessValue = "success";
     public const string CopyAbortedValue = "aborted";
     public const string CopyFailedValue = "failed";
+    public const string RehydratePendingToHot = "rehydrate-pending-to-hot";
+    public const string RehydratePendingToCool = "rehydrate-pending-to-cool";
     public const string GeoUnavailableValue = "unavailable";
     public const string GeoLiveValue = "live";
     public const string GeoBootstrapValue = "bootstrap";
+    public const string AccessTierElement = "AccessTier";
+    public const string ArchiveStatusElement = "ArchiveStatus";
     public const string BlobTypeElement = "BlobType";
     public const string LeaseStatusElement = "LeaseStatus";
     public const string LeaseStateElement = "LeaseState";
@@ -245,7 +249,7 @@ internal static class Constants
         public const string TableEncryptionKeyDetails = "_ClientEncryptionMetadata1";
         public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
         public const string AgentMetadataKey = "EncryptionLibrary";
-        public const string AgentMetadataValue = ".NET 8.1.4";
+        public const string AgentMetadataValue = ".NET 8.4.0";
     }
 }
 

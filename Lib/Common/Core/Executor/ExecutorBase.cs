@@ -24,8 +24,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-#if NETCORE
+#if NETCORE || WINDOWS_RT
     using System.Net.Http;
+    using System.Net.Http.Headers;
 #endif
 
     internal abstract class ExecutorBase
@@ -35,6 +36,18 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             if (!string.IsNullOrEmpty(executionState.OperationContext.ClientRequestID))
             {
                 executionState.Req.Headers.Add(Constants.HeaderConstants.ClientRequestIdHeader, executionState.OperationContext.ClientRequestID);
+            }
+            
+
+            if (!string.IsNullOrEmpty(executionState.OperationContext.CustomUserAgent))
+            {
+#if WINDOWS_DESKTOP
+                executionState.Req.UserAgent = executionState.OperationContext.CustomUserAgent + " " + Constants.HeaderConstants.UserAgent;
+#elif NETCORE || WINDOWS_RT
+                executionState.Req.Headers.UserAgent.TryParseAdd(executionState.OperationContext.CustomUserAgent);
+                executionState.Req.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
+                executionState.Req.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
+#endif
             }
 
             if (executionState.OperationContext.UserHeaders != null && executionState.OperationContext.UserHeaders.Count > 0)
