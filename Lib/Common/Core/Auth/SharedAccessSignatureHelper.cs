@@ -19,12 +19,14 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 {
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+#if ALL_SERVICES
+    using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.Queue;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Microsoft.WindowsAzure.Storage.Table;
+#endif
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -36,6 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
     /// </summary>
     internal static class SharedAccessSignatureHelper
     {
+#if ALL_SERVICES
         /// <summary>
         /// Get the complete query builder for creating the Shared Access Signature query.
         /// </summary>
@@ -263,7 +266,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 
             return builder;
         }
-
+#endif
         internal static UriQueryBuilder GetSignature(
             SharedAccessAccountPolicy policy,
             string signature,
@@ -407,7 +410,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 
             return null;
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Get the signature hash embedded inside the Shared Access Signature.
         /// </summary>
@@ -727,7 +730,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Auth
 
             return CryptoUtility.ComputeHmac256(keyValue, stringToSign);
         }
-
+#endif
         internal static string GetHash(
             SharedAccessAccountPolicy policy,
             string accountName,

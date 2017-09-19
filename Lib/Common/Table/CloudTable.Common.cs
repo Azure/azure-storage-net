@@ -197,9 +197,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-         
+#if ALL_SERVICES
             string signature = SharedAccessSignatureHelper.GetHash(
-                policy,
+#else
+            string signature = TableSharedAccessSignatureHelper.GetHash(
+#endif
+            policy,
                 accessPolicyIdentifier,
                 startPartitionKey,
                 startRowKey,
@@ -210,9 +213,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 protocols,
                 ipAddressOrRange,
                 accountKey.KeyValue);
-
+#if ALL_SERVICES
             UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
-                policy,
+#else
+            UriQueryBuilder builder = TableSharedAccessSignatureHelper.GetSignature(
+#endif
+            policy,
                 this.Name,
                 accessPolicyIdentifier,
                 startPartitionKey,

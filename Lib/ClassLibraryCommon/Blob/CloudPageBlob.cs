@@ -490,7 +490,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (CloudBlobStream blobStream = this.OpenWrite(length, premiumPageBlobTier, accessCondition, modifiedOptions, operationContext))
             {
+#if ALL_SERVICES
                 using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#else
+                using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#endif
                 {
                     source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
                     blobStream.Commit();
@@ -633,8 +637,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
 
             ICancellableAsyncResult result = this.BeginOpenWrite(
@@ -2074,7 +2081,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (!pageData.CanSeek || requiresContentMD5)
                 {
+#if ALL_SERVICES
                     ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                    ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
                     Stream writeToStream;
                     if (pageData.CanSeek)
@@ -2114,21 +2125,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        /// <summary>
-        /// Begins an asynchronous operation to write pages to a page blob.
-        /// </summary>
-        /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
-        /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
+                    /// <summary>
+                    /// Begins an asynchronous operation to write pages to a page blob.
+                    /// </summary>
+                    /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
+                    /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
+                    /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+                    /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+                    /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+                    /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+                    /// <remarks>
+                    /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
+                    /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+                    /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+                    /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+                    /// </remarks>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, string contentMD5, AsyncCallback callback, object state)
         {
@@ -2170,7 +2181,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
+#if ALL_SERVICES
                 ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
                 storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
 
                 Stream seekableStream;

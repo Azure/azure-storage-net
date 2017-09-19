@@ -1,0 +1,43 @@
+{
+  "title": "Microsoft.Azure.Storage.Common",
+    "version": "8.4.0.0",
+
+    "authors": [ "Microsoft Corporation" ],
+    "description": "Azure Storage SDK for NetCore",
+    "dependencies": {
+        "Newtonsoft.Json": "10.0.2"
+    },
+
+    "frameworks": {
+        "netstandard1.3": {
+            "dependencies": {
+                "NETStandard.Library": "1.6.1"
+            },
+            "imports": "dnxcore50" 
+        }
+
+    },
+
+  "buildOptions": {
+    "define": [ "NETCORE" ],
+    "outputName": "Microsoft.Azure.Storage.Common",
+    "allowUnsafe": false,
+    "warningsAsErrors": true,
+    "delaySign": true,
+    "keyFile": "MSSharedLibKey.snk",
+    "compile": [
+      "**/*.cs",
+
+      "../../../Common/*.cs",
+      "../../../Common/Shared/**/*.cs",
+      "../../../Common/Auth/**/*.cs",
+      "../../../Common/Core/**/*.cs",
+      "../../../Common/RetryPolicies/**/*.cs",
+
+      "../../../WindowsRuntime/*.cs",
+      "../../../WindowsRuntime/Auth/**/*.cs",
+      "../../../WindowsRuntime/Core/**/*.cs",
+      "../../../WindowsRuntime/Shared/**/*.cs"
+    ]
+  }
+}

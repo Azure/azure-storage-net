@@ -21,7 +21,9 @@ namespace Microsoft.WindowsAzure.Storage
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+#if ALL_SERVICES
     using Microsoft.WindowsAzure.Storage.Table.Protocol;
+#endif
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -151,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
-        #region IXmlSerializable
+#region IXmlSerializable
 
         /// <summary>
         /// Generates a serializable <see cref="StorageExtendedErrorInformation"/> object from its XML representation.
@@ -250,6 +252,6 @@ namespace Microsoft.WindowsAzure.Storage
             writer.WriteEndElement();
         }
 
-        #endregion
+#endregion
     }
 }

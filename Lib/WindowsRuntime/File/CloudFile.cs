@@ -17,7 +17,9 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
+#if ALL_SERVICES
     using Microsoft.WindowsAzure.Storage.Blob;
+#endif
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Core.Util;
@@ -286,7 +288,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
             return Task.Run(async () =>
             {
@@ -1297,7 +1303,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
             return Task.Run(async () =>
             {
@@ -1415,7 +1425,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying an existing blob's contents, properties, and metadata to a new Azure file.
         /// </summary>
@@ -1430,6 +1440,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
         }
+#endif
 
         /// <summary>
         /// Begins an operation to start copying an existing Azure file's contents, properties, and metadata to a new Azure file.
@@ -1489,7 +1500,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken), cancellationToken);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying a blob's contents, properties, and metadata to a new Azure file.
         /// </summary>
@@ -1508,6 +1519,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
+#endif
 
         /// <summary>
         /// Aborts an ongoing copy operation.

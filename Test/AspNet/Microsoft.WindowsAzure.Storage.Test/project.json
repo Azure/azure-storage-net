@@ -2,12 +2,12 @@
     "version": "8.1.2.0",
     "testRunner": "xunit",
 
-    "dependencies": {
-        "xunit": "2.1.0",
-        "dotnet-test-xunit": "2.2.0-preview2-build1029",
-        "Microsoft.WindowsAzure.Storage": "8.1.2.0",
-        "XUnitForMsTest": "1.0.0-*"
-    },
+  "dependencies": {
+    "xunit": "2.1.0",
+    "dotnet-test-xunit": "2.2.0-preview2-build1029",
+    "XUnitForMsTest": "1.0.0-*",
+    "Microsoft.WindowsAzure.Storage": "8.4.0.0"
+  },
 
     "frameworks": {
         "netcoreapp1.0": {
@@ -25,7 +25,7 @@
     },
 
     "buildOptions": {
-        "define": [ "NETCORE", "XUNIT" ],
+        "define": [ "NETCORE", "XUNIT" , "ALL_SERVICES"],
         "delaySign": true,
         "keyFile": "MSSharedLibKey.snk",
         "compile": [

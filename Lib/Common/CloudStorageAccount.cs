@@ -17,17 +17,20 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-#if !(WINDOWS_RT || NETCORE)
+#if ALL_SERVICES && !(WINDOWS_RT || NETCORE)
     using Microsoft.WindowsAzure.Storage.Analytics;
 #endif
     using Microsoft.WindowsAzure.Storage.Auth;
+#if ALL_SERVICES
     using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Auth;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.Table;
+#endif
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -556,6 +559,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
 
+#if ALL_SERVICES
         /// <summary>
         /// Creates the Table service client.
         /// </summary>
@@ -652,7 +656,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             return new CloudFileClient(this.FileStorageUri, this.Credentials);
         }
-
+#endif
         /// <summary>
         /// Returns a shared access signature for the account.
         /// </summary>

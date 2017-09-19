@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;WINDOWS_DESKTOP;SYNC;APM;TASK;CODE_ANALYSIS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;WINDOWS_DESKTOP;SYNC;APM;TASK;CODE_ANALYSIS;ALL_SERVICES</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Microsoft.WindowsAzure.Storage.xml</DocumentationFile>
@@ -102,6 +102,9 @@
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Core\*.cs">
       <Link>Core\Core</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Blob\*.cs">
+      <Link>Core\Blob</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Core\Auth\*.cs">
       <Link>Core\Auth\Auth</Link>

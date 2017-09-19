@@ -18,7 +18,9 @@
 namespace Microsoft.WindowsAzure.Storage.File
 {
     using Microsoft.WindowsAzure.Storage.Auth;
+#if ALL_SERVICES
     using Microsoft.WindowsAzure.Storage.Blob;
+#endif
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
@@ -398,10 +400,13 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
+#if ALL_SERVICES
             string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
-
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "f", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
-
+                        UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "f", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+#else
+            string signature = FileSharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
+            UriQueryBuilder builder = FileSharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "f", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+#endif
             return builder.ToString();
         }
 
