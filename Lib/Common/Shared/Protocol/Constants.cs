@@ -52,6 +52,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int DefaultSubStreamBufferSize = (int)(4 * Constants.MB);
 
         /// <summary>
+        /// Default range size when downloading a blob in parallel.
+        /// </summary>
+        public const long DefaultParallelDownloadRangeSizeBytes = 16 * Constants.MB;
+
+        /// <summary>
         /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
         public const long MaxSingleUploadBlobSize = 256 * MB;
