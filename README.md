@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET (8.4.0)
+# Microsoft Azure Storage SDK for .NET (8.5.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
