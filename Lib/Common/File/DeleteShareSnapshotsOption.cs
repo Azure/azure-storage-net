@@ -20,7 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// <summary>
     /// The set of options describing delete operation.
     /// </summary>
-    internal enum DeleteShareSnapshotsOption
+    public enum DeleteShareSnapshotsOption
     {
         /// <summary>
         /// Delete the share only. If the share has snapshots, this option will result in an error from the service.

@@ -1,5 +1,5 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="ShareListingDetails.cs" company="Microsoft">
+//-----------------------------------------------------------------------
+// <copyright file="StandardBlobTier.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,34 +15,31 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using System;
-
     /// <summary>
-    /// Specifies which details to include when listing the shares in this storage account.
+    /// The tier of the block blob on a standard storage account.
     /// </summary>
-    [Flags]
-    public enum ShareListingDetails
+    public enum StandardBlobTier
     {
         /// <summary>
-        /// No additional details.
+        /// The tier is not recognized by this version of the library
         /// </summary>
-        None = 0x0,
+        Unknown,
 
         /// <summary>
-        /// Retrieve share metadata.
+        /// Hot Storage
         /// </summary>
-        Metadata = 0x1,
+        Hot,
 
         /// <summary>
-        /// Retrieve share snapshots.
+        /// Cool Storage
         /// </summary>
-        Snapshots = 0x2,
+        Cool,
 
         /// <summary>
-        /// Retrieve all available details.
+        /// Archive Storage
         /// </summary>
-        All = Metadata | Snapshots
+        Archive
     }
 }

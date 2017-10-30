@@ -1,3 +1,13 @@
+Changes in ?.?.? :
+- Blobs (Desktop): Added support for downloading a blob to a file by making concurrent service requests. The concurrency count is mandatory. The concurrency and range size should be chosen based on the memory, CPU, and bandwidth available. 
+
+Changes in 8.5.0 :
+- Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
+
+Changes in 8.4.0 :
+- BlockBlobs: For Blob Storage Accounts, added support for getting and setting the tier on a block blob.
+- All: Added a property called CustomUserAgent to the OperationContext class to provide the option for users to prepend a customized value to the existing UserAgent header value.
+
 Changes in 8.3.0 :
 - All(Netstandard): Updated the hashing algorithm to IncrementalHash instead of the original method which required buffering the data for MD5 calculations.
 - All: Fixed a race condition in the resume-download logic where a failure during downloads could lead to corrupted data.
@@ -17,11 +27,11 @@ Changes in 8.2.0 :
 - Tables: Added TableEntityAdapter<T> class to allow writing and reading simple or complex objects to Azure Table Storage without the need to implement ITableEntity interface or inherit from TableEntity class.
 
 Changes in 8.1.4 :
-- All(Desktop): Fixed a regression in the executor caused by disposing the SendStream during parallel operations.
+- All (Desktop): Fixed a regression in the executor caused by disposing the SendStream during parallel operations.
 
 Changes in 8.1.3 :
 - Blobs (Desktop) : Fixed a bug where the MaximumExecutionTime was not honored, leading to infinite wait, if due to a failure, e.g., a network failure after receiving the response headers, server stopped sending partial response.
-- All(Desktop) : Fixed a memory leak issue where the SendStream was not being disposed during retries, cancellations and Table Operations.
+- All (Desktop) : Fixed a memory leak issue where the SendStream was not being disposed during retries, cancellations and Table Operations.
 
 Changes in 8.1.1 :
 - All (NetStandard/NetCore): Removed Microsoft.Data.Services.Client as a temporary fix to ODataLib dependency incompatibility with NetStandard.

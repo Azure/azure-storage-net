@@ -252,17 +252,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="blobType">A <see cref="BlobType" /> indicating the type of blob.</param>
         /// <param name="blobTierString">The blob tier as a string</param>
-        /// <param name="pageBlobTier">A nullable <see cref="PremiumPageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
-        internal static void GetBlobTier(BlobType blobType, string blobTierString, out PremiumPageBlobTier? premiumPageBlobTier)
+        /// <param name="standardBlobTier">A nullable <see cref="StandardBlobTier"/>. This value will be populated if the blob type is unspecified or is a block blob.</param>
+        /// <param name="premiumPageBlobTier">A nullable <see cref="PremiumPageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
+        internal static void GetBlobTier(BlobType blobType, string blobTierString, out StandardBlobTier? standardBlobTier, out PremiumPageBlobTier? premiumPageBlobTier)
         {
+            standardBlobTier = null;
             premiumPageBlobTier = null;
 
-            if (blobType.Equals(BlobType.PageBlob))
+            if (blobType.Equals(BlobType.BlockBlob))
             {
-                PremiumPageBlobTier premiumPageBlobTierFromResponse;
-                if (Enum.TryParse(blobTierString, true, out premiumPageBlobTierFromResponse))
+                StandardBlobTier standardBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out standardBlobTierFromResponse))
                 {
-                    premiumPageBlobTier = premiumPageBlobTierFromResponse;
+                    standardBlobTier = standardBlobTierFromResponse;
+                }
+                else
+                {
+                    standardBlobTier = StandardBlobTier.Unknown;
+                }
+            }
+            else if (blobType.Equals(BlobType.PageBlob))
+            {
+                PremiumPageBlobTier pageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
+                {
+                    premiumPageBlobTier = pageBlobTierFromResponse;
                 }
                 else
                 {
@@ -271,16 +285,46 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
             else if (blobType.Equals(BlobType.Unspecified))
             {
-                PremiumPageBlobTier premiumPageBlobTierFromResponse;
-                if (Enum.TryParse(blobTierString, true, out premiumPageBlobTierFromResponse))
+                StandardBlobTier standardBlobTierFromResponse;
+                PremiumPageBlobTier pageBlobTierFromResponse;
+                if (Enum.TryParse(blobTierString, true, out standardBlobTierFromResponse))
                 {
-                    premiumPageBlobTier = premiumPageBlobTierFromResponse;
+                    standardBlobTier = standardBlobTierFromResponse;
+                }
+                else if (Enum.TryParse(blobTierString, true, out pageBlobTierFromResponse))
+                {
+                    premiumPageBlobTier = pageBlobTierFromResponse;
                 }
                 else
                 {
+                    standardBlobTier = StandardBlobTier.Unknown;
                     premiumPageBlobTier = PremiumPageBlobTier.Unknown;
                 }
             }
+        }
+
+        /// <summary>
+        /// Determines the rehydration status of the blob.
+        /// </summary>
+        /// <param name="rehydrationStatus">The rehydration status as a string.</param>
+        /// <returns>A <see cref="RehydrationStatus"/> representing the rehydration status of the blob.</returns>
+        internal static RehydrationStatus? GetRehydrationStatus(string rehydrationStatus)
+        {
+            if (!string.IsNullOrEmpty(rehydrationStatus))
+            {
+                if (Constants.RehydratePendingToHot.Equals(rehydrationStatus))
+                {
+                    return RehydrationStatus.PendingToHot;
+                }
+                else if (Constants.RehydratePendingToCool.Equals(rehydrationStatus))
+                {
+                    return RehydrationStatus.PendingToCool;
+                }
+
+                return RehydrationStatus.Unknown;
+            }
+
+            return null;
         }
     }
 }

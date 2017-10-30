@@ -1,5 +1,5 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="ShareListingDetails.cs" company="Microsoft">
+//-----------------------------------------------------------------------
+// <copyright file="RehydrationStatus.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,34 +15,27 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using System;
-
     /// <summary>
-    /// Specifies which details to include when listing the shares in this storage account.
+    /// The rehydration status for a blob that is currently archived.
     /// </summary>
-    [Flags]
-    public enum ShareListingDetails
+    /// <remarks>Only applicable to block blobs for this version.</remarks>
+    public enum RehydrationStatus
     {
         /// <summary>
-        /// No additional details.
+        /// The rehydration status is unknown.
         /// </summary>
-        None = 0x0,
+        Unknown,
 
         /// <summary>
-        /// Retrieve share metadata.
+        /// The blob is being rehydrated to hot storage.
         /// </summary>
-        Metadata = 0x1,
+        PendingToHot,
 
         /// <summary>
-        /// Retrieve share snapshots.
+        /// The blob is being rehydrated to cool storage.
         /// </summary>
-        Snapshots = 0x2,
-
-        /// <summary>
-        /// Retrieve all available details.
-        /// </summary>
-        All = Metadata | Snapshots
+        PendingToCool
     }
 }
