@@ -1,6 +1,9 @@
 Changes in ?.?.? :
 - Blobs (Desktop): Added support for downloading a blob to a file by making concurrent service requests. The concurrency count is mandatory. The concurrency and range size should be chosen based on the memory, CPU, and bandwidth available. 
 
+Changes in 8.5.0 :
+- Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
+
 Changes in 8.4.0 :
 - BlockBlobs: For Blob Storage Accounts, added support for getting and setting the tier on a block blob.
 - All: Added a property called CustomUserAgent to the OperationContext class to provide the option for users to prepend a customized value to the existing UserAgent header value.

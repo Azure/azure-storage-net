@@ -6,7 +6,8 @@ public enum ShareListingDetails
 {
     None = 0,
     Metadata = 1,
-    All = Metadata,
+    Snapshots = 2,
+    All = Snapshots | Metadata,
 }
 
 }
