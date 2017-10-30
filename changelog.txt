@@ -1,3 +1,5 @@
+Changes in 8.6.0 :
+
 Changes in 8.5.0 :
 - Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
 
