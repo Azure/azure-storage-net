@@ -750,7 +750,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
-        [Description("Try to delete a non-existing container access Conditions")]
+        [Description("Try to delete a non-existing container with access conditions")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
