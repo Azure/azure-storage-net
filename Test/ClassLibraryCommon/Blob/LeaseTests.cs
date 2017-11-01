@@ -6062,7 +6062,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             () => leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfNoneMatchCondition("garbage")),
                             "Lease container with unsupported IfNoneMatch Condition",
                             string.Format(SR.ConditionalHeaderNotSupported, "AcquireContainerLease"));
-            leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now.AddDays(-1)));
+            leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now.AddDays(-1))); // We only care that the access conditions do not cause failure 
             leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now.AddDays(1)));
 
             // Delete the blob

@@ -2235,7 +2235,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     () => container.SetMetadata(AccessCondition.GenerateIfNoneMatchCondition("garbage")),
                     "Container set metadata with unsupported IfNoneMatch condition",
                     string.Format(SR.ConditionalHeaderNotSupported, "SetContainerMetadata"));
-                container.SetMetadata(AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now)); // Only validating that this access condition does not throw
+                container.SetMetadata(AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now.AddDays(-1))); // Only validating that this access condition does not throw
             }
             finally
             {
