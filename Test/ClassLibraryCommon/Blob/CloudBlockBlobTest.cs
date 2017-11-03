@@ -18,6 +18,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -1487,6 +1488,53 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob.DownloadBlockList();
                 Assert.AreEqual(0, blob.Properties.Length);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Get block list with unsupported access conditions")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobDownloadBlockListAccessConditions()
+        {
+            byte[] buffer = GetRandomBuffer(1024);
+            List<string> blocks = GetBlockIdList(3);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                foreach (string block in blocks)
+                {
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        blob.PutBlock(block, memoryStream, null);
+                    }
+                }
+                TestHelper.ExpectedException<ArgumentException>(
+                    () =>  blob.DownloadBlockList(BlockListingFilter.Committed, AccessCondition.GenerateIfMatchCondition("garbage"), null, null),
+                    "Download block list with unsupported IfMatchCondition",
+                    string.Format(SR.ConditionalHeaderNotSupported, "GetBlockList"));
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => blob.DownloadBlockList(BlockListingFilter.Committed, AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now), null, null),
+                    "Download block list with unsupported IfModifiedSinceCondition",
+                    string.Format(SR.ConditionalHeaderNotSupported, "GetBlockList"));
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => blob.DownloadBlockList(BlockListingFilter.Committed, AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now), null, null),
+                    "Download block list with unsupported IfNotModifiedSince",
+                    string.Format(SR.ConditionalHeaderNotSupported, "GetBlockList"));
+                TestHelper.ExpectedException<ArgumentException>(
+                    () => blob.DownloadBlockList(BlockListingFilter.Committed, AccessCondition.GenerateIfNoneMatchCondition("garbage"), null, null),
+                    "Download block list with unsupported IfNoneMatch",
+                    string.Format(SR.ConditionalHeaderNotSupported, "GetBlockList"));
+                IEnumerable<ListBlockItem> blockList = blob.DownloadBlockList(BlockListingFilter.Committed, null, null, null);
             }
             finally
             {
@@ -3690,6 +3738,56 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         Assert.AreEqual(resultingData.Length, blobData.Length);
 
                         Assert.IsTrue(blobData.ToArray().SequenceEqual(resultingData.ToArray()));
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Put block with unsupported access conditions")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobPutBlockAccessConditions()
+        {
+            byte[] buffer = GetRandomBuffer(4 * Constants.MB);
+            MD5 md5 = MD5.Create();
+            string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                List<string> blockList = GetBlockIdList(1);
+
+                using (MemoryStream resultingData = new MemoryStream())
+                {
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        TestHelper.ExpectedException<ArgumentException>(
+                            () => blob.PutBlock(blockList[0], memoryStream, contentMD5, AccessCondition.GenerateIfMatchCondition("garbage")),
+                            "Put block with unsupported IfMatchCondition",
+                            string.Format(SR.ConditionalHeaderNotSupported, "PutBlock"));
+                        TestHelper.ExpectedException<ArgumentException>(
+                            () => blob.PutBlock(blockList[0], memoryStream, contentMD5, AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now)),
+                            "Put block with unsupported IfModifiedSince",
+                            string.Format(SR.ConditionalHeaderNotSupported, "PutBlock"));
+                        TestHelper.ExpectedException<ArgumentException>(
+                            () => blob.PutBlock(blockList[0], memoryStream, contentMD5, AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now)),
+                            "Put block with unsupported IfNotModifiedSince",
+                            string.Format(SR.ConditionalHeaderNotSupported, "PutBlock"));
+                        TestHelper.ExpectedException<ArgumentException>(
+                            () => blob.PutBlock(blockList[0], memoryStream, contentMD5, AccessCondition.GenerateIfNoneMatchCondition("garbage")),
+                            "Put block with unsupported IfNoneMatch",
+                            string.Format(SR.ConditionalHeaderNotSupported, "PutBlock"));
                     }
                 }
             }

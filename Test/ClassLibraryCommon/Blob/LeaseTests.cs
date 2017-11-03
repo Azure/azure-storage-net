@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6040,6 +6041,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.DeleteAll();
         }
 #endif
+
+        [TestMethod]
+        [Description("Acquire lease with access conditions")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void ContainerAcquireLeaseStateAccessConditionTests()
+        {
+            string proposedLeaseId = Guid.NewGuid().ToString();
+            
+            CloudBlobContainer leasedContainer = this.GetContainerReference("lease-tests");
+            leasedContainer.Create();
+            TestHelper.ExpectedException<ArgumentException>(
+                            () => leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfMatchCondition("garbage")),
+                            "Lease container with unsupported IfMatch Condition",
+                            string.Format(SR.ConditionalHeaderNotSupported, "AcquireContainerLease"));
+            TestHelper.ExpectedException<ArgumentException>(
+                            () => leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfNoneMatchCondition("garbage")),
+                            "Lease container with unsupported IfNoneMatch Condition",
+                            string.Format(SR.ConditionalHeaderNotSupported, "AcquireContainerLease"));
+            leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now.AddDays(-1)));
+            leasedContainer.AcquireLease(null, proposedLeaseId, AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now.AddDays(1)));
+
+            // Delete the blob
+            this.DeleteAll();
+        }
 
         public void ContainerRenewLeaseStateTestsSync()
         {

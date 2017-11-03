@@ -55,6 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string CannotUpdateKeyWithoutAccountKeyCreds = "Cannot update key unless Account Key credentials are used.";
         public const string CannotUpdateSasWithoutSasCreds = "Cannot update Shared Access Signature unless Sas credentials are used.";
         public const string ConcurrentOperationsNotSupported = "Could not acquire exclusive use of the TableServiceContext, Concurrent operations are not supported.";
+        public const string ConditionalHeaderNotSupported = "{0} does not support one of the specified conditional headers";
         public const string Container = "container";
         public const string ContentMD5NotCalculated = "The operation requires a response body but no data was copied to the destination buffer.";
         public const string CopyAborted = "The copy operation has been aborted by the user.";
