@@ -199,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage
                 TestBase.PremiumBlobTenantConfig = configurations.TenantConfigurations.Single(config => config.TenantName == configurations.TargetPremiumBlobTenantName);
                 TestBase.PremiumBlobStorageCredentials = new StorageCredentials(TestBase.PremiumBlobTenantConfig.AccountName, TestBase.PremiumBlobTenantConfig.AccountKey);
             }
-            catch (InvalidOperationException) { }
+            catch (InvalidOperationException e) { }
 
 #if WINDOWS_DESKTOP
             System.Threading.ThreadPool.SetMinThreads(100, 100);
