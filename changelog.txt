@@ -1,5 +1,7 @@
-Changes in 8.6.0 :
+Changes in ?.?.? :
+- Blobs (Desktop): Added support for downloading a blob to a file by making concurrent service requests. The concurrency count is mandatory. The concurrency and range size should be chosen based on the memory, CPU, and bandwidth available. 
 - All: An exception is now thrown if a user passes conditional headers not supported by the called method.
+
 
 Changes in 8.5.0 :
 - Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
