@@ -581,7 +581,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1064,7 +1064,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
