@@ -181,7 +181,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string QueryBuilderKeyNotFound = "'{0}' key not found in the query builder.";
         public const string Queue = "queue";
         public const string QueueEndPointNotConfigured = "No queue endpoint configured.";
-        public const string RangeSizeIsInvalid = "The range size of '{0}' is invalid. Please use a size that is greater than or equal to 4 MB and is 4 KB aligned.";
+        public const string RangeSizeIsInvalid = "The range size of '{0}' is invalid. Please use a size that is greater than or equal to '{1}' MB and is a multiple of 4 KB.";
+        public const string RangeSizeIsInvalidMD5 = "The argument '{0}' is invalid when using MD5. When MD5 is enabled the range size must be '{1}' MB.";
         public const string RangeDownloadNotPermittedOnPhone = "Windows Phone does not support downloading closed ranges from an encrypted blob. Please download the full blob or an open range (by specifying length as null)";
         public const string RecursiveReferencedObject = "Recursive reference detected. Object Path: {0} Property Type: {1}.";
         public const string RelativeAddressNotPermitted = "Address '{0}' is a relative address. Only absolute addresses are permitted.";

@@ -189,6 +189,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 try
                 {
                     Task downloadTask = blob.DownloadToFileParallelAsync(outputFileName, FileMode.Create, 16, 16 * Constants.MB, cts.Token);
+                    await Task.Delay(1000);
                     cts.Cancel();
                     await downloadTask;
 
@@ -247,7 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.DownloadToFileParallelAsync(outputFileName, FileMode.Create, 16, 16 * Constants.MB, 0, null, null, options, null, CancellationToken.None);
                     Assert.Fail("Expected a failure");
                 }
-                catch (ArgumentOutOfRangeException) {}
+                catch (ArgumentException) {}
 
                 blob.Delete();
             }

@@ -783,12 +783,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
         /// <param name="parallelIOCount">The maximum number of ranges that can be downloaded concurrently</param>
         /// <param name="rangeSizeInBytes">The size of each individual range in bytes that is being dowloaded in parallel.
-        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB is used.</param>
+        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB is used or 4MB if transactional MD5 is enabled.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         /// <remarks>
         /// The parallelIOCount and rangeSizeInBytes should be adjusted depending on the CPU, memory, and bandwidth.
         /// This API should only be used for larger downloads as a HEAD request is made prior to downloading the data.
         /// For smaller blobs, please use DownloadToFileAsync().
+        /// To get the best performance, it is recommended to try several values, and measure throughput.
+        /// One place to start would be to set the parallelIOCount to the number of CPUs.
+        /// Then adjust the rangeSizeInBytes so that parallelIOCount times rangeSizeInBytes equals the amount of memory you want the process to consume.
         /// </remarks>
         [DoesServiceRequest]
         public virtual Task DownloadToFileParallelAsync(string path, FileMode mode, int parallelIOCount, long? rangeSizeInBytes)
@@ -803,13 +806,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
         /// <param name="parallelIOCount">The maximum number of ranges that can be downloaded concurrently.</param>
         /// <param name="rangeSizeInBytes">The size of each individual range in bytes that is being dowloaded in parallel.
-        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB is used.</param>
+        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB is used or 4MB if transactional MD5 is enabled.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         /// <remarks>
         /// The parallelIOCount and rangeSizeInBytes should be adjusted depending on the CPU, memory, and bandwidth.
         /// This API should only be used for larger downloads as a HEAD request is made prior to downloading the data.
         /// For smaller blobs, please use DownloadToFileAsync().
+        /// To get the best performance, it is recommended to try several values, and measure throughput.
+        /// One place to start would be to set the parallelIOCount to the number of CPUs.
+        /// Then adjust the rangeSizeInBytes so that parallelIOCount times rangeSizeInBytes equals the amount of memory you want the process to consume.
         /// 
         /// ## Examples
         /// [!code-csharp[DownloadToFileParallel](~/azure-storage-net/Test/Common/Blob/BlobLargeDownloadToFileTests.cs#sample_DownloadToFileParallel "DownloadToFileParallel Sample")]
@@ -827,7 +833,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
         /// <param name="parallelIOCount">The maximum number of ranges that can be downloaded concurrently</param>
         /// <param name="rangeSizeInBytes">The size of each individual range in bytes that is being dowloaded in parallel.
-        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB is used.</param>
+        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB or 4MB if transactional MD5 is enabled.</param>
         /// <param name="offset">The offset of the blob.</param>
         /// <param name="length">The number of bytes to download.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
@@ -839,6 +845,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The parallelIOCount and rangeSizeInBytes should be adjusted depending on the CPU, memory, and bandwidth.
         /// This API should only be used for larger downloads as a HEAD request is made prior to downloading the data.
         /// For smaller blobs, please use DownloadToFileAsync().
+        /// To get the best performance, it is recommended to try several values, and measure throughput.
+        /// One place to start would be to set the parallelIOCount to the number of CPUs.
+        /// Then adjust the rangeSizeInBytes so that parallelIOCount times rangeSizeInBytes equals the amount of memory you want the process to consume.
         /// </remarks>
         [DoesServiceRequest]
         public virtual Task DownloadToFileParallelAsync(string path, FileMode mode, int parallelIOCount, long? rangeSizeInBytes, long offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)

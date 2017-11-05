@@ -107,13 +107,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             if (rangeSizeInBytes.HasValue)
             {
                 CommonUtility.AssertInBounds("rangeSizeInBytes", rangeSizeInBytes.Value, Constants.MaxRangeGetContentMD5Size);
-                if (useTransactionalMD5)
+                if (useTransactionalMD5 && rangeSizeInBytes.Value != Constants.MaxRangeGetContentMD5Size)
                 {
-                    CommonUtility.AssertInBounds("rangeSizeInBytes", rangeSizeInBytes.Value, Constants.MaxRangeGetContentMD5Size, Constants.MaxRangeGetContentMD5Size);
+                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalidMD5, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
                 }
                 else if (rangeSizeInBytes % 4 * Constants.KB != 0)
                 {
-                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalid, rangeSizeInBytes));
+                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalid, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
                 }
             }
             else if (useTransactionalMD5)
