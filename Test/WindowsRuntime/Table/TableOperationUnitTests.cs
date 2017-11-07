@@ -1599,7 +1599,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             // Validate IgnoreProperty Attribute
             Assert.IsFalse(flattenedProperties.ContainsKey("IgnoredProperty"));
             Assert.IsFalse(flattenedProperties.ContainsKey("InnerComplexEntityWithNestedComplexProperties[ o_0 ]IgnoredProperty"));
-            Assert.AreEqual(154, flattenedProperties.Count);
+            Assert.AreEqual(156, flattenedProperties.Count);
 
             ComplexEntityWithNestedComplexProperties recomposedObject =
                 TableEntity.ConvertBack<ComplexEntityWithNestedComplexProperties>(flattenedProperties, entityPropertyConverterOptions, operationContext);
