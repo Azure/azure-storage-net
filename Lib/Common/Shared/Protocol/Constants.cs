@@ -52,11 +52,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int DefaultSubStreamBufferSize = (int)(4 * Constants.MB);
 
         /// <summary>
-        /// Default range size when downloading a blob in parallel.
-        /// </summary>
-        public const long DefaultParallelDownloadRangeSizeBytes = 16 * Constants.MB;
-
-        /// <summary>
         /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
         public const long MaxSingleUploadBlobSize = 256 * MB;
@@ -849,7 +844,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "8.4.0";
+            public const string UserAgentProductVersion = "8.5.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
