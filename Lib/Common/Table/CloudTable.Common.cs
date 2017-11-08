@@ -209,7 +209,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 endPartitionKey,
                 endRowKey,
                 resourceName,
-                Constants.HeaderConstants.TargetStorageVersion,
+                OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion,
                 protocols,
                 ipAddressOrRange,
                 accountKey.KeyValue);
@@ -227,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 endRowKey,
                 signature,
                 accountKey.KeyName,
-                Constants.HeaderConstants.TargetStorageVersion,
+                OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion,
                 protocols,
                 ipAddressOrRange);
 

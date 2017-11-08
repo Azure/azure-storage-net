@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
-    internal static class AccountExtensions
+    public static class QueueAccountExtensions
     {
         /// <summary>
         /// Creates the Queue service client.

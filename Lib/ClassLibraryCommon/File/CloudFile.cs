@@ -3917,7 +3917,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
-#endif //Split ifdef
+#endif
 #endif
 
 #if SYNC

@@ -293,15 +293,15 @@ namespace Microsoft.WindowsAzure.Storage.File
             string resourceName = this.GetSharedAccessCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
 #if ALL_SERVICES
-            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
+            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
 #else
-            string signature = FileSharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
+            string signature = FileSharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
 #endif
             string accountKeyName = accountKey.KeyName;
 #if ALL_SERVICES
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "s", signature, accountKeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "s", signature, accountKeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 #else
-            UriQueryBuilder builder = FileSharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "s", signature, accountKeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+            UriQueryBuilder builder = FileSharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "s", signature, accountKeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 #endif
 
             return builder.ToString();

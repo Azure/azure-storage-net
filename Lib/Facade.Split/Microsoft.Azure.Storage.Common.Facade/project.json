@@ -1,0 +1,33 @@
+{
+    "title": "Microsoft.WindowsAzure.Storage.Common",
+    "version": "8.4.0.0",
+
+    "authors": [ "Microsoft Corporation" ],
+    "description": "Azure Storage Common SDK for NetCore",
+    "dependencies": {
+
+      "Newtonsoft.Json": "10.0.2"
+  },
+
+    "frameworks": {
+        "netstandard1.0": {
+            "dependencies": {
+                "NETStandard.Library": "1.6.1"
+            }
+        }
+
+    },
+
+  "buildOptions": {
+    "allowUnsafe": false,
+    "warningsAsErrors": true,
+    "delaySign": true,
+    "keyFile": "MSSharedLibKey.snk",
+    "outputName": "Microsoft.Azure.Storage.Common",
+    "compile": [
+      "**/*.cs",
+      "Common/*.cs"
+    ],
+    "define": [ "SIGN" ]
+  }
+}

@@ -73,7 +73,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             if (useVersionHeader)
             {
-                request.Headers[Constants.HeaderConstants.StorageVersionHeader] = Constants.HeaderConstants.TargetStorageVersion;
+                request.Headers[Constants.HeaderConstants.StorageVersionHeader] = OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion;
             }
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE

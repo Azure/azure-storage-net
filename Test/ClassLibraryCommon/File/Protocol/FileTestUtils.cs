@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             Assert.IsFalse(required && (request.Headers["x-ms-version"] == null));
             if (request.Headers["x-ms-version"] != null)
             {
-                Assert.AreEqual(Constants.HeaderConstants.TargetStorageVersion, request.Headers["x-ms-version"]);
+                Assert.AreEqual(OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, request.Headers["x-ms-version"]);
             }
         }
 

@@ -67,6 +67,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlobClient(StorageUri storageUri, StorageCredentials credentials)
         {
+#if !All_SERVICES
+            OperationContext.StorageVersion = /* constants.version */ "2016-10-16";
+            OperationContext.PackageVersion = /* contants.packageVersion */ "0.0.9";
+#endif
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
             this.DefaultRequestOptions = 

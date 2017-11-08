@@ -829,6 +829,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed.")]
         public static class HeaderConstants
         {
+
             static HeaderConstants()
             {
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
@@ -842,8 +843,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 #else
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
-
+#if ALL_SERVICES
                 UserAgent = UserAgentProductName + "/" + UserAgentProductVersion + " " + UserAgentComment;
+#else
+                UserAgent = BuildPackageSpecificUserAgent();
+#endif
             }
 
             /// <summary>
@@ -1750,5 +1754,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// </summary>
             public const string AgentMetadataValue = ".NET " + Constants.HeaderConstants.UserAgentProductVersion;
         }
+
+#if !ALL_SERVICES
+        internal static string BuildPackageSpecificUserAgent()
+        {
+            if (!string.IsNullOrEmpty(OperationContext.StorageVersion))
+            {
+                return HeaderConstants.UserAgentProductName + "/" + HeaderConstants.UserAgentProductVersion + "-" + OperationContext.PackageVersion + HeaderConstants.UserAgentComment;
+            }
+
+            return HeaderConstants.UserAgentProductName + "/" + HeaderConstants.UserAgentProductVersion + " " + HeaderConstants.UserAgentComment;
+        }
+#endif
     }
 }

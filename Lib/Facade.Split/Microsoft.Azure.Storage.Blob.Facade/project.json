@@ -1,0 +1,33 @@
+{
+    "title": "Microsoft.Azure.Storage.Blob",
+    "version": "8.4.0.0",
+
+    "authors": [ "Microsoft Corporation" ],
+    "description": "Azure Storage Blob SDK for NetCore",
+  "dependencies": {
+    "Microsoft.Azure.Storage.Common.Facade": "8.4.0.0",
+    "Newtonsoft.Json": "10.0.2"
+  },
+
+    "frameworks": {
+        "netstandard1.0": {
+            "dependencies": {
+                "NETStandard.Library": "1.6.1"
+            }
+        }
+
+    },
+
+  "buildOptions": {
+    "allowUnsafe": false,
+    "warningsAsErrors": true,
+    "delaySign": true,
+    "keyFile": "MSSharedLibKey.snk",
+    "outputName": "Microsoft.Azure.Storage.Blob",
+    "compile": [
+      "**/*.cs",
+      "Blob/*.cs"
+    ],
+    "define": [ "SIGN" ]
+  }
+}

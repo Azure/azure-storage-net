@@ -1516,6 +1516,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudPageBlobSetMetadata()
         {
             CloudBlobContainer container = GetRandomContainerReference();
+            var op = new OperationContext
+            {
+                CustomUserAgent = "dood"
+            };
+            
             try
             {
                 container.Create();
@@ -1529,19 +1534,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob.Metadata["key1"] = null;
                 StorageException e = TestHelper.ExpectedException<StorageException>(
-                    () => blob.SetMetadata(),
+                    () => blob.SetMetadata(null, null, op),
                     "Metadata keys should have a non-null value");
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "";
                 e = TestHelper.ExpectedException<StorageException>(
-                    () => blob.SetMetadata(),
+                    () => blob.SetMetadata(null, null, op),
                     "Metadata keys should have a non-empty value");
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = " ";
                 e = TestHelper.ExpectedException<StorageException>(
-                    () => blob.SetMetadata(),
+                    () => blob.SetMetadata(null, null, op),
                     "Metadata keys should have a non-whitespace only value");
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 

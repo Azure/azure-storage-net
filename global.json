@@ -1,5 +1,5 @@
-﻿{
-    "projects": [ "lib", "Lib/AspNet" ],
+{
+  "projects": [ "lib", "Lib/AspNet", "Lib/Common.Split/NetStandard", "Lib/Netstandard.Split" ],
   "sdk": {
       "version": "1.0.0-preview2-003131"
   }

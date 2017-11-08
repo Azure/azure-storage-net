@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    internal static class AccountExtensions
+    public static class BlobAccountExtensions
     {
         /// <summary>
         /// Creates the Blob service client.

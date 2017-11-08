@@ -262,7 +262,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.Create();
+                var op = new OperationContext
+                {
+                    CustomUserAgent = "did"
+                };
+
+                container.Create(BlobContainerPublicAccessType.Off, null, op);
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 Assert.IsFalse(blob.DeleteIfExists());

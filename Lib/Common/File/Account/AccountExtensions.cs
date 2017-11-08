@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
-    internal static class AccountExtensions
+    public static class FileAccountExtensions
     {
         /// <summary>
         /// Creates the File service client.

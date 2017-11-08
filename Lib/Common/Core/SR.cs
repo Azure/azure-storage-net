@@ -165,7 +165,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string NegativeBytesRequestedInCopy = "Internal Error - negative copyLength requested when attempting to copy a stream.  CopyLength = {0}, totalBytes = {1}, total bytes recorded so far = {2}.";
         public const string NoPropertyResolverAvailable = "No property resolver available. Deserializing the entity properties as strings.";
         public const string OffsetNotInRange = "The offset provided is out of range. The range must be between 0 and the length of the byte array.";
-        public const string ODataReaderNotInCompletedState = "OData Reader state expected to be Completed state. Actual state: {0}.";
         public const string OperationCanceled = "Operation was canceled by user.";
         public const string ParseError = "Error parsing value";
         public const string PartitionKey = "All entities in a given batch must have the same partition key.";

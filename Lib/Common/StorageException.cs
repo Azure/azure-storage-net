@@ -25,9 +25,6 @@ namespace Microsoft.WindowsAzure.Storage
 
 #if WINDOWS_DESKTOP 
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-#if ALL_SERVICES
-    using Microsoft.WindowsAzure.Storage.Table.Protocol;
-#endif
     using System.Collections.Generic;
     using System.Globalization;
     using System.Runtime.Serialization;

@@ -673,8 +673,8 @@ namespace Microsoft.WindowsAzure.Storage
 
             StorageAccountKey accountKey = this.Credentials.Key;
 
-            string signature = SharedAccessSignatureHelper.GetHash(policy, this.Credentials.AccountName, Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion);
+            string signature = SharedAccessSignatureHelper.GetHash(policy, this.Credentials.AccountName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, accountKey.KeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion);
             return builder.ToString();
         }
 

@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
-    internal static class AccountExtensions
+    public static class TableAccountExtensions
     {
         /// <summary>
         /// Creates the Table service client.
