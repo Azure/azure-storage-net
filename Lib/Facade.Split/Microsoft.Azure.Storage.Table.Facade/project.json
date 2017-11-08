@@ -1,11 +1,11 @@
 {
     "title": "Microsoft.Azure.Storage.Table",
-    "version": "8.4.0.0",
+    "version": "8.6.0-preview.0",
 
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage Table SDK for NetCore",
   "dependencies": {
-    "Microsoft.Azure.Storage.Common.Facade": "8.4.0.0",
+    "Microsoft.Azure.Storage.Common.Facade": "8.6.0-preview.0",
     "Newtonsoft.Json": "10.0.2"
   },
 

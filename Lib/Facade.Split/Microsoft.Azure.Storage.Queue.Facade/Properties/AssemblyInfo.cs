@@ -31,11 +31,12 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("8.4.0.0")]
-[assembly: AssemblyFileVersion("8.4.0.0")]
+[assembly: AssemblyVersion("8.6.0")]
+[assembly: AssemblyFileVersion("8.6.0")]
+[assembly: AssemblyInformationalVersion("8.6.0.0-preview")]
 
 [assembly: InternalsVisibleTo(
-    "Microsoft.WindowsAzure.Storage.Facade.PorQueue, PublicKey=" +
+    "Microsoft.WindowsAzure.Storage.Facade.Queue, PublicKey=" +
     "0024000004800000940000000602000000240000525341310004000001000100b5fc90e7027f67" +
     "871e773a8fde8938c81dd402ba65b9201d60593e96c492651e889cc13f1415ebb53fac1131ae0b" +
     "d333c5ee6021672d9718ea31a8aebd0da0072f25d87dba6fc90ffd598ed4da35e44c398c454307" +
