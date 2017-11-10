@@ -12,7 +12,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>10851280-f6ea-4988-80b0-4b0caee23196</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Microsoft.WindowsAzure.Storage</RootNamespace>
+    <RootNamespace>Microsoft.Azure.Storage</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="$(OutputType) == 'Console'">
     <DebuggerFlavor>ConsoleDebugger</DebuggerFlavor>

@@ -132,12 +132,6 @@
     <Compile Include="..\Common\Queue\*.cs">
       <Link>Queue\Queue</Link>
     </Compile>
-    <Compile Include="..\Common\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
     <Compile Include="..\Common\TestConfigProcess\*.cs">
       <Link>TestConfigProcess\TestConfigProcess</Link>
     </Compile>
@@ -165,18 +159,6 @@
     <Compile Include="..\ClassLibraryCommon\Queue\*.cs">
       <Link>Queue\Queue</Link>
     </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\Entities\*.cs">
-      <Link>Table\Entities\Entities</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\SAS\*.cs">
-      <Link>Table\SAS\SAS</Link>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Table\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Lib\Common.Split\NetFx\Microsoft.Azure.Storage.Common.NetFx.csproj">
@@ -194,10 +176,6 @@
     <ProjectReference Include="..\..\Lib\WindowsDesktop.Split\Queue\Microsoft.Azure.Storage.Queue.NetFx.csproj">
       <Project>{ed51f78b-ec11-4052-a9ca-5a909c8ba3b7}</Project>
       <Name>Microsoft.Azure.Storage.Queue.NetFx</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Lib\WindowsDesktop.Split\Table\Microsoft.Azure.Storage.Table.NetFx.csproj">
-      <Project>{c6787633-b26a-4913-a762-4c0ffceb6fe3}</Project>
-      <Name>Microsoft.Azure.Storage.Table.NetFx</Name>
     </ProjectReference>
     <ProjectReference Include="..\FaultInjection\HttpMangler\HttpMangler.csproj">
       <Project>{ca607e8f-2906-4065-a1a9-4a3733f0cc31}</Project>

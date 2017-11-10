@@ -9,7 +9,7 @@
     <ProjectGuid>{F05021EA-CDFC-4CAB-A109-CFCCD8B8B882}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.WindowsAzure.Storage</RootNamespace>
+    <RootNamespace>Microsoft.Azure.Storage</RootNamespace>
     <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>

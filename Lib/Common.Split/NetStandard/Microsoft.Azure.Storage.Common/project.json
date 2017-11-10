@@ -1,9 +1,9 @@
 {
   "title": "Microsoft.Azure.Storage.Common",
-    "version": "8.6.0-preview.0",
+    "version": "8.6.0.0-preview",
 
     "authors": [ "Microsoft Corporation" ],
-    "description": "Azure Storage SDK for NetCore",
+  "description": "Azure Storage Common SDK for NetCore",
     "dependencies": {
         "Newtonsoft.Json": "10.0.2"
     },
