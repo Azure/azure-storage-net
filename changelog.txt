@@ -1,3 +1,6 @@
+Changes in ?.?.? :
+- Blobs (Desktop): Added a new API supporting downloading a blob to a file by making concurrent service requests.
+
 Changes in 8.6.0 :
 - Tables : Added support for Byte type property in TableEntity Flatten/ConvertBack methods.
 

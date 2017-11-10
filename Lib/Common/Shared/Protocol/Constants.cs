@@ -52,6 +52,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int DefaultSubStreamBufferSize = (int)(4 * Constants.MB);
 
         /// <summary>
+        /// Default range size when downloading a blob in parallel.
+        /// </summary>
+        public const long DefaultParallelDownloadRangeSizeBytes = 16 * Constants.MB;
+
+        /// <summary>
         /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
         public const long MaxSingleUploadBlobSize = 256 * MB;
@@ -65,6 +70,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// The maximum size of a single block for Append Blobs.
         /// </summary>
         public const int MaxAppendBlockSize = (int)(4 * Constants.MB);
+
+        /// <summary>
+        /// The maximum allowed time between write calls to the stream for parallel download streams.
+        /// </summary>
+        public const int MaxIdleTimeMs = 120000;
 
         /// <summary>
         /// The maximum size of a range get operation that returns content MD5.
