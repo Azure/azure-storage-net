@@ -25,7 +25,7 @@ using System.Runtime.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.WindowsAzure.Storage.Table.Entities
+namespace Microsoft.Azure.Storage.Table.Entities
 {
     public class ComplexEntity : TableEntity 
     {

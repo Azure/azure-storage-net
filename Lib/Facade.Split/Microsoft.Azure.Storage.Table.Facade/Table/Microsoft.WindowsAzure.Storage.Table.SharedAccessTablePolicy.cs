@@ -1,7 +1,7 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Text;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public sealed class SharedAccessTablePolicy
 {

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 internal sealed class CloudFileAttributes
 {

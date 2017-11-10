@@ -16,15 +16,15 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Queue;
-using Microsoft.WindowsAzure.Storage.Table;
-using Microsoft.WindowsAzure.Test.Network;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.Queue;
+using Microsoft.Azure.Storage.Table;
+using Microsoft.Azure.Test.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
     /// <summary>
     /// Summary description for OperationContextUnitTests
@@ -297,7 +297,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             OperationContext ctx = new OperationContext();
             ctx.CustomUserAgent = "product-info-correct-format";
-            string userAgentValue = ctx.CustomUserAgent + " " + Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
+            string userAgentValue = ctx.CustomUserAgent + " " + Microsoft.Azure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
 
             Action act = () => container.Exists(null, ctx);
 

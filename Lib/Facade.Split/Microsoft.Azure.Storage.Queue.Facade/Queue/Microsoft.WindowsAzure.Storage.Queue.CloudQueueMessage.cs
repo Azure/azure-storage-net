@@ -3,7 +3,7 @@ using System.Globalization;
  
 using System.Text;
  
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 public sealed class CloudQueueMessage
 {

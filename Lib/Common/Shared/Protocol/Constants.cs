@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// <summary>
         /// Common name to be used for all loggers.
         /// </summary>
-        internal const string LogSourceName = "Microsoft.WindowsAzure.Storage";
+        internal const string LogSourceName = "Microsoft.Azure.Storage";
 
         /// <summary>
         /// The size of a page in a PageBlob.

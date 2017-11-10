@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Xml;
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 public sealed class QueueContinuationToken : IContinuationToken
 {

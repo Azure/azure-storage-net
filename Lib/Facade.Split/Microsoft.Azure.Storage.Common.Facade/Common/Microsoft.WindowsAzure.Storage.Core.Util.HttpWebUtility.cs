@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-namespace Microsoft.WindowsAzure.Storage.Core.Util
+namespace Microsoft.Azure.Storage.Core.Util
 {
 internal static class HttpWebUtility
 {

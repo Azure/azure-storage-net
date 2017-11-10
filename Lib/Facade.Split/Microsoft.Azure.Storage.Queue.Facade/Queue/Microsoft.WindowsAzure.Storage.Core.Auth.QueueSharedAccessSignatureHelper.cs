@@ -1,8 +1,8 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.Queue;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Queue;
 using System;
 using System.Globalization;
-namespace Microsoft.WindowsAzure.Storage.Core.Auth
+namespace Microsoft.Azure.Storage.Core.Auth
 {
 internal static class QueueSharedAccessSignatureHelper
 {

@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
  
  
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public sealed class EntityProperty
 {

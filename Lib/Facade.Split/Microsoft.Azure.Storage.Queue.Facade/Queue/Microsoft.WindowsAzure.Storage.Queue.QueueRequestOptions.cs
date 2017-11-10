@@ -1,13 +1,13 @@
-using Microsoft.WindowsAzure.Storage.Core.Executor;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Core.Executor;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 public sealed class QueueRequestOptions : IRequestOptions
 {
-    internal static QueueRequestOptions BaseDefaultRequestOptions = new QueueRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), LocationMode = new Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode?(Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?() };
+    internal static QueueRequestOptions BaseDefaultRequestOptions = new QueueRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), LocationMode = new Microsoft.Azure.Storage.RetryPolicies.LocationMode?(Microsoft.Azure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?() };
 
     internal DateTime? OperationExpiryTime
     {
@@ -19,7 +19,7 @@ public sealed class QueueRequestOptions : IRequestOptions
         get; set;
     }
 
-    public Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode? LocationMode
+    public Microsoft.Azure.Storage.RetryPolicies.LocationMode? LocationMode
     {
         get; set;
     }

@@ -1,5 +1,5 @@
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+using Microsoft.Azure.Storage.Shared.Protocol;
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
 internal sealed class BlobListingContext : ListingContext
 {

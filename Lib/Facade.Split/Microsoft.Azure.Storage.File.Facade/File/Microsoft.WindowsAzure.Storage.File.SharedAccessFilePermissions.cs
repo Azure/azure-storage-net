@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 [Flags]
 public enum SharedAccessFilePermissions

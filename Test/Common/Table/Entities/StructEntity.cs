@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table.Entities
+namespace Microsoft.Azure.Storage.Table.Entities
 {
 	public struct StructEntity
     {

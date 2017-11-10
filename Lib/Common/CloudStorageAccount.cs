@@ -15,21 +15,21 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
 #if ALL_SERVICES && !(WINDOWS_RT || NETCORE)
-    using Microsoft.WindowsAzure.Storage.Analytics;
+    using Microsoft.Azure.Storage.Analytics;
 #endif
-    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.Azure.Storage.Auth;
 #if ALL_SERVICES
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.Queue;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
+    using Microsoft.Azure.Storage.Queue;
+    using Microsoft.Azure.Storage.Table;
 #endif
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Auth;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Auth;
+    using Microsoft.Azure.Storage.Core.Util;
 
     using System;
     using System.Collections.Generic;
@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Globalization;
     using System.Linq;
     using AccountSetting = System.Collections.Generic.KeyValuePair<string, System.Func<string, bool>>;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using ConnectionStringFilter = System.Func<System.Collections.Generic.IDictionary<string, string>, System.Collections.Generic.IDictionary<string, string>>;
 
     /// <summary>

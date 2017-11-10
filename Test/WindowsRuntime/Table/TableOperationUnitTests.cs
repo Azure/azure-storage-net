@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Table.Entities;
+using Microsoft.Azure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ using System.Threading;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableOperationUnitTests : TableTestBase
@@ -1678,7 +1678,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 "Flatten should throw SerializationException for recursive referenced objects.");
 
             Assert.AreEqual("Recursive reference detected. Object Path: InnerComplexEntityWithNestedComplexProperties"
-                + " Property Type: Microsoft.WindowsAzure.Storage.Table.Entities.ComplexEntityWithNestedComplexProperties.", ex.Message);
+                + " Property Type: Microsoft.Azure.Storage.Table.Entities.ComplexEntityWithNestedComplexProperties.", ex.Message);
         }
 
         private static ComplexEntity CreateComplexEntity(string pk, int seed)

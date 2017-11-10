@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-namespace Microsoft.WindowsAzure.Storage.Core.Util
+namespace Microsoft.Azure.Storage.Core.Util
 {
 internal class AsyncSemaphore
 {

@@ -1,5 +1,5 @@
 using System.IO;
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
 public class SyncMemoryStream : MemoryStream
 {

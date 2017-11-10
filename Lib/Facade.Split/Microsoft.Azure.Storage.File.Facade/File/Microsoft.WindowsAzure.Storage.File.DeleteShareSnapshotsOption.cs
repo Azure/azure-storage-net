@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 internal enum DeleteShareSnapshotsOption
 {

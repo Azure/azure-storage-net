@@ -1,8 +1,8 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 public class CloudBlobDirectory : IListBlobItem
 {

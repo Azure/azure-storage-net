@@ -1,6 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 public abstract class CloudFileStream : Stream
 {

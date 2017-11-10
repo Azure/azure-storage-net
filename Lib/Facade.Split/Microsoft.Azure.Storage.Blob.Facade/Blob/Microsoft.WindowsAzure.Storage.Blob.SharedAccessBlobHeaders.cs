@@ -1,5 +1,5 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
-namespace Microsoft.WindowsAzure.Storage.Blob
+using Microsoft.Azure.Storage.Core.Util;
+namespace Microsoft.Azure.Storage.Blob
 {
 public sealed class SharedAccessBlobHeaders
 {

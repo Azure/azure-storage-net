@@ -1,9 +1,9 @@
-using Microsoft.WindowsAzure.Storage.Core;
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public class TableEntity : ITableEntity
 {

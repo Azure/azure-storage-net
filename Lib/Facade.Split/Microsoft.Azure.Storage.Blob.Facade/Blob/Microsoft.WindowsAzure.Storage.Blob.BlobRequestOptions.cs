@@ -1,13 +1,13 @@
-using Microsoft.WindowsAzure.Storage.Core.Executor;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Core.Executor;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 public sealed class BlobRequestOptions : IRequestOptions
 {
-    internal static BlobRequestOptions BaseDefaultRequestOptions = new BlobRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), AbsorbConditionalErrorsOnRetry = new bool?(false), LocationMode = new Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode?(Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?(), ParallelOperationThreadCount = new int?(1), SingleBlobUploadThresholdInBytes = new long?(33554432L), DisableContentMD5Validation = new bool?(false), UseTransactionalMD5 = new bool?(false) };
+    internal static BlobRequestOptions BaseDefaultRequestOptions = new BlobRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), AbsorbConditionalErrorsOnRetry = new bool?(false), LocationMode = new Microsoft.Azure.Storage.RetryPolicies.LocationMode?(Microsoft.Azure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?(), ParallelOperationThreadCount = new int?(1), SingleBlobUploadThresholdInBytes = new long?(33554432L), DisableContentMD5Validation = new bool?(false), UseTransactionalMD5 = new bool?(false) };
 
 
     internal DateTime? OperationExpiryTime
@@ -25,7 +25,7 @@ public sealed class BlobRequestOptions : IRequestOptions
         get; set;
     }
 
-    public Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode? LocationMode
+    public Microsoft.Azure.Storage.RetryPolicies.LocationMode? LocationMode
     {
         get; set;
     }

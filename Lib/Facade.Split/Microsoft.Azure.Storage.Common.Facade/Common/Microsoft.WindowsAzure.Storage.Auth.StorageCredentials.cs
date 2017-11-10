@@ -1,8 +1,8 @@
-using Microsoft.WindowsAzure.Storage.Core;
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Globalization;
-namespace Microsoft.WindowsAzure.Storage.Auth
+namespace Microsoft.Azure.Storage.Auth
 {
 public sealed class StorageCredentials
 {

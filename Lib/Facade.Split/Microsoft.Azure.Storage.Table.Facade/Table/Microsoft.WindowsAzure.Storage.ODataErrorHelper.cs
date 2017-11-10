@@ -1,5 +1,5 @@
-using Microsoft.WindowsAzure.Storage.Core;
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core;
+using Microsoft.Azure.Storage.Core.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
 public static class ODataErrorHelper
 {

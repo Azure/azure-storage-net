@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table.Protocol
+namespace Microsoft.Azure.Storage.Table.Protocol
 {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using System;

@@ -1,9 +1,9 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
  
-namespace Microsoft.WindowsAzure.Storage.Core.Executor
+namespace Microsoft.Azure.Storage.Core.Executor
 {
 internal abstract class StorageCommandBase<T>
 {

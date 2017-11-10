@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Xml.Linq;
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
 public sealed class ShareStats
 {

@@ -16,13 +16,13 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Test.Network;
-using Microsoft.WindowsAzure.Test.Network.Behaviors;
+using Microsoft.Azure.Test.Network;
+using Microsoft.Azure.Test.Network.Behaviors;
 using System;
 using System.IO;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class FileManglerUnitTests : FileTestBase

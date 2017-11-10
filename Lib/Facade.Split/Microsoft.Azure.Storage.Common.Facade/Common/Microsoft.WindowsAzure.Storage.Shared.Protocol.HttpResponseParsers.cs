@@ -1,4 +1,4 @@
-using Microsoft.WindowsAzure.Storage.Core.Executor;
+using Microsoft.Azure.Storage.Core.Executor;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,7 +9,7 @@ using System.Net;
  
 using System.Xml;
 using System.Xml.Linq;
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
 internal static class HttpResponseParsers
 {

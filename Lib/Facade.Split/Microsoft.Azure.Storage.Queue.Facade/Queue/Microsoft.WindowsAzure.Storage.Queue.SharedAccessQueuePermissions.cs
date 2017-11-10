@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 [Flags]
 public enum SharedAccessQueuePermissions

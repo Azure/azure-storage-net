@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table.Queryable
+namespace Microsoft.Azure.Storage.Table.Queryable
 {
-    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.Azure.Storage.Core;
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;

@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
 internal static class Constants
 {
@@ -19,7 +19,7 @@ internal static class Constants
     public const long MaxBlobSize = 5242880000000;
     public const int MinLargeBlockSize = 4194305;
     internal const int DefaultBufferSize = 65536;
-    internal const string LogSourceName = "Microsoft.WindowsAzure.Storage";
+    internal const string LogSourceName = "Microsoft.Azure.Storage";
     public const int PageSize = 512;
     public const long KB = 1024;
     public const long MB = 1048576;

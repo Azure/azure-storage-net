@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 internal enum BlobEncryptionMode
 {

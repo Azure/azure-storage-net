@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public enum TablePayloadFormat
 {

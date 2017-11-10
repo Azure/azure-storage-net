@@ -1,9 +1,9 @@
-﻿using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
-using Microsoft.WindowsAzure.Storage.Core;
+﻿using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Table;
+using Microsoft.Azure.Storage.Core;
 using System;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     public static class TableAccountExtensions
     {

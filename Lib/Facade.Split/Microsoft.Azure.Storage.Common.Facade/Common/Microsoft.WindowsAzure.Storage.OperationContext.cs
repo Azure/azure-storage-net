@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
 public sealed class OperationContext
 {

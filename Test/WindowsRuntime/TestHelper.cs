@@ -22,7 +22,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     public partial class TestHelper
     {

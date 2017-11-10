@@ -1,5 +1,5 @@
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+using Microsoft.Azure.Storage.Shared.Protocol;
+namespace Microsoft.Azure.Storage.File.Protocol
 {
 internal sealed class FileListingContext : ListingContext
 {

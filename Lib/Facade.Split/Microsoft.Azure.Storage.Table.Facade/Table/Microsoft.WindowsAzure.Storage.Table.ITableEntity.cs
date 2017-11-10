@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public interface ITableEntity
 {

@@ -1,6 +1,6 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
-namespace Microsoft.WindowsAzure.Storage.RetryPolicies
+namespace Microsoft.Azure.Storage.RetryPolicies
 {
 public sealed class LinearRetry : IExtendedRetryPolicy, IRetryPolicy
 {

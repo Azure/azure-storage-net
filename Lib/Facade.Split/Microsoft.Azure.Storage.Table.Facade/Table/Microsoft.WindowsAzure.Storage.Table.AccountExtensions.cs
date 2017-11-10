@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public static class TableAccountExtensions
 {

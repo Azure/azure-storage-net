@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
+namespace Microsoft.Azure.Storage.Queue.Protocol
 {
 internal sealed class QueueEntry
 {

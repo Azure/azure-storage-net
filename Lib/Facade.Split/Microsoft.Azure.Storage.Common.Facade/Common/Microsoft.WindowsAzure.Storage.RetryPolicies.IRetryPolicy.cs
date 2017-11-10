@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage.RetryPolicies
+namespace Microsoft.Azure.Storage.RetryPolicies
 {
 public interface IRetryPolicy
 {

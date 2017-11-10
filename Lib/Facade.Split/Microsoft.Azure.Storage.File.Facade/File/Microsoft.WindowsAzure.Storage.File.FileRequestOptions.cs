@@ -1,13 +1,13 @@
-using Microsoft.WindowsAzure.Storage.Core.Executor;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Core.Executor;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 public sealed class FileRequestOptions : IRequestOptions
 {
-    internal static FileRequestOptions BaseDefaultRequestOptions = new FileRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), LocationMode = new Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode?(Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?(), ParallelOperationThreadCount = new int?(1), DisableContentMD5Validation = new bool?(false), StoreFileContentMD5 = new bool?(false), UseTransactionalMD5 = new bool?(false) };
+    internal static FileRequestOptions BaseDefaultRequestOptions = new FileRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), LocationMode = new Microsoft.Azure.Storage.RetryPolicies.LocationMode?(Microsoft.Azure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?(), ParallelOperationThreadCount = new int?(1), DisableContentMD5Validation = new bool?(false), StoreFileContentMD5 = new bool?(false), UseTransactionalMD5 = new bool?(false) };
 
 
     internal DateTime? OperationExpiryTime
@@ -20,7 +20,7 @@ public sealed class FileRequestOptions : IRequestOptions
         get; set;
     }
 
-    public Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode? LocationMode
+    public Microsoft.Azure.Storage.RetryPolicies.LocationMode? LocationMode
     {
         get
         {

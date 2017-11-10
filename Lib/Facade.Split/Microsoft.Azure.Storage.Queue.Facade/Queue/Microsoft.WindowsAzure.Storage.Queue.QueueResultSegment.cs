@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 public sealed class QueueResultSegment
 {

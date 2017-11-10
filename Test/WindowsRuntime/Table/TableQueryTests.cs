@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Table.Entities;
+using Microsoft.Azure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +25,7 @@ using System.Net;
 using System.Threading;
 #endif
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage.Table.Protocol;
+using Microsoft.Azure.Storage.Table.Protocol;
 
 #if NETCORE
 using System.Globalization;
@@ -33,7 +33,7 @@ using System.Globalization;
 using Windows.Globalization;
 #endif
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableQueryTests : TableTestBase

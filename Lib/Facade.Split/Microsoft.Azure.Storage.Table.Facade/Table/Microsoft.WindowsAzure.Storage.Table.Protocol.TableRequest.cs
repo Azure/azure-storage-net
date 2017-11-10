@@ -1,10 +1,10 @@
-using Microsoft.WindowsAzure.Storage.Core.Auth;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Core.Auth;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
-namespace Microsoft.WindowsAzure.Storage.Table.Protocol
+namespace Microsoft.Azure.Storage.Table.Protocol
 {
 internal static class TableRequest
 {

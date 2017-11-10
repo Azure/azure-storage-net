@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     using System;
     using System.Collections.Generic;
@@ -23,7 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Net;
     using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
 
     [TestClass]
     public class TableAnalyticsUnitTests : TestBase

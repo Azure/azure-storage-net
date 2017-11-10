@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
 public enum FileRangeWrite
 {

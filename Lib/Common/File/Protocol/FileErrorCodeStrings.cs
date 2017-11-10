@@ -18,7 +18,7 @@
 // </summary>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
     /// <summary>
     /// Provides error code strings that are specific to the File service.

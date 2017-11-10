@@ -14,7 +14,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     /// <summary>
     /// Represents the blob encryption data that is stored as metadata on the service.

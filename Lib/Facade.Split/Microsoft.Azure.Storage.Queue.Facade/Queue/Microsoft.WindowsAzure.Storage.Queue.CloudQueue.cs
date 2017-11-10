@@ -1,10 +1,10 @@
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Core;
-using Microsoft.WindowsAzure.Storage.Core.Auth;
-using Microsoft.WindowsAzure.Storage.Core.Executor;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.Queue.Protocol;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Core;
+using Microsoft.Azure.Storage.Core.Auth;
+using Microsoft.Azure.Storage.Core.Executor;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Queue.Protocol;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,7 +14,7 @@ using System.Net;
  
 using System.Threading;
 using System.Threading.Tasks;
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 public class CloudQueue
 {

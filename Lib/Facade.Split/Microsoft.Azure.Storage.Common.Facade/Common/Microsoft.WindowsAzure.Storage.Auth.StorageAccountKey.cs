@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Auth
+namespace Microsoft.Azure.Storage.Auth
 {
 internal struct StorageAccountKey
 {

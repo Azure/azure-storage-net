@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
-    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.Azure.Storage.Core;
     using System;
     using System.Collections.Generic;
     using System.Globalization;

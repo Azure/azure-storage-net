@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
 public enum AuthenticationScheme
 {

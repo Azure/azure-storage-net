@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table.Queryable
+namespace Microsoft.Azure.Storage.Table.Queryable
 {
     using System.Diagnostics;
     using System.Linq.Expressions;

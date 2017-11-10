@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Xml;
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 public sealed class BlobContinuationToken : IContinuationToken
 {

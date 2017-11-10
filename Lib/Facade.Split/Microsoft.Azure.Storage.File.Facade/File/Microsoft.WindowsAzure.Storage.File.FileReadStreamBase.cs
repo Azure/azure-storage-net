@@ -1,9 +1,9 @@
-using Microsoft.WindowsAzure.Storage.Core;
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Globalization;
 using System.IO;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 internal abstract class FileReadStreamBase : Stream
 {

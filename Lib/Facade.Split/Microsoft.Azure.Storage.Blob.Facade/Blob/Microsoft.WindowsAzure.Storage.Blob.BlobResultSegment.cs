@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 public class BlobResultSegment
 {

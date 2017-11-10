@@ -1,8 +1,8 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public sealed class SharedAccessTablePolicies : IDictionary<string, SharedAccessTablePolicy>, ICollection<KeyValuePair<string, SharedAccessTablePolicy>>, IEnumerable<KeyValuePair<string, SharedAccessTablePolicy>>, IEnumerable
 {

@@ -24,7 +24,7 @@ using System.Threading;
 
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableEscapingTests : TableTestBase

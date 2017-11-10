@@ -1,5 +1,5 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
-namespace Microsoft.WindowsAzure.Storage.File
+using Microsoft.Azure.Storage.Core.Util;
+namespace Microsoft.Azure.Storage.File
 {
 public sealed class SharedAccessFileHeaders
 {

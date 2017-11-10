@@ -15,14 +15,14 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
 
     [TestClass]
     public class BlobAnalyticsUnitTests : TestBase
@@ -879,7 +879,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void TestSetServicePropertiesWithoutMetricsAndLoggingProperties()
         {
             ServiceProperties serviceProperties = new ServiceProperties(cors: new CorsProperties());
-            Microsoft.WindowsAzure.Storage.Shared.Protocol.CorsRule rule = new Microsoft.WindowsAzure.Storage.Shared.Protocol.CorsRule();
+            Microsoft.Azure.Storage.Shared.Protocol.CorsRule rule = new Microsoft.Azure.Storage.Shared.Protocol.CorsRule();
             rule.AllowedHeaders.Add("x-ms-meta-xyz");
             rule.AllowedHeaders.Add("x-ms-meta-data*");
             rule.AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put;

@@ -1,11 +1,11 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
-namespace Microsoft.WindowsAzure.Storage.Core.Executor
+namespace Microsoft.Azure.Storage.Core.Executor
 {
 internal abstract class ExecutorBase
 {

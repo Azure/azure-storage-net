@@ -24,7 +24,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     [TestClass]
     public class MD5FlagsTest : BlobTestBase

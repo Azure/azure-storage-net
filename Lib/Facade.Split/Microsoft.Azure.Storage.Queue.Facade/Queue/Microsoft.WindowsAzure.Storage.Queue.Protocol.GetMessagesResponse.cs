@@ -1,8 +1,8 @@
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
-namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
+namespace Microsoft.Azure.Storage.Queue.Protocol
 {
 internal sealed class GetMessagesResponse : ResponseParsingBase<QueueMessage>
 {

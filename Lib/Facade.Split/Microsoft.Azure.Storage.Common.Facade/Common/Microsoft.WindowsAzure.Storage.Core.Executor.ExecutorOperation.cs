@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Core.Executor
+namespace Microsoft.Azure.Storage.Core.Executor
 {
 internal enum ExecutorOperation
 {

@@ -15,10 +15,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-using Microsoft.WindowsAzure.Storage.Core;
+using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Core;
 using System;
 using System.Linq;
 using System.Net;
@@ -27,7 +27,7 @@ using System.Threading;
 using System.Xml.Linq;
 using System.IO;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class FileSASTests : FileTestBase

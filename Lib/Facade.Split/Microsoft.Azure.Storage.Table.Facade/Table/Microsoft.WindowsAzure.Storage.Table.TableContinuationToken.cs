@@ -1,8 +1,8 @@
-using Microsoft.WindowsAzure.Storage.Core;
+using Microsoft.Azure.Storage.Core;
 using System;
 using System.Globalization;
 using System.Xml;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public sealed class TableContinuationToken : IContinuationToken
 {

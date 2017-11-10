@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 #if !NETCORE
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     using System;
     using System.IO;

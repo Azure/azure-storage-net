@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 public enum CopyStatus
 {

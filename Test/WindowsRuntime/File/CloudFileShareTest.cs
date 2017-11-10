@@ -28,9 +28,9 @@ using System.Threading;
 using Windows.Globalization;
 #endif
 
-using Microsoft.WindowsAzure.Storage.Core;
+using Microsoft.Azure.Storage.Core;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class CloudFileShareTest : FileTestBase

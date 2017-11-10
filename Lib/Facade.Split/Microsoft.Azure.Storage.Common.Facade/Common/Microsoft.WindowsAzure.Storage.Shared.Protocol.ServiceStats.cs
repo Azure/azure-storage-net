@@ -1,5 +1,5 @@
 using System.Xml.Linq;
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
 public sealed class ServiceStats
 {

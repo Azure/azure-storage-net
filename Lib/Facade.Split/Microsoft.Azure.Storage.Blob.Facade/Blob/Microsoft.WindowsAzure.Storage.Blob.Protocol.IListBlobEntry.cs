@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
 internal interface IListBlobEntry
 {

@@ -1,13 +1,13 @@
-using Microsoft.WindowsAzure.Storage.Core.Executor;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Core.Executor;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public sealed class TableRequestOptions : IRequestOptions
 {
-    internal static TableRequestOptions BaseDefaultRequestOptions = new TableRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), LocationMode = new Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode?(Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?(), PayloadFormat = new TablePayloadFormat?(TablePayloadFormat.Json), PropertyResolver = (Func<string, string, string, string, EdmType>) null, ProjectSystemProperties = new bool?(true) };
+    internal static TableRequestOptions BaseDefaultRequestOptions = new TableRequestOptions() { RetryPolicy = (IRetryPolicy) new NoRetry(), LocationMode = new Microsoft.Azure.Storage.RetryPolicies.LocationMode?(Microsoft.Azure.Storage.RetryPolicies.LocationMode.PrimaryOnly), ServerTimeout = new TimeSpan?(), MaximumExecutionTime = new TimeSpan?(), PayloadFormat = new TablePayloadFormat?(TablePayloadFormat.Json), PropertyResolver = (Func<string, string, string, string, EdmType>) null, ProjectSystemProperties = new bool?(true) };
 
 
     internal DateTime? OperationExpiryTime
@@ -25,7 +25,7 @@ public sealed class TableRequestOptions : IRequestOptions
         get; set;
     }
 
-    public Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode? LocationMode
+    public Microsoft.Azure.Storage.RetryPolicies.LocationMode? LocationMode
     {
         get; set;
     }

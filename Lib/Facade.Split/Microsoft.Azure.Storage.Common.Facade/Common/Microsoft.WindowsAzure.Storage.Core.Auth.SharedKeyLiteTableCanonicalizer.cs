@@ -1,6 +1,6 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
  
-namespace Microsoft.WindowsAzure.Storage.Core.Auth
+namespace Microsoft.Azure.Storage.Core.Auth
 {
 internal sealed class SharedKeyLiteTableCanonicalizer : ICanonicalizer
 {

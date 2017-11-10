@@ -15,12 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     using Microsoft.Azure.KeyVault;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Table.Entities;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Table.Entities;
     using Newtonsoft.Json;
     using Shared.Protocol;
     using System;

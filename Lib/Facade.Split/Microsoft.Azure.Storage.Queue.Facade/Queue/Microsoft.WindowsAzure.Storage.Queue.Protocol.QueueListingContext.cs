@@ -1,5 +1,5 @@
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
+using Microsoft.Azure.Storage.Shared.Protocol;
+namespace Microsoft.Azure.Storage.Queue.Protocol
 {
 internal sealed class QueueListingContext : ListingContext
 {

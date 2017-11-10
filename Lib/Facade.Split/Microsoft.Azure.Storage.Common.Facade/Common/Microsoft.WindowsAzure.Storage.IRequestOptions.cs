@@ -1,6 +1,6 @@
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.RetryPolicies;
 using System;
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
 public interface IRequestOptions
 {
@@ -9,7 +9,7 @@ public interface IRequestOptions
         get; set;
     }
 
-    Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode? LocationMode
+    Microsoft.Azure.Storage.RetryPolicies.LocationMode? LocationMode
     {
         get; set;
     }

@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
+namespace Microsoft.Azure.Storage.Queue.Protocol
 {
 [Flags]
 public enum QueueListingDetails

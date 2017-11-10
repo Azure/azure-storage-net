@@ -15,16 +15,16 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.IO;
     using System.Net;
     using System.Text;
 
 #if WINDOWS_DESKTOP 
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Runtime.Serialization;

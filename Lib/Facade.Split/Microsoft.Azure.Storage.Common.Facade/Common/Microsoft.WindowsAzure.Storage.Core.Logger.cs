@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
 internal static class Logger
 {

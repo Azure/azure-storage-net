@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 public sealed class FileResultSegment
 {

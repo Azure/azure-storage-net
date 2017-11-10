@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Xml;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 public sealed class FileContinuationToken : IContinuationToken
 {

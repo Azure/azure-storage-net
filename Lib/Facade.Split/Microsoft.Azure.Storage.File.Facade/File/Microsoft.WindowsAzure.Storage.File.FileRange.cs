@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
 public sealed class FileRange
 {

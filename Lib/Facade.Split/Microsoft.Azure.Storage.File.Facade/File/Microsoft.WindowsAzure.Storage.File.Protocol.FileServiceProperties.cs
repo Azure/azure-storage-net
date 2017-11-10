@@ -1,7 +1,7 @@
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System.IO;
 using System.Xml.Linq;
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
 public sealed class FileServiceProperties
 {

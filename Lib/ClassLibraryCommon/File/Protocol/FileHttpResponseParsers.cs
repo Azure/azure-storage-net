@@ -18,14 +18,14 @@
 // </summary>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
 #if ALL_SERVICES
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Blob.Protocol;
 #endif
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;

@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 public class PageRange
 {

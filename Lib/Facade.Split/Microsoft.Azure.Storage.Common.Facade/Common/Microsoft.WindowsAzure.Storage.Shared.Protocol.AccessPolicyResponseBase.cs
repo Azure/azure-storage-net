@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Linq;
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
 internal abstract class AccessPolicyResponseBase<T> : ResponseParsingBase<KeyValuePair<string, T>> where T : new()
 {

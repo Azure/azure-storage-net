@@ -1,6 +1,6 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 public sealed class BlobProperties
 {
@@ -89,17 +89,17 @@ public sealed class BlobProperties
         get; internal set;
     }
 
-    public Microsoft.WindowsAzure.Storage.Blob.StandardBlobTier? StandardBlobTier
+    public Microsoft.Azure.Storage.Blob.StandardBlobTier? StandardBlobTier
     {
         get; internal set;
     }
 
-    public Microsoft.WindowsAzure.Storage.Blob.RehydrationStatus? RehydrationStatus
+    public Microsoft.Azure.Storage.Blob.RehydrationStatus? RehydrationStatus
     {
         get; internal set;
     }
 
-    public Microsoft.WindowsAzure.Storage.Blob.PremiumPageBlobTier? PremiumPageBlobTier
+    public Microsoft.Azure.Storage.Blob.PremiumPageBlobTier? PremiumPageBlobTier
     {
         get; internal set;
     }

@@ -1,8 +1,8 @@
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 public sealed class SharedAccessQueuePolicies : IDictionary<string, SharedAccessQueuePolicy>, ICollection<KeyValuePair<string, SharedAccessQueuePolicy>>, IEnumerable<KeyValuePair<string, SharedAccessQueuePolicy>>, IEnumerable
 {

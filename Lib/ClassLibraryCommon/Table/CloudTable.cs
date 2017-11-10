@@ -15,14 +15,14 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using Microsoft.WindowsAzure.Storage.Table.Protocol;
-    using Microsoft.WindowsAzure.Storage.Table.Queryable;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Table.Protocol;
+    using Microsoft.Azure.Storage.Table.Queryable;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -538,9 +538,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <typeparam name="TElement">The entity type of the query.</typeparam>
         /// <returns>A <see cref="TableQuery"/> object, specialized for type <c>TElement</c>, that may subsequently be executed.</returns>
         /// <remarks>
-        /// The <see cref="Microsoft.WindowsAzure.Storage.Table.Queryable"/> namespace includes extension methods for the <see cref="TableQuery"/> object, 
+        /// The <see cref="Microsoft.Azure.Storage.Table.Queryable"/> namespace includes extension methods for the <see cref="TableQuery"/> object, 
         /// including <see cref="M:WithOptions"/>, <see cref="M:WithContext"/>, and <see cref="M:AsTableQuery"/>. To use these methods, include a <c>using</c>
-        /// statement that references the <see cref="Microsoft.WindowsAzure.Storage.Table.Queryable"/> namespace.
+        /// statement that references the <see cref="Microsoft.Azure.Storage.Table.Queryable"/> namespace.
         /// </remarks>
         public virtual TableQuery<TElement> CreateQuery<TElement>() where TElement : ITableEntity, new()
         {

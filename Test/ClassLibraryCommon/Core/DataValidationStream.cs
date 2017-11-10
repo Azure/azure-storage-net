@@ -19,7 +19,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.Core.Util
+namespace Microsoft.Azure.Storage.Core.Util
 {
     public class DataValidationStream : Stream
     {

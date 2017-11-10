@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
 public sealed class NullType
 {

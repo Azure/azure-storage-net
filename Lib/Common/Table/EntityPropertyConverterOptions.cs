@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     /// <summary>
     /// Represents a set of options that may be specified for flattening and re-composition of objects by the Entity property converter.

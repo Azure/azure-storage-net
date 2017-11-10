@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
  
 internal sealed class DoesServiceRequestAttribute : Attribute

@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 #endif
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     [TestClass]
     public class BlobUploadDownloadTest : BlobTestBase

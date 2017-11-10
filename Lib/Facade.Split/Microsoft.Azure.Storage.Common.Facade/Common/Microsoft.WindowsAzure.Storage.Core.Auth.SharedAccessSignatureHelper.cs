@@ -1,9 +1,9 @@
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-namespace Microsoft.WindowsAzure.Storage.Core.Auth
+namespace Microsoft.Azure.Storage.Core.Auth
 {
 internal static class SharedAccessSignatureHelper
 {

@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
+namespace Microsoft.Azure.Storage.Queue.Protocol
 {
 internal static class QueueErrorCodeStrings
 {

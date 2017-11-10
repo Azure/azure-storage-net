@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-namespace Microsoft.WindowsAzure.Storage.RetryPolicies
+namespace Microsoft.Azure.Storage.RetryPolicies
 {
 public sealed class RetryContext
 {

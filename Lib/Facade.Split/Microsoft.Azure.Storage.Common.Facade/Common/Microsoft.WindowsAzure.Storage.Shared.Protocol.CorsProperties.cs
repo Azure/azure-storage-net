@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
 public sealed class CorsProperties
 {

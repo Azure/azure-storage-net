@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
 public sealed class TableResultSegment : IEnumerable<CloudTable>, IEnumerable
 {

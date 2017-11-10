@@ -18,7 +18,7 @@
 using System;
 using System.Text;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     public class TableTestBase : TestBase
     {

@@ -1,5 +1,5 @@
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
 internal enum QueueMessageType
 {

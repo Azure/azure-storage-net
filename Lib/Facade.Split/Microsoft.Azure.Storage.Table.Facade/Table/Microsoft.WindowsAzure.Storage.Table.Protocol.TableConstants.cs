@@ -1,5 +1,5 @@
 using System;
-namespace Microsoft.WindowsAzure.Storage.Table.Protocol
+namespace Microsoft.Azure.Storage.Table.Protocol
 {
 internal static class TableConstants
 {

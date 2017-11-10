@@ -1,5 +1,5 @@
  
-namespace Microsoft.WindowsAzure.Storage.Core.Auth
+namespace Microsoft.Azure.Storage.Core.Auth
 {
 internal interface ICanonicalizer
 {
