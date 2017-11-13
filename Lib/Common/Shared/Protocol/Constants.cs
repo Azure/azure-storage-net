@@ -854,7 +854,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "8.5.0";
+            public const string UserAgentProductVersion = "8.6.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
