@@ -109,6 +109,11 @@ public sealed class BlobProperties
         get; internal set;
     }
 
+    public DateTimeOffset? BlobTierLastModifiedTime
+    {
+        get; internal set;
+    }
+
     public BlobProperties()
     {
         throw new System.NotImplementedException();
