@@ -41,6 +41,7 @@ public static class HeaderConstants
     public const string AccessTierHeader = "x-ms-access-tier";
     public const string ArchiveStatusHeader = "x-ms-archive-status";
     public const string AccessTierInferredHeader = "x-ms-access-tier-inferred";
+    public const string AccessTierChangeTimeHeader = "x-ms-access-tier-change-time";
     public const string BlobCacheControlHeader = "x-ms-blob-cache-control";
     public const string BlobContentDispositionRequestHeader = "x-ms-blob-content-disposition";
     public const string BlobContentEncodingHeader = "x-ms-blob-content-encoding";
