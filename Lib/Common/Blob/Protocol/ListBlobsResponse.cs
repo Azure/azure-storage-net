@@ -361,7 +361,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             rehydrationStatusString = reader.ReadElementContentAsString();
                                             break;
 
-
                                         case Constants.AccessTierInferred:
                                             blobTierInferred = reader.ReadElementContentAsBoolean();
                                             break;
@@ -370,6 +369,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             string t = reader.ReadElementContentAsString();
                                             blobTierLastModifiedTime = DateTimeOffset.Parse(t, CultureInfo.InvariantCulture);
                                             break;
+
 
                                         case Constants.DeletedTimeElement:
                                             blob.Properties.DeletedTime = reader.ReadElementContentAsString().ToUTCTime();
