@@ -1257,13 +1257,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 catch (StorageException e)
                 {
                     string[] parts = e.RequestInformation.HttpStatusMessage.Split(' ');
-                    actualIP = IPAddress.Parse(parts[parts.Length - 1].Trim('.'));
                     exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
+                    Assert.IsNull(actualIP);
                 }
 
                 Assert.IsTrue(exceptionThrown);
-                ipAddressOrRange = generateFinalIPAddressOrRange(actualIP);
+                ipAddressOrRange = null;
                 tableToken = table.GetSharedAccessSignature(policy, null, null, null, null, null, null, ipAddressOrRange);
                 tableSAS = new StorageCredentials(tableToken);
                 tableSASUri = tableSAS.TransformUri(table.Uri);
