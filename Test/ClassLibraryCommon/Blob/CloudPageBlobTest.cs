@@ -3921,7 +3921,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob blob3 = (CloudPageBlob)container.ListBlobs().ToList().First();
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
-                Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob3.Properties.BlobTierInferred.HasValue);
 
                 CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
                 blob4.Create(125 * Constants.GB);

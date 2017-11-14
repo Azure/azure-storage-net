@@ -148,7 +148,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             properties.StandardBlobTier = standardBlobTier;
             properties.PremiumPageBlobTier = premiumPageBlobTier;
             
-            if (properties.PremiumPageBlobTier.HasValue && !properties.BlobTierInferred.HasValue)
+            if ((properties.PremiumPageBlobTier.HasValue || properties.StandardBlobTier.HasValue) && !properties.BlobTierInferred.HasValue)
             {
                 properties.BlobTierInferred = false;
             }
@@ -156,6 +156,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             // Get the rehydration status
             string rehydrationStatusString = response.Headers[Constants.HeaderConstants.ArchiveStatusHeader];
             properties.RehydrationStatus = BlobHttpResponseParsers.GetRehydrationStatus(rehydrationStatusString);
+
+            // Get the time the tier of the blob was last modified
+            string accessTierChangeTimeString = response.Headers[Constants.HeaderConstants.AccessTierChangeTimeHeader];
+            if (!string.IsNullOrEmpty(accessTierChangeTimeString))
+            {
+                properties.BlobTierLastModifiedTime = DateTimeOffset.Parse(accessTierChangeTimeString, CultureInfo.InvariantCulture);
+            }
 
             return properties;
         }
