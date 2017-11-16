@@ -52,11 +52,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int DefaultSubStreamBufferSize = (int)(4 * Constants.MB);
 
         /// <summary>
-        /// Default range size when downloading a blob in parallel.
-        /// </summary>
-        public const long DefaultParallelDownloadRangeSizeBytes = 16 * Constants.MB;
-
-        /// <summary>
         /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
         public const long MaxSingleUploadBlobSize = 256 * MB;
@@ -528,6 +523,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string AccessTierElement = "AccessTier";
 
         /// <summary>
+        /// Constant for the access tier being inferred.
+        /// </summary>
+        public const string AccessTierInferred = "AccessTierInferred";
+
+        /// <summary>
+        /// Constant for the access tier change time.
+        /// </summary>
+        public const string AccessTierChangeTimeElement = "AccessTierChangeTime";
+
+        /// <summary>
         /// Constant for the archive status.
         /// </summary>
         public const string ArchiveStatusElement = "ArchiveStatus";
@@ -849,7 +854,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "8.4.0";
+            public const string UserAgentProductVersion = "8.6.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -1020,6 +1025,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header for the blob tier inferred.
             /// </summary>
             public const string AccessTierInferredHeader = PrefixForStorageHeader + "access-tier-inferred";
+
+            /// <summary>
+            /// Header for the last time the tier was modified.
+            /// </summary>
+            public const string AccessTierChangeTimeHeader = PrefixForStorageHeader + "access-tier-change-time";
 
             /// <summary>
             /// Header that specifies blob caching control.

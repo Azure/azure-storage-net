@@ -92,7 +92,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             if ((snapshot != null) && (deleteSnapshotsOption != DeleteShareSnapshotsOption.None))
             {
@@ -143,7 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
@@ -177,7 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? snapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder shareBuilder = GetShareUriQueryBuilder();
             ShareHttpWebRequestFactory.AddShareSnapshot(shareBuilder, snapshot);
@@ -259,7 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        internal static HttpWebRequest Snapshot(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest Snapshot(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.ResourceType, "share");
@@ -343,20 +343,19 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                     sb.Append("metadata");
                 }
 
-                //TODO: Enable with ShareSnapshot
-                //if ((detailsIncluded & ShareListingDetails.Snapshots) == ShareListingDetails.Snapshots)
-                //{
-                //    if (!started)
-                //    {
-                //        started = true;
-                //    }
-                //    else
-                //    {
-                //        sb.Append(",");
-                //    }
+                if ((detailsIncluded & ShareListingDetails.Snapshots) == ShareListingDetails.Snapshots)
+                {
+                    if (!started)
+                    {
+                        started = true;
+                    }
+                    else
+                    {
+                        sb.Append(",");
+                    }
 
-                //    sb.Append("snapshots");
-                //}
+                    sb.Append("snapshots");
+                }
 
                 builder.Add("include", sb.ToString());
             }
