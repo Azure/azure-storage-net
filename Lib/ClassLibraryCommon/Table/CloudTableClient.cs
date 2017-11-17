@@ -88,6 +88,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                             this.Credentials,
                             this.Credentials.AccountName);
                     }
+                    else if (this.Credentials.IsToken)
+                    {
+                        throw new InvalidOperationException(SR.TokenIsNotSupportedForThisService);
+                    }
                     else
                     {
                         result = new NoOpAuthenticationHandler();

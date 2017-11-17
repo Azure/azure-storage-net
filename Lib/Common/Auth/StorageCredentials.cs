@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Auth;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
@@ -62,6 +63,11 @@ namespace Microsoft.WindowsAzure.Storage.Auth
             } 
         }
 
+        /// <summary>
+        /// Gets the associated OAuth Token for the credentials.
+        /// </summary>
+        internal TokenCredential TokenCredential { get; private set; }
+
         internal StorageAccountKey Key { get; private set; }
 
         /// <summary>
@@ -97,7 +103,19 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         {
             get
             {
-                return (this.SASToken == null) && (this.AccountName != null);
+                return (this.SASToken == null) && (this.TokenCredential == null) && (this.AccountName != null);
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the credentials are a bearer token.
+        /// </summary>
+        /// <value><c>true</c> if the credentials are a bearer token; otherwise, <c>false</c>.</value>
+        public bool IsToken
+        {
+            get
+            {
+                return this.TokenCredential != null;
             }
         }
 
@@ -188,6 +206,15 @@ namespace Microsoft.WindowsAzure.Storage.Auth
 
             this.SASToken = sasToken;
             this.UpdateQueryBuilder();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageCredentials"/> class with the specified bearer token.
+        /// </summary>
+        /// <param name="tokenCredential">The authentication token.</param>
+        public StorageCredentials(TokenCredential tokenCredential)
+        {
+            this.TokenCredential = tokenCredential;
         }
 
         /// <summary>
@@ -327,6 +354,11 @@ namespace Microsoft.WindowsAzure.Storage.Auth
             return (accountKey.KeyValue == null) ? null : Convert.ToBase64String(accountKey.KeyValue);
         }
 
+        private static string GetTokenValue(TokenCredential tokenCredential)
+        {
+            return tokenCredential == null ?  null : tokenCredential.Token;
+        }
+
         internal string ToString(bool exportSecrets)
         {
             if (this.IsSharedKey)
@@ -367,7 +399,8 @@ namespace Microsoft.WindowsAzure.Storage.Auth
                 return string.Equals(this.SASToken, other.SASToken) &&
                     string.Equals(this.AccountName, other.AccountName) &&
                     string.Equals(thisAccountKey.KeyName, otherAccountKey.KeyName) &&
-                    string.Equals(GetBase64EncodedKey(thisAccountKey), GetBase64EncodedKey(otherAccountKey));
+                    string.Equals(GetBase64EncodedKey(thisAccountKey), GetBase64EncodedKey(otherAccountKey)) &&
+                    string.Equals(GetTokenValue(this.TokenCredential), GetTokenValue(other.TokenCredential));
             }
         }
 

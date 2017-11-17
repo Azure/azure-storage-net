@@ -266,6 +266,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             StorageCredentials credSAS3 = new StorageCredentials(token + "1");
             StorageCredentials credAnonymous1 = new StorageCredentials();
             StorageCredentials credAnonymous2 = new StorageCredentials();
+            StorageCredentials tokenCredential1 = new StorageCredentials(new TokenCredential("0"));
+            StorageCredentials tokenCredential2 = new StorageCredentials(new TokenCredential("1"));
+            StorageCredentials tokenCredential3 = new StorageCredentials(new TokenCredential("0"));
 
             Assert.IsTrue(credSharedKey1.Equals(credSharedKey2));
             Assert.IsFalse(credSharedKey1.Equals(credSharedKey3));
@@ -276,6 +279,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             Assert.IsFalse(credSharedKey1.Equals(credSAS1));
             Assert.IsFalse(credSharedKey1.Equals(credAnonymous1));
             Assert.IsFalse(credSAS1.Equals(credAnonymous1));
+            Assert.IsFalse(tokenCredential1.Equals(tokenCredential2));
+            Assert.IsTrue(tokenCredential1.Equals(tokenCredential3));
         }
 
         private void AccountsAreEqual(CloudStorageAccount a, CloudStorageAccount b)

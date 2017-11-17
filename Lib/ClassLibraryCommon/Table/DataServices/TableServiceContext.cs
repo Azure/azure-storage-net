@@ -220,6 +220,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
                             this.ServiceClient.Credentials,
                             this.ServiceClient.Credentials.AccountName);
                     }
+                    else if (this.ServiceClient.Credentials.IsToken)
+                    {
+                        throw new InvalidOperationException(SR.TokenIsNotSupportedForThisService);
+                    }
                     else
                     {
                         this.authenticationHandler = new NoOpAuthenticationHandler();
