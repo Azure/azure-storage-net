@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     {
         private IDictionary<string, string> responseHeaders;
         private Stream inputStream = null;
+        private Task<Stream> inputStreamAsCachedTask = null;
         private string responseContentType = null;
 
         public DataServicesResponseAdapterMessage(Dictionary<string, string> responseHeaders, Stream inputStream)
@@ -38,12 +39,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         {
             this.responseHeaders = responseHeaders;
             this.inputStream = inputStream;
+            this.inputStreamAsCachedTask = Task.FromResult(inputStream);
             this.responseContentType = responseContentType;
         }
 
         public Task<Stream> GetStreamAsync()
         {
-            return Task.Factory.StartNew(() => this.inputStream);
+            return inputStreamAsCachedTask;
         }
 
         public string GetHeader(string headerName)
