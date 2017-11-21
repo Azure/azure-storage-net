@@ -1,3 +1,7 @@
+Changes in ?.?.? :
+- Blobs (Desktop): Added support for downloading a blob to a file by making concurrent service requests. The concurrency count is mandatory. The concurrency and range size should be chosen based on the memory, CPU, and bandwidth available. 
+- Blobs: Parsing the snapshot parameter when creating a CloudBlockBlob from a URI is now case insensitive
+
 Changes in 8.6.0 :
 - Tables : Added support for Byte type property in TableEntity Flatten/ConvertBack methods.
 - Blobs : Added support for the last time blobTier was modified.
