@@ -1,3 +1,6 @@
+Changes in 8.6.1 :
+- Blobs : Fixed a bug where a StorageException is throw when attempting to store encrypted blobs when a default JsonSerializerSettings with Formatting = Newtonsoft.Json.Formatting.Indented is specified.
+
 Changes in 8.6.0 :
 - Tables : Added support for Byte type property in TableEntity Flatten/ConvertBack methods.
 - Blobs : Added support for the last time blobTier was modified.
