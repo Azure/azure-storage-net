@@ -2568,6 +2568,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand{T}"/> that uploads the block.</returns>
         internal RESTCommand<NullType> PutBlockImpl(Stream source, string blockId, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options)
         {
+            if(accessCondition != null && accessCondition.IsConditional)
+            {
+                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "PutBlock"));
+            }
             options.AssertNoEncryptionPolicyOrStrictMode();
 
             long offset = source.Position;
@@ -2657,6 +2661,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand{T}"/> that gets the download block list.</returns>
         internal RESTCommand<IEnumerable<ListBlockItem>> GetBlockListImpl(BlockListingFilter typesOfBlocks, AccessCondition accessCondition, BlobRequestOptions options)
         {
+            if (accessCondition != null && accessCondition.IsConditional)
+            {
+                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "GetBlockList"));
+            }
             RESTCommand<IEnumerable<ListBlockItem>> getCmd = new RESTCommand<IEnumerable<ListBlockItem>>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(getCmd);

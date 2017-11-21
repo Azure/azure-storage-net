@@ -1553,6 +1553,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("copyId", copyId);
 
+            if (accessCondition != null && accessCondition.IsConditional)
+            {
+                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "AbortCopy"));
+            }
+
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);

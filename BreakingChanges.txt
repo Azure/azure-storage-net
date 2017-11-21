@@ -1,3 +1,7 @@
+Tracking Breaking Changes since 8.0
+
+- All: An exception is now thrown if a user passes conditional headers not supported by the called method.
+
 Tracking Breaking Changes since 7.0
 
 - All: (Desktop) Updated the desktop library to target .Net 4.5.0
