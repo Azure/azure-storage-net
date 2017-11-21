@@ -416,5 +416,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             "Creating a SAS should throw when using an invalid value for the Protocol enum.",
             String.Format(SR.InvalidProtocolsInSAS, protocol));
         }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying parameters unkown to the service.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobSASUnknownParamsAsync()
+        {
+            // Create Source on server
+            CloudBlockBlob blob = this.testContainer.GetBlockBlobReference("source");
+
+            string data = "String data";
+            await UploadTextAsync(blob, data, Encoding.UTF8);
+
+            UriBuilder blobURIBuilder = new UriBuilder(blob.Uri);
+            blobURIBuilder.Query = "MyQuery=value&YOURQUERY=value2"; // Add the query params unknown to the service
+
+            // Source SAS must have read permissions
+            SharedAccessBlobPermissions permissions = SharedAccessBlobPermissions.Read;
+            SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = permissions,
+            };
+            string sasToken = blob.GetSharedAccessSignature(policy);
+
+            StorageCredentials credentials = new StorageCredentials(sasToken);
+            CloudBlockBlob sasBlob = new CloudBlockBlob(credentials.TransformUri(blobURIBuilder.Uri)); // Add the SAS query params
+
+            // Validate that we can fetch the attributes on the blob (no exception thrown)
+            await sasBlob.FetchAttributesAsync();
+        }
     }
 }
