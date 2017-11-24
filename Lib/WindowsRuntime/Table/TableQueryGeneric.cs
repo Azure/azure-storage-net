@@ -76,11 +76,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment<TElement>> cmdToExecute = QueryImpl(this, token, client, tableName, EntityUtilities.ResolveEntityByType<TElement>, modifiedOptions);
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                        cmdToExecute,
-                                                        modifiedOptions.RetryPolicy,
-                                                        operationContext,
-                                                        cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         internal IEnumerable<TResult> Execute<TResult>(CloudTableClient client, string tableName, EntityResolver<TResult> resolver, TableRequestOptions requestOptions, OperationContext operationContext)
@@ -119,11 +119,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment<TResult>> cmdToExecute = QueryImpl(this, token, client, tableName, resolver, modifiedOptions);
 
-            return Task.Run(() => Executor.ExecuteAsync(
-                                            cmdToExecute,
-                                            modifiedOptions.RetryPolicy,
-                                            operationContext,
-                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private static RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<T, RESULT_TYPE>(TableQuery<T> query, TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions) where T : ITableEntity, new()

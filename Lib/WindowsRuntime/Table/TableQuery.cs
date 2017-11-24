@@ -71,11 +71,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment> cmdToExecute = QueryImpl(this, continuationToken, client, tableName, EntityUtilities.ResolveEntityByType<DynamicTableEntity>, modifiedOptions);
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                            cmdToExecute,
-                                                            modifiedOptions.RetryPolicy,
-                                                            operationContext,
-                                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private static RESTCommand<TableQuerySegment> QueryImpl(TableQuery query, TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<DynamicTableEntity> resolver, TableRequestOptions requestOptions)
@@ -119,11 +119,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<TableQuerySegment<TResult>> cmdToExecute = this.QueryImpl<TResult>(continuationToken, client, tableName, resolver, modifiedOptions);
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                            cmdToExecute,
-                                                            modifiedOptions.RetryPolicy,
-                                                            operationContext,
-                                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<RESULT_TYPE>(TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions)
