@@ -80,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A stream to be used for writing to the blob.</returns>
         [DoesServiceRequest]
-        public virtual Task<CloudBlobStream> OpenWriteAsync(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<CloudBlobStream> OpenWriteAsync(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient, false);
@@ -89,27 +89,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new ArgumentException(SR.MD5NotPossible);
             }
 
-            return Task.Run(async () =>
+            if (createNew)
             {
-                if (createNew)
-                {
-                    await this.CreateOrReplaceAsync(accessCondition, options, operationContext, cancellationToken);
-                }
-                else
-                {
-                    // Although we don't need any properties from the service, we should make this call in order to honor the user specified conditional headers
-                    // while opening an existing stream and to get the append position for an existing blob if user didn't specify one.
-                    await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken);
-                }
+                await this.CreateOrReplaceAsync(accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                // Although we don't need any properties from the service, we should make this call in order to honor the user specified conditional headers
+                // while opening an existing stream and to get the append position for an existing blob if user didn't specify one.
+                await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
 
-                if (accessCondition != null)
-                {
-                    accessCondition = new AccessCondition() { LeaseId = accessCondition.LeaseId, IfAppendPositionEqual = accessCondition.IfAppendPositionEqual, IfMaxSizeLessThanOrEqual = accessCondition.IfMaxSizeLessThanOrEqual };
-                }
+            if (accessCondition != null)
+            {
+                accessCondition = new AccessCondition() { LeaseId = accessCondition.LeaseId, IfAppendPositionEqual = accessCondition.IfAppendPositionEqual, IfMaxSizeLessThanOrEqual = accessCondition.IfMaxSizeLessThanOrEqual };
+            }
 
-                CloudBlobStream stream = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
-                return stream;
-            }, cancellationToken);
+            CloudBlobStream stream = new BlobWriteStream(this, accessCondition, modifiedOptions, operationContext);
+            return stream;
         }
 
         /// <summary>
@@ -358,7 +355,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        internal Task UploadFromStreamAsyncHelper(Stream source, long? length, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        internal async Task UploadFromStreamAsyncHelper(Stream source, long? length, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -377,16 +374,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-            return Task.Run(async () =>
+            using (CloudBlobStream blobStream = await this.OpenWriteAsync(createNew, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false))
             {
-                using (CloudBlobStream blobStream = await this.OpenWriteAsync(createNew, accessCondition, options, operationContext, cancellationToken))
-                {
-                    // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
-                    // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-                    await source.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
-                    await blobStream.CommitAsync();
-                }
-            }, cancellationToken);
+                // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
+                // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
+                await source.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                await blobStream.CommitAsync().ConfigureAwait(false);
+            }
         }
 
         /// <summary>
@@ -472,17 +466,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task UploadFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("path", path);
 
-            return Task.Run(async () =>
+            using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
-                }
-            }, cancellationToken);
+                await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
         }
 #else
         /// <param name="source">The file providing the blob content.</param>
@@ -502,13 +493,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("source", source);
 
-            return Task.Run(async () =>
+            using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken).ConfigureAwait(false))
             {
-                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken))
-                {
-                    await this.UploadFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken);
-                }
-            });
+                await this.UploadFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
         }
 #endif
 
@@ -581,17 +569,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task AppendFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task AppendFromFileAsync(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("path", path);
 
-            return Task.Run(async () =>
+            using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    await this.AppendFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
-                }
-            }, cancellationToken);
+                await this.AppendFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
         }
 #else
         /// <param name="source">The file providing the blob content.</param>
@@ -609,13 +594,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             CommonUtility.AssertNotNull("source", source);
 
-            return Task.Run(async () =>
+            using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken).ConfigureAwait(false))
             {
-                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken))
-                {
-                    await this.AppendFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken);
-                }
-            });
+                await this.AppendFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
         }
 #endif
 
@@ -889,11 +871,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task CreateOrReplaceAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.CreateImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -947,60 +929,57 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
             bool requiresContentMD5 = string.IsNullOrEmpty(contentMD5) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-            return Task.Run(async () =>
+            Stream blockDataAsStream = blockData;
+            Stream seekableStream = blockDataAsStream;
+            bool seekableStreamCreated = false;
+
+            try
             {
-                Stream blockDataAsStream = blockData;
-                Stream seekableStream = blockDataAsStream;
-                bool seekableStreamCreated = false;
-
-                try
+                if (!blockDataAsStream.CanSeek || requiresContentMD5)
                 {
-                    if (!blockDataAsStream.CanSeek || requiresContentMD5)
+                    Stream writeToStream;
+                    if (blockDataAsStream.CanSeek)
                     {
-                        Stream writeToStream;
-                        if (blockDataAsStream.CanSeek)
-                        {
-                            writeToStream = Stream.Null;
-                        }
-                        else
-                        {
-                            seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                            seekableStreamCreated = true;
-                            writeToStream = seekableStream;
-                        }
-
-                        StreamDescriptor streamCopyState = new StreamDescriptor();
-                        long startPosition = seekableStream.Position;
-                        await blockDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
-                        seekableStream.Position = startPosition;
-
-                        if (requiresContentMD5)
-                        {
-                            contentMD5 = streamCopyState.Md5;
-                        }
+                        writeToStream = Stream.Null;
+                    }
+                    else
+                    {
+                        seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                        seekableStreamCreated = true;
+                        writeToStream = seekableStream;
                     }
 
-                    return await Executor.ExecuteAsync(
-                        this.AppendBlockImpl(seekableStream, contentMD5, accessCondition, modifiedOptions),
-                        modifiedOptions.RetryPolicy,
-                        operationContext,
-                        cancellationToken);
-                }
-                finally
-                {
-                    if (seekableStreamCreated)
+                    StreamDescriptor streamCopyState = new StreamDescriptor();
+                    long startPosition = seekableStream.Position;
+                    await blockDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
+                    seekableStream.Position = startPosition;
+
+                    if (requiresContentMD5)
                     {
-                        seekableStream.Dispose();
+                        contentMD5 = streamCopyState.Md5;
                     }
                 }
-            }, cancellationToken);
+
+                return await Executor.ExecuteAsync(
+                    this.AppendBlockImpl(seekableStream, contentMD5, accessCondition, modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (seekableStreamCreated)
+                {
+                    seekableStream.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -1037,17 +1016,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The contents of the blob, as a string.</returns>
         [DoesServiceRequest]
-        public virtual Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
+            using (SyncMemoryStream stream = new SyncMemoryStream())
             {
-                using (SyncMemoryStream stream = new SyncMemoryStream())
-                {
-                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
-                    byte[] streamAsBytes = stream.ToArray();
-                    return (encoding ?? Encoding.UTF8).GetString(streamAsBytes, 0, streamAsBytes.Length);
-                }
-            }, cancellationToken);
+                await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                byte[] streamAsBytes = stream.ToArray();
+                return (encoding ?? Encoding.UTF8).GetString(streamAsBytes, 0, streamAsBytes.Length);
+            }
         }
 
         /// <summary>
@@ -1142,11 +1118,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.CreateSnapshotImpl(metadata, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
     /// <summary>
