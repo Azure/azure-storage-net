@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
     internal class DataServicesResponseAdapterMessage : IODataResponseMessage
     {
         private IDictionary<string, string> responseHeaders;
-        private Stream inputStream = null;
+        private Task<Stream> inputStreamAsCachedTask = null;
         private string responseContentType = null;
 
         public DataServicesResponseAdapterMessage(Dictionary<string, string> responseHeaders, Stream inputStream)
@@ -37,13 +37,13 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
         public DataServicesResponseAdapterMessage(IDictionary<string, string> responseHeaders, Stream inputStream, string responseContentType)
         {
             this.responseHeaders = responseHeaders;
-            this.inputStream = inputStream;
+            this.inputStreamAsCachedTask = Task.FromResult(inputStream);
             this.responseContentType = responseContentType;
         }
 
         public Task<Stream> GetStreamAsync()
         {
-            return Task.Factory.StartNew(() => this.inputStream);
+            return inputStreamAsCachedTask;
         }
 
         public string GetHeader(string headerName)
@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.DataServices
 
         public Stream GetStream()
         {
-            return this.inputStream;
+            return this.inputStreamAsCachedTask.Result; // safe since completed task and avoids additional field for stream
         }
 
         public IEnumerable<KeyValuePair<string, string>> Headers
