@@ -559,7 +559,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
+            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.FromResult(BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;
         }
 #endregion
