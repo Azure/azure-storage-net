@@ -99,7 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                ResultSegment<DynamicTableEntity> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<DynamicTableEntity>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
+                ResultSegment<DynamicTableEntity> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<DynamicTableEntity>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName).ConfigureAwait(false);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;
@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
+                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName).ConfigureAwait(false);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;

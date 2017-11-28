@@ -68,7 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     }
                     else
                     {
-                        currentResult.ExtendedErrorInformation = await StorageExtendedErrorInformation.ReadFromStreamAsync(errStream.AsInputStream());
+                        currentResult.ExtendedErrorInformation = await StorageExtendedErrorInformation.ReadFromStreamAsync(errStream.AsInputStream()).ConfigureAwait(false);
                     }
                 }
                 catch (Exception)
