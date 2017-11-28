@@ -71,9 +71,9 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="stream">input stream</param>
         /// <param name="buffer">buffer to write to the stream</param>
         /// <returns>Async task</returns>
-        public static async Task WriteAsync(this Stream stream, byte[] buffer)
+        public static Task WriteAsync(this Stream stream, byte[] buffer)
         {
-            await stream.WriteAsync(buffer, 0, buffer.Length);
+            return stream.WriteAsync(buffer, 0, buffer.Length);
         }
 
         /// <summary>
