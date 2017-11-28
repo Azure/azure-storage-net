@@ -67,11 +67,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async() => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.CreateDirectoryImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -107,48 +107,45 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise <c>false</c>.</returns>
         /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
-        public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () =>
+            try
             {
-                try
+                // Root directory always exists if the share exists.
+                // We cannot call this.CreateDirectoryImpl if this is the root directory, because the service will always 
+                // return a 405 error in that case, regardless of whether or not the share exists.
+                if (string.IsNullOrEmpty(this.Name))
                 {
-                    // Root directory always exists if the share exists.
-                    // We cannot call this.CreateDirectoryImpl if this is the root directory, because the service will always 
-                    // return a 405 error in that case, regardless of whether or not the share exists.
-                    if (string.IsNullOrEmpty(this.Name))
-                    {
-                        // If the share does not exist, this fetch call will throw a 404, which is what we want.
-                        await Executor.ExecuteAsync(
-                            this.FetchAttributesImpl(null, modifiedOptions),
-                            modifiedOptions.RetryPolicy,
-                            operationContext,
-                            cancellationToken);
-                        return false;
-                    }
-
+                    // If the share does not exist, this fetch call will throw a 404, which is what we want.
                     await Executor.ExecuteAsync(
-                        this.CreateDirectoryImpl(modifiedOptions),
+                        this.FetchAttributesImpl(null, modifiedOptions),
                         modifiedOptions.RetryPolicy,
                         operationContext,
-                        cancellationToken);
+                        cancellationToken).ConfigureAwait(false);
+                    return false;
+                }
 
-                    return true;
-                }
-                catch (StorageException e)
+                await Executor.ExecuteAsync(
+                    this.CreateDirectoryImpl(modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken).ConfigureAwait(false);
+
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.ExtendedErrorInformation != null) &&
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists))
                 {
-                    if ((e.RequestInformation.ExtendedErrorInformation != null) &&
-                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return false;
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -184,11 +181,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.DeleteDirectoryImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -223,54 +220,51 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the directory already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () =>
+            try
             {
-                try
-                {
-                    bool exists = await Executor.ExecuteAsync(
-                        this.ExistsImpl(modifiedOptions),
-                        modifiedOptions.RetryPolicy,
-                        operationContext,
-                        cancellationToken);
+                bool exists = await Executor.ExecuteAsync(
+                    this.ExistsImpl(modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken).ConfigureAwait(false);
 
-                    if (!exists)
-                    {
-                        return false;
-                    }
-                }
-                catch (StorageException e)
+                if (!exists)
                 {
-                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
-                    {
-                        throw;
-                    }
+                    return false;
                 }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
+            }
 
-                try
-                {
-                    await Executor.ExecuteAsync(
-                        this.DeleteDirectoryImpl(accessCondition, modifiedOptions),
-                        modifiedOptions.RetryPolicy,
-                        operationContext,
-                        cancellationToken);
+            try
+            {
+                await Executor.ExecuteAsync(
+                    this.DeleteDirectoryImpl(accessCondition, modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken).ConfigureAwait(false);
 
-                    return true;
-                }
-                catch (StorageException e)
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
-                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return false;
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -306,11 +300,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.ExistsImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -345,11 +339,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.FetchAttributesImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -427,19 +421,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A file result segment.</returns>
         [DoesServiceRequest]
-        public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () =>
-            {
-                ResultSegment<IListFileItem> resultSegment = await Executor.ExecuteAsync(
-                    this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken, prefix),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
+            ResultSegment<IListFileItem> resultSegment = await Executor.ExecuteAsync(
+                this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken, prefix),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
 
-                return new FileResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
-            }, cancellationToken);
+            return new FileResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
         }
 
         /// <summary>
@@ -475,11 +466,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -603,24 +594,21 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
+                ListFilesAndDirectoriesResponse listFilesResponse = new ListFilesAndDirectoriesResponse(cmd.ResponseStream);
+                List<IListFileItem> fileList = listFilesResponse.Files.Select(item => this.SelectListFileItem(item)).ToList();
+                FileContinuationToken continuationToken = null;
+                if (listFilesResponse.NextMarker != null)
                 {
-                    ListFilesAndDirectoriesResponse listFilesResponse = new ListFilesAndDirectoriesResponse(cmd.ResponseStream);
-                    List<IListFileItem> fileList = listFilesResponse.Files.Select(item => this.SelectListFileItem(item)).ToList();
-                    FileContinuationToken continuationToken = null;
-                    if (listFilesResponse.NextMarker != null)
+                    continuationToken = new FileContinuationToken()
                     {
-                        continuationToken = new FileContinuationToken()
-                        {
-                            NextMarker = listFilesResponse.NextMarker,
-                            TargetLocation = cmd.CurrentResult.TargetLocation,
-                        };
-                    }
-
-                    return new ResultSegment<IListFileItem>(fileList)
-                    {
-                        ContinuationToken = continuationToken,
+                        NextMarker = listFilesResponse.NextMarker,
+                        TargetLocation = cmd.CurrentResult.TargetLocation,
                     };
+                }
+
+                return Task.FromResult(new ResultSegment<IListFileItem>(fileList)
+                {
+                    ContinuationToken = continuationToken,
                 });
             };
 
