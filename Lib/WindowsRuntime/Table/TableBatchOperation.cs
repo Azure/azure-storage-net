@@ -56,11 +56,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             RESTCommand<IList<TableResult>> cmdToExecute = BatchImpl(this, client, tableName, modifiedOptions);
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                            cmdToExecute,
-                                                            modifiedOptions.RetryPolicy,
-                                                            operationContext,
-                                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private static RESTCommand<IList<TableResult>> BatchImpl(TableBatchOperation batch, CloudTableClient client, string tableName, TableRequestOptions requestOptions)
