@@ -95,11 +95,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 throw new NotSupportedException();
             }
 
-            return Task.Run(() => Executor.ExecuteAsync(
-                                            cmdToExecute,
-                                            modifiedOptions.RetryPolicy,
-                                            operationContext,                                                                       
-                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private static RESTCommand<TableResult> InsertImpl(TableOperation operation, CloudTableClient client, string tableName, TableRequestOptions requestOptions)
@@ -176,17 +176,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retrieveCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retrieveCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableOperation(cmd, uri, builder, serverTimeout, operation, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             retrieveCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex, cmd, ctx);
-            retrieveCmd.PostProcessResponse = (cmd, resp, ctx) =>
-                  Task.Run(async () =>
+            retrieveCmd.PostProcessResponse = async (cmd, resp, ctx) =>
+                {
+                    if (resp.StatusCode == HttpStatusCode.NotFound)
                     {
-                        if (resp.StatusCode == HttpStatusCode.NotFound)
-                        {
-                            return result;
-                        }
-
-                        result = await TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
                         return result;
-                    });
+                    }
+
+                    result = await TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName).ConfigureAwait(false);
+                    return result;
+                };
             return retrieveCmd;
         }
 

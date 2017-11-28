@@ -172,24 +172,21 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The result segment containing the collection of tables.</returns>
         [DoesServiceRequest]
-        public virtual Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<TableResultSegment> ListTablesSegmentedAsync(string prefix, int? maxResults, TableContinuationToken currentToken, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
 
             TableQuery query = this.GenerateListTablesQuery(prefix, maxResults);
 
-            return Task.Run(async () =>
-            {
-                TableQuerySegment seg = await this.ExecuteQuerySegmentedAsync(TableConstants.TableServiceTablesName, query, currentToken, requestOptions, operationContext, cancellationToken);
-                TableResultSegment retSegment = new TableResultSegment(seg.Results.Select(tbl => new CloudTable(tbl.Properties[TableConstants.TableName].StringValue, this)).ToList());
-                retSegment.ContinuationToken = seg.ContinuationToken;
-                return retSegment;
-            }, cancellationToken);
+            TableQuerySegment seg = await this.ExecuteQuerySegmentedAsync(TableConstants.TableServiceTablesName, query, currentToken, requestOptions, operationContext, cancellationToken).ConfigureAwait(false);
+            TableResultSegment retSegment = new TableResultSegment(seg.Results.Select(tbl => new CloudTable(tbl.Properties[TableConstants.TableName].StringValue, this)).ToList());
+            retSegment.ContinuationToken = seg.ContinuationToken;
+            return retSegment;
         }
-#endregion
+        #endregion
 
-#region Analytics
+        #region Analytics
         /// <summary>
         /// Gets the properties of the table service.
         /// </summary>
@@ -225,11 +222,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                        this.GetServicePropertiesImpl(modifiedOptions),
-                                                        modifiedOptions.RetryPolicy,
-                                                        operationContext,
-                                                        cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetServicePropertiesImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<ServiceProperties> GetServicePropertiesImpl(TableRequestOptions requestOptions)
@@ -245,7 +242,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             retCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() => HttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
+                return Task.FromResult(HttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
             };
 
             requestOptions.ApplyToStorageCommand(retCmd);
@@ -289,11 +286,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-                                                                this.SetServicePropertiesImpl(properties, modifiedOptions),
-                                                                modifiedOptions.RetryPolicy,
-                                                                operationContext,
-                                                                cancellationToken), cancellationToken);
+            return Executor.ExecuteAsyncNullReturn(
+                this.SetServicePropertiesImpl(properties, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<NullType> SetServicePropertiesImpl(ServiceProperties properties, TableRequestOptions requestOptions)
@@ -356,12 +353,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(
-                async () => await Executor.ExecuteAsync(
-                    this.GetServiceStatsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetServiceStatsImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
 
@@ -379,7 +375,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             retCmd.RetrieveResponseStream = true;
             retCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => HttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
+            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.FromResult(HttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;
         }
         #endregion
