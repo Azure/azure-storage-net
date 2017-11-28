@@ -75,16 +75,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A stream to be used for reading from the file.</returns>
         [DoesServiceRequest]
-        public virtual Task<Stream> OpenReadAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<Stream> OpenReadAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             operationContext = operationContext ?? new OperationContext();
-            return Task.Run<Stream>(async () =>
-            {
-                await this.FetchAttributesAsync(accessCondition, options, operationContext);
-                AccessCondition streamAccessCondition = AccessCondition.CloneConditionWithETag(accessCondition, this.Properties.ETag);
-                FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient, false);
-                return new FileReadStream(this, streamAccessCondition, modifiedOptions, operationContext);
-            }, cancellationToken);
+            await this.FetchAttributesAsync(accessCondition, options, operationContext).ConfigureAwait(false);
+            AccessCondition streamAccessCondition = AccessCondition.CloneConditionWithETag(accessCondition, this.Properties.ETag);
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient, false);
+            return new FileReadStream(this, streamAccessCondition, modifiedOptions, operationContext);
         }
 
         /// <summary>
@@ -122,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A stream to be used for writing to the file.</returns>
         [DoesServiceRequest]
-        public virtual Task<CloudFileStream> OpenWriteAsync(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<CloudFileStream> OpenWriteAsync(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient, false);
@@ -133,26 +130,23 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 throw new ArgumentException(SR.MD5NotPossible);
             }
-            return Task.Run(async () =>
+            if (createNew)
             {
-                if (createNew)
-                {
-                    await this.CreateAsync(size.Value, accessCondition, options, operationContext, cancellationToken);
-                }
-                else
-                {
-                    await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken);
-                    size = this.Properties.Length;
-                }
+                await this.CreateAsync(size.Value, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                size = this.Properties.Length;
+            }
 
-                if (accessCondition != null)
-                {
-                    accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
-                }
+            if (accessCondition != null)
+            {
+                accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
+            }
 
-                CloudFileStream stream = new FileWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext);
-                return stream;
-            }, cancellationToken);
+            CloudFileStream stream = new FileWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext);
+            return stream;
         }
 
         /// <summary>
@@ -264,7 +258,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        internal async Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -288,16 +282,14 @@ namespace Microsoft.WindowsAzure.Storage.File
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-            return Task.Run(async () =>
+            using (CloudFileStream fileStream = await this.OpenWriteAsync(length, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false))
             {
-                using (CloudFileStream fileStream = await this.OpenWriteAsync(length, accessCondition, options, operationContext, cancellationToken))
-                {
-                    // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
-                    // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-                    await sourceAsStream.WriteToAsync(fileStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
-                    await fileStream.CommitAsync();
-                }
-            }, cancellationToken);
+                // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
+                // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
+                await sourceAsStream.WriteToAsync(fileStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                await fileStream.CommitAsync().ConfigureAwait(false);
+            }
+
         }
 
         /// <summary>
@@ -361,13 +353,10 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             CommonUtility.AssertNotNull("source", source);
 
-            return Task.Run(async () =>
+            using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken).ConfigureAwait(false))
             {
-                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken))
-                {
-                    await this.UploadFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken);
-                }
-            });
+                await this.UploadFromStreamAsync(stream.AsStream(), accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
         }
 #endif
 
@@ -382,17 +371,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task UploadFromFileAsync(string path, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("path", path);
 
-            return Task.Run(async () =>
+            using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
-                }
-            }, cancellationToken);
+                await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
         }
 #endif
 
@@ -591,14 +577,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             CommonUtility.AssertNotNull("target", target);
 
-            return Task.Run(async () =>
+            using (StorageStreamTransaction transaction = await target.OpenTransactedWriteAsync().AsTask(cancellationToken).ConfigureAwait(false))
             {
-                using (StorageStreamTransaction transaction = await target.OpenTransactedWriteAsync().AsTask(cancellationToken))
-                {
-                    await this.DownloadToStreamAsync(transaction.Stream.AsStream(), accessCondition, options, operationContext, cancellationToken);
-                    await transaction.CommitAsync();
-                }
-            });
+                await this.DownloadToStreamAsync(transaction.Stream.AsStream(), accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                await transaction.CommitAsync().ConfigureAwait(false);
+            }
         }
 #endif
 
@@ -614,39 +597,36 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("path", path);
 
-            return Task.Run(async () =>
+            FileStream stream = new FileStream(path, mode, FileAccess.Write);
+
+            try
             {
-                FileStream stream = new FileStream(path, mode, FileAccess.Write);
-
-                try
+                using (stream)
                 {
-                    using (stream)
+                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            catch (Exception)
+            {
+                if (mode == FileMode.Create || mode == FileMode.CreateNew)
+                {
+                    try
                     {
-                        await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
+                        File.Delete(path);
+                    }
+                    catch (Exception)
+                    {
+                        // Best effort to clean up in the event that download was unsuccessful.
+                        // Do not throw as we want to throw original exception.
                     }
                 }
-                catch (Exception)
-                {
-                    if (mode == FileMode.Create || mode == FileMode.CreateNew)
-                    {
-                        try
-                        {
-                            File.Delete(path);
-                        }
-                        catch (Exception)
-                        {
-                            // Best effort to clean up in the event that download was unsuccessful.
-                            // Do not throw as we want to throw original exception.
-                        }
-                    }
 
-                    throw;
-                }
-            });
+                throw;
+            }
         }
 #endif
 
@@ -738,17 +718,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The contents of the file, as a string.</returns>
         [DoesServiceRequest]
-        public virtual Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
+            using (SyncMemoryStream stream = new SyncMemoryStream())
             {
-                using (SyncMemoryStream stream = new SyncMemoryStream())
-                {
-                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
-                    byte[] streamAsBytes = stream.ToArray();
-                    return Encoding.UTF8.GetString(streamAsBytes, 0, streamAsBytes.Length);
-                }
-            }, cancellationToken);
+                await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                byte[] streamAsBytes = stream.ToArray();
+                return Encoding.UTF8.GetString(streamAsBytes, 0, streamAsBytes.Length);
+            }
         }
 
         /// <summary>
@@ -787,11 +764,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
             // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.GetFileImpl(target, offset, length, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -838,16 +815,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         [DoesServiceRequest]
-        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
+            using (SyncMemoryStream stream = new SyncMemoryStream(target, index))
             {
-                using (SyncMemoryStream stream = new SyncMemoryStream(target, index))
-                {
-                    await this.DownloadRangeToStreamAsync(stream, fileOffset, length, accessCondition, options, operationContext, cancellationToken);
-                    return (int)stream.Position;
-                }
-            }, cancellationToken);
+                await this.DownloadRangeToStreamAsync(stream, fileOffset, length, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                return (int)stream.Position;
+            }
         }
 
         /// <summary>
@@ -886,11 +860,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -926,11 +900,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.ExistsImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -965,11 +939,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.FetchAttributesImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1005,11 +979,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.DeleteFileImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1044,39 +1018,36 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the file already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
+            try
             {
-                try
+                await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception)
+            {
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
-                    await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                    if ((extendedInfo == null) ||
+                        (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
                     {
-                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                        if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        return false;
                     }
                     else
                     {
                         throw;
                     }
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// Gets a collection of valid ranges and their starting and ending bytes.
@@ -1118,11 +1089,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task<IEnumerable<FileRange>> ListRangesAsync(long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.ListRangesImpl(offset, length, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1157,11 +1128,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1199,11 +1170,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual Task ResizeAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.ResizeImpl(size, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1239,11 +1210,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1289,7 +1260,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("rangeData", rangeData);
 
@@ -1299,60 +1270,57 @@ namespace Microsoft.WindowsAzure.Storage.File
             operationContext = operationContext ?? new OperationContext();
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-            return Task.Run(async () =>
+            DateTime streamCopyStartTime = DateTime.Now;
+
+            Stream rangeDataAsStream = rangeData;
+            Stream seekableStream = rangeDataAsStream;
+            bool seekableStreamCreated = false;
+
+            try
             {
-                DateTime streamCopyStartTime = DateTime.Now;
-
-                Stream rangeDataAsStream = rangeData;
-                Stream seekableStream = rangeDataAsStream;
-                bool seekableStreamCreated = false;
-
-                try
+                if (!rangeDataAsStream.CanSeek || requiresContentMD5)
                 {
-                    if (!rangeDataAsStream.CanSeek || requiresContentMD5)
+                    Stream writeToStream;
+                    if (rangeDataAsStream.CanSeek)
                     {
-                        Stream writeToStream;
-                        if (rangeDataAsStream.CanSeek)
-                        {
-                            writeToStream = Stream.Null;
-                        }
-                        else
-                        {
-                            seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                            seekableStreamCreated = true;
-                            writeToStream = seekableStream;
-                        }
-
-                        StreamDescriptor streamCopyState = new StreamDescriptor();
-                        long startPosition = seekableStream.Position;
-                        await rangeDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
-                        seekableStream.Position = startPosition;
-
-                        if (requiresContentMD5)
-                        {
-                            contentMD5 = streamCopyState.Md5;
-                        }
-
-                        if (modifiedOptions.MaximumExecutionTime.HasValue)
-                        {
-                            modifiedOptions.MaximumExecutionTime -= DateTime.Now.Subtract(streamCopyStartTime);
-                        }
+                        writeToStream = Stream.Null;
+                    }
+                    else
+                    {
+                        seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                        seekableStreamCreated = true;
+                        writeToStream = seekableStream;
                     }
 
-                    await Executor.ExecuteAsyncNullReturn(
-                        this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
-                        modifiedOptions.RetryPolicy,
-                        operationContext,
-                        cancellationToken);
-                }
-                finally
-                {
-                    if (seekableStreamCreated)
+                    StreamDescriptor streamCopyState = new StreamDescriptor();
+                    long startPosition = seekableStream.Position;
+                    await rangeDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    seekableStream.Position = startPosition;
+
+                    if (requiresContentMD5)
                     {
-                        seekableStream.Dispose();
+                        contentMD5 = streamCopyState.Md5;
+                    }
+
+                    if (modifiedOptions.MaximumExecutionTime.HasValue)
+                    {
+                        modifiedOptions.MaximumExecutionTime -= DateTime.Now.Subtract(streamCopyStartTime);
                     }
                 }
-            }, cancellationToken);
+
+                await Executor.ExecuteAsyncNullReturn(
+                    this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (seekableStreamCreated)
+                {
+                    seekableStream.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -1394,11 +1362,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.ClearRangeImpl(startOffset, length, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1483,11 +1451,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync<string>(
+            return Executor.ExecuteAsync<string>(
                 this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1545,11 +1513,11 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-               this.AbortCopyImpl(copyId, accessCondition, modifiedOptions),
-               modifiedOptions.RetryPolicy,
-               operationContext,
-               cancellationToken), cancellationToken);
+            return Executor.ExecuteAsyncNullReturn(
+                this.AbortCopyImpl(copyId, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         /// <summary>
@@ -1653,7 +1621,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 HttpResponseParsers.ValidateResponseStreamMd5AndLength(validateLength, storedMD5, cmd);
-                return Task.FromResult(NullType.Value);
+                return NullType.ValueTask;
             };
 
             return getCmd;
@@ -1780,12 +1748,9 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 this.UpdateETagLMTAndLength(resp, true);
-                return Task.Factory.StartNew(() =>
-                {
-                    ListRangesResponse listRangesResponse = new ListRangesResponse(cmd.ResponseStream);
-                    IEnumerable<FileRange> ranges = listRangesResponse.Ranges.ToList();
-                    return ranges;
-                });
+                ListRangesResponse listRangesResponse = new ListRangesResponse(cmd.ResponseStream);
+                IEnumerable<FileRange> ranges = listRangesResponse.Ranges.ToList();
+                return Task.FromResult(ranges);
             };
 
             return getCmd;
