@@ -226,7 +226,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             retCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() => QueueHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
+                return Task.FromResult(QueueHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
             };
 
             requestOptions.ApplyToStorageCommand(retCmd);
@@ -356,7 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => QueueHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
+            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.FromResult(QueueHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;
         }
 
