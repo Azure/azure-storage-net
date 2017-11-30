@@ -261,6 +261,49 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        [TestMethod]
+        [Description("Test downloading an empty blob to a file")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task ParallelDownloadToEmptyFileTest()
+        {
+            string inputFileName = Path.GetTempFileName();
+            string outputFileName = Path.GetTempPath() + "output.tmp";
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("largeblob1");
+
+
+                FileStream fs = File.Create(inputFileName);
+                fs.Close();
+                
+                BlobRequestOptions options = new BlobRequestOptions();
+                options.ParallelOperationThreadCount = 16;
+                await blob.UploadFromFileAsync(inputFileName, null, options, null);
+
+                Assert.IsFalse(File.Exists(outputFileName));
+                await blob.DownloadToFileParallelAsync(
+                    outputFileName,
+                    FileMode.Create,
+                    16,
+                    null);
+                Assert.IsTrue(File.Exists(outputFileName));
+
+                await blob.DeleteAsync();
+            }
+            finally
+            {
+                container.DeleteIfExists();
+                File.Delete(inputFileName);
+                File.Delete(outputFileName);
+            }
+        }
+
         private static bool FilesAreEqual(string file1Name, string file2Name, long? file1Offset = null)
         {
             int BYTES_TO_READ = sizeof(Int64);

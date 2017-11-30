@@ -104,40 +104,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertInBounds("parallelIOCount", parallelIOCount, 1);
             bool useTransactionalMD5 = this.blobRequestOptions != null && this.blobRequestOptions.UseTransactionalMD5.HasValue && this.blobRequestOptions.UseTransactionalMD5.Value;
-            if (rangeSizeInBytes.HasValue)
-            {
-                CommonUtility.AssertInBounds("rangeSizeInBytes", rangeSizeInBytes.Value, Constants.MaxRangeGetContentMD5Size);
-                if (useTransactionalMD5 && rangeSizeInBytes.Value != Constants.MaxRangeGetContentMD5Size)
-                {
-                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalidMD5, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
-                }
-                else if (rangeSizeInBytes % 4 * Constants.KB != 0)
-                {
-                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalid, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
-                }
-            }
-            else if (useTransactionalMD5)
-            {
-                rangeSizeInBytes = Constants.MaxRangeGetContentMD5Size;
-            }
-            else
-            {
-                rangeSizeInBytes = Constants.DefaultParallelDownloadRangeSizeBytes;
-            }
+            rangeSizeInBytes = this.validateOrGetRangeSize(useTransactionalMD5, rangeSizeInBytes);
 
-            // Always do a head request to have an ETag to lock-on to.
-            // This code is designed for only large blobs so this request should be neglibile on perf
+            // always do a head request to have an ETag to lock-on to.
+            // this code is designed for only large blobs so this request should be neglibile on perf
             await this.Blob.FetchAttributesAsync(this.accessCondition, this.blobRequestOptions, this.operationContext).ConfigureAwait(false);
             if (this.accessCondition == null)
             {
                 this.accessCondition = new AccessCondition();
             }
 
+            // it is ok to overwrite the user's IfMatchETag if they had provided one because the HEAD request would have failed
             this.accessCondition.IfMatchETag = this.Blob.Properties.ETag;
 
             if (!this.Length.HasValue)
             {
                 this.Length = this.Blob.Properties.Length - this.Offset;
+            }
+
+            // if the offset does not equal zero ensure the length is one
+            // zero size ranges are not allowed but downloading an empty blob is allowed
+            if (this.Offset != 0)
+            {
+                CommonUtility.AssertInBounds("length", this.Length.Value, 1, long.MaxValue);
+            }
+
+            // if downloading a zero length blob, just create the file and return
+            if (this.Length == 0)
+            {
+                File.Create(this.FilePath).Close();
+                return;
             }
 
             int totalIOReadCalls = (int)Math.Ceiling((double)this.Length.Value / (double)rangeSizeInBytes);
@@ -268,6 +264,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     largeDownloadStream.Close();
                 }
             }
+        }
+
+        /// <summary>
+        /// If the rangeSizeInBytes has a value, validate it.
+        /// Otherwise set the rangeSizeInBytes to the appropriate default vlaue.
+        /// </summary>
+        /// <param name="useTransactionalMD5">Indicates if transactional MD5 validation is to be used.</param>
+        /// <param name="rangeSizeInBytes">The range size in bytes to be used for each download operation
+        /// or null to use the default value.</param>
+        /// <returns>The rangeSizeInBytes value that was passed in if not null, otherwise the appropriate default value.</returns>
+        private long validateOrGetRangeSize(bool useTransactionalMD5, long? rangeSizeInBytes)
+        {
+            if (rangeSizeInBytes.HasValue)
+            {
+                CommonUtility.AssertInBounds("rangeSizeInBytes", rangeSizeInBytes.Value, Constants.MaxRangeGetContentMD5Size);
+                if (useTransactionalMD5 && rangeSizeInBytes.Value != Constants.MaxRangeGetContentMD5Size)
+                {
+                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalidMD5, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
+                }
+                else if (rangeSizeInBytes % 4 * Constants.KB != 0)
+                {
+                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalid, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
+                }
+            }
+            else if (useTransactionalMD5)
+            {
+                rangeSizeInBytes = Constants.MaxRangeGetContentMD5Size;
+            }
+            else
+            {
+                rangeSizeInBytes = Constants.DefaultParallelDownloadRangeSizeBytes;
+            }
+
+            return rangeSizeInBytes.Value;
         }
     }
 #endif
