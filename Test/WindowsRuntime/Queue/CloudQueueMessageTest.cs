@@ -138,17 +138,44 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 await queue.AddMessageAsync(futureMessage, TimeSpan.FromDays(2), TimeSpan.FromDays(1), null, null);
                 VerifyAddMessageResult(futureMessage);
 
+                await queue.ClearAsync();
+
+                // -1 seconds should set an infinite ttl
+                await queue.AddMessageAsync(presentMessage, TimeSpan.FromSeconds(-1), null, null, null);
+                retrievedMessage = await queue.PeekMessageAsync();
+                Assert.AreEqual(DateTime.MaxValue.Year, retrievedMessage.ExpirationTime.Value.Year);
+
+                // There should be no upper bound on ttl
+                await queue.AddMessageAsync(presentMessage, TimeSpan.MaxValue, null, null, null);
+
+                // Check other edge cases
+                await queue.AddMessageAsync(presentMessage, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(0), null, null);
+                await queue.AddMessageAsync(presentMessage, TimeSpan.FromSeconds(7 * 24 * 60 * 60), TimeSpan.FromSeconds(7 * 24 * 60 * 60 - 1), null, null);
+                await queue.AddMessageAsync(presentMessage, TimeSpan.FromSeconds(-1), TimeSpan.FromSeconds(1), null, null);
+
                 await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                             async () => await queue.AddMessageAsync(futureMessage, TimeSpan.FromDays(1), TimeSpan.FromDays(2), null, null),
                             "Using a visibility timeout longer than the time to live should fail");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                             async () => await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromDays(8), null, null),
-                            "Using a visibility longer than the maximum time to live should fail");
+                            "Using a visibility longer than the maximum visibility timeout should fail");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentException>(
                             async () => await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromMinutes(-1), null, null),
                             "Using a negative visibility should fail");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                            async () => await queue.AddMessageAsync(futureMessage, TimeSpan.FromMinutes(-1), null, null, null),
+                            "Using a negative TTL other than -1 seconds (infinite) should fail");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                        () => queue.AddMessageAsync(futureMessage, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), null, null),
+                        "Visibility timeout must be strictly less than the TTL");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                        () => queue.AddMessageAsync(presentMessage, null, CloudQueueMessage.MaxVisibilityTimeout, null, null),
+                        "Null TTL will default to 7 days, which is the max visibility timeout. They cannot be equal.");
             }
             finally
             {

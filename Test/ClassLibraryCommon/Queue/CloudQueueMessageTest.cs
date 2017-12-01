@@ -1758,7 +1758,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CloudQueue queue = client.GetQueueReference(name);
             queue.Create();
 
-            queue.AddMessage(futureMessage, TimeSpan.FromDays(2));
+            queue.AddMessage(futureMessage, null, TimeSpan.FromDays(2));
             VerifyAddMessageResult(futureMessage);
 
             // We should not be able to see the future message yet.
@@ -1771,7 +1771,23 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             // We should be able to see the present message.
             retrievedMessage = queue.GetMessage();
             Assert.IsNotNull(retrievedMessage);
+
             Assert.AreEqual<string>(presentMessage.AsString, retrievedMessage.AsString);
+
+            queue.Clear();
+
+            // -1 seconds should set an infinite ttl
+            queue.AddMessage(presentMessage, TimeSpan.FromSeconds(-1), null);
+            retrievedMessage = queue.PeekMessage();
+            Assert.AreEqual(DateTime.MaxValue.Year, retrievedMessage.ExpirationTime.Value.Year);
+
+            // There should be no upper bound on a ttl
+            queue.AddMessage(presentMessage, TimeSpan.MaxValue, null);
+            
+            // Check other edge cases
+            queue.AddMessage(presentMessage, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(0));
+            queue.AddMessage(presentMessage, TimeSpan.FromSeconds(7 * 24 * 60 * 60), TimeSpan.FromSeconds(7 * 24 * 60 * 60 - 1));
+            queue.AddMessage(presentMessage, TimeSpan.FromSeconds(-1), TimeSpan.FromSeconds(1));
 
             TestHelper.ExpectedException<ArgumentException>(
                         () => queue.AddMessage(futureMessage, TimeSpan.FromDays(1), TimeSpan.FromDays(2)),
@@ -1779,11 +1795,23 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             TestHelper.ExpectedException<ArgumentException>(
                         () => queue.AddMessage(futureMessage, null, TimeSpan.FromDays(8)),
-                        "Using a visibility longer than the maximum time to live should fail");
+                        "Using a visibility longer than the maximum visibility timeout should fail");
 
             TestHelper.ExpectedException<ArgumentException>(
                         () => queue.AddMessage(futureMessage, null, TimeSpan.FromMinutes(-1)),
                         "Using a negative visibility should fail");
+
+            TestHelper.ExpectedException<ArgumentException>(
+                        () => queue.AddMessage(futureMessage, TimeSpan.FromMinutes(-1)),
+                        "Using a negative TTL other than -1 seconds (infinite) will fail");
+
+            TestHelper.ExpectedException<ArgumentException>(
+                        () => queue.AddMessage(futureMessage, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1)),
+                        "Visibility timeout must be strictly less than the TTL");
+
+            TestHelper.ExpectedException<ArgumentException>(
+                        () => queue.AddMessage(presentMessage, null, CloudQueueMessage.MaxVisibilityTimeout),
+                        "Null TTL will default to 7 days, which is the max visibility timeout. They cannot be equal.");
 
             queue.Delete();
         }

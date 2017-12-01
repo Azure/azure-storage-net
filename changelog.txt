@@ -1,3 +1,6 @@
+Changes in 8.x.x :
+- Queues: Added support for infinite TTL on queue messages.
+
 Changes in 8.5.0 :
 - Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
 
