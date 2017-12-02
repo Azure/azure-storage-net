@@ -104,7 +104,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertInBounds("parallelIOCount", parallelIOCount, 1);
             bool useTransactionalMD5 = this.blobRequestOptions != null && this.blobRequestOptions.UseTransactionalMD5.HasValue && this.blobRequestOptions.UseTransactionalMD5.Value;
-            rangeSizeInBytes = this.validateOrGetRangeSize(useTransactionalMD5, rangeSizeInBytes);
+            rangeSizeInBytes = this.ValidateOrGetRangeSize(useTransactionalMD5, rangeSizeInBytes);
 
             // always do a head request to have an ETag to lock-on to.
             // this code is designed for only large blobs so this request should be neglibile on perf
@@ -117,24 +117,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             // it is ok to overwrite the user's IfMatchETag if they had provided one because the HEAD request would have failed
             this.accessCondition.IfMatchETag = this.Blob.Properties.ETag;
 
+            long maxPossibleLength = this.Blob.Properties.Length - this.Offset;
             if (!this.Length.HasValue)
             {
-                this.Length = this.Blob.Properties.Length - this.Offset;
+                this.Length = maxPossibleLength;
             }
-
-            // if the offset does not equal zero ensure the length is one
-            // zero size ranges are not allowed but downloading an empty blob is allowed
-            if (this.Offset != 0)
+            else
             {
-                CommonUtility.AssertInBounds("length", this.Length.Value, 1, long.MaxValue);
+                this.Length = Math.Min(this.Length.Value, maxPossibleLength);
             }
 
             // if downloading a zero length blob, just create the file and return
-            if (this.Length == 0)
+            if (this.Offset == 0 && this.Length.Value == 0)
             {
                 File.Create(this.FilePath).Close();
                 return;
             }
+
+            // zero size ranges are not allowed except when downloading an empty blob is allowed
+            CommonUtility.AssertInBounds("length", this.Length.Value, 1, long.MaxValue);
 
             int totalIOReadCalls = (int)Math.Ceiling((double)this.Length.Value / (double)rangeSizeInBytes);
 
@@ -173,7 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         }
 
                         MemoryMappedViewStream viewStream = mmf.CreateViewStream(streamBeginIndex, streamReadSize);
-                        Task downloadTask = this.downloadToStreamWrapperAsync(
+                        Task downloadTask = this.DownloadToStreamWrapperAsync(
                             viewStream,
                             this.Offset + streamBeginIndex, streamReadSize,
                             this.accessCondition,
@@ -212,7 +213,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Wraps the downloadToStream logic to retry/recover the download operation
         /// in the case that the last time the input stream has been written to exceeds a threshold.
         /// </summary>
-        private async Task downloadToStreamWrapperAsync(MemoryMappedViewStream viewStream, long blobOffset, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private async Task DownloadToStreamWrapperAsync(MemoryMappedViewStream viewStream, long blobOffset, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             long startingOffset = blobOffset;
             ParallelDownloadStream largeDownloadStream = null;
@@ -274,7 +275,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="rangeSizeInBytes">The range size in bytes to be used for each download operation
         /// or null to use the default value.</param>
         /// <returns>The rangeSizeInBytes value that was passed in if not null, otherwise the appropriate default value.</returns>
-        private long validateOrGetRangeSize(bool useTransactionalMD5, long? rangeSizeInBytes)
+        private long ValidateOrGetRangeSize(bool useTransactionalMD5, long? rangeSizeInBytes)
         {
             if (rangeSizeInBytes.HasValue)
             {
@@ -283,7 +284,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalidMD5, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
                 }
-                else if (rangeSizeInBytes % 4 * Constants.KB != 0)
+                else if (rangeSizeInBytes % (4 * Constants.KB) != 0)
                 {
                     throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalid, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
                 }
