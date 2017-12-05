@@ -1,5 +1,6 @@
 Changes in 8.x.x :
 - Queues: Added support for infinite TTL on queue messages.
+- All: ErrorCode is retrieved from the header instead of the body of a failed request and set to the ErrorCode property on RequestResult.
 
 Changes in 8.5.0 :
 - Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
