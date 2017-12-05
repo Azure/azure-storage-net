@@ -1,3 +1,6 @@
+Changes in 8.7.0 :
+- Blobs/Files: Added support for progress notification in async upload and download APIs.
+
 Changes in 8.6.0 :
 - Tables : Added support for Byte type property in TableEntity Flatten/ConvertBack methods.
 - Blobs : Added support for the last time blobTier was modified.
