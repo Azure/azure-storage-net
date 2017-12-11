@@ -242,7 +242,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Gets a value indicating whether or not this blob has been deleted.
         /// </summary>
-        /// <value>A bool representing if the has been deleted.</value>
+        /// <value>A bool representing if the blob has been deleted.</value>
         public bool IsDeleted
         {
             get

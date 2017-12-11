@@ -1,6 +1,7 @@
 {
     "title": "Microsoft.WindowsAzure.Storage",
-    "version": "8.4.0.0",
+    "version": "8.6.0.0",
+
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for NetCore",
     "dependencies": {

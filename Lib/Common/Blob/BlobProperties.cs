@@ -203,12 +203,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <value>A bool representing if the blob tier has been inferred.</value>
         public bool? BlobTierInferred { get; internal set; }
 
-
         /// <summary>
         /// Gets the time for when the tier of the blob was last-modified, expressed as a UTC value.
         /// </summary>
         /// <value>A <see cref="DateTimeOffset"/> containing the time for when the tier of the blob was last-modified, in UTC format.</value>
         public DateTimeOffset? BlobTierLastModifiedTime { get; internal set; }
+
 
         /// <summary>
         /// If the blob is deleted, gets the the deletion time for the blob, expressed as a UTC value.
@@ -221,6 +221,5 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <value>An integer containing the number of remaining days before permenant delete.</value>
         public int? RemainingDaysBeforePermanentDelete { get; internal set; }
-
     }
 }
