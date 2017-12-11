@@ -389,7 +389,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             // Update the encryption metadata with the newly wrapped CEK and call SetMetadata.
             encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.encryptedKey, wrappedKey.algorithm);
 
-            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData);
+            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData, Newtonsoft.Json.Formatting.None);
 
             if (accessCondition == null)
             {
@@ -569,7 +569,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.encryptedKey, wrappedKey.algorithm);
 
-            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData);
+            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData, Newtonsoft.Json.Formatting.None);
 
             if (accessCondition == null)
             {
@@ -826,6 +826,98 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToFile, this.EndDownloadToFile, path, mode, accessCondition, options, operationContext, cancellationToken);
         }
 
+#if WINDOWS_DESKTOP && !WINDOWS_PHONE
+        /// <summary>
+        /// Initiates an asynchronous operation to download the contents of a blob to a file by making parallel requests.
+        /// </summary>
+        /// <param name="path">A string containing the path to the target file.</param>
+        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
+        /// <param name="parallelIOCount">The maximum number of ranges that can be downloaded concurrently</param>
+        /// <param name="rangeSizeInBytes">The size of each individual range in bytes that is being dowloaded in parallel.
+        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB is used or 4MB if transactional MD5 is enabled.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// The parallelIOCount and rangeSizeInBytes should be adjusted depending on the CPU, memory, and bandwidth.
+        /// This API should only be used for larger downloads as a HEAD request is made prior to downloading the data.
+        /// For smaller blobs, please use DownloadToFileAsync().
+        /// To get the best performance, it is recommended to try several values, and measure throughput.
+        /// One place to start would be to set the parallelIOCount to the number of CPUs.
+        /// Then adjust the rangeSizeInBytes so that parallelIOCount times rangeSizeInBytes equals the amount of memory you want the process to consume.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task DownloadToFileParallelAsync(string path, FileMode mode, int parallelIOCount, long? rangeSizeInBytes)
+        {
+            return this.DownloadToFileParallelAsync(path, mode, parallelIOCount, rangeSizeInBytes, 0, null, null, null, null, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to download the contents of a blob to a file by making parallel requests.
+        /// </summary>
+        /// <param name="path">A string containing the path to the target file.</param>
+        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
+        /// <param name="parallelIOCount">The maximum number of ranges that can be downloaded concurrently.</param>
+        /// <param name="rangeSizeInBytes">The size of each individual range in bytes that is being dowloaded in parallel.
+        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB is used or 4MB if transactional MD5 is enabled.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// The parallelIOCount and rangeSizeInBytes should be adjusted depending on the CPU, memory, and bandwidth.
+        /// This API should only be used for larger downloads as a HEAD request is made prior to downloading the data.
+        /// For smaller blobs, please use DownloadToFileAsync().
+        /// To get the best performance, it is recommended to try several values, and measure throughput.
+        /// One place to start would be to set the parallelIOCount to the number of CPUs.
+        /// Then adjust the rangeSizeInBytes so that parallelIOCount times rangeSizeInBytes equals the amount of memory you want the process to consume.
+        /// 
+        /// ## Examples
+        /// [!code-csharp[DownloadToFileParallel](~/azure-storage-net/Test/Common/Blob/BlobLargeDownloadToFileTests.cs#sample_DownloadToFileParallel "DownloadToFileParallel Sample")]
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task DownloadToFileParallelAsync(string path, FileMode mode, int parallelIOCount, long? rangeSizeInBytes, CancellationToken cancellationToken)
+        {
+            return this.DownloadToFileParallelAsync(path, mode, parallelIOCount, rangeSizeInBytes, 0, null, null, null, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to download the contents of a blob to a file by making parallel requests.
+        /// </summary>
+        /// <param name="path">A string containing the path to the target file.</param>
+        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
+        /// <param name="parallelIOCount">The maximum number of ranges that can be downloaded concurrently</param>
+        /// <param name="rangeSizeInBytes">The size of each individual range in bytes that is being dowloaded in parallel.
+        /// The range size must be a multiple of 4 KB and a minimum of 4 MB. If no value is passed a default value of 16 MB or 4MB if transactional MD5 is enabled.</param>
+        /// <param name="offset">The offset of the blob.</param>
+        /// <param name="length">The number of bytes to download.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// The parallelIOCount and rangeSizeInBytes should be adjusted depending on the CPU, memory, and bandwidth.
+        /// This API should only be used for larger downloads as a HEAD request is made prior to downloading the data.
+        /// For smaller blobs, please use DownloadToFileAsync().
+        /// To get the best performance, it is recommended to try several values, and measure throughput.
+        /// One place to start would be to set the parallelIOCount to the number of CPUs.
+        /// Then adjust the rangeSizeInBytes so that parallelIOCount times rangeSizeInBytes equals the amount of memory you want the process to consume.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task DownloadToFileParallelAsync(string path, FileMode mode, int parallelIOCount, long? rangeSizeInBytes, long offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            ParallelDownloadToFile pdf = ParallelDownloadToFile.Start(
+                this,
+                path,
+                mode,
+                parallelIOCount,
+                rangeSizeInBytes,
+                offset,
+                length,
+                accessCondition,
+                options,
+                operationContext,
+                cancellationToken);
+            return pdf.Task;
+        }
+#endif
         /// <summary>
         /// Initiates an asynchronous operation to download the contents of a blob to a file.
         /// </summary>

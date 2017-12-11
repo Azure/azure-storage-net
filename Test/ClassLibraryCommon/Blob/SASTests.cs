@@ -900,5 +900,52 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             builder.Port = port;
             return builder.Uri;
         }
+
+        [TestMethod]
+        [Description("Perform a SAS request specifying parameters unkown to the service.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSASUnknownParams()
+        {
+           CloudBlobContainer container = GetRandomContainerReference();
+           try
+           {
+               container.Create();
+
+               // Create Source on server
+               CloudBlockBlob blob = container.GetBlockBlobReference("source");
+
+               string data = "String data";
+               UploadText(blob, data, Encoding.UTF8);
+
+               UriBuilder blobURIBuilder = new UriBuilder(blob.Uri);
+               blobURIBuilder.Query = "MyQuery=value&YOURQUERY=value2"; // Add the query params unknown to the service
+
+               // Source SAS must have read permissions
+               SharedAccessBlobPermissions permissions = SharedAccessBlobPermissions.Read;
+               SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy()
+               {
+                   SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                   SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                   Permissions = permissions,
+               };
+               string sasToken = blob.GetSharedAccessSignature(policy);
+
+               // Replace one of the SAS keys with a capitalized version to ensure we are case-insensitive on expected parameter keys as well
+               StorageCredentials credentials = new StorageCredentials(sasToken);
+               StringBuilder sasString = new StringBuilder(credentials.TransformUri(blobURIBuilder.Uri).ToString());
+               sasString.Replace("sp=", "SP=");
+               CloudBlockBlob sasBlob = new CloudBlockBlob(new Uri(sasString.ToString()));
+
+               // Validate that we can fetch the attributes on the blob (no exception thrown)
+               sasBlob.FetchAttributes();
+           }
+           finally
+           {
+               container.DeleteIfExists();
+           }
+        }
     }
 }
