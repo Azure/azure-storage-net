@@ -58,10 +58,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 try
                 {
-                    if (registration.HasValue)
+                    Task.Run(() =>
                     {
-                        registration.Value.Dispose();
-                    }
+                        if (registration.HasValue)
+                        {
+                            registration.Value.Dispose();
+                        }
+                    });
 
                     TResult result = endMethod(ar);
                     taskCompletionSource.TrySetResult(result);
@@ -106,10 +109,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             {
                 try
                 {
-                    if (registration.HasValue)
+                    Task.Run(() =>
                     {
-                        registration.Value.Dispose();
-                    }
+                        if (registration.HasValue)
+                        {
+                            registration.Value.Dispose();
+                        }
+                    });
 
                     endMethod(ar);
                     taskCompletionSource.TrySetResult(null);
