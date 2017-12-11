@@ -1,7 +1,8 @@
 Changes in 8.7.0:
 - Blobs: Parsing the snapshot parameter when creating a CloudBlockBlob from a URI is now case insensitive
 - Blobs (Desktop): Added a new API supporting downloading a blob to a file by making concurrent service requests.
-- Blobs: Fixed a race-condition where cancelling a blob upload could result in deadlock.
+- Blobs (Desktop): Fixed a race-condition where cancelling a blob upload could result in deadlock.
+- Blobs: Fixed StorageException when storing encrypted blobs with Formatting.Indented set in default JsonSerializerSettings.
 
 Changes in 8.6.0 :
 - Tables : Added support for Byte type property in TableEntity Flatten/ConvertBack methods.
