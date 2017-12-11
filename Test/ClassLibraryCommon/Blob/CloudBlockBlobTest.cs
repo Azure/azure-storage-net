@@ -265,7 +265,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.Create();
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-                Assert.IsFalse(blob.DeleteIfExists(isPermenantDelete:true));
+                Assert.IsFalse(blob.DeleteIfExists());
                 CreateForTest(blob, 0, 0, false);
                 Assert.IsTrue(blob.DeleteIfExists());
                 Assert.IsFalse(blob.DeleteIfExists());

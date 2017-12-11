@@ -87,11 +87,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const int MinLargeBlockSize = (int)(4 * Constants.MB) + 1;
 
         /// <summary>
-        /// The maximum number of retained versions per blob.
-        /// </summary>
-        public const int MaxRetainedVersionsPerBlob = 10;
-
-        /// <summary>
         /// Constant for the max value of MaximumExecutionTime.
         /// </summary>
         public static readonly TimeSpan MaxMaximumExecutionTime = TimeSpan.FromDays(24.0);
@@ -111,6 +106,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Maximum allowed timeout for any request.
         /// </summary>
         public static readonly TimeSpan MaximumAllowedTimeout = TimeSpan.FromSeconds(int.MaxValue);
+
+        /// <summary>
+        /// Maximum allowed value for Delete Retention Days.
+        /// </summary>
+        internal static readonly int MaximumAllowedRetentionDays = 365;
 
         /// <summary>
         /// Default size of buffer for unknown sized requests.

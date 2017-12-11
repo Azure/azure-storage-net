@@ -448,5 +448,501 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
+        #region Soft-Delete
+
+        #region SYNC
+
+        [TestMethod]
+        [Description("Soft Delete and Undelete a blob with no snapshot")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSoftDeleteNoSnapshot()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                //Enables a delete retention policy on the blob with 1 day of default retention days
+                container.ServiceClient.EnableSoftDelete();
+                container.Create();
+
+                // Upload some data to the blob.
+                MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplace();
+                appendBlob.AppendBlock(originalData, null);
+                
+                
+                CloudBlob blob = container.GetBlobReference(BlobName);
+
+                Assert.IsTrue(blob.Exists());
+                Assert.IsFalse(blob.IsDeleted);
+
+                blob.Delete();
+                Assert.IsFalse(blob.Exists());
+
+                int blobCount = 0;
+                foreach(IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.IsTrue(blobItem.IsDeleted);
+                    Assert.IsNotNull(blobItem.Properties.DeletedTime);
+                    Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
+                    blobCount++;
+                }
+
+                Assert.AreEqual(blobCount, 1);
+
+                blob.Undelete();
+
+                blob.FetchAttributes();
+                Assert.IsFalse(blob.IsDeleted);
+                Assert.IsNull(blob.Properties.DeletedTime);
+                Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
+
+                blobCount = 0;
+                foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.IsFalse(blobItem.IsDeleted);
+                    Assert.IsNull(blobItem.Properties.DeletedTime);
+                    Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
+                    blobCount++;
+                }
+
+                Assert.AreEqual(blobCount, 1);
+
+            }
+            finally
+            {
+                container.ServiceClient.DisableSoftDelete();
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Soft Delete and Undelete a blob with snapshots")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSoftDeleteSnapshot()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                //Enables a delete retention policy on the blob with 1 day of default retention days
+                container.ServiceClient.EnableSoftDelete();
+                container.Create();
+
+                // Upload some data to the blob.
+                MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.UploadFromStream(originalData);
+
+                CloudBlob blob = container.GetBlobReference(BlobName);
+
+                //create snapshot via api
+                CloudBlob snapshot = blob.Snapshot();
+                //create snapshot via write protection
+                appendBlob.UploadFromStream(originalData);
+
+                //we should have 2 snapshots 1 regular and 1 deleted: there is no way to get only the deleted snapshots but the below listing will get both snapshot types
+                int blobCount = 0;
+                int deletedSnapshotCount = 0;
+                int snapShotCount = 0;
+                foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.Snapshots | BlobListingDetails.Deleted))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    if (blobItem.IsSnapshot)
+                        snapShotCount++;
+                    if (blobItem.IsDeleted)
+                    {
+                        Assert.IsNotNull(blobItem.Properties.DeletedTime);
+                        Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
+                        deletedSnapshotCount++;
+                    }
+                    blobCount++;
+                }
+                Assert.AreEqual(blobCount, 3);
+                Assert.AreEqual(deletedSnapshotCount, 1);
+                Assert.AreEqual(snapShotCount, 2);
+
+                blobCount = 0;
+                foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.Snapshots))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.IsFalse(blobItem.IsDeleted);
+                    Assert.IsNull(blobItem.Properties.DeletedTime);
+                    Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
+                    blobCount++;
+                }
+
+                Assert.AreEqual(blobCount, 2);
+
+                //Delete Blob and snapshots
+                blob.Delete(DeleteSnapshotsOption.IncludeSnapshots);
+                Assert.IsFalse(blob.Exists());
+                Assert.IsFalse(snapshot.Exists());
+
+                blobCount = 0;
+                foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.IsTrue(blobItem.IsDeleted);
+                    Assert.IsNotNull(blobItem.Properties.DeletedTime);
+                    Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
+                    blobCount++;
+                }
+
+                Assert.AreEqual(blobCount, 3);
+
+                blob.Undelete();
+
+                blob.FetchAttributes();
+                Assert.IsFalse(blob.IsDeleted);
+                Assert.IsNull(blob.Properties.DeletedTime);
+                Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
+
+                blobCount = 0;
+                foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.IsFalse(blobItem.IsDeleted);
+                    Assert.IsNull(blobItem.Properties.DeletedTime);
+                    Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
+                    blobCount++;
+                }
+
+                Assert.AreEqual(blobCount, 3);
+
+            }
+            finally
+            {
+                container.ServiceClient.DisableSoftDelete();
+                container.DeleteIfExists();
+            }
+        }
+        #endregion
+
+        #region APM        
+        [TestMethod]
+        [Description("Soft Delete and Undelete a blob with no snapshot APM")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSoftDeleteNoSnapshotAPM()
+        {         
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                //Enables a delete retention policy on the blob with 1 day of default retention days
+                container.ServiceClient.EnableSoftDelete();
+                container.Create();
+
+                // Upload some data to the blob.
+                MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplace();
+                appendBlob.AppendBlock(originalData, null);
+                
+                
+                CloudBlob blob = container.GetBlobReference(BlobName);
+                Assert.IsFalse(blob.IsDeleted);
+
+                IAsyncResult result;
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    result = blob.BeginDelete(DeleteSnapshotsOption.None, null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndDelete(result);
+                }
+
+                Assert.IsFalse(blob.Exists());
+
+                int blobCount = 0;
+                foreach(IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.IsTrue(blobItem.IsDeleted);
+                    Assert.IsNotNull(blobItem.Properties.DeletedTime);
+                    Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
+                    blobCount++;
+                }
+
+                Assert.AreEqual(blobCount, 1);
+
+                using(AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    result = blob.BeginUndelete(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+                    blob.EndUndelete(result);
+                }
+
+                blob.FetchAttributes();
+                Assert.IsFalse(blob.IsDeleted);
+                Assert.IsNull(blob.Properties.DeletedTime);
+                Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
+
+                blobCount = 0;
+                foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
+                {
+                    CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.IsFalse(blobItem.IsDeleted);
+                    Assert.IsNull(blobItem.Properties.DeletedTime);
+                    Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
+                    blobCount++;
+                }
+
+                Assert.AreEqual(blobCount, 1);
+
+            }
+            finally
+            {
+                container.ServiceClient.DisableSoftDelete();
+                container.DeleteIfExists();
+            }
+        }
+
+        #endregion
+
+        #region TASK
+        [TestMethod]
+        [Description("Soft Delete and Undelete a blob with no snapshot TASK")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSoftDeleteNoSnapshotTask()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                //Enables a delete retention policy on the blob with 1 day of default retention days
+                container.ServiceClient.EnableSoftDelete();
+                container.CreateAsync().Wait();
+
+                // Upload some data to the blob.
+                MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.CreateOrReplaceAsync().Wait();
+                appendBlob.AppendBlockAsync(originalData, null).Wait();
+
+
+                CloudBlob blob = container.GetBlobReference(BlobName);
+                Assert.IsTrue(blob.ExistsAsync().Result);
+                Assert.IsFalse(blob.IsDeleted);
+
+                blob.DeleteAsync().Wait();
+                Assert.IsFalse(blob.ExistsAsync().Result);
+
+                int blobCount = 0;
+                BlobContinuationToken ct = null;
+                do
+                {
+                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null)
+                        .Result
+                        .Results
+                        .ToList())
+                    {
+                        CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.IsTrue(blobItem.IsDeleted);
+                        Assert.IsNotNull(blobItem.Properties.DeletedTime);
+                        Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
+                        blobCount++;
+                    }
+                } while (ct != null);
+
+                Assert.AreEqual(blobCount, 1);
+
+                blob.UndeleteAsync().Wait();
+
+                blob.FetchAttributes();
+                Assert.IsFalse(blob.IsDeleted);
+                Assert.IsNull(blob.Properties.DeletedTime);
+                Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
+
+                blobCount = 0;
+                ct = null;
+                do
+                {
+                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null)
+                        .Result
+                        .Results
+                        .ToList())
+                    {
+                        CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.IsFalse(blobItem.IsDeleted);
+                        Assert.IsNull(blobItem.Properties.DeletedTime);
+                        Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
+                        blobCount++;
+                    }
+                } while (ct != null);
+                Assert.AreEqual(blobCount, 1);
+
+            }
+            finally
+            {
+                container.ServiceClient.DisableSoftDelete();
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Soft Delete and Undelete a blob with snapshots TASK")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSoftDeleteSnapshotTask()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                //Enables a delete retention policy on the blob with 1 day of default retention days
+                container.ServiceClient.EnableSoftDelete();
+                container.Create();
+
+                // Upload some data to the blob.
+                MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                appendBlob.UploadFromStream(originalData);
+
+                CloudBlob blob = container.GetBlobReference(BlobName);
+
+                //create snapshot via api
+                CloudBlob snapshot = blob.Snapshot();
+                //create snapshot via write protection
+                appendBlob.UploadFromStream(originalData);
+
+                //we should have 2 snapshots 1 regular and 1 deleted: there is no way to get only the deleted snapshots but the below listing will get both snapshot types
+                int blobCount = 0;
+                int deletedSnapshotCount = 0;
+                int snapShotCount = 0;
+                BlobContinuationToken ct = null;
+                do
+                {
+                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.Snapshots | BlobListingDetails.Deleted, null, ct, null, null)
+                        .Result
+                        .Results
+                        .ToList())
+                    {
+                        CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                        Assert.AreEqual(blobItem.Name, BlobName);
+                        if (blobItem.IsSnapshot)
+                            snapShotCount++;
+                        if (blobItem.IsDeleted)
+                        {
+                            Assert.IsNotNull(blobItem.Properties.DeletedTime);
+                            Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
+                            deletedSnapshotCount++;
+                        }
+                        blobCount++;
+                    }
+                } while (ct != null);
+
+                Assert.AreEqual(blobCount, 3);
+                Assert.AreEqual(deletedSnapshotCount, 1);
+                Assert.AreEqual(snapShotCount, 2);
+
+                blobCount = 0;
+                ct = null;
+                do
+                {
+                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.Snapshots, null, ct, null, null)
+                        .Result
+                        .Results
+                        .ToList())
+                    {
+                        CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.IsFalse(blobItem.IsDeleted);
+                        Assert.IsNull(blobItem.Properties.DeletedTime);
+                        Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
+                        blobCount++;
+                    }
+                } while (ct != null);
+
+                Assert.AreEqual(blobCount, 2);
+
+                //Delete Blob and snapshots
+                blob.Delete(DeleteSnapshotsOption.IncludeSnapshots);
+                Assert.IsFalse(blob.Exists());
+                Assert.IsFalse(snapshot.Exists());
+
+                blobCount = 0;
+                ct = null;
+                do
+                {
+                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null)
+                        .Result
+                        .Results
+                        .ToList())
+                    {
+                        CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.IsTrue(blobItem.IsDeleted);
+                        Assert.IsNotNull(blobItem.Properties.DeletedTime);
+                        Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
+                        blobCount++;
+                    }
+                }while(ct != null);
+
+                Assert.AreEqual(blobCount, 3);
+
+                blob.Undelete();
+
+                blob.FetchAttributes();
+                Assert.IsFalse(blob.IsDeleted);
+                Assert.IsNull(blob.Properties.DeletedTime);
+                Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
+
+                blobCount = 0;
+                ct = null;
+                do
+                {
+                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null)
+                        .Result
+                        .Results
+                        .ToList())
+                    {
+                        CloudAppendBlob blobItem = (CloudAppendBlob)item;
+                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.IsFalse(blobItem.IsDeleted);
+                        Assert.IsNull(blobItem.Properties.DeletedTime);
+                        Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
+                        blobCount++;
+                    }
+                }while(ct != null);
+
+                Assert.AreEqual(blobCount, 3);
+
+            }
+            finally
+            {
+                container.ServiceClient.DisableSoftDelete();
+                container.DeleteIfExists();
+            }
+        }
+        #endregion
+        #endregion
     }
 }

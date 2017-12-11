@@ -238,19 +238,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         }
 
         /// <summary>
-        /// Adds the snapshot.
-        /// </summary>
-        /// <param name="builder">An object of type <see cref="UriQueryBuilder"/> that contains additional parameters to add to the URI query string.</param>
-        /// <param name="isPermenantDelete">A boolean value indicating whether to set the <i>deletetype=permanent</i> HTTP header.</param>
-        private static void AddDeleteType(UriQueryBuilder builder, bool isPermenantDelete)
-        {
-            if (isPermenantDelete)
-            {
-                builder.Add(Constants.QueryConstants.DeleteType, "permanent");
-            }
-        }
-
-        /// <summary>
         /// Constructs a web request to commit a block to an append blob.
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
@@ -656,42 +643,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, OperationContext operationContext)
-        {
-            return BlobHttpWebRequestFactory.Delete(uri, timeout, snapshot, deleteSnapshotsOption, accessCondition, true /* useVersionHeader */, operationContext);
-        }
-
-        /// <summary>
-        /// Constructs a web request to delete a blob.
-        /// </summary>
-        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
-        /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
-        {
-            return BlobHttpWebRequestFactory.Delete(uri, timeout, snapshot, false /* isPermenantDelete */, deleteSnapshotsOption, accessCondition, useVersionHeader, operationContext);
-        }
-
-        /// <summary>
-        /// Constructs a web request to delete a blob.
-        /// </summary>
-        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
-        /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="isPermenantDelete">A boolean value indicating whether to set the <i>deletetype=permanent</i> HTTP header.</param>
-        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, bool isPermenantDelete, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             if ((snapshot != null) && (deleteSnapshotsOption != DeleteSnapshotsOption.None))
             {
@@ -700,8 +655,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             UriQueryBuilder builder = new UriQueryBuilder();
             BlobHttpWebRequestFactory.AddSnapshot(builder, snapshot);
-            BlobHttpWebRequestFactory.AddDeleteType(builder, isPermenantDelete);
-
 
             HttpWebRequest request = HttpWebRequestFactory.Delete(uri, builder, timeout, useVersionHeader, operationContext);
 
