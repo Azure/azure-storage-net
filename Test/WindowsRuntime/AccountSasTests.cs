@@ -345,7 +345,17 @@ namespace Microsoft.WindowsAzure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.List) == SharedAccessAccountPermissions.List) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Service) == SharedAccessAccountResourceTypes.Service))
                 {
-                    ContainerResultSegment segment = await blobClientWithSAS.ListContainersSegmentedAsync(container.Name, null);
+                    ContainerResultSegment segment = null;
+                    BlobContinuationToken ct =null;
+                    IEnumerable<CloudBlobContainer> results = null;
+                    do
+                    {
+                        segment = await blobClientWithSAS.ListContainersSegmentedAsync(container.Name, ct);
+                        ct = segment.ContinuationToken;
+                        results = segment.Results;
+
+                    }while(ct != null && results.Count() < 1);
+
                     Assert.AreEqual(container.Name, segment.Results.First().Name);
                 }
                 else

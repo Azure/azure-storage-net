@@ -255,7 +255,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExists();
+              //  container.DeleteIfExists();
             }
         }
 
@@ -2423,7 +2423,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await DoBlobUploadFromStreamTestAsyncWithProgress(
                () => this.testContainer.GetPageBlobReference("blob1"),
                (blob, stream, progressHandler, cancellationToken) =>
-                   blob.UploadFromStreamAsync(stream, default(PremiumPageBlobTier), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken),
+                   blob.UploadFromStreamAsync(stream, null, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken),
                5000
                    );
         }
