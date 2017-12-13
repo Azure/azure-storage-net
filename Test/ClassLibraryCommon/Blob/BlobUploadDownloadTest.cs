@@ -253,10 +253,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 MemoryStream dstStream2 = new MemoryStream(testBuffer2);
                 blob.DownloadRangeToStream(dstStream2, null, null, null, null, context);
             }
-            finally
-            {
-                container.DeleteIfExists();
-            }
         }
 
         [TestMethod]
@@ -2423,7 +2419,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await DoBlobUploadFromStreamTestAsyncWithProgress(
                () => this.testContainer.GetPageBlobReference("blob1"),
                (blob, stream, progressHandler, cancellationToken) =>
-                   blob.UploadFromStreamAsync(stream, default(PremiumPageBlobTier), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken),
+                   blob.UploadFromStreamAsync(stream, null, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken),
                5000
                    );
         }
