@@ -239,20 +239,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             byte[] buffer = GetRandomBuffer(2 * 1024);
             CloudBlobContainer container = GetRandomContainerReference();
             OperationContext context = new OperationContext();
-            try
+            container.Create(null, context);
+            CloudPageBlob blob = container.GetPageBlobReference("blob1");
+            context.UserHeaders = new Dictionary<string, string>();
+            context.UserHeaders.Add("x-ms-foo", String.Empty);
+            using (MemoryStream srcStream = new MemoryStream(buffer))
             {
-                container.Create(null, context);
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                context.UserHeaders = new Dictionary<string, string>();
-                context.UserHeaders.Add("x-ms-foo", String.Empty);
-                using (MemoryStream srcStream = new MemoryStream(buffer))
-                {
-                    blob.UploadFromStream(srcStream, null, null, context);
-                }
-                byte[] testBuffer2 = new byte[2048];
-                MemoryStream dstStream2 = new MemoryStream(testBuffer2);
-                blob.DownloadRangeToStream(dstStream2, null, null, null, null, context);
+                blob.UploadFromStream(srcStream, null, null, context);
             }
+            byte[] testBuffer2 = new byte[2048];
+            MemoryStream dstStream2 = new MemoryStream(testBuffer2);
+            blob.DownloadRangeToStream(dstStream2, null, null, null, null, context);
         }
 
         [TestMethod]
