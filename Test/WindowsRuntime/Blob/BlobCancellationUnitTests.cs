@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using System;
 using System.IO;
 using System.Threading;
@@ -91,7 +92,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         OperationContext operationContext = new OperationContext();
                         var tokenSource = new CancellationTokenSource();
-                        Task action = blob.DownloadToStreamAsync(downloadedBlob, null, null, operationContext, tokenSource.Token);
+#if NETCORE
+                        Task action = blob.DownloadToStreamAsync(downloadedBlob, default(AccessCondition), default(BlobRequestOptions), operationContext, default(IProgress<StorageProgress>), tokenSource.Token);
+#else
+                        Task action = blob.DownloadToStreamAsync(downloadedBlob, default(AccessCondition), default(BlobRequestOptions), operationContext, tokenSource.Token);
+#endif
                         await Task.Delay(100);
                         tokenSource.Cancel();
                         try
@@ -135,7 +140,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         OperationContext operationContext = new OperationContext();
                         var tokenSource = new CancellationTokenSource();
-                        Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, null, null, operationContext, tokenSource.Token);
+#if NETCORE
+                        Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, default(AccessCondition), default(BlobRequestOptions), operationContext, default(IProgress<StorageProgress>) /* progressHandler */, tokenSource.Token);
+#else
+                        Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, default(AccessCondition), default(BlobRequestOptions), operationContext, tokenSource.Token);
+#endif
                         await Task.Delay(1000); //we need a bit longer time in order to put the cancel output exception to operationContext.LastResult
                         tokenSource.Cancel();
                         try

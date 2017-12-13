@@ -337,6 +337,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Verify additional user-defined query parameters do not disrupt a normal request")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobFetchAttributesSpecialQueryParametersAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                // Ensure that unkown query parameters set by the user are signed properly but ignored, allowing the operation to succeed
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                await CreateForTestAsync(blob, 1, 1024);
+                UriBuilder blobURIBuilder = new UriBuilder(blob.Uri);
+                blobURIBuilder.Query = "MyQuery=value&YOURQUERY=value2";
+                blob = new CloudBlockBlob(blobURIBuilder.Uri, blob.ServiceClient.Credentials);
+
+                await blob.FetchAttributesAsync();
+                Assert.AreEqual(1024, blob.Properties.Length);
+                Assert.IsNotNull(blob.Properties.ETag);
+                Assert.IsTrue(blob.Properties.LastModified > DateTimeOffset.UtcNow.AddMinutes(-5));
+                Assert.IsNull(blob.Properties.CacheControl);
+                Assert.IsNull(blob.Properties.ContentDisposition);
+                Assert.IsNull(blob.Properties.ContentEncoding);
+                Assert.IsNull(blob.Properties.ContentLanguage);
+                Assert.AreEqual("application/octet-stream", blob.Properties.ContentType);
+                Assert.IsNull(blob.Properties.ContentMD5);
+                Assert.AreEqual(LeaseStatus.Unlocked, blob.Properties.LeaseStatus);
+                Assert.AreEqual(BlobType.BlockBlob, blob.Properties.BlobType);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
         [Description("Verify that creating a block blob can also set its metadata")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]

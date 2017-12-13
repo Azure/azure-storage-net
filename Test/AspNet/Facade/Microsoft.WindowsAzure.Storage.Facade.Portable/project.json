@@ -1,8 +1,8 @@
 ﻿{
-  "version": "8.5.0.0",
+  "version": "8.7.0.0",
   "supports": {},
   "dependencies": {
-    "WindowsAzure.Storage": "8.5.0-facade"
+    "WindowsAzure.Storage": "8.7.0-facade"
   },
   "frameworks": {
     ".NETPortable,Version=v4.5,Profile=Profile259": {}

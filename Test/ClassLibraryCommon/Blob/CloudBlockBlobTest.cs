@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
@@ -707,6 +708,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
+        [TestMethod]
+        [Description("Verify additional user-defined query parameters do not disrupt a normal request")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobFetchAttributesSpecialQueryParameters()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                // Ensure that unkown query parameters set by the user are signed properly but ignored, allowing the operation to succeed
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                CreateForTest(blob, 1, 1024, false);
+                UriBuilder blobURIBuilder = new UriBuilder(blob.Uri);
+                blobURIBuilder.Query = "MyQuery=value&YOURQUERY=value2";
+                blob = new CloudBlockBlob(blobURIBuilder.Uri, blob.ServiceClient.Credentials);
+
+                blob.FetchAttributes();
+                Assert.AreEqual(1024, blob.Properties.Length);
+                Assert.IsNotNull(blob.Properties.ETag);
+                Assert.IsTrue(blob.Properties.LastModified > DateTimeOffset.UtcNow.AddMinutes(-5));
+                Assert.IsNull(blob.Properties.CacheControl);
+                Assert.IsNull(blob.Properties.ContentDisposition);
+                Assert.IsNull(blob.Properties.ContentEncoding);
+                Assert.IsNull(blob.Properties.ContentLanguage);
+                Assert.AreEqual("application/octet-stream", blob.Properties.ContentType);
+                Assert.IsNull(blob.Properties.ContentMD5);
+                Assert.AreEqual(LeaseStatus.Unlocked, blob.Properties.LeaseStatus);
+                Assert.AreEqual(BlobType.BlockBlob, blob.Properties.BlobType);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
 
         [TestMethod]
         [Description("Verify setting the properties of a blob")]
@@ -4499,7 +4538,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 uploadList.Clear();
@@ -4520,7 +4559,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB + 1);
