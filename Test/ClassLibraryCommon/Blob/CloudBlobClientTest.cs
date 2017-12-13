@@ -1448,7 +1448,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(containerNamePrefix, ContainerListingDetails.All, 1, continuationToken, requestOptions, operationContext, cancellationToken).Result;
                     continuationToken = resultSegment.ContinuationToken;
                     //first result segment might not actually return any results
-                    if(resultSegment.Results.Count() > 0)
+                    if(resultSegment.Results.Any())
                         tokenCount++;
 
                     if (tokenCount < containerCount)

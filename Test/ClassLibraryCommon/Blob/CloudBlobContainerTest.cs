@@ -2025,7 +2025,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         results = resultSegment.Results;
                         ct = resultSegment.ContinuationToken;
 
-                    } while (ct != null && results.Count() <= 0);
+                    } while (ct != null && !results.Any());
 
                     CloudBlobContainer container3 = results.First();
                     Assert.AreEqual(1, container3.Metadata.Count);

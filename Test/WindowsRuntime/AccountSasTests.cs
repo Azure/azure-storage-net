@@ -220,10 +220,10 @@ namespace Microsoft.WindowsAzure.Storage
             SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
             policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
 
-            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
 
             policy.IPAddressOrRange = null;
             await RunBlobTest(policy, null);
@@ -236,10 +236,10 @@ namespace Microsoft.WindowsAzure.Storage
 
             policy.IPAddressOrRange = new IPAddressOrRange(new HostName("255.255.255.0").ToString(), invalidIP.ToString());
 
-            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
         }
         
         [TestMethod]
@@ -354,7 +354,7 @@ namespace Microsoft.WindowsAzure.Storage
                         ct = segment.ContinuationToken;
                         results = segment.Results;
 
-                    }while(ct != null && results.Count() < 1);
+                    }while(ct != null && !results.Any());
 
                     Assert.AreEqual(container.Name, segment.Results.First().Name);
                 }

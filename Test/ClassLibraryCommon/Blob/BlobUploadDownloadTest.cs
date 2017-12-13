@@ -253,10 +253,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 MemoryStream dstStream2 = new MemoryStream(testBuffer2);
                 blob.DownloadRangeToStream(dstStream2, null, null, null, null, context);
             }
-            finally
-            {
-              //  container.DeleteIfExists();
-            }
         }
 
         [TestMethod]
