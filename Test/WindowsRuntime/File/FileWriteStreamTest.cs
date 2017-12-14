@@ -363,6 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         // todo: Make some other better logic for this test to be reliable.
                         System.Threading.Thread.Sleep(500);
 #endif
+                        Task.Delay(500).GetAwaiter().GetResult();
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);
 

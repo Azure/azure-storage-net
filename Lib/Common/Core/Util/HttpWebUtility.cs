@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <returns></returns>
         public static IDictionary<string, string> ParseQueryString(string query)
         {
-            Dictionary<string, string> retVal = new Dictionary<string, string>();
+            Dictionary<string, string> retVal = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (string.IsNullOrEmpty(query))
             {
                 return retVal;
