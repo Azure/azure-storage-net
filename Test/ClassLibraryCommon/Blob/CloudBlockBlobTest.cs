@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
@@ -4537,7 +4538,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 uploadList.Clear();
@@ -4558,7 +4559,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB + 1);

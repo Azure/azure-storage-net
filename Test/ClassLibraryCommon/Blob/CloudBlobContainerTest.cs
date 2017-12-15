@@ -2012,11 +2012,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.AreEqual(1, container2.Metadata.Count);
                     Assert.AreEqual("value1", container2.Metadata["key1"]);
 
-                    result = container.ServiceClient.BeginListContainersSegmented(container.Name, ContainerListingDetails.Metadata, null, null, null, null,
+                    BlobContinuationToken ct = null;
+                    IEnumerable<CloudBlobContainer> results = null;
+                    do
+                    {
+                        result = container.ServiceClient.BeginListContainersSegmented(container.Name, ContainerListingDetails.Metadata, null, ct, null, null,
                         ar => waitHandle.Set(),
                         null);
-                    waitHandle.WaitOne();
-                    CloudBlobContainer container3 = container.ServiceClient.EndListContainersSegmented(result).Results.First();
+                        waitHandle.WaitOne();
+
+                        var resultSegment = container.ServiceClient.EndListContainersSegmented(result);
+                        results = resultSegment.Results;
+                        ct = resultSegment.ContinuationToken;
+
+                    } while (ct != null && !results.Any());
+
+                    CloudBlobContainer container3 = results.First();
                     Assert.AreEqual(1, container3.Metadata.Count);
                     Assert.AreEqual("value1", container3.Metadata["key1"]);
 
