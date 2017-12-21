@@ -77,9 +77,9 @@ namespace Microsoft.WindowsAzure.Storage
             return ReadFromStream(inputStream.AsStreamForRead());
         }
 
-        public static async Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
+        public static Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
         {
-            return await ReadFromStreamAsync(inputStream.AsStreamForRead());
+            return ReadFromStreamAsync(inputStream.AsStreamForRead());
         }
 #endif
 
@@ -139,7 +139,7 @@ namespace Microsoft.WindowsAzure.Storage
 
                 using (XmlReader reader = XmlReader.Create(inputStream, settings))
                 {
-                    await reader.ReadAsync();
+                    await reader.ReadAsync().ConfigureAwait(false);
                     extendedErrorInfo.ReadXml(reader);
                 }
 

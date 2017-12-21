@@ -572,7 +572,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
                     // Copy the block
                     int blockReadLength = (int)Math.Min(leftToRead, currentBlock.Count);
-                    await destination.WriteAsync(currentBlock.Array, currentBlock.Offset, blockReadLength);
+                    await destination.WriteAsync(currentBlock.Array, currentBlock.Offset, blockReadLength).ConfigureAwait(false);
 
                     this.AdvancePosition(ref leftToRead, blockReadLength);
                 }

@@ -95,11 +95,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
 
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.CreateContainerImpl(modifiedOptions, accessType),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
         /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
-        public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             if (accessType == BlobContainerPublicAccessType.Unknown)
             {
@@ -160,34 +160,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
+            try
             {
-                try
+                await this.CreateAsync(accessType, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception)
+            {
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
                 {
-                    await this.CreateAsync(accessType, modifiedOptions, operationContext, cancellationToken);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                    StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                    if ((extendedInfo == null) ||
+                        (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists))
                     {
-                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                        if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        return false;
                     }
                     else
                     {
                         throw;
                     }
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -226,11 +223,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task DeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.DeleteContainerImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -265,55 +262,52 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the container already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
+            try
             {
-                try
+                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                if (!exists)
                 {
-                    bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken);
-                    if (!exists)
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
+            }
+
+            try
+            {
+                await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception)
+            {
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                    if ((extendedInfo == null) ||
+                        (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
                     {
                         return false;
-                    }
-                }
-                catch (StorageException e)
-                {
-                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
-                    {
-                        throw;
-                    }
-                }
-
-                try
-                {
-                    await this.DeleteAsync(accessCondition, modifiedOptions, operationContext, cancellationToken);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                    {
-                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                        if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
                     }
                     else
                     {
                         throw;
                     }
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -421,19 +415,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment containing objects that implement <see cref="IListBlobItem"/>.</returns>
         [DoesServiceRequest]
-        public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () =>
-            {
-                ResultSegment<IListBlobItem> resultSegment = await Executor.ExecuteAsync(
-                    this.ListBlobsImpl(prefix, maxResults, useFlatBlobListing, blobListingDetails, modifiedOptions, currentToken),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
+            ResultSegment<IListBlobItem> resultSegment = await Executor.ExecuteAsync(
+                this.ListBlobsImpl(prefix, maxResults, useFlatBlobListing, blobListingDetails, modifiedOptions, currentToken),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
 
-                return new BlobResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
-            }, cancellationToken);
+            return new BlobResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
         }
 
         /// <summary>
@@ -474,11 +465,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task SetPermissionsAsync(BlobContainerPermissions permissions, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetPermissionsImpl(permissions, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -516,11 +507,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task<BlobContainerPermissions> GetPermissionsAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.GetPermissionsImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -561,11 +552,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private Task<bool> ExistsAsync(bool primaryOnly, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.ExistsImpl(modifiedOptions, primaryOnly),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -603,11 +594,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.FetchAttributesImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -645,11 +636,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -699,11 +690,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.AcquireLeaseImpl(leaseTime, proposedLeaseId, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -742,11 +733,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task RenewLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.RenewLeaseImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -788,11 +779,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.ChangeLeaseImpl(proposedLeaseId, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -831,11 +822,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task ReleaseLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.ReleaseLeaseImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -882,11 +873,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.BreakLeaseImpl(breakPeriod, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1272,12 +1263,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 this.UpdateETagAndLastModified(resp);
-                return Task.Factory.StartNew(() =>
-                {
-                    ContainerHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, containerAcl);
-                    this.Properties.PublicAccess = containerAcl.PublicAccess;
-                    return containerAcl;
-                });
+                ContainerHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, containerAcl);
+                this.Properties.PublicAccess = containerAcl.PublicAccess;
+                return Task.FromResult(containerAcl);
             };
 
             return getCmd;
@@ -1356,24 +1344,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
+                ListBlobsResponse listBlobsResponse = new ListBlobsResponse(cmd.ResponseStream);
+                List<IListBlobItem> blobList = listBlobsResponse.Blobs.Select(item => this.SelectListBlobItem(item)).ToList();
+                BlobContinuationToken continuationToken = null;
+                if (listBlobsResponse.NextMarker != null)
                 {
-                    ListBlobsResponse listBlobsResponse = new ListBlobsResponse(cmd.ResponseStream);
-                    List<IListBlobItem> blobList = listBlobsResponse.Blobs.Select(item => this.SelectListBlobItem(item)).ToList();
-                    BlobContinuationToken continuationToken = null;
-                    if (listBlobsResponse.NextMarker != null)
+                    continuationToken = new BlobContinuationToken()
                     {
-                        continuationToken = new BlobContinuationToken()
-                        {
-                            NextMarker = listBlobsResponse.NextMarker,
-                            TargetLocation = cmd.CurrentResult.TargetLocation,
-                        };
-                    }
-
-                    return new ResultSegment<IListBlobItem>(blobList)
-                    {
-                        ContinuationToken = continuationToken,
+                        NextMarker = listBlobsResponse.NextMarker,
+                        TargetLocation = cmd.CurrentResult.TargetLocation,
                     };
+                }
+
+                return Task.FromResult(new ResultSegment<IListBlobItem>(blobList)
+                {
+                    ContinuationToken = continuationToken,
                 });
             };
 
