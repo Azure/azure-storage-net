@@ -35,6 +35,8 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
     internal static class TableOperationHttpResponseParsers
     {
+        static JsonSerializer serializer = new JsonSerializer();
+
         internal static TableResult TableOperationPreProcess<T>(TableResult result, TableOperation operation, HttpResponseMessage resp, Exception ex, StorageCommandBase<T> cmd, OperationContext ctx)
         {
             result.HttpStatusCode = (int)resp.StatusCode;
@@ -90,57 +92,53 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return result;
         }
 
-        internal static Task<TableResult> TableOperationPostProcess(TableResult result, TableOperation operation, RESTCommand<TableResult> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, string accountName)
+        internal static async Task<TableResult> TableOperationPostProcess(TableResult result, TableOperation operation, RESTCommand<TableResult> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, string accountName)
         {
-            return Task.Run(() =>
+            if (operation.OperationType != TableOperationType.Retrieve && operation.OperationType != TableOperationType.Insert)
             {
-                if (operation.OperationType != TableOperationType.Retrieve && operation.OperationType != TableOperationType.Insert)
+                result.Etag = resp.Headers.ETag.ToString();
+                operation.Entity.ETag = result.Etag;
+            }
+            else if (operation.OperationType == TableOperationType.Insert && (!operation.EchoContent))
+            {
+                if (resp.Headers.ETag != null)
                 {
                     result.Etag = resp.Headers.ETag.ToString();
                     operation.Entity.ETag = result.Etag;
+                    operation.Entity.Timestamp = ParseETagForTimestamp(result.Etag);
                 }
-                else if (operation.OperationType == TableOperationType.Insert && (!operation.EchoContent))
+            }
+            else
+            {
+                // Parse entity
+                ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
+                readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
+                IEnumerable<string> contentType;
+                resp.Content.Headers.TryGetValues(Constants.HeaderConstants.PayloadContentTypeHeader, out contentType);
+
+                if (contentType != null && contentType.FirstOrDefault() != null && contentType.FirstOrDefault().Contains(Constants.JsonContentTypeHeaderValue) &&
+                        contentType.FirstOrDefault().Contains(Constants.NoMetadata))
                 {
-                    if (resp.Headers.ETag != null)
+                    IEnumerable<string> etag;
+                    resp.Headers.TryGetValues(Constants.HeaderConstants.EtagHeader, out etag);
+                    if (etag != null)
                     {
-                        result.Etag = resp.Headers.ETag.ToString();
-                        operation.Entity.ETag = result.Etag;
-                        operation.Entity.Timestamp = ParseETagForTimestamp(result.Etag);
+                        result.Etag = etag.FirstOrDefault();
                     }
+
+                    ReadEntityUsingJsonParser(result, operation, cmd.ResponseStream, ctx, options);
                 }
                 else
                 {
-                    // Parse entity
-                    ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
-                    readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
-                    IEnumerable<string> contentType;
-                    resp.Content.Headers.TryGetValues(Constants.HeaderConstants.PayloadContentTypeHeader, out contentType);
-
-                    if (contentType != null && contentType.FirstOrDefault() != null && contentType.FirstOrDefault().Contains(Constants.JsonContentTypeHeaderValue) &&
-                            contentType.FirstOrDefault().Contains(Constants.NoMetadata))
-                    {
-                        IEnumerable<string> etag;
-                        resp.Headers.TryGetValues(Constants.HeaderConstants.EtagHeader, out etag);
-                        if (etag != null)
-                        {
-                            result.Etag = etag.FirstOrDefault();
-                        }
-
-                        ReadEntityUsingJsonParser(result, operation, cmd.ResponseStream, ctx, options);
-                    }
-                    else
-                    {
-                        ReadOdataEntity(result, operation, new HttpResponseAdapterMessage(resp, cmd.ResponseStream), ctx, readerSettings, accountName);
-                    }
+                    await ReadOdataEntity(result, operation, new HttpResponseAdapterMessage(resp, cmd.ResponseStream), ctx, readerSettings, accountName).ConfigureAwait(false);
                 }
+            }
 
-                return result;
-            });
+            return result;
         }
 
-        internal static Task<IList<TableResult>> TableBatchOperationPostProcess(IList<TableResult> result, TableBatchOperation batch, RESTCommand<IList<TableResult>> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, string accountName)
+        internal static async Task<IList<TableResult>> TableBatchOperationPostProcess(IList<TableResult> result, TableBatchOperation batch, RESTCommand<IList<TableResult>> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, string accountName)
         {
-            return Task.Run(() =>
             {
                 ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
                 readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
@@ -148,18 +146,18 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 using (ODataMessageReader responseReader = new ODataMessageReader(new HttpResponseAdapterMessage(resp, cmd.ResponseStream), readerSettings))
                 {
                     // create a reader
-                    ODataBatchReader reader = responseReader.CreateODataBatchReader();
+                    ODataBatchReader reader = await responseReader.CreateODataBatchReaderAsync().ConfigureAwait(false);
 
                     // Initial => changesetstart 
                     if (reader.State == ODataBatchReaderState.Initial)
                     {
-                        reader.Read();
+                        await reader.ReadAsync().ConfigureAwait(false);
                     }
 
                     if (reader.State == ODataBatchReaderState.ChangesetStart)
                     {
                         // ChangeSetStart => Operation
-                        reader.Read();
+                        await reader.ReadAsync().ConfigureAwait(false);
                     }
 
                     int index = 0;
@@ -172,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         TableResult currentResult = new TableResult() { Result = currentOperation.Entity };
                         result.Add(currentResult);
 
-                        ODataBatchOperationResponseMessage mimePartResponseMessage = reader.CreateOperationResponseMessage();
+                        ODataBatchOperationResponseMessage mimePartResponseMessage = await reader.CreateOperationResponseMessageAsync().ConfigureAwait(false);
                         string contentType = mimePartResponseMessage.GetHeader(Constants.ContentTypeElement);
 
                         currentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
@@ -197,7 +195,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                                 index++;
 
                                 // Operation => next
-                                reader.Read();
+                                await reader.ReadAsync().ConfigureAwait(false);
                                 continue;
                             }
 
@@ -231,7 +229,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                             {
                                 cmd.CurrentResult.HttpStatusMessage = mimePartResponseMessage.StatusCode.ToString();
                             }
-                            
+
                             throw new StorageException(
                                    cmd.CurrentResult,
                                    cmd.CurrentResult.ExtendedErrorInformation != null ? cmd.CurrentResult.ExtendedErrorInformation.ErrorMessage : SR.ExtendedErrorUnavailable,
@@ -297,7 +295,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                             }
                             else
                             {
-                                ReadOdataEntity(currentResult, currentOperation, mimePartResponseMessage, ctx, readerSettings, accountName);
+                                await ReadOdataEntity(currentResult, currentOperation, mimePartResponseMessage, ctx, readerSettings, accountName).ConfigureAwait(false);
                             }
                         }
                         else if (currentOperation.OperationType == TableOperationType.Insert)
@@ -308,17 +306,16 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         index++;
 
                         // Operation =>
-                        reader.Read();
+                        await reader.ReadAsync().ConfigureAwait(false);
                     }
                 }
 
                 return result;
-            });
+            }
         }
 
-        internal static Task<ResultSegment<TElement>> TableQueryPostProcessGeneric<TElement>(Stream responseStream, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, HttpResponseMessage resp, TableRequestOptions options, OperationContext ctx, string accountName)
+        internal static async Task<ResultSegment<TElement>> TableQueryPostProcessGeneric<TElement>(Stream responseStream, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, HttpResponseMessage resp, TableRequestOptions options, OperationContext ctx, string accountName)
         {
-            return Task.Run(() =>
             {
                 ResultSegment<TElement> retSeg = new ResultSegment<TElement>(new List<TElement>());
                 retSeg.ContinuationToken = ContinuationFromResponse(resp);
@@ -342,46 +339,46 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     using (ODataMessageReader responseReader = new ODataMessageReader(new HttpResponseAdapterMessage(resp, responseStream), readerSettings, new TableStorageModel(accountName)))
                     {
                         // create a reader
-                        ODataReader reader = responseReader.CreateODataFeedReader();
+                        ODataReader reader = await responseReader.CreateODataFeedReaderAsync().ConfigureAwait(false);
 
                         // Start => FeedStart
                         if (reader.State == ODataReaderState.Start)
                         {
-                            reader.Read();
+                            await reader.ReadAsync().ConfigureAwait(false);
                         }
 
                         // Feedstart 
                         if (reader.State == ODataReaderState.FeedStart)
                         {
-                            reader.Read();
+                            await reader.ReadAsync().ConfigureAwait(false);
                         }
 
                         while (reader.State == ODataReaderState.EntryStart)
                         {
                             // EntryStart => EntryEnd
-                            reader.Read();
+                            await reader.ReadAsync().ConfigureAwait(false);
 
                             ODataEntry entry = (ODataEntry)reader.Item;
 
                             retSeg.Results.Add(ReadAndResolve(entry, resolver));
 
                             // Entry End => ?
-                            reader.Read();
+                            await reader.ReadAsync().ConfigureAwait(false);
                         }
 
-                        DrainODataReader(reader);
+                        await DrainODataReader(reader).ConfigureAwait(false);
                     }
                 }
 
                 return retSeg;
-            });
+            }
         }
 
-        private static void DrainODataReader(ODataReader reader)
+        private static async Task DrainODataReader(ODataReader reader)
         {
             if (reader.State == ODataReaderState.FeedEnd)
             {
-                reader.Read();
+                await reader.ReadAsync().ConfigureAwait(false);
             }
 
             if (reader.State != ODataReaderState.Completed)
@@ -426,14 +423,14 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return newContinuationToken;
         }
 
-        private static void ReadOdataEntity(TableResult result, TableOperation operation, IODataResponseMessage respMsg, OperationContext ctx, ODataMessageReaderSettings readerSettings, string accountName)
+        private static async Task ReadOdataEntity(TableResult result, TableOperation operation, IODataResponseMessage respMsg, OperationContext ctx, ODataMessageReaderSettings readerSettings, string accountName)
         {
             using (ODataMessageReader messageReader = new ODataMessageReader(respMsg, readerSettings, new TableStorageModel(accountName)))
             {
                 // Create a reader.
-                ODataReader reader = messageReader.CreateODataEntryReader();
+                ODataReader reader = await messageReader.CreateODataEntryReaderAsync().ConfigureAwait(false);
 
-                while (reader.Read())
+                while (await reader.ReadAsync().ConfigureAwait(false))
                 {
                     if (reader.State == ODataReaderState.EntryEnd)
                     {
@@ -451,7 +448,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     }
                 }
 
-                DrainODataReader(reader);
+                await DrainODataReader(reader).ConfigureAwait(false);
             }
         }
 
@@ -482,7 +479,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             StreamReader streamReader = new StreamReader(stream);
             using (JsonReader reader = new JsonTextReader(streamReader))
             {
-                JsonSerializer serializer = new JsonSerializer();
+                
                 Dictionary<string, string> properties = serializer.Deserialize<Dictionary<string, string>>(reader);
                 if (operation.OperationType == TableOperationType.Retrieve)
                 {
