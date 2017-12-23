@@ -45,7 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         protected AccessCondition accessCondition;
         protected BlobRequestOptions options;
         protected OperationContext operationContext;
-        protected CounterEvent noPendingWritesEvent;
+        protected AsyncCounterEvent noPendingWritesEvent;
         protected MD5Wrapper blobMD5;
         protected MD5Wrapper blockMD5;
         protected AsyncSemaphore parallelOperationSemaphore;
@@ -68,7 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.currentOffset = 0;
             this.options = options;
             this.operationContext = operationContext;
-            this.noPendingWritesEvent = new CounterEvent();
+            this.noPendingWritesEvent = new AsyncCounterEvent();
             this.blobMD5 = this.options.StoreBlobContentMD5.Value ? new MD5Wrapper() : null;
             this.blockMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
             this.parallelOperationSemaphore = new AsyncSemaphore(options.ParallelOperationThreadCount.Value);
@@ -309,12 +309,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     this.internalBuffer.Dispose();
                     this.internalBuffer = null;
-                }
-       
-                if (this.noPendingWritesEvent != null)
-                {
-                    this.noPendingWritesEvent.Dispose();
-                    this.noPendingWritesEvent = null;
                 }
             }
 

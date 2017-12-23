@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         protected AccessCondition accessCondition;
         protected FileRequestOptions options;
         protected OperationContext operationContext;
-        protected CounterEvent noPendingWritesEvent;
+        protected AsyncCounterEvent noPendingWritesEvent;
         protected MD5Wrapper fileMD5;
         protected MD5Wrapper rangeMD5;
         protected AsyncSemaphore parallelOperationSemaphore;
@@ -62,7 +62,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.accessCondition = accessCondition;
             this.options = options;
             this.operationContext = operationContext;
-            this.noPendingWritesEvent = new CounterEvent();
+            this.noPendingWritesEvent = new AsyncCounterEvent();
             this.fileMD5 = this.options.StoreFileContentMD5.Value ? new MD5Wrapper() : null;
             this.rangeMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
             this.parallelOperationSemaphore = new AsyncSemaphore(options.ParallelOperationThreadCount.Value);
@@ -224,12 +224,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     this.internalBuffer.Dispose();
                     this.internalBuffer = null;
-                }
-
-                if (this.noPendingWritesEvent != null)
-                {
-                    this.noPendingWritesEvent.Dispose();
-                    this.noPendingWritesEvent = null;
                 }
             }
 
