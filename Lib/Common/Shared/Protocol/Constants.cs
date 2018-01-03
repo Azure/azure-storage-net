@@ -1337,6 +1337,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies the Content type for the request payload.
             /// </summary>
             internal const string PayloadContentTypeHeader = "Content-Type";
+
+            /// <summary>
+            /// Header that specifies the storage error code string in a failed response.
+            /// </summary>
+            internal const string StorageErrorCodeHeader = "x-ms-error-code";
         }
 
         /// <summary>
