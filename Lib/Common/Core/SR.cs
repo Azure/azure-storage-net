@@ -111,8 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string InvalidLoggingLevel = "Invalid logging operations specified.";
         public const string InvalidMetricsLevel = "Invalid metrics level specified.";
         public const string InvalidBlockSize = "Append block data should not exceed the maximum blob size condition value.";
-        public const string InvalidDeleteRetentionDaysValue = "The delete retention policy is enabled but the RetentionDays property is not specified or has an invalid value. The specified value must be between 1 and 365.";
-        public const string InvalidRetainedVersionsPerBlobValue = "The delete retention policy is enabled but the RetainedVersionsPerBlob value is not specified or has an invalid value. The specified value must be between 1 and 10.";
+        public const string InvalidDeleteRetentionDaysValue = "The delete retention policy is enabled but the RetentionDays property is not specified or has an invalid value. RetentionDays must be greater than 0 and less than or equal to 365 days.";
         public const string InvalidPageSize = "Page data must be a multiple of 512 bytes.";
         public const string InvalidProtocolsInSAS = "Invalid value {0} for the SharedAccessProtocol parameter when creating a SharedAccessSignature.  Use 'null' if you do not wish to include a SharedAccessProtocol.";
         public const string InvalidResourceName = "Invalid {0} name. Check MSDN for more information about valid {0} naming.";

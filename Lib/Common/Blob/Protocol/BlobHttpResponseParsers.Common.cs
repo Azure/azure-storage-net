@@ -241,7 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <summary>
         /// Determines if a blob has been deleted.
         /// </summary>
-        /// <param name="deletedHeader">String giving the deletion copy status of the blob</param>
+        /// <param name="deletedHeader">String giving the deletion status of the blob</param>
         /// <returns><c>true</c> if blob has been deleted or <c>false</c> if not.</returns>
         public static bool GetDeletionStatus(string deletedHeader)
         {

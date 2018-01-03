@@ -37,7 +37,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public static CloudBlobContainer GetRandomContainerReference()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
-
             string name = GetRandomContainerName();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 

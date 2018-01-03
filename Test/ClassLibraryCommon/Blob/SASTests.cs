@@ -700,17 +700,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 byte[] target = new byte[4];
                 OperationContext opContext = new OperationContext();
                 IPAddress actualIP = null;
-                opContext.ResponseReceived += (sender, e) =>
-                    {
-                        Stream stream = e.Response.GetResponseStream();
-                        stream.Seek(0, SeekOrigin.Begin);
-                        using (StreamReader reader = new StreamReader(stream))
-                        {
-                            string text = reader.ReadToEnd();
-                            XDocument xdocument = XDocument.Parse(text);
-                            actualIP = IPAddress.Parse(xdocument.Descendants("SourceIP").First().Value);
-                        }
-                    };
 
                 bool exceptionThrown = false;
                 try
@@ -720,11 +709,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 catch (StorageException)
                 {
                     exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
+                    //The IP should not be included in the error details for security reasons
+                    Assert.IsNull(actualIP);
                 }
 
                 Assert.IsTrue(exceptionThrown);
-                ipAddressOrRange = generateFinalIPAddressOrRange(actualIP);
+                ipAddressOrRange = null;
                 blockBlobToken = blockBlob.GetSharedAccessSignature(policy, null, null, null, ipAddressOrRange);
                 blockBlobSAS = new StorageCredentials(blockBlobToken);
                 blockBlobSASUri = blockBlobSAS.TransformUri(blockBlob.Uri);

@@ -143,58 +143,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
             using (MemoryStream srcStream = new MemoryStream(buffer))
             {
-                blob.UploadFromStream(srcStream);
-                blob.UploadFromStream(srcStream);
-                blob.UploadFromStream(srcStream);
-                var blobListDelted = blob.Container.ListBlobs( useFlatBlobListing: true, blobListingDetails: BlobListingDetails.Deleted);
-              //  var snapList = blob.Container.ListBlobs(blobListingDetails: BlobListingDetails.Snapshots);
-             //   var blobListAll = blob.Container.ListBlobs(blobListingDetails: BlobListingDetails.All);
-                blob.DeleteIfExists();
-                
-                foreach (CloudBlob b in blobListDelted)
-                {
-                    //b.FetchAttributes();
-                    if (b.IsDeleted)
-                    {
-                        b.Undelete();
-                    }
-                }
-
-                var blobListUndeletedDelted = blob.Container.ListBlobs(useFlatBlobListing: true, blobListingDetails: BlobListingDetails.Deleted | BlobListingDetails.Snapshots);
-
-                foreach (CloudBlob b in blobListUndeletedDelted)
-                {
-                    //b.FetchAttributes();
-                    if (b.IsDeleted)
-                    {
-                        b.Undelete();
-                    }
-                }
-
-                foreach (CloudBlob b in blobListUndeletedDelted)
-                {
-                    if (!b.IsSnapshot && !b.IsDeleted)
-                    {
-                        b.DeleteIfExists(deleteSnapshotsOption: DeleteSnapshotsOption.IncludeSnapshots);
-                    }
-                    else if (!b.IsDeleted)
-                    {
-                        b.DeleteIfExists();
-                    }
-                }
-
-                var blobListSnapshots = blob.Container.ListBlobs(useFlatBlobListing: true, blobListingDetails: BlobListingDetails.Deleted | BlobListingDetails.Snapshots);
-
-                foreach (CloudBlob bb in blobListSnapshots)
-                {
-                    if (bb.IsDeleted)
-                    {
-                        
-                    }
-                }
-
-                blob.DeleteIfExists(isPermenantDelete: true);
-
+                blob.UploadFromStream(srcStream);               
                 byte[] testBuffer = new byte[2048];
                 MemoryStream dstStream = new MemoryStream(testBuffer);
                 blob.DownloadRangeToStream(dstStream, null, null);

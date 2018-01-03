@@ -265,7 +265,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.Create();
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-                Assert.IsFalse(blob.DeleteIfExists(isPermenantDelete:true));
+                Assert.IsFalse(blob.DeleteIfExists());
                 CreateForTest(blob, 0, 0, false);
                 Assert.IsTrue(blob.DeleteIfExists());
                 Assert.IsFalse(blob.DeleteIfExists());
@@ -1972,7 +1972,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, false, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.PreconditionFailed);
+                    HttpStatusCode.NotFound);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, false, true);
                 this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, false, true);
@@ -2021,7 +2021,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, true, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.PreconditionFailed);
+                    HttpStatusCode.NotFound);
 
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, true, true);

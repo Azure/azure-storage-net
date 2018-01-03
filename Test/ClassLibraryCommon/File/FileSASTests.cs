@@ -358,11 +358,12 @@ namespace Microsoft.WindowsAzure.Storage.File
                 catch (StorageException)
                 {
                     exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
+                    //The IP should not be included in the error details for security reasons
+                    Assert.IsNull(actualIP);
                 }
 
                 Assert.IsTrue(exceptionThrown);
-                ipAddressOrRange = generateFinalIPAddressOrRange(actualIP);
+                ipAddressOrRange = null;
                 fileToken = fileWithKey.GetSharedAccessSignature(policy, null, null, null, ipAddressOrRange);
                 fileSAS = new StorageCredentials(fileToken);
                 fileSASUri = fileSAS.TransformUri(fileWithKey.Uri);

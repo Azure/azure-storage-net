@@ -20,7 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
     /// <summary>
     /// Class representing the service properties pertaining to DeleteRetentionPolicy
     /// </summary>
-    public sealed class DeleteRetentionPolicyProperties
+    public sealed class DeleteRetentionPolicy
     {
         /// <summary>
         /// Gets or sets the Enabled flag of the DeleteRetentionPolicy.
@@ -36,17 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// Gets or Sets the number of days on the DeleteRetentionPolicy.
         /// </summary>
         /// <value>Indicates the number of days that the deleted blob should be retained. The minimum specified value can be 1 and the maximum value can be 365. </value>
-        public int? Days
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Gets or Sets the number of 
-        /// </summary>
-        /// <value>Indicates the number of deleted versions of each blob to be retained. The minimum specified value can be 1 and the maximum value can be 10.</value>
-        public int? RetainedVersionsPerBlob
+        public int? RetentionDays
         {
             get;
             set;
