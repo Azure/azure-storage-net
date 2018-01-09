@@ -1,3 +1,6 @@
+Tracking Braking Changes since 8.0
+- All: Deprecated the ErrorCode property on ExtendedErrorInformation
+
 Tracking Breaking Changes since 7.0
 
 - All: (Desktop) Updated the desktop library to target .Net 4.5.0

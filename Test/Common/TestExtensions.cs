@@ -38,6 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         internal static void DisableSoftDelete(this CloudBlobClient client)
         {
             ServiceProperties props = new ServiceProperties(
+                deleteRetentionPolicy:
                 new DeleteRetentionPolicy()
                 {
                     Enabled = false

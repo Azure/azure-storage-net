@@ -55,6 +55,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Gets the storage service error code.
         /// </summary>
         /// <value>A string containing the storage service error code.</value>
+        [System.Obsolete("Use RequestResult.ErrorCode instead")]
         public string ErrorCode { get; internal set; }
 
         /// <summary>
