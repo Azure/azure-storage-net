@@ -118,6 +118,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public static readonly TimeSpan MaximumAllowedTimeout = TimeSpan.FromSeconds(int.MaxValue);
 
         /// <summary>
+        /// Maximum allowed value for Delete Retention Days.
+        /// </summary>
+        internal static readonly int MaximumAllowedRetentionDays = 365;
+
+        /// <summary>
         /// Default size of buffer for unknown sized requests.
         /// </summary>
         internal const int DefaultBufferSize = (int)(64 * KB);
@@ -401,6 +406,21 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for destination snapshot time.
         /// </summary>
         public const string CopyDestinationSnapshotElement = "CopyDestinationSnapshot";
+
+        /// <summary>
+        /// XML element for deleted flag indicating the retention policy on the blob.
+        /// </summary>
+        public const string DeletedElement = "Deleted";
+
+        /// <summary>
+        /// XML element for the time the retained blob was deleted.
+        /// </summary>
+        public const string DeletedTimeElement = "DeletedTime";
+
+        /// <summary>
+        /// XML element for the remaining days before the retained blob will be permenantly deleted.
+        /// </summary>
+        public const string RemainingRetentionDaysElement = "RemainingRetentionDays";
 
         /// <summary>
         /// Constant signaling a page blob.
@@ -1195,7 +1215,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2017-04-17";
+            public const string TargetStorageVersion = "2017-07-29";
 
             /// <summary>
             /// Specifies the file type.
@@ -1348,6 +1368,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// </summary>
             internal const string PayloadContentTypeHeader = "Content-Type";
 
+            /// <summary>
+            /// OData Related
+            /// </summary>
             internal const string AcceptCharset = "Accept-Charset";
 
             internal const string AcceptCharsetValue = "UTF-8";
@@ -1367,7 +1390,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             internal const string PreferReturnContent = "return-content";
             internal const string PreferReturnNoContent = "return-no-content";
 
-
+            /// <summary>
+            /// Header that specifies the storage error code string in a failed response.
+            /// </summary>
+            internal const string StorageErrorCodeHeader = "x-ms-error-code";
         }
 
         /// <summary>
@@ -1536,6 +1562,12 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Query component for the copy ID.
             /// </summary>
             public const string CopyId = "copyid";
+            
+            /// <summary>
+            /// Query component for the permanent delete type.
+            /// </summary>
+            public const string DeleteType = "deletetype";
+
         }
 
         /// <summary>

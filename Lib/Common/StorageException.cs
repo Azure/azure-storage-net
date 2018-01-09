@@ -373,6 +373,7 @@ namespace Microsoft.WindowsAzure.Storage
                 string tempDate = HttpWebUtility.TryGetHeader(response, "Date", null);
                 reqResult.RequestDate = string.IsNullOrEmpty(tempDate) ? DateTime.Now.ToString("R", CultureInfo.InvariantCulture) : tempDate;
                 reqResult.Etag = response.Headers[HttpResponseHeader.ETag];
+                reqResult.ErrorCode = HttpWebUtility.TryGetHeader(response, Constants.HeaderConstants.StorageErrorCodeHeader, null);
 #endif
             }
 
@@ -400,10 +401,10 @@ namespace Microsoft.WindowsAzure.Storage
                 sb.AppendLine("RequestID:" + this.RequestInformation.ServiceRequestID);
                 sb.AppendLine("RequestDate:" + this.RequestInformation.RequestDate);
                 sb.AppendLine("StatusMessage:" + this.RequestInformation.HttpStatusMessage);
+                sb.AppendLine("ErrorCode:" + this.RequestInformation.ErrorCode);
 
                 if (this.RequestInformation.ExtendedErrorInformation != null)
                 {
-                    sb.AppendLine("ErrorCode:" + this.RequestInformation.ExtendedErrorInformation.ErrorCode);
                     sb.AppendLine("ErrorMessage:" + this.RequestInformation.ExtendedErrorInformation.ErrorMessage);
                 }
             }
