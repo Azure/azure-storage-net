@@ -32,9 +32,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
     using System.Xml;
 
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Microsoft.WindowsAzure.Storage.Table.DataServices;
-#elif WINDOWS_RT
+#if WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
 

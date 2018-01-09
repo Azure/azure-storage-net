@@ -822,6 +822,26 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         internal const string ETagPrefix = "\"datetime'";
 
+        internal const string OdataTypeString = "@odata.type";
+
+        internal const string EdmDateTime = @"Edm.DateTime";
+        internal const string EdmBinary = @"Edm.Binary";
+        internal const string EdmInt64 = @"Edm.Int64";
+        internal const string EdmGuid = @"Edm.Guid";
+
+        internal const string BatchBoundaryMarker = @"multipart/mixed; boundary=batch_";
+        internal const string ChangesetBoundaryMarker = @"Content-Type: multipart/mixed; boundary=changeset_";
+
+        internal const string BatchSeparator = @"--batch_";
+        internal const string ChangesetSeparator = @"--changeset_";
+
+        internal const string ContentTypeApplicationHttp = @"Content-Type: application/http";
+        internal const string ContentTransferEncodingBinary = @"Content-Transfer-Encoding: binary";
+
+        internal const string ContentTypeApplicationJson = HeaderConstants.PayloadContentTypeHeader + ": " + JsonContentTypeHeaderValue;
+
+        internal const string HTTP1_1 = "HTTP/1.1";
+
         /// <summary>
         /// Constants for HTTP headers.
         /// </summary>
@@ -1327,6 +1347,27 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies the Content type for the request payload.
             /// </summary>
             internal const string PayloadContentTypeHeader = "Content-Type";
+
+            internal const string AcceptCharset = "Accept-Charset";
+
+            internal const string AcceptCharsetValue = "UTF-8";
+
+            internal const string MaxDataServiceVersion = "MaxDataServiceVersion";
+            internal const string MaxDataServiceVersionValue = "3.0;NetFx";
+
+            internal const string DataServiceVersion = "DataServiceVersion";
+            internal const string DataServiceVersionValue = "3.0;";
+
+            internal const string PostTunnelling = "X-HTTP-Method";
+
+            internal const string IfMatch = "If-Match";
+
+            internal const string Prefer = "Prefer";
+
+            internal const string PreferReturnContent = "return-content";
+            internal const string PreferReturnNoContent = "return-no-content";
+
+
         }
 
         /// <summary>

@@ -687,9 +687,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 containerNames.Add(containerName);
                 blobClient.GetContainerReference(containerName).Create();
             }
-
             IEnumerable<CloudBlobContainer> results = blobClient.ListContainers();
-
             foreach (CloudBlobContainer container in results)
             {
                 if (containerNames.Remove(container.Name))

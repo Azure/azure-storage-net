@@ -39,23 +39,10 @@
     <CodeAnalysisRuleSet>CodeAnalysisWindowsRuntime.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Data.Edm, Version=5.8.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Microsoft.Data.Edm.5.8.2\lib\portable-net45+wp8+win8+wpa\Microsoft.Data.Edm.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Data.OData, Version=5.8.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Microsoft.Data.OData.5.8.2\lib\portable-net45+wp8+win8+wpa\Microsoft.Data.OData.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.8.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Newtonsoft.Json.6.0.8\lib\portable-net45+wp80+win8+wpa81+aspnetcore50\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\packages\Newtonsoft.Json.10.0.2\lib\portable-net45+win8+wpa81+wp8\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Spatial, Version=5.8.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\System.Spatial.5.8.2\lib\portable-net45+wp8+win8+wpa\System.Spatial.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Auth\Protocol\StorageAuthenticationHttpHandler.cs" />
@@ -121,8 +108,6 @@
     <Compile Include="Table\CloudTable.cs" />
     <Compile Include="Table\CloudTableClient.cs" />
     <Compile Include="Table\Protocol\TableHttpRequestMessageFactory.cs" />
-    <Compile Include="Table\Protocol\HttpRequestAdapterMessage.cs" />
-    <Compile Include="Table\Protocol\HttpResponseAdapterMessage.cs" />
     <Compile Include="Table\TableOperation.cs" />
     <Compile Include="Table\Protocol\TableOperationHttpRequestFactory.cs" />
     <Compile Include="Table\Protocol\TableOperationHttpResponseParsers.cs" />

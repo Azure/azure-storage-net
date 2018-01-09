@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
-    using Microsoft.Data.OData;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
 
@@ -125,10 +124,5 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
         /// The minimum DateTime supported.
         /// </summary> 
         public static readonly DateTimeOffset MinDateTime = new DateTimeOffset(1601, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
-        /// <summary>
-        /// The ODataProtocolVersion.
-        /// </summary>
-        internal static ODataVersion ODataProtocolVersion = ODataVersion.V3;
     }
 }
