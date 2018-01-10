@@ -4,9 +4,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
 public static class HeaderConstants
 {
-    public static readonly string UserAgent = "Azure-Storage/8.5.0 ";
+    public static readonly string UserAgent = "Azure-Storage/8.7.0 ";
     public const string UserAgentProductName = "Azure-Storage";
-    public const string UserAgentProductVersion = "8.5.0";
+    public const string UserAgentProductVersion = "8.7.0";
     public const string PrefixForStorageHeader = "x-ms-";
     public const string TrueHeader = "true";
     public const string FalseHeader = "false";
@@ -41,6 +41,7 @@ public static class HeaderConstants
     public const string AccessTierHeader = "x-ms-access-tier";
     public const string ArchiveStatusHeader = "x-ms-archive-status";
     public const string AccessTierInferredHeader = "x-ms-access-tier-inferred";
+    public const string AccessTierChangeTimeHeader = "x-ms-access-tier-change-time";
     public const string BlobCacheControlHeader = "x-ms-blob-cache-control";
     public const string BlobContentDispositionRequestHeader = "x-ms-blob-content-disposition";
     public const string BlobContentEncodingHeader = "x-ms-blob-content-encoding";

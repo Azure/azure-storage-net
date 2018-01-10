@@ -109,6 +109,38 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.DownloadRangeToStreamAsync(target, null /* offset */, null /* length */, accessCondition, options, operationContext);
         }
 
+#if NETCORE
+        /// <summary>
+        /// Downloads the contents of a blob to a stream.
+        /// </summary>
+        /// <param name="target">The target stream.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.DownloadToStreamAsync(target, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+
+        /// <summary>
+        /// Downloads the contents of a blob to a stream.
+        /// </summary>
+        /// <param name="target">The target stream.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.DownloadRangeToStreamAsync(target, null /* offset */, null /* length */, accessCondition, options, operationContext, progressHandler, cancellationToken);
+        }
+#else
         /// <summary>
         /// Downloads the contents of a blob to a stream.
         /// </summary>
@@ -123,6 +155,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.DownloadRangeToStreamAsync(target, null /* offset */, null /* length */, accessCondition, options, operationContext, cancellationToken);
         }
+#endif
 
         /// <summary>
         /// Downloads the contents of a blob to a file.
@@ -207,6 +240,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual async Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            await this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Downloads the contents of a blob to a file.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual async Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
             CommonUtility.AssertNotNull("path", path);
 
             FileStream stream = new FileStream(path, mode, FileAccess.Write);
@@ -215,7 +265,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 using (stream)
                 {
-                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (Exception)
@@ -265,6 +315,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.DownloadRangeToByteArrayAsync(target, index, null /* blobOffset */, null /* length */, accessCondition, options, operationContext);
         }
 
+#if NETCORE
+        /// <summary>
+        /// Downloads the contents of a blob to a byte array.
+        /// </summary>
+        /// <param name="target">The target byte array.</param>
+        /// <param name="index">The starting offset in the byte array.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The total number of bytes read into the buffer.</returns>
+        [DoesServiceRequest]
+        public virtual Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.DownloadRangeToByteArrayAsync(target, index, null /* blobOffset */, null /* length */, accessCondition, options, operationContext, progressHandler, cancellationToken);
+        }
+#endif
+
         /// <summary>
         /// Downloads the contents of a blob to a byte array.
         /// </summary>
@@ -310,6 +379,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Downloads a range of bytes from a blob to a stream.
         /// </summary>
@@ -324,17 +394,56 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Downloads a range of bytes from a blob to a stream.
+        /// </summary>
+        /// <param name="target">The target stream.</param>
+        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
+        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual async Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Downloads a range of bytes from a blob to a stream.
+        /// </summary>
+        /// <param name="target">The target stream.</param>
+        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
+        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
+        {
             CommonUtility.AssertNotNull("target", target);
 
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
 
             // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
             // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-            return Executor.ExecuteAsyncNullReturn(
+            await Executor.ExecuteAsyncNullReturn(
+#if NETCORE
+                this.GetBlobImpl(this.attributes, new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(target), offset, length, accessCondition, modifiedOptions),
+#else
                 this.GetBlobImpl(this.attributes, target, offset, length, accessCondition, modifiedOptions),
+#endif
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -368,6 +477,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Downloads a range of bytes from a blob to a byte array.
         /// </summary>
@@ -381,11 +491,48 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         [DoesServiceRequest]
-        public virtual async Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Downloads a range of bytes from a blob to a byte array.
+        /// </summary>
+        /// <param name="target">The target byte array.</param>
+        /// <param name="index">The starting offset in the byte array.</param>
+        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
+        /// <param name="length">The length of the data range, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The total number of bytes read into the buffer.</returns>
+        [DoesServiceRequest]
+        public virtual async Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Downloads a range of bytes from a blob to a byte array.
+        /// </summary>
+        /// <param name="target">The target byte array.</param>
+        /// <param name="index">The starting offset in the byte array.</param>
+        /// <param name="blobOffset">The starting offset of the data range, in bytes.</param>
+        /// <param name="length">The length of the data range, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The total number of bytes read into the buffer.</returns>
+        [DoesServiceRequest]
+        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
         {
             using (SyncMemoryStream stream = new SyncMemoryStream(target, index))
             {
-                await this.DownloadRangeToStreamAsync(stream, blobOffset, length, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                await this.DownloadRangeToStreamAsync(stream, blobOffset, length, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
                 return (int)stream.Position;
             }
         }

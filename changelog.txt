@@ -1,5 +1,16 @@
-Changes in ?.?.? :
+Changes in 9.0.0:
 - All: An exception is now thrown if a user passes conditional headers not supported by the called method.
+
+Changes in 8.7.0:
+- Blobs: Parsing the snapshot parameter when creating a CloudBlockBlob from a URI is now case insensitive
+- Blobs (Desktop): Added a new API supporting downloading a blob to a file by making concurrent service requests.
+- Blobs (Desktop): Fixed a race-condition where cancelling a blob upload could result in deadlock.
+- Blobs: Fixed StorageException when storing encrypted blobs with Formatting.Indented set in default JsonSerializerSettings.
+- Blobs/Files: Added support for progress notification in async upload and download APIs.
+
+Changes in 8.6.0 :
+- Tables : Added support for Byte type property in TableEntity Flatten/ConvertBack methods.
+- Blobs : Added support for the last time blobTier was modified.
 
 Changes in 8.5.0 :
 - Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
