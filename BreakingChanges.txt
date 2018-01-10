@@ -1,6 +1,7 @@
 Tracking Breaking Changes since 8.0
 
 - All: An exception is now thrown if a user passes conditional headers not supported by the called method.
+- All: Deprecated the ErrorCode property on ExtendedErrorInformation
 
 Tracking Breaking Changes since 7.0
 

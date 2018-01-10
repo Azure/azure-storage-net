@@ -1,4 +1,9 @@
 Changes in 9.0.0:
+- All: Support for 2017-07-29 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.3.
+- Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
+- Blobs : Added support for Soft-delete/Undelete a blob. 
+- Queues: Added support for infinite TTL on queue messages.
+- All: ErrorCode is retrieved from the header instead of the body of a failed request and set to the ErrorCode property on RequestResult.
 - All: An exception is now thrown if a user passes conditional headers not supported by the called method.
 
 Changes in 8.7.0:
@@ -22,6 +27,7 @@ Changes in 8.4.0 :
 Changes in 8.3.0 :
 - All(Netstandard): Updated the hashing algorithm to IncrementalHash instead of the original method which required buffering the data for MD5 calculations.
 - All: Fixed a race condition in the resume-download logic where a failure during downloads could lead to corrupted data.
+- Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
 
 Changes in 8.2.1 :
 - All: Fixed a bug where empty metadata headers would lead to an infinite loop when trying to list blobs on a container.

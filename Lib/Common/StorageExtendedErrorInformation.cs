@@ -32,9 +32,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
     using System.Xml;
 
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Microsoft.WindowsAzure.Storage.Table.DataServices;
-#elif WINDOWS_RT
+#if WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
 
@@ -57,6 +55,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Gets the storage service error code.
         /// </summary>
         /// <value>A string containing the storage service error code.</value>
+        [System.Obsolete("Use RequestResult.ErrorCode instead")]
         public string ErrorCode { get; internal set; }
 
         /// <summary>

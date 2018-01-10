@@ -75,7 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             batchCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
             batchCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableBatchOperation(cmd, uri, builder, serverTimeout, tableName, batch, client, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             batchCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp.StatusCode, results, cmd, ex);
-            batchCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableBatchOperationPostProcess(results, batch, cmd, resp, ctx, requestOptions, client.AccountName);
+            batchCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableBatchOperationPostProcess(results, batch, cmd, resp, ctx, requestOptions, CancellationToken.None);
             batchCmd.RecoveryAction = (cmd, ex, ctx) => results.Clear();
 
             return batchCmd;

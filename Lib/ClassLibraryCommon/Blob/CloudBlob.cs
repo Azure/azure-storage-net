@@ -2247,6 +2247,119 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if SYNC
         /// <summary>
+        /// UnDeletes the blob if it is soft-deleted.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        public virtual void Undelete(AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            Executor.ExecuteSync(
+                this.UndeleteBlobImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to undelete the soft-deleted blob.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginUndelete(AsyncCallback callback, object state)
+        {
+            return this.BeginUndelete(null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+
+        /// <summary>
+        /// Begins an asynchronous operation to undelete the soft-deleted blob.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginUndelete(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.BeginExecuteAsync(
+                this.UndeleteBlobImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to undelete the soft-deleted blob.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        public virtual void EndUndelete(IAsyncResult asyncResult)
+        {
+            Executor.EndExecuteAsync<NullType>(asyncResult);
+        }
+
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to undelete the soft-deleted blob.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UndeleteAsync()
+        {
+            return this.UndeleteAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to delete the blob.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UndeleteAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUndelete, this.EndUndelete, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to undelete the soft-deleted blob.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UndeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.UndeleteAsync(accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to undelete the soft-deleted blob.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UndeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUndelete, this.EndUndelete, accessCondition, options, operationContext, cancellationToken);
+        }
+
+#endif
+
+#if SYNC
+        /// <summary>
         /// Acquires a lease on this blob.
         /// </summary>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
@@ -3918,6 +4031,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Implements the UndeleteBlob method.
+        /// </summary>
+        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>
+        /// A <see cref="RESTCommand{T}"/> that deletes the blob.
+        /// </returns>
+        private RESTCommand<NullType> UndeleteBlobImpl(BlobAttributes blobAttributes, AccessCondition accessCondition, BlobRequestOptions options)
+        {
+            RESTCommand<NullType> unDeleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+
+            options.ApplyToStorageCommand(unDeleteCmd);
+            unDeleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Undelete(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
+            unDeleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            unDeleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+
+            return unDeleteCmd;
+        }
+
+        /// <summary>
         /// Validates that the AccessCondition and the RequestOptions passed into a KeyRotation operation are correct.
         /// </summary>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. 
@@ -4058,7 +4192,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             blobAttributes.Properties.LastModified = parsedProperties.LastModified ?? blobAttributes.Properties.LastModified;
             blobAttributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? blobAttributes.Properties.PageBlobSequenceNumber;
             blobAttributes.Properties.AppendBlobCommittedBlockCount = parsedProperties.AppendBlobCommittedBlockCount ?? blobAttributes.Properties.AppendBlobCommittedBlockCount;
+            blobAttributes.Properties.IsServerEncrypted = parsedProperties.IsServerEncrypted;
             blobAttributes.Properties.IsIncrementalCopy = parsedProperties.IsIncrementalCopy;
+            blobAttributes.Properties.DeletedTime = parsedProperties.DeletedTime ??
+                                                    blobAttributes.Properties.DeletedTime;
+            blobAttributes.Properties.RemainingDaysBeforePermanentDelete =
+                parsedProperties.RemainingDaysBeforePermanentDelete ??
+                blobAttributes.Properties.RemainingDaysBeforePermanentDelete;
 
             if (updateLength)
             {

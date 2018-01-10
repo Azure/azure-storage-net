@@ -17,7 +17,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.RetryPolicies;
-using Microsoft.WindowsAzure.Storage.Table.DataServices;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using Microsoft.WindowsAzure.Storage.Table.Queryable;
 using Microsoft.WindowsAzure.Test.Network;

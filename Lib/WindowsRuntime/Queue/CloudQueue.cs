@@ -30,6 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Threading;
+    using System.Globalization;
 #if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -1096,18 +1097,32 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand"/> that sets the permissions.</returns>
         private RESTCommand<NullType> AddMessageImpl(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options)
         {
-            int? timeToLiveInSeconds = null;
+            long? timeToLiveInSeconds = null;
             int? initialVisibilityDelayInSeconds = null;
 
             if (timeToLive.HasValue)
             {
-                CommonUtility.AssertInBounds("timeToLive", timeToLive.Value, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
-                timeToLiveInSeconds = (int)timeToLive.Value.TotalSeconds;
+                if (timeToLive.Value.Equals(TimeSpan.FromSeconds(-1)) || timeToLive.Value >= TimeSpan.Zero)
+                {
+                    timeToLiveInSeconds = (long)timeToLive.Value.TotalSeconds;
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException("timeToLive", string.Format(CultureInfo.InvariantCulture, SR.ArgumentOutOfRangeError, timeToLive));
+                }
             }
 
             if (initialVisibilityDelay.HasValue)
             {
-                CommonUtility.AssertInBounds("initialVisibilityDelay", initialVisibilityDelay.Value, TimeSpan.Zero, timeToLive ?? CloudQueueMessage.MaxTimeToLive);
+                // If ttl is null, it will default to 7 days (MaxVisibilityTimeout) on the service
+                TimeSpan? effectiveTtl = timeToLive ?? CloudQueueMessage.MaxVisibilityTimeout;
+
+                // Ensures the visibilityTimeout is less than the max allowed and strictly less than the TTL
+                TimeSpan visibilityUpperBound = ((effectiveTtl.Value < TimeSpan.Zero) ||
+                    (effectiveTtl.Value.Add(TimeSpan.FromSeconds(-1)) > CloudQueueMessage.MaxVisibilityTimeout)) ?
+                    CloudQueueMessage.MaxVisibilityTimeout : effectiveTtl.Value.Add(TimeSpan.FromSeconds(-1));
+                CommonUtility.AssertInBounds("initialVisibilityDelay", initialVisibilityDelay.Value, TimeSpan.Zero, visibilityUpperBound);
+
                 initialVisibilityDelayInSeconds = (int)initialVisibilityDelay.Value.TotalSeconds;
             }
 
@@ -1146,7 +1161,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CommonUtility.AssertNotNull("message", message);
             CommonUtility.AssertNotNullOrEmpty("messageId", message.Id);
             CommonUtility.AssertNotNullOrEmpty("popReceipt", message.PopReceipt);
-            CommonUtility.AssertInBounds("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
+            CommonUtility.AssertInBounds("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxVisibilityTimeout);
 
             if ((updateFields & MessageUpdateFields.Visibility) == 0)
             {
