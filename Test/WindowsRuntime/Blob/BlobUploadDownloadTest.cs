@@ -81,6 +81,38 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
 #if NETCORE
         [TestMethod]
+        [Description("Upload a stream to a block blob, with progress, sample code")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobUploadFromStreamTestAsyncWithProgress_Sample()
+        {
+            byte[] buffer = GetRandomBuffer(2 * 1024 * 1024);
+
+            CloudBlockBlob blob = this.testContainer.GetBlockBlobReference("blob1");
+
+            using (MemoryStream srcStream = new MemoryStream(buffer))
+            {
+                #region sample_StorageProgress_NetCore
+                CancellationToken cancellationToken = new CancellationToken();
+                IProgress<StorageProgress> progressHandler = new Progress<StorageProgress>(
+                    progress => Console.WriteLine("Progress: {0} bytes transferred", progress.BytesTransferred)
+                    );
+
+                await blob.UploadFromStreamAsync(
+                    srcStream,
+                    default(AccessCondition),
+                    default(BlobRequestOptions),
+                    default(OperationContext),
+                    progressHandler,
+                    cancellationToken
+                    );
+                #endregion
+            }
+        }
+
+        [TestMethod]
         [Description("Upload a stream to a block blob, with progress")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -133,9 +165,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             )
             where T : ICloudBlob
         {
-            byte[] uploadBuffer = GetRandomBuffer(2 * 1024 * 1024);
-
-            T uploadBlob = blobFactory();
             byte[] buffer = GetRandomBuffer(2 * 1024 * 1024);
 
             T blob = blobFactory();
