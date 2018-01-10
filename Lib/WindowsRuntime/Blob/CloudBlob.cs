@@ -814,10 +814,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
+#pragma warning disable 618
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
                     if ((extendedInfo == null) ||
                         (extendedInfo.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
                         (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
+#pragma warning restore 618
                     {
                         return false;
                     }

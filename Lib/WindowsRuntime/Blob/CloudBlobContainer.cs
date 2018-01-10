@@ -171,7 +171,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
                     if ((extendedInfo == null) ||
+#pragma warning disable 618
                         (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerAlreadyExists))
+#pragma warning restore 618
                     {
                         return false;
                     }
@@ -293,8 +295,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+#pragma warning disable 618
                     if ((extendedInfo == null) ||
                         (extendedInfo.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
+#pragma warning restore 618
                     {
                         return false;
                     }

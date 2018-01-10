@@ -55,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Gets the storage service error code.
         /// </summary>
         /// <value>A string containing the storage service error code.</value>
-        [System.Obsolete("Use RequestResult.ErrorCode instead")]
+        [System.Obsolete("Use RequestResult.ErrorCode instead", false)]
         public string ErrorCode { get; internal set; }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
-        #region IXmlSerializable
+#region IXmlSerializable
 
         /// <summary>
         /// Generates a serializable <see cref="StorageExtendedErrorInformation"/> object from its XML representation.
@@ -180,7 +180,9 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     if ((string.Compare(reader.LocalName, Constants.ErrorCode, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorCodePreview, StringComparison.Ordinal) == 0))
                     {
+#pragma warning disable 618
                         this.ErrorCode = reader.ReadElementContentAsString();
+#pragma warning restore 618
                     }
                     else if ((string.Compare(reader.LocalName, Constants.ErrorMessage, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorMessagePreview, StringComparison.Ordinal) == 0))
                     {
@@ -239,7 +241,9 @@ namespace Microsoft.WindowsAzure.Storage
             CommonUtility.AssertNotNull("writer", writer);
 
             writer.WriteStartElement(Constants.ErrorRootElement);
+#pragma warning disable 618
             writer.WriteElementString(Constants.ErrorCode, this.ErrorCode);
+#pragma warning restore 618
             writer.WriteElementString(Constants.ErrorMessage, this.ErrorMessage);
 
             foreach (string key in this.AdditionalDetails.Keys)
@@ -251,6 +255,6 @@ namespace Microsoft.WindowsAzure.Storage
             writer.WriteEndElement();
         }
 
-        #endregion
+#endregion
     }
 }

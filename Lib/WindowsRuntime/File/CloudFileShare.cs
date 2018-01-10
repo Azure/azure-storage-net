@@ -133,8 +133,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                 if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
                 {
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+#pragma warning disable 618
                     if ((extendedInfo == null) ||
                         (extendedInfo.ErrorCode == FileErrorCodeStrings.ShareAlreadyExists))
+#pragma warning restore 618
                     {
                         return false;
                     }
@@ -335,7 +337,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
                     if ((extendedInfo == null) ||
+#pragma warning disable 618
                         (extendedInfo.ErrorCode == FileErrorCodeStrings.ShareNotFound))
+#pragma warning restore 618
                     {
                         return false;
                     }

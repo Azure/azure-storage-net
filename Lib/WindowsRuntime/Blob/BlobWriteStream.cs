@@ -385,9 +385,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         && this.operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
                     {
                         StorageExtendedErrorInformation extendedInfo = this.operationContext.LastResult.ExtendedErrorInformation;
+#pragma warning disable 618
                         if (extendedInfo != null 
                             && (extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition || extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidMaxBlobSizeCondition)
                             && (this.operationContext.RequestResults.Count - previousResultsCount > 1))
+#pragma warning restore 618
                         {
                             // Pre-condition failure on a retry should be ignored in a single writer scenario since the request
                             // succeeded in the first attempt.

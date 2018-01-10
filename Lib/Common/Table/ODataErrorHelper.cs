@@ -118,7 +118,9 @@ namespace Microsoft.WindowsAzure.Storage
                         Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>();
                         if (errorProperties.ContainsKey(@"code"))
                         {
+#pragma warning disable 618
                             errorInformation.ErrorCode = (string)errorProperties[@"code"];
+#pragma warning restore 618
                         }
                         if (errorProperties.ContainsKey(@"message"))
                         {

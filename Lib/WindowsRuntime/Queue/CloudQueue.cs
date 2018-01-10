@@ -134,8 +134,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
                 {
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+#pragma warning disable 618
                     if ((extendedInfo == null) ||
                         (extendedInfo.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists))
+#pragma warning restore 618
                     {
                         return false;
                     }
@@ -255,7 +257,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 {
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
                     if ((extendedInfo == null) ||
+#pragma warning disable 618
                         (extendedInfo.ErrorCode == QueueErrorCodeStrings.QueueNotFound))
+#pragma warning restore 618
                     {
                         return false;
                     }

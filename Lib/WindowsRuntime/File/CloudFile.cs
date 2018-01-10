@@ -1371,7 +1371,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
                     if ((extendedInfo == null) ||
+#pragma warning disable 618
                         (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
+#pragma warning restore 618
                     {
                         return false;
                     }

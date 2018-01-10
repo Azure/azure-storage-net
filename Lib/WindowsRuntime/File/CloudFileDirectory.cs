@@ -136,8 +136,10 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             catch (StorageException e)
             {
+#pragma warning disable 618
                 if ((e.RequestInformation.ExtendedErrorInformation != null) &&
                     (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists))
+#pragma warning restore 618
                 {
                     return false;
                 }
