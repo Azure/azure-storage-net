@@ -423,7 +423,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -757,14 +757,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task DownloadToFileAsync(StorageFile target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task DownloadToFileAsync(StorageFile target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("target", target);
 
             using (StorageStreamTransaction transaction = await target.OpenTransactedWriteAsync().AsTask(cancellationToken).ConfigureAwait(false))
             {
                 await this.DownloadToStreamAsync(transaction.Stream.AsStream(), accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
-                await transaction.CommitAsync().ConfigureAwait(false);
+                await transaction.CommitAsync();
             }
         }
 #endif
@@ -940,9 +940,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The contents of the file, as a string.</returns>
         [DoesServiceRequest]
-        public virtual async Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            awaitthis.DownloadTextAsync(accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken).ConfigureAwait(false);
+            return this.DownloadTextAsync(accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
         }
 #endif
 
@@ -968,20 +968,19 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The contents of the file, as a string.</returns>
         [DoesServiceRequest]
-        public virtual Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
-
-                using (SyncMemoryStream stream = new SyncMemoryStream())
-                {
+            using (SyncMemoryStream stream = new SyncMemoryStream())
+            {
 #if NETCORE
-                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
+                await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
 #else
-                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
 #endif
-                    byte[] streamAsBytes = stream.ToArray();
-                    return Encoding.UTF8.GetString(streamAsBytes, 0, streamAsBytes.Length);
-                }
+                byte[] streamAsBytes = stream.ToArray();
+                return Encoding.UTF8.GetString(streamAsBytes, 0, streamAsBytes.Length);
+            }
         }
 
         /// <summary>
@@ -1047,7 +1046,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
             CommonUtility.AssertNotNull("target", target);
@@ -1056,7 +1055,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
             // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-            return Executor.ExecuteAsyncNullReturn(
+            await Executor.ExecuteAsyncNullReturn(
 #if NETCORE
                 this.GetFileImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(target), offset, length, accessCondition, modifiedOptions),
 #else
@@ -1156,7 +1155,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 #if NETCORE
                 await this.DownloadRangeToStreamAsync(stream, fileOffset, length, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
 #else
-                await this.DownloadRangeToStreamAsync(stream, fileOffset, length, accessCondition, options, operationContext, cancellationToken).ConfigureAwaite(false);
+                await this.DownloadRangeToStreamAsync(stream, fileOffset, length, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
 #endif
                 return (int)stream.Position;
             }

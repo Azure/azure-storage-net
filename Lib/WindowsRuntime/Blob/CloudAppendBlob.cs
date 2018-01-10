@@ -644,7 +644,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// To append data to an append blob that already exists, see <see cref="AppendFromFileAsync(string, FileMode, AccessCondition, BlobRequestOptions, OperationContext, CancellationToken)"/>.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -772,7 +772,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task AppendFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task AppendFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
 
             CommonUtility.AssertNotNull("source", source);
@@ -1305,9 +1305,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual async Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<long> AppendBlockAsync(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            await this.AppendBlockAsync(blockData, contentMD5, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken).ConfigureAwait(false);
+            return this.AppendBlockAsync(blockData, contentMD5, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
         }
 #endif
 
@@ -1381,7 +1381,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 seekableStream = new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream);
 #endif
 
-                await Executor.ExecuteAsync(
+                return await Executor.ExecuteAsync(
                     this.AppendBlockImpl(seekableStream, contentMD5, accessCondition, modifiedOptions),
                     modifiedOptions.RetryPolicy,
                     operationContext,
@@ -1461,7 +1461,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The contents of the blob, as a string.</returns>
         [DoesServiceRequest]
-        public virtual async Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         public virtual async Task<string> DownloadTextAsync(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {

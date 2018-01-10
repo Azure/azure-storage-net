@@ -216,12 +216,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task DownloadToFileAsync(StorageFile target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task DownloadToFileAsync(StorageFile target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             using (StorageStreamTransaction transaction = await target.OpenTransactedWriteAsync().AsTask(cancellationToken))
             {
                 await this.DownloadToStreamAsync(transaction.Stream.AsStream(), accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
-                await transaction.CommitAsync().ConfigureAwait(false);
+                await transaction.CommitAsync();
             }
         }
 #endif
@@ -426,7 +426,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
             CommonUtility.AssertNotNull("target", target);
@@ -527,12 +527,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         [DoesServiceRequest]
-        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
             using (SyncMemoryStream stream = new SyncMemoryStream(target, index))
             {
+#if NETCORE
                 await this.DownloadRangeToStreamAsync(stream, blobOffset, length, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
+#else
+                await this.DownloadRangeToStreamAsync(stream, blobOffset, length, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+#endif
                 return (int)stream.Position;
             }
         }
