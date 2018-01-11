@@ -1,13 +1,13 @@
 Tracking Breaking Changes since 8.0
 
-- Removed OData
-- Added full async parsing to tables
-- All: An exception is now thrown if a user passes conditional headers not supported by the called method.
-- All: Deprecated the ErrorCode property on ExtendedErrorInformation. Added new property ErrorCode on RequestResult class to be used instead.
-- Unsealed CloudStorageAccount class.
-- Added the 'virtual' qualifier to Get*Client APIs and GetRoot*Reference methods and 
-- BlobResultSegment now has a public constructor
-- 
+- Tables: Removed dependencies on OData libraries.
+- Tables: Removed the deprecated WCF DataServices Table implementation namespace.
+- All: Updated the Newtonsoft.json dependency to version 10.0.2.
+- All: Deprecated the ErrorCode property on ExtendedErrorInformation via the obsolete attribute. Use the corresponding methods in RequestResult and StorageException instead.
+- Unsealed CloudStorageAccount, FileResultSegment class.
+- Added the 'virtual' qualifier to Get*Client APIs and GetRoot*Reference methods.
+- Added a default constructor to Blob/File/Container/ShareResultSegment.
+- Added the 'virtual' qualifier to the Name property of Blob/File.
 
 Tracking Breaking Changes since 7.0
 
