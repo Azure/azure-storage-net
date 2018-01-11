@@ -26,6 +26,10 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     /// <summary>
     /// Holds information about the progress data transfers for both request and response streams in a single operation.
     /// </summary>
+    /// <remarks>
+    /// ## Examples
+    /// [!code-csharp[StorageProgress](~/azure-storage-net/Test/WindowsRuntime/Blob/BlobUploadDownloadTest.cs#sample_StorageProgress_NetCore "StorageProgress Sample")]
+    /// </remarks>
     public sealed class StorageProgress
     {
         /// <summary>

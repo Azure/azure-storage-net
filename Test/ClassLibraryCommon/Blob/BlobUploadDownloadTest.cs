@@ -2443,9 +2443,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             )
             where T : ICloudBlob
         {
-            byte[] uploadBuffer = GetRandomBuffer(2 * 1024 * 1024);
-
-            T uploadBlob = blobFactory();
             byte[] buffer = GetRandomBuffer(2 * 1024 * 1024);
 
             T blob = blobFactory();
