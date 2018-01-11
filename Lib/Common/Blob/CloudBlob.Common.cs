@@ -315,7 +315,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets the name of the blob.
         /// </summary>
         /// <value>A string containing the name of the blob.</value>
-        public string Name { get; private set; }
+        public virtual string Name { get; private set; }
 
         /// <summary>
         /// Gets a <see cref="CloudBlobContainer"/> object representing the blob's container.

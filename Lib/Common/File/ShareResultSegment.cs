@@ -24,6 +24,11 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// </summary>
     public class ShareResultSegment
     {
+        public ShareResultSegment()
+        {
+
+        }
+
         internal ShareResultSegment(IEnumerable<CloudFileShare> shares, FileContinuationToken continuationToken)
         {
             this.Results = shares;

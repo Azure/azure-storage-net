@@ -287,7 +287,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// Gets the file's name.
         /// </summary>
         /// <value>The file's name.</value>
-        public string Name { get; private set; }
+        public virtual string Name { get; private set; }
 
         /// <summary>
         /// Gets a <see cref="CloudFileShare"/> object representing the file's share.

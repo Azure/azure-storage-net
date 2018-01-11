@@ -22,8 +22,13 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// <summary>
     /// Represents a segment of <see cref="IListFileItem"/> results, with continuation information for pagination scenarios.
     /// </summary>
-    public sealed class FileResultSegment
+    public class FileResultSegment
     {
+        public FileResultSegment()
+        {
+
+        }
+
         internal FileResultSegment(IEnumerable<IListFileItem> files, FileContinuationToken continuationToken)
         {
             this.Results = files;

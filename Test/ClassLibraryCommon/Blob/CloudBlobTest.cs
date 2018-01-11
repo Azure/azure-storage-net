@@ -116,6 +116,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
+                //overwriting the blob and creating the 5th snapshot
                 appendBlob.CreateOrReplace();
                 blob.FetchAttributes();
 
@@ -126,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
-                Assert.AreEqual(4, blobs.Count);
+                Assert.AreEqual(5, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                 AssertAreEqual(blob, (CloudBlob)blobs[2]);
@@ -214,7 +215,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
-                    Assert.AreEqual(4, blobs.Count);
+                    Assert.AreEqual(5, blobs.Count);
                     AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                     AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                     AssertAreEqual(blob, (CloudBlob)blobs[2]);
@@ -283,6 +284,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
+                //overwriting will create another snapshot
                 appendBlob.CreateOrReplaceAsync().Wait();
                 blob.FetchAttributesAsync().Wait();
 
@@ -297,7 +299,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                              .Result
                              .Results
                              .ToList();
-                Assert.AreEqual(4, blobs.Count);
+                Assert.AreEqual(5, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                 AssertAreEqual(blob, (CloudBlob)blobs[2]);

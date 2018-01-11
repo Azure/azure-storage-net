@@ -24,6 +24,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// </summary>
     public class BlobResultSegment
     {
+        public BlobResultSegment()
+        {
+        }
+
         internal BlobResultSegment(IEnumerable<IListBlobItem> blobs, BlobContinuationToken continuationToken)
         {
             this.Results = blobs;

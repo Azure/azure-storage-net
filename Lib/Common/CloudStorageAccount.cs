@@ -40,7 +40,7 @@ namespace Microsoft.WindowsAzure.Storage
     /// <summary>
     /// Represents a Microsoft Azure Storage account.
     /// </summary>
-    public sealed class CloudStorageAccount
+    public class CloudStorageAccount
     {
         /// <summary>
         /// The FISMA compliance default value.
@@ -560,7 +560,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Creates the Table service client.
         /// </summary>
         /// <returns>A <see cref="CloudTableClient"/> object.</returns>
-        public CloudTableClient CreateCloudTableClient()
+        public virtual CloudTableClient CreateCloudTableClient()
         {
             if (this.TableEndpoint == null)
             {
@@ -579,7 +579,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Creates the Queue service client.
         /// </summary>
         /// <returns>A <see cref="CloudQueueClient"/> object.</returns>
-        public CloudQueueClient CreateCloudQueueClient()
+        public virtual CloudQueueClient CreateCloudQueueClient()
         {
             if (this.QueueEndpoint == null)
             {
@@ -598,7 +598,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Creates the Blob service client.
         /// </summary>
         /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
-        public CloudBlobClient CreateCloudBlobClient()
+        public virtual CloudBlobClient CreateCloudBlobClient()
         {
             if (this.BlobEndpoint == null)
             {
@@ -638,7 +638,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Creates the File service client.
         /// </summary>
         /// <returns>A client object that specifies the File service endpoint.</returns>
-        public CloudFileClient CreateCloudFileClient()
+        public virtual CloudFileClient CreateCloudFileClient()
         {
             if (this.FileEndpoint == null)
             {
