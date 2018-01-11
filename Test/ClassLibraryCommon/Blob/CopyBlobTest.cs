@@ -17,7 +17,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Net;
 using System.Text;
@@ -256,48 +255,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlockBlobCopy(false, false);
         }
-
-        [TestMethod]
-        [Description("Abort a copy with unsupported access conditions")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobAbortCopyTestAccessConditions()
-        { 
-            CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.Create();
-
-                CloudBlockBlob source = container.GetBlockBlobReference("source");
-
-                string data = "String data";
-                UploadText(source, data, Encoding.UTF8);
-
-                CloudBlockBlob copy = container.GetBlockBlobReference("copy");
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => copy.AbortCopy("id", AccessCondition.GenerateIfMatchCondition("garbage")),
-                    "Abort copy with unsupported IfMatchCondition",
-                    string.Format(SR.ConditionalHeaderNotSupported, "AbortCopy"));
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => copy.AbortCopy("id", AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now)),
-                    "Abort copy with unsupported IfModifiedSince",
-                    string.Format(SR.ConditionalHeaderNotSupported, "AbortCopy"));
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => copy.AbortCopy("id", AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now)),
-                    "Abort copy with unsupported IfNotModifiedSince",
-                    string.Format(SR.ConditionalHeaderNotSupported, "AbortCopy"));
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => copy.AbortCopy("id", AccessCondition.GenerateIfNoneMatchCondition("garbage")),
-                    "Abort copy with unsupported IfNoneMatchCondition",
-                    string.Format(SR.ConditionalHeaderNotSupported, "AbortCopy"));
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
-        }   
 
         [TestMethod]
         [Description("Copy a blob and then verify its contents, properties, and metadata")]

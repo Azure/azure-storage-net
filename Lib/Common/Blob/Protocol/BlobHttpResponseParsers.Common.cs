@@ -264,7 +264,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="blobType">A <see cref="BlobType" /> indicating the type of blob.</param>
         /// <param name="blobTierString">The blob tier as a string</param>
         /// <param name="standardBlobTier">A nullable <see cref="StandardBlobTier"/>. This value will be populated if the blob type is unspecified or is a block blob.</param>
-        /// <param name="premiumPageBlobTier">A nullable <see cref="PageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
+        /// <param name="premiumPageBlobTier">A nullable <see cref="PremiumPageBlobTier"/>. This value will be populated if the blob type is unspecified or is a page blob.</param>
         internal static void GetBlobTier(BlobType blobType, string blobTierString, out StandardBlobTier? standardBlobTier, out PremiumPageBlobTier? premiumPageBlobTier)
         {
             standardBlobTier = null;

@@ -896,12 +896,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A RESTCommand implementing the acquire lease operation.</returns>
         internal RESTCommand<string> AcquireLeaseImpl(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options)
         {
-            if (accessCondition != null && !(string.IsNullOrEmpty(accessCondition.IfMatchETag) &&
-                string.IsNullOrEmpty(accessCondition.IfNoneMatchETag)))
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "AcquireContainerLease"));
-            }
-
             int leaseDuration = -1;
             if (leaseTime.HasValue)
             {
@@ -1088,12 +1082,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that deletes the container.</returns>
         private RESTCommand<NullType> DeleteContainerImpl(AccessCondition accessCondition, BlobRequestOptions options)
         {
-            if (accessCondition != null && !(string.IsNullOrEmpty(accessCondition.IfMatchETag) &&
-                string.IsNullOrEmpty(accessCondition.IfNoneMatchETag)))
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "DeleteContainer"));
-            }
-
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
@@ -1111,11 +1099,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that fetches the attributes.</returns>
         private RESTCommand<NullType> FetchAttributesImpl(AccessCondition accessCondition, BlobRequestOptions options)
         {
-            if (accessCondition != null && accessCondition.IsConditional)
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "FetchContainerAttributes"));
-            }
-
             RESTCommand<NullType> getCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(getCmd);
@@ -1169,12 +1152,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that sets the metadata.</returns>
         private RESTCommand<NullType> SetMetadataImpl(AccessCondition accessCondition, BlobRequestOptions options)
         {
-            if (accessCondition != null && !(string.IsNullOrEmpty(accessCondition.IfMatchETag)
-                && string.IsNullOrEmpty(accessCondition.IfNoneMatchETag) && !accessCondition.IfNotModifiedSinceTime.HasValue))
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "SetContainerMetadata"));
-            }
-
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
@@ -1208,12 +1185,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
             }
 
-            if (accessCondition != null && !(string.IsNullOrEmpty(accessCondition.IfMatchETag) &&
-                string.IsNullOrEmpty(accessCondition.IfNoneMatchETag)))
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "SetContainerPermissions"));
-            }
-
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
             BlobRequest.WriteSharedAccessIdentifiers(acl.SharedAccessPolicies, memoryStream);
 
@@ -1242,11 +1213,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that gets the permissions.</returns>
         private RESTCommand<BlobContainerPermissions> GetPermissionsImpl(AccessCondition accessCondition, BlobRequestOptions options)
         {
-            if (accessCondition != null && accessCondition.IsConditional)
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "GetContainerPermissions"));
-            }
-
             BlobContainerPermissions containerAcl = null;
 
             RESTCommand<BlobContainerPermissions> getCmd = new RESTCommand<BlobContainerPermissions>(this.ServiceClient.Credentials, this.StorageUri);

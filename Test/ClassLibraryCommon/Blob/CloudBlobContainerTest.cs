@@ -17,7 +17,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -750,29 +749,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
-        [Description("Try to delete a non-existing container with access conditions")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerDeleteIfExistsAccessConditions()
-        {
-            CloudBlobContainer container = GetRandomContainerReference();
-            TestHelper.ExpectedException<ArgumentException>(
-                            () => container.Delete(AccessCondition.GenerateIfMatchCondition("garbage")),
-                            "Delete container with unsupported IfMatch Condition",
-                            string.Format(SR.ConditionalHeaderNotSupported, "DeleteContainer"));
-            TestHelper.ExpectedException<ArgumentException>(
-                            () => container.Delete(AccessCondition.GenerateIfNoneMatchCondition("garbage")),
-                            "Delete container with unsupported IfNoneMatch Condition",
-                            string.Format(SR.ConditionalHeaderNotSupported, "DeleteContainer"));
-
-            container.Create();
-            container.DeleteIfExists(AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now.AddDays(-1))); // We only care that the access conditions do not cause failure
-            container.DeleteIfExists(AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now));
-        }
-
-        [TestMethod]
         [Description("Check a container's existence")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1200,36 +1176,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
         [TestMethod]
-        [Description("Set container permissions with access conditions")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerSetPermissionsAccessConditions()
-        {
-            CloudBlobContainer container = GetRandomContainerReference();
-            BlobContainerPermissions permissions = new BlobContainerPermissions();
-            try
-            {
-                container.Create();
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => container.SetPermissions(permissions, AccessCondition.GenerateIfMatchCondition("garbage")),
-                    "Container set permissions with unsupported IfMatch",
-                    string.Format(SR.ConditionalHeaderNotSupported, "SetContainerPermissions"));
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => container.SetPermissions(permissions, AccessCondition.GenerateIfNoneMatchCondition("garbage")),
-                    "Container set permissions with unsupported IfNoneMatch condition",
-                    string.Format(SR.ConditionalHeaderNotSupported, "SetContainerPermissions"));
-                container.SetPermissions(permissions, AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now.AddDays(-1))); // Only validating that this access condition does not throw
-                container.SetPermissions(permissions, AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now));
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
-        }
-
-        [TestMethod]
         [Description("Clear container permissions")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -1616,78 +1562,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             policy.Permissions = SharedAccessBlobPolicy.PermissionsFromString("w");
             Assert.AreEqual(SharedAccessBlobPermissions.Write, policy.Permissions);
-        }
-
-        [TestMethod]
-        [Description("Get container permissions with access conditions")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerGetPermissionsAccessConditions()
-        {
-            CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.Create();
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.GetPermissions(AccessCondition.GenerateIfMatchCondition("garbage")),
-                            "Container get permissions with unsupported IfMatch condition",
-                            string.Format(SR.ConditionalHeaderNotSupported, "GetContainerPermissions"));
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.GetPermissions(AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now)),
-                            "Container get permissions with unsupported IfModifiedSince",
-                            string.Format(SR.ConditionalHeaderNotSupported, "GetContainerPermissions"));
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.GetPermissions(AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now)),
-                            "Container get permissions with unsupported IfNotModifiedSince",
-                            string.Format(SR.ConditionalHeaderNotSupported, "GetContainerPermissions"));
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.GetPermissions(AccessCondition.GenerateIfNoneMatchCondition("garbage")),
-                            "Container get permissions with unsupported IfNoneMatch condition",
-                            string.Format(SR.ConditionalHeaderNotSupported, "GetContainerPermissions"));
-
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
-        }
-
-        [TestMethod]
-        [Description("Fetch container attributes with access conditions")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerFetchAttributesAccessConditions()
-        {
-            CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.Create();
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.FetchAttributes(AccessCondition.GenerateIfMatchCondition("garbage")),
-                            "Container fetch attributes with unsupported IfMatch condition",
-                            string.Format(SR.ConditionalHeaderNotSupported, "FetchContainerAttributes"));
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.FetchAttributes(AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now)),
-                            "Container fetch attributes with unsupported IfModifiedSince",
-                            string.Format(SR.ConditionalHeaderNotSupported, "FetchContainerAttributes"));
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.FetchAttributes(AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now)),
-                            "Container fetch attributes with unsupported IfNotModifiedSince",
-                            string.Format(SR.ConditionalHeaderNotSupported, "FetchContainerAttributes"));
-                TestHelper.ExpectedException<ArgumentException>(
-                            () => container.FetchAttributes(AccessCondition.GenerateIfNoneMatchCondition("garbage")),
-                            "Container fetch attributes with unsupported IfNoneMatch condition",
-                            string.Format(SR.ConditionalHeaderNotSupported, "FetchContainerAttributes"));
-
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
         }
 
         [TestMethod]
@@ -2221,38 +2095,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
-
-        [TestMethod]
-        [Description("Set container metadata with access conditions")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerSetMetadataAccessConditions()
-        {
-            CloudBlobContainer container = GetRandomContainerReference();
-            try
-            {
-                container.Create();
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => container.SetMetadata(AccessCondition.GenerateIfMatchCondition("garbage")),
-                    "Container set metadata with unsupported IfMatch condition",
-                    string.Format(SR.ConditionalHeaderNotSupported, "SetContainerMetadata"));
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => container.SetMetadata(AccessCondition.GenerateIfNotModifiedSinceCondition(DateTime.Now)),
-                    "Container set metadata with unsupported IfNotModifiedSince",
-                    string.Format(SR.ConditionalHeaderNotSupported, "SetContainerMetadata"));
-                TestHelper.ExpectedException<ArgumentException>(
-                    () => container.SetMetadata(AccessCondition.GenerateIfNoneMatchCondition("garbage")),
-                    "Container set metadata with unsupported IfNoneMatch condition",
-                    string.Format(SR.ConditionalHeaderNotSupported, "SetContainerMetadata"));
-                container.SetMetadata(AccessCondition.GenerateIfModifiedSinceCondition(DateTime.Now.AddDays(-1))); // Only validating that this access condition does not throw
-            }
-            finally
-            {
-                container.DeleteIfExists();
-            }
-        }
 
         [TestMethod]
         [Description("List blobs")]

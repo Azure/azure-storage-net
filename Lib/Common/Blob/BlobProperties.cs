@@ -192,6 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>Only applicable for block blobs in this version of the library.</remarks>
         public RehydrationStatus? RehydrationStatus { get; internal set; }
 
+        /// <summary>
         /// Gets a value indicating the tier of the premium page blob.
         /// </summary>
         /// <value>A <see cref="PremiumPageBlobTier"/> object that indicates the page blob tier.</value>

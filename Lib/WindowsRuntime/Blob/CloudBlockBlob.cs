@@ -1363,11 +1363,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that uploads the block list.</returns>
         internal RESTCommand<NullType> PutBlockListImpl(IEnumerable<PutBlockListItem> blocks, AccessCondition accessCondition, BlobRequestOptions options)
         {
-            if (accessCondition != null && accessCondition.IsConditional)
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "PutBlock"));
-            }
-
             MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
             BlobRequest.WriteBlockListBody(blocks, memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
@@ -1410,10 +1405,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="TaskSequence"/> that gets the download block list.</returns>
         internal RESTCommand<IEnumerable<ListBlockItem>> GetBlockListImpl(BlockListingFilter typesOfBlocks, AccessCondition accessCondition, BlobRequestOptions options)
         {
-            if (accessCondition != null && accessCondition.IsConditional)
-            {
-                throw new ArgumentException(string.Format(SR.ConditionalHeaderNotSupported, "GetBlockList"));
-            }
             RESTCommand<IEnumerable<ListBlockItem>> getCmd = new RESTCommand<IEnumerable<ListBlockItem>>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(getCmd);
