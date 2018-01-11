@@ -1,7 +1,13 @@
 Tracking Breaking Changes since 8.0
 
+- Removed OData
+- Added full async parsing to tables
 - All: An exception is now thrown if a user passes conditional headers not supported by the called method.
-- All: Deprecated the ErrorCode property on ExtendedErrorInformation
+- All: Deprecated the ErrorCode property on ExtendedErrorInformation. Added new property ErrorCode on RequestResult class to be used instead.
+- Unsealed CloudStorageAccount class.
+- Added the 'virtual' qualifier to Get*Client APIs and GetRoot*Reference methods and 
+- BlobResultSegment now has a public constructor
+- 
 
 Tracking Breaking Changes since 7.0
 

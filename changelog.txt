@@ -1,6 +1,7 @@
 Changes in 9.0.0:
 - All: Support for 2017-07-29 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.3.
-- Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
+- Tables: Removed dependencies on OData libraries.
+- Upgraded to version 10.0.0 of NewtonSoft.json and added full async parsing to table API's.
 - Blobs : Added support for Soft-delete/Undelete a blob. 
 - Queues: Added support for infinite TTL on queue messages.
 - All: ErrorCode is retrieved from the header instead of the body of a failed request and set to the ErrorCode property on RequestResult.

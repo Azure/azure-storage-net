@@ -1193,7 +1193,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, null /* premiumBlobTier */, sourceAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, null /* premiumBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
