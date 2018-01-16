@@ -182,6 +182,8 @@ namespace Microsoft.Azure.Storage.Core.Util
                     this.state = null;
                 }
             }
+
+            disposed = true;
         }
 
         /// <summary>

@@ -220,69 +220,26 @@ namespace Microsoft.Azure.Storage
             SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
             policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
 
-            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
 
-            string myBlobIP = await GetMyBlobIPAddressFromService();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(myBlobIP).ToString());
+            policy.IPAddressOrRange = null;
             await RunBlobTest(policy, null);
 
-            string myTableIP = await GetMyTableIPAddressFromService();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(myTableIP).ToString());
             await RunTableTest(policy, null);
 
-            string myQueueIP = await GetMyQueueIPAddressFromService();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(myQueueIP).ToString());
             await RunQueueTest(policy, null);
 
-            string myFileIP = await GetMyFileIPAddressFromService();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(myFileIP).ToString());
             await RunFileTest(policy, null);
 
             policy.IPAddressOrRange = new IPAddressOrRange(new HostName("255.255.255.0").ToString(), invalidIP.ToString());
 
-            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationSourceIPMismatch");
-
-            string blobFirstTwelveString = myBlobIP.Substring(0, myBlobIP.LastIndexOf('.'));
-            string blobLastFourString = myBlobIP.Substring(myBlobIP.LastIndexOf('.') + 1);
-            int blobLastFourInt = int.Parse(blobLastFourString);
-
-            string initialBlobAddress = blobFirstTwelveString + "." + (blobLastFourInt - 1).ToString();
-            string endBlobAddress = blobFirstTwelveString + "." + (blobLastFourInt + 1).ToString();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(initialBlobAddress).ToString(), new HostName(endBlobAddress).ToString());
-            await RunBlobTest(policy, null);
-
-            string tableFirstTwelveString = myTableIP.Substring(0, myTableIP.LastIndexOf('.'));
-            string tableLastFourString = myTableIP.Substring(myTableIP.LastIndexOf('.') + 1);
-            int tableLastFourInt = int.Parse(tableLastFourString);
-
-            string initialTableAddress = tableFirstTwelveString + "." + (tableLastFourInt - 1).ToString();
-            string endTableAddress = tableFirstTwelveString + "." + (tableLastFourInt + 1).ToString();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(initialTableAddress).ToString(), new HostName(endTableAddress).ToString());
-            await RunTableTest(policy, null);
-
-            string queueFirstTwelveString = myQueueIP.Substring(0, myQueueIP.LastIndexOf('.'));
-            string queueLastFourString = myQueueIP.Substring(myQueueIP.LastIndexOf('.') + 1);
-            int queueLastFourInt = int.Parse(queueLastFourString);
-
-            string initialQueueAddress = queueFirstTwelveString + "." + (queueLastFourInt - 1).ToString();
-            string endQueueAddress = queueFirstTwelveString + "." + (queueLastFourInt + 1).ToString();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(initialQueueAddress).ToString(), new HostName(endQueueAddress).ToString());
-            await RunQueueTest(policy, null);
-
-            string fileFirstTwelveString = myFileIP.Substring(0, myFileIP.LastIndexOf('.'));
-            string fileLastFourString = myFileIP.Substring(myFileIP.LastIndexOf('.') + 1);
-            int fileLastFourInt = int.Parse(fileLastFourString);
-
-            string initialFileAddress = fileFirstTwelveString + "." + (fileLastFourInt - 1).ToString();
-            string endFileAddress = fileFirstTwelveString + "." + (fileLastFourInt + 1).ToString();
-            policy.IPAddressOrRange = new IPAddressOrRange(new HostName(initialFileAddress).ToString(), new HostName(endFileAddress).ToString());
-            await RunFileTest(policy, null);
+            await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
+            await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
         }
         
         [TestMethod]
@@ -388,7 +345,17 @@ namespace Microsoft.Azure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.List) == SharedAccessAccountPermissions.List) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Service) == SharedAccessAccountResourceTypes.Service))
                 {
-                    ContainerResultSegment segment = await blobClientWithSAS.ListContainersSegmentedAsync(container.Name, null);
+                    ContainerResultSegment segment = null;
+                    BlobContinuationToken ct =null;
+                    IEnumerable<CloudBlobContainer> results = null;
+                    do
+                    {
+                        segment = await blobClientWithSAS.ListContainersSegmentedAsync(container.Name, ct);
+                        ct = segment.ContinuationToken;
+                        results = segment.Results;
+
+                    }while(ct != null && !results.Any());
+
                     Assert.AreEqual(container.Name, segment.Results.First().Name);
                 }
                 else
@@ -1091,258 +1058,7 @@ namespace Microsoft.Azure.Storage
                 fileClient.GetShareReference(shareName).DeleteIfExistsAsync().Wait();
             }
         }
-
-        private async Task<string> GetMyBlobIPAddressFromService()
-        {
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
-            string containerName = "c" + Guid.NewGuid().ToString("N");
-            CloudBlobContainer container = blobClient.GetContainerReference(containerName);
-            try
-            {
-                await container.CreateAsync();
-                string blobName = "blob";
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
-                byte[] data = new byte[] { 0x1, 0x2, 0x3, 0x4 };
-                await blockBlob.UploadFromByteArrayAsync(data, 0, 4);
-
-                SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
-                HostName invalidIP = new HostName("255.255.255.255");
-                policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
-
-                CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, blobClient.StorageUri, null, null, null);
-                CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
-                CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
-                CloudBlockBlob blockblobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
-
-                byte[] target = new byte[4];
-                string actualIP = null;
-                bool exceptionThrown = false;
-                try
-                {
-                    await blockblobWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
-                }
-                catch (StorageException e)
-                {
-                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
-                    exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
-                }
-
-                Assert.IsTrue(exceptionThrown);
-                return actualIP;
-            }
-            finally
-            {
-                container.DeleteIfExistsAsync().Wait();
-            }
-        }
-
-        private async Task<string> GetMyQueueIPAddressFromService()
-        {
-            CloudQueueClient queueClient = GenerateCloudQueueClient();
-            string queueName = "c" + Guid.NewGuid().ToString("N");
-            CloudQueue queue = queueClient.GetQueueReference(queueName);
-            try
-            {
-                await queue.CreateAsync();
-                CloudQueueMessage message = new CloudQueueMessage("content");
-                await queue.AddMessageAsync(message);
-
-                SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
-                HostName invalidIP = new HostName("255.255.255.255");
-                policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
-
-                CloudStorageAccount account = new CloudStorageAccount(queueClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, queueClient.StorageUri, null, null);
-                CloudQueueClient queueClientWithSAS = accountWithSAS.CreateCloudQueueClient();
-                CloudQueue queueWithSAS = queueClientWithSAS.GetQueueReference(queueName);
-
-                string actualIP = null;
-                bool exceptionThrown = false;
-                try
-                {
-                    await queueWithSAS.GetMessageAsync();
-                }
-                catch (StorageException e)
-                {
-                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
-                    exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
-                }
-
-                Assert.IsTrue(exceptionThrown);
-                return actualIP;
-            }
-            finally
-            {
-                queue.DeleteIfExistsAsync().Wait();
-            }
-        }
-
-        private async Task<string> GetMyTableIPAddressFromService()
-        {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = "c" + Guid.NewGuid().ToString("N");
-            CloudTable table = tableClient.GetTableReference(tableName);
-            try
-            {
-                await table.CreateAsync();
-
-                string propName = "prop";
-                int propValue = 4;
-                DynamicTableEntity entity1 = new DynamicTableEntity();
-
-                string partitionKey = "PK";
-                string rowKeyPrefix = "RK";
-                entity1.PartitionKey = partitionKey;
-                entity1.RowKey = rowKeyPrefix + "1";
-                entity1.Properties = new Dictionary<string, EntityProperty>() { { propName, EntityProperty.GeneratePropertyForInt(propValue) } };
-
-                await table.ExecuteAsync(TableOperation.Insert(entity1));
-
-                SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
-                HostName invalidIP = new HostName("255.255.255.255");
-                policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
-
-                CloudStorageAccount account = new CloudStorageAccount(tableClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, tableClient.StorageUri, null);
-                CloudTableClient tableClientWithSAS = accountWithSAS.CreateCloudTableClient();
-                CloudTable tableWithSAS = tableClientWithSAS.GetTableReference(tableName);
-
-                string actualIP = null;
-                bool exceptionThrown = false;
-
-                try
-                {
-                    TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity1.PartitionKey, entity1.RowKey));
-                    (await tableWithSAS.ExecuteQuerySegmentedAsync(query, null)).First();
-                }
-                catch (StorageException e)
-                {
-                    string[] parts = e.RequestInformation.HttpStatusMessage.Split(' ');
-                    actualIP = parts[parts.Length - 1].Trim('.');
-                    exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
-                }
-
-                Assert.IsTrue(exceptionThrown);
-                return actualIP;
-            }
-            finally
-            {
-                table.DeleteIfExistsAsync().Wait();
-            }
-        }
-
-        private async Task<string> GetMyFileIPAddressFromService()
-        {
-            CloudFileClient fileClient = GenerateCloudFileClient();
-            string shareName = "c" + Guid.NewGuid().ToString("N");
-            CloudFileShare share = fileClient.GetShareReference(shareName);
-            try
-            {
-                await share.CreateAsync();
-                string fileName = "file";
-                await share.GetRootDirectoryReference().CreateIfNotExistsAsync();
-                CloudFile file = share.GetRootDirectoryReference().GetFileReference(fileName);
-                await file.CreateAsync(1024);
-                byte[] data = new byte[] { 0x1, 0x2, 0x3, 0x4 };
-                await file.UploadFromByteArrayAsync(data, 0, 4);
-
-                SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
-                HostName invalidIP = new HostName("255.255.255.255");
-                policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
-
-                CloudStorageAccount account = new CloudStorageAccount(fileClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, fileClient.StorageUri);
-                CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();
-                CloudFileShare shareWithSAS = fileClientWithSAS.GetShareReference(shareName);
-                CloudFile fileWithSAS = shareWithSAS.GetRootDirectoryReference().GetFileReference(fileName);
-
-                byte[] target = new byte[4];
-                string actualIP = null;
-                bool exceptionThrown = false;
-                try
-                {
-                    await fileWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
-                }
-                catch (StorageException e)
-                {
-                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
-                    exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
-                }
-
-                Assert.IsTrue(exceptionThrown);
-                return actualIP;
-            }
-            finally
-            {
-                share.DeleteIfExistsAsync().Wait(); 
-            }
-        }
-
-        private async Task<string> GetMyIPAddressFromService()
-        {
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
-            string containerName = "c" + Guid.NewGuid().ToString("N");
-            CloudBlobContainer container = blobClient.GetContainerReference(containerName);
-            try
-            {
-            await container.CreateAsync();
-             
-            string blobName = "blob";
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
-                byte[] data = new byte[] { 0x1, 0x2, 0x3, 0x4 };
-                await blockBlob.UploadFromByteArrayAsync(data, 0, 4);
-
-                SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
-                HostName invalidIP = new HostName("255.255.255.255");
-                policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
-
-                CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, blobClient.StorageUri, null, null, null);
-                CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
-                CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
-                CloudBlockBlob blockblobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
-
-                byte[] target = new byte[4];
-                OperationContext opContext = new OperationContext();
-                string actualIP = null;
-
-                bool exceptionThrown = false;
-                try
-                {
-                    await blockblobWithSAS.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, null, opContext);
-                }
-                catch (StorageException e)
-                {
-                    exceptionThrown = true;
-                    actualIP = e.RequestInformation.ExtendedErrorInformation.AdditionalDetails["SourceIP"];
-                    Assert.IsNotNull(actualIP);
-                }
-
-                Assert.IsTrue(exceptionThrown);
-                return actualIP;
-            }
-            finally
-            {
-                container.DeleteIfExistsAsync().Wait();
-            }
-               
-        }
-
+    
         private SharedAccessAccountPolicy GetPolicyWithFullPermissions()
         {
             SharedAccessAccountPolicy policy = new SharedAccessAccountPolicy();

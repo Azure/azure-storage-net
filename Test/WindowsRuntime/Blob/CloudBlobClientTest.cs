@@ -329,43 +329,50 @@ namespace Microsoft.Azure.Storage.Blob
             string name = GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
-            await container.CreateAsync();
 
-            BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
-            BlobContainerPermissions permissions = new BlobContainerPermissions();
-            foreach (BlobContainerPublicAccessType access in accessValues)
+            try
             {
-                permissions.PublicAccess = access;
-                await container.SetPermissionsAsync(permissions);
-                Assert.AreEqual(access, container.Properties.PublicAccess);
+                await container.CreateAsync();
 
-                CloudBlobContainer container2 = blobClient.GetContainerReference(name);
-                Assert.IsFalse(container2.Properties.PublicAccess.HasValue);
-                await container2.FetchAttributesAsync();
-                Assert.AreEqual(access, container2.Properties.PublicAccess);
-
-                CloudBlobContainer container3 = blobClient.GetContainerReference(name);
-                BlobContainerPermissions containerAccess = await container3.GetPermissionsAsync();
-                Assert.AreEqual(access, containerAccess.PublicAccess);
-                Assert.AreEqual(access, container3.Properties.PublicAccess);
-
-                List<CloudBlobContainer> listedContainers = new List<CloudBlobContainer>();
-                BlobContinuationToken token = null;
-                do
+                BlobContainerPublicAccessType[] accessValues = { BlobContainerPublicAccessType.Container, BlobContainerPublicAccessType.Off, BlobContainerPublicAccessType.Blob };
+                BlobContainerPermissions permissions = new BlobContainerPermissions();
+                foreach (BlobContainerPublicAccessType access in accessValues)
                 {
-                    ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
-                    foreach (CloudBlobContainer returnedContainer in resultSegment.Results)
+                    permissions.PublicAccess = access;
+                    await container.SetPermissionsAsync(permissions);
+                    Assert.AreEqual(access, container.Properties.PublicAccess);
+
+                    CloudBlobContainer container2 = blobClient.GetContainerReference(name);
+                    Assert.IsFalse(container2.Properties.PublicAccess.HasValue);
+                    await container2.FetchAttributesAsync();
+                    Assert.AreEqual(access, container2.Properties.PublicAccess);
+
+                    CloudBlobContainer container3 = blobClient.GetContainerReference(name);
+                    BlobContainerPermissions containerAccess = await container3.GetPermissionsAsync();
+                    Assert.AreEqual(access, containerAccess.PublicAccess);
+                    Assert.AreEqual(access, container3.Properties.PublicAccess);
+
+                    List<CloudBlobContainer> listedContainers = new List<CloudBlobContainer>();
+                    BlobContinuationToken token = null;
+                    do
                     {
-                        listedContainers.Add(returnedContainer);
+                        ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
+                        foreach (CloudBlobContainer returnedContainer in resultSegment.Results)
+                        {
+                            listedContainers.Add(returnedContainer);
+                        }
+                        token = resultSegment.ContinuationToken;
                     }
+                    while (token != null);
+
+                    Assert.AreEqual(1, listedContainers.Count());
+                    Assert.AreEqual(access, listedContainers.First().Properties.PublicAccess);
                 }
-                while (token != null);
-
-                Assert.AreEqual(1, listedContainers.Count());
-                Assert.AreEqual(access, listedContainers.First().Properties.PublicAccess);
             }
-
-            await container.DeleteAsync();
+            finally
+            {
+               container.DeleteAsync().GetAwaiter().GetResult();
+            }
         }
 
         [TestMethod]

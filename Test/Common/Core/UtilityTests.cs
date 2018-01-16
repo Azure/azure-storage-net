@@ -55,5 +55,19 @@ namespace Microsoft.Azure.Storage.Core
             dictionary = HttpWebUtility.ParseQueryString("?");
             Assert.AreEqual(0, dictionary.Count);
         }
+
+        [TestMethod]
+        [Description("Ensure that the fields of a query string are read as case insensitive to be consistent with the service")]
+        [TestCategory(ComponentCategory.Core)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void ParseQueryStringCaseSensitivityTest()
+        {
+            IDictionary<string, string> dictionary = HttpWebUtility.ParseQueryString("?SNAPSHOT=a&SnApShOt=b");
+            Assert.AreEqual(1, dictionary.Count);
+            Assert.AreEqual("a,b", dictionary["snapshot"]);
+            Assert.AreEqual("a,b", dictionary["sNaPsHoT"]);
+        }
     }
 }

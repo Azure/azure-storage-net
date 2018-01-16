@@ -16,8 +16,9 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -712,6 +713,44 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 #endif
+        [TestMethod]
+        [Description("Verify additional user-defined query parameters do not disrupt a normal request")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobFetchAttributesSpecialQueryParameters()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                // Ensure that unkown query parameters set by the user are signed properly but ignored, allowing the operation to succeed
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                CreateForTest(blob, 1, 1024, false);
+                UriBuilder blobURIBuilder = new UriBuilder(blob.Uri);
+                blobURIBuilder.Query = "MyQuery=value&YOURQUERY=value2";
+                blob = new CloudBlockBlob(blobURIBuilder.Uri, blob.ServiceClient.Credentials);
+
+                blob.FetchAttributes();
+                Assert.AreEqual(1024, blob.Properties.Length);
+                Assert.IsNotNull(blob.Properties.ETag);
+                Assert.IsTrue(blob.Properties.LastModified > DateTimeOffset.UtcNow.AddMinutes(-5));
+                Assert.IsNull(blob.Properties.CacheControl);
+                Assert.IsNull(blob.Properties.ContentDisposition);
+                Assert.IsNull(blob.Properties.ContentEncoding);
+                Assert.IsNull(blob.Properties.ContentLanguage);
+                Assert.AreEqual("application/octet-stream", blob.Properties.ContentType);
+                Assert.IsNull(blob.Properties.ContentMD5);
+                Assert.AreEqual(LeaseStatus.Unlocked, blob.Properties.LeaseStatus);
+                Assert.AreEqual(BlobType.BlockBlob, blob.Properties.BlobType);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
 
         [TestMethod]
         [Description("Verify setting the properties of a blob")]
@@ -1977,7 +2016,7 @@ namespace Microsoft.Azure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, false, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.PreconditionFailed);
+                    HttpStatusCode.NotFound);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, false, true);
                 this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, false, true);
@@ -2026,7 +2065,7 @@ namespace Microsoft.Azure.Storage.Blob
                 TestHelper.ExpectedException(
                     () => this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, false, 0, true, true),
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
-                    HttpStatusCode.PreconditionFailed);
+                    HttpStatusCode.NotFound);
 
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 this.CloudBlockBlobUploadFromStream(container, 2 * Constants.MB, null, accessCondition, true, true, 0, true, true);
@@ -3185,21 +3224,37 @@ namespace Microsoft.Azure.Storage.Blob
 
                     CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                     CreateForTestTask(blob, 2, 1024);
+                    blob.FetchAttributes();
+                    Assert.IsTrue(blob.Properties.StandardBlobTier.HasValue);
+                    Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
+                    Assert.IsTrue(blob.Properties.BlobTierInferred.Value);
+
+                    CloudBlockBlob listBlob = (CloudBlockBlob)container.ListBlobs().ToList().First();
+                    Assert.IsTrue(listBlob.Properties.StandardBlobTier.HasValue);
+                    Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
+                    Assert.IsTrue(listBlob.Properties.BlobTierInferred.Value);
+
                     blob.SetStandardBlobTier(blobTier);
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     blob2.FetchAttributes();
                     Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
 
                     CloudBlockBlob blob3 = (CloudBlockBlob)container.ListBlobs().ToList().First();
                     Assert.AreEqual(blobTier, blob3.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob3.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob3.Properties.BlobTierLastModifiedTime.HasValue);
+                    Assert.IsFalse(blob3.Properties.BlobTierInferred.HasValue);
 
                     blob.Delete();
                 }
@@ -3225,38 +3280,55 @@ namespace Microsoft.Azure.Storage.Blob
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 CreateForTestTask(blob, 2, 1024);
+                Assert.IsFalse(blob.Properties.BlobTierInferred.HasValue);
+                Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
+                blob.FetchAttributes();
+                Assert.IsTrue(blob.Properties.BlobTierInferred.HasValue);
+                Assert.IsTrue(blob.Properties.StandardBlobTier.HasValue);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+
                 blob.SetStandardBlobTier(StandardBlobTier.Archive);
                 Assert.IsNull(blob.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
+
                 CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
                 CreateForTestTask(blob2, 2, 1024);
                 blob2.SetStandardBlobTier(StandardBlobTier.Archive);
                 Assert.IsNull(blob2.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
+                Assert.IsFalse(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                 blob.SetStandardBlobTier(StandardBlobTier.Cool);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
                 Assert.IsNull(blob2.Properties.RehydrationStatus);
+                Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
                 blob.FetchAttributes();
                 Assert.AreEqual(RehydrationStatus.PendingToCool, blob.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob.Properties.StandardBlobTier.Value);
+                Assert.IsTrue(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                 blob2.SetStandardBlobTier(StandardBlobTier.Hot);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
                 Assert.IsNull(blob2.Properties.RehydrationStatus);
+                Assert.IsFalse(blob2.Properties.BlobTierLastModifiedTime.HasValue);
                 blob2.FetchAttributes();
                 Assert.AreEqual(RehydrationStatus.PendingToHot, blob2.Properties.RehydrationStatus);
                 Assert.AreEqual(StandardBlobTier.Archive, blob2.Properties.StandardBlobTier.Value);
+                Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                 CloudBlockBlob listBlob = (CloudBlockBlob)container.ListBlobs().ToList().ElementAt(0);
                 Assert.AreEqual(StandardBlobTier.Archive, listBlob.Properties.StandardBlobTier.Value);
                 Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToCool, listBlob.Properties.RehydrationStatus.Value);
+                Assert.IsTrue(listBlob.Properties.BlobTierLastModifiedTime.HasValue);
+                Assert.AreEqual(listBlob.Properties.BlobTierLastModifiedTime.Value, blob.Properties.BlobTierLastModifiedTime.Value);
 
                 CloudBlockBlob listBlob2 = (CloudBlockBlob)container.ListBlobs().ToList().ElementAt(1);
                 Assert.AreEqual(StandardBlobTier.Archive, listBlob2.Properties.StandardBlobTier.Value);
                 Assert.IsFalse(listBlob2.Properties.PremiumPageBlobTier.HasValue);
                 Assert.AreEqual(RehydrationStatus.PendingToHot, listBlob2.Properties.RehydrationStatus.Value);
+                Assert.AreEqual(listBlob2.Properties.BlobTierLastModifiedTime.Value, blob2.Properties.BlobTierLastModifiedTime.Value);
 
                 blob.Delete();
                 blob2.Delete();
@@ -3299,6 +3371,7 @@ namespace Microsoft.Azure.Storage.Blob
                         Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                         Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                         Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+                        Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                         CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                         result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
@@ -3307,6 +3380,7 @@ namespace Microsoft.Azure.Storage.Blob
                         Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                         Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                         Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                        Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
 
                         blob.Delete();
                     }
@@ -3346,12 +3420,14 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
+                    Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
                     blob2.FetchAttributesAsync().Wait();
                     Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
+                    Assert.IsTrue(blob2.Properties.BlobTierLastModifiedTime.HasValue);
                 }
             }
             finally
@@ -4467,7 +4543,7 @@ namespace Microsoft.Azure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 uploadList.Clear();
@@ -4488,7 +4564,7 @@ namespace Microsoft.Azure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, CancellationToken.None);
+                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB + 1);

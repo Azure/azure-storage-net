@@ -60,6 +60,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Blob\ParallelDownloadStream.cs" />
+    <Compile Include="Blob\ParallelDownloadToFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

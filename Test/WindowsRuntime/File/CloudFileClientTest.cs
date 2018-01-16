@@ -404,8 +404,7 @@ namespace Microsoft.Azure.Storage.File
             Assert.IsNull(timeout);
         }
 
-        //TODO: Enable for ShareSnapshot release
-        //[TestMethod]
+        [TestMethod]
         [Description("Test list shares with a snapshot")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

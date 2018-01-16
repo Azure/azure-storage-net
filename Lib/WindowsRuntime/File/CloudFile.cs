@@ -209,6 +209,24 @@ namespace Microsoft.Azure.Storage.File
             return this.UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext);
         }
 
+#if NETCORE
+        /// <summary>
+        /// Uploads a stream to a file. 
+        /// </summary>
+        /// <param name="source">The stream providing the file content.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromStreamAsync(Stream source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.UploadFromStreamAsyncHelper(source, null, accessCondition, options, operationContext, progressHandler, cancellationToken);
+        }
+#endif
+
         /// <summary>
         /// Uploads a stream to a file. 
         /// </summary>
@@ -223,6 +241,25 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.UploadFromStreamAsyncHelper(source, null, accessCondition, options, operationContext, cancellationToken);
         }
+
+#if NETCORE
+        /// <summary>
+        /// Uploads a stream to a file. 
+        /// </summary>
+        /// <param name="source">The stream providing the file content.</param>
+        /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromStreamAsync(Stream source, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, progressHandler, cancellationToken);
+        }
+#endif
 
         /// <summary>
         /// Uploads a stream to a file. 
@@ -255,6 +292,7 @@ namespace Microsoft.Azure.Storage.File
             return UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Uploads a stream to a file. 
         /// </summary>
@@ -267,6 +305,39 @@ namespace Microsoft.Azure.Storage.File
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Uploads a stream to a file. 
+        /// </summary>
+        /// <param name="source">The stream providing the file content.</param>
+        /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        private Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Uploads a stream to a file. 
+        /// </summary>
+        /// <param name="source">The stream providing the file content.</param>
+        /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        internal Task UploadFromStreamAsyncHelper(Stream source, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -300,7 +371,11 @@ namespace Microsoft.Azure.Storage.File
                 {
                     // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                     // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
+#if NETCORE
+                    await sourceAsStream.WriteToAsync(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(fileStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+#else
                     await sourceAsStream.WriteToAsync(fileStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+#endif
                     await fileStream.CommitAsync();
                 }
             }, cancellationToken);
@@ -390,13 +465,29 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.UploadFromFileAsync(path, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+
+        /// <summary>
+        /// Uploads a file to the Azure File Service. If the file already exists on the service, it will be overwritten.
+        /// </summary>
+        /// <param name="path">A string containing the path to the target file.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromFileAsync(string path, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
             CommonUtility.AssertNotNull("path", path);
 
             return Task.Run(async () =>
             {
                 using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
-                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
+                    await this.UploadFromStreamAsync(stream, accessCondition, options, operationContext, progressHandler, cancellationToken);
                 }
             }, cancellationToken);
         }
@@ -431,6 +522,7 @@ namespace Microsoft.Azure.Storage.File
             return this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Uploads the contents of a byte array to a file.
         /// </summary>
@@ -445,10 +537,49 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Uploads the contents of a byte array to a file.
+        /// </summary>
+        /// <param name="buffer">An array of bytes.</param>
+        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the file.</param>
+        /// <param name="count">The number of bytes to be written to the file.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Uploads the contents of a byte array to a file.
+        /// </summary>
+        /// <param name="buffer">An array of bytes.</param>
+        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the file.</param>
+        /// <param name="count">The number of bytes to be written to the file.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
+        {
             CommonUtility.AssertNotNull("buffer", buffer);
 
             SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
+#if NETCORE
+            return this.UploadFromStreamAsync(stream, stream.Length, accessCondition, options, operationContext, progressHandler, cancellationToken);
+#else
             return this.UploadFromStreamAsync(stream, stream.Length, accessCondition, options, operationContext, cancellationToken);
+#endif
         }
 
         /// <summary>
@@ -476,6 +607,7 @@ namespace Microsoft.Azure.Storage.File
             return this.UploadTextAsync(content, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Uploads a string of text to a file. If the file already exists on the service, it will be overwritten.
         /// </summary>
@@ -488,10 +620,45 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task UploadTextAsync(string content, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.UploadTextAsync(content, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Uploads a string of text to a file. If the file already exists on the service, it will be overwritten.
+        /// </summary>
+        /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadTextAsync(string content, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Uploads a string of text to a file. If the file already exists on the service, it will be overwritten.
+        /// </summary>
+        /// <param name="content">The text to upload, encoded as a UTF-8 string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadTextAsync(string content, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
+        {
             CommonUtility.AssertNotNull("content", content);
 
             byte[] contentAsBytes = Encoding.UTF8.GetBytes(content);
-            return this.UploadFromByteArrayAsync(contentAsBytes, 0, contentAsBytes.Length, accessCondition, options, operationContext);
+#if NETCORE
+            return this.UploadFromByteArrayAsync(contentAsBytes, 0, contentAsBytes.Length, accessCondition, options, operationContext, progressHandler, cancellationToken);
+#else
+            return this.UploadFromByteArrayAsync(contentAsBytes, 0, contentAsBytes.Length, accessCondition, options, operationContext, cancellationToken);
+#endif
         }
 
         /// <summary>
@@ -518,6 +685,24 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.DownloadToStreamAsync(target, accessCondition, options, operationContext, CancellationToken.None);
         }
+
+#if NETCORE
+        /// <summary>
+        /// Downloads the contents of a file to a stream.
+        /// </summary>
+        /// <param name="target">The target stream.</param>
+        /// <param name="accessCondition">An object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.DownloadRangeToStreamAsync(target, null /* offset */, null /* length */, accessCondition, options, operationContext, progressHandler, cancellationToken);
+        }
+#endif
 
         /// <summary>
         /// Downloads the contents of a file to a stream.
@@ -609,6 +794,7 @@ namespace Microsoft.Azure.Storage.File
 #endif
 
 #if NETCORE
+
         /// <summary>
         /// Downloads the contents of a file to a file.
         /// </summary>
@@ -622,6 +808,23 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+
+        /// <summary>
+        /// Downloads the contents of a file to a file.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
             CommonUtility.AssertNotNull("path", path);
 
             return Task.Run(async () =>
@@ -632,7 +835,7 @@ namespace Microsoft.Azure.Storage.File
                 {
                     using (stream)
                     {
-                        await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
+                        await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, progressHandler, cancellationToken);
                     }
                 }
                 catch (Exception)
@@ -682,6 +885,25 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.DownloadToByteArrayAsync(target, index, accessCondition, options, operationContext, CancellationToken.None);
         }
+
+#if NETCORE
+        /// <summary>
+        /// Downloads the contents of a file to a byte array.
+        /// </summary>
+        /// <param name="target">The target byte array.</param>
+        /// <param name="index">The starting offset in the byte array.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The total number of bytes read into the buffer.</returns>
+        [DoesServiceRequest]
+        public virtual Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.DownloadRangeToByteArrayAsync(target, index, null /* fileOffset */, null /* length */, accessCondition, options, operationContext, progressHandler, cancellationToken);
+        }
+#endif
 
         /// <summary>
         /// Downloads the contents of a file to a byte array.
@@ -735,6 +957,7 @@ namespace Microsoft.Azure.Storage.File
             return this.DownloadTextAsync(accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Downloads the file's contents as a string.
         /// </summary>
@@ -746,11 +969,44 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.DownloadTextAsync(accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Downloads the file's contents as a string.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The contents of the file, as a string.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Downloads the file's contents as a string.
+        /// </summary>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">An object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The contents of the file, as a string.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> DownloadTextAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
+        {
             return Task.Run(async () =>
             {
                 using (SyncMemoryStream stream = new SyncMemoryStream())
                 {
+#if NETCORE
+                    await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, progressHandler, cancellationToken);
+#else
                     await this.DownloadToStreamAsync(stream, accessCondition, options, operationContext, cancellationToken);
+#endif
                     byte[] streamAsBytes = stream.ToArray();
                     return Encoding.UTF8.GetString(streamAsBytes, 0, streamAsBytes.Length);
                 }
@@ -773,6 +1029,7 @@ namespace Microsoft.Azure.Storage.File
             return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Downloads the contents of a file to a stream.
         /// </summary>
@@ -787,6 +1044,41 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Downloads the contents of a file to a stream.
+        /// </summary>
+        /// <param name="target">The target stream.</param>
+        /// <param name="offset">The offset at which to begin downloading the file, in bytes.</param>
+        /// <param name="length">The length of the data to download from the file, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Downloads the contents of a file to a stream.
+        /// </summary>
+        /// <param name="target">The target stream.</param>
+        /// <param name="offset">The offset at which to begin downloading the file, in bytes.</param>
+        /// <param name="length">The length of the data to download from the file, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
+        {
             CommonUtility.AssertNotNull("target", target);
 
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -794,7 +1086,11 @@ namespace Microsoft.Azure.Storage.File
             // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
             // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
             return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+#if NETCORE
+                this.GetFileImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(target), offset, length, accessCondition, modifiedOptions),
+#else
                 this.GetFileImpl(target, offset, length, accessCondition, modifiedOptions),
+#endif
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken), cancellationToken);
@@ -831,6 +1127,7 @@ namespace Microsoft.Azure.Storage.File
             return this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
         /// <summary>
         /// Downloads the contents of a file to a byte array.
         /// </summary>
@@ -846,11 +1143,52 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
+        /// <summary>
+        /// Downloads the contents of a file to a byte array.
+        /// </summary>
+        /// <param name="target">The target byte array.</param>
+        /// <param name="index">The starting offset in the byte array.</param>
+        /// <param name="fileOffset">The starting offset of the data range, in bytes.</param>
+        /// <param name="length">The length of the data range, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The total number of bytes read into the buffer.</returns>
+        [DoesServiceRequest]
+        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Downloads the contents of a file to a byte array.
+        /// </summary>
+        /// <param name="target">The target byte array.</param>
+        /// <param name="index">The starting offset in the byte array.</param>
+        /// <param name="fileOffset">The starting offset of the data range, in bytes.</param>
+        /// <param name="length">The length of the data range, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The total number of bytes read into the buffer.</returns>
+        [DoesServiceRequest]
+        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
+        {
             return Task.Run(async () =>
             {
                 using (SyncMemoryStream stream = new SyncMemoryStream(target, index))
                 {
+#if NETCORE
+                    await this.DownloadRangeToStreamAsync(stream, fileOffset, length, accessCondition, options, operationContext, progressHandler, cancellationToken);
+#else
                     await this.DownloadRangeToStreamAsync(stream, fileOffset, length, accessCondition, options, operationContext, cancellationToken);
+#endif
                     return (int)stream.Position;
                 }
             }, cancellationToken);
@@ -1283,6 +1621,26 @@ namespace Microsoft.Azure.Storage.File
             return this.WriteRangeAsync(rangeData, startOffset, contentMD5, accessCondition, options, operationContext, CancellationToken.None);
         }
 
+#if NETCORE
+        /// <summary>
+        /// Writes range to a file.
+        /// </summary>
+        /// <param name="rangeData">A stream providing the range data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
+        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
+        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.WriteRangeAsync(rangeData, startOffset, contentMD5, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+        }
+#endif
+
+#if NETCORE
         /// <summary>
         /// Writes range to a file.
         /// </summary>
@@ -1293,9 +1651,25 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+#else
+        /// <summary>
+        /// Writes range to a file.
+        /// </summary>
+        /// <param name="rangeData">A stream providing the range data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
+        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
+        /// on the file. May be <code>null</code> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If null, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
         {
             CommonUtility.AssertNotNull("rangeData", rangeData);
 
@@ -1350,7 +1724,11 @@ namespace Microsoft.Azure.Storage.File
                     }
 
                     await Executor.ExecuteAsyncNullReturn(
+#if NETCORE
+                        this.PutRangeImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
+#else
                         this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+#endif
                         modifiedOptions.RetryPolicy,
                         operationContext,
                         cancellationToken);
@@ -1889,7 +2267,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="rangeData">The range data.</param>
         /// <param name="startOffset">The start offset.</param> 
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <c>null</code> or an empty string.</param>
+        /// on the file. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that writes the range.</returns>

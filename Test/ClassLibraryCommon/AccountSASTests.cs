@@ -983,10 +983,6 @@ namespace Microsoft.Azure.Storage
         public void AccountSASSignedIPs()
         {
             IPAddress invalidIP = IPAddress.Parse("255.255.255.255");
-            IPAddress myBlobIP = GetMyBlobIPAddressFromService();
-            IPAddress myQueueIP = GetMyQueueIPAddressFromService();
-            IPAddress myTableIP = GetMyTableIPAddressFromService();
-            IPAddress myFileIP = GetMyFileIPAddressFromService();
 
             SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
             policy.IPAddressOrRange = new IPAddressOrRange(invalidIP.ToString());
@@ -996,13 +992,10 @@ namespace Microsoft.Azure.Storage
             RunQueueTest(policy, action => TestHelper.ExpectedException<StorageException>(() => action(), "Operation should have failed with invalid IP access."), null);
             RunFileTest(policy, action => TestHelper.ExpectedException<StorageException>(() => action(), "Operation should have failed with invalid IP access."), null);
 
-            policy.IPAddressOrRange = new IPAddressOrRange(myBlobIP.ToString());
+            policy.IPAddressOrRange = null;
             RunBlobTest(policy, action => action(), null);
-            policy.IPAddressOrRange = new IPAddressOrRange(myTableIP.ToString());
             RunTableTest(policy, action => action(), null);
-            policy.IPAddressOrRange = new IPAddressOrRange(myQueueIP.ToString());
             RunQueueTest(policy, action => action(), null);
-            policy.IPAddressOrRange = new IPAddressOrRange(myFileIP.ToString());
             RunFileTest(policy, action => action(), null);
 
             policy.IPAddressOrRange = new IPAddressOrRange(IPAddress.Parse("255.255.255.0").ToString(), invalidIP.ToString());
@@ -1011,38 +1004,6 @@ namespace Microsoft.Azure.Storage
             RunTableTest(policy, action => TestHelper.ExpectedException<StorageException>(() => action(), "Operation should have failed with invalid IP access."), null);
             RunQueueTest(policy, action => TestHelper.ExpectedException<StorageException>(() => action(), "Operation should have failed with invalid IP access."), null);
             RunFileTest(policy, action => TestHelper.ExpectedException<StorageException>(() => action(), "Operation should have failed with invalid IP access."), null);
-
-            byte[] actualBlobAddressBytes = myBlobIP.GetAddressBytes();
-            byte[] initialBlobAddressBytes = actualBlobAddressBytes.ToArray();
-            initialBlobAddressBytes[0]--;
-            byte[] finalBlobAddressBytes = actualBlobAddressBytes.ToArray();
-            finalBlobAddressBytes[0]++;
-            policy.IPAddressOrRange = new IPAddressOrRange(new IPAddress(initialBlobAddressBytes).ToString(), new IPAddress(finalBlobAddressBytes).ToString());
-            RunBlobTest(policy, action => action(), null);
-
-            byte[] actualTableAddressBytes = myTableIP.GetAddressBytes();
-            byte[] initialTableAddressBytes = actualTableAddressBytes.ToArray();
-            initialTableAddressBytes[0]--;
-            byte[] finalTableAddressBytes = actualTableAddressBytes.ToArray();
-            finalTableAddressBytes[0]++;
-            policy.IPAddressOrRange = new IPAddressOrRange(new IPAddress(initialTableAddressBytes).ToString(), new IPAddress(finalTableAddressBytes).ToString());
-            RunTableTest(policy, action => action(), null);
-
-            byte[] actualQueueAddressBytes = myQueueIP.GetAddressBytes();
-            byte[] initialQueueAddressBytes = actualQueueAddressBytes.ToArray();
-            initialQueueAddressBytes[0]--;
-            byte[] finalQueueAddressBytes = actualQueueAddressBytes.ToArray();
-            finalQueueAddressBytes[0]++;
-            policy.IPAddressOrRange = new IPAddressOrRange(new IPAddress(initialQueueAddressBytes).ToString(), new IPAddress(finalQueueAddressBytes).ToString());
-            RunQueueTest(policy, action => action(), null);
-
-            byte[] actualFileAddressBytes = myFileIP.GetAddressBytes();
-            byte[] initialFileAddressBytes = actualFileAddressBytes.ToArray();
-            initialFileAddressBytes[0]--;
-            byte[] finalFileAddressBytes = actualFileAddressBytes.ToArray();
-            finalFileAddressBytes[0]++;
-            policy.IPAddressOrRange = new IPAddressOrRange(new IPAddress(initialFileAddressBytes).ToString(), new IPAddress(finalFileAddressBytes).ToString());
-            RunFileTest(policy, action => action(), null);
         }
 
         [TestMethod]
@@ -1207,12 +1168,13 @@ namespace Microsoft.Azure.Storage
                 catch (StorageException)
                 {
                     exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
+                    //The IP should not be included in the error details for security reasons
+                    Assert.IsNull(actualIP);
                 }
 
                 Assert.IsTrue(exceptionThrown);
 
-                policy.IPAddressOrRange = new IPAddressOrRange(actualIP.ToString());
+                policy.IPAddressOrRange = null;
                 accountSASToken = account.GetSharedAccessSignature(policy);
                 accountSAS = new StorageCredentials(accountSASToken);
                 accountWithSAS = new CloudStorageAccount(accountSAS, blobClient.StorageUri, null, null, null);

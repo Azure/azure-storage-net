@@ -59,6 +59,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.PremiumPageBlobTier = other.PremiumPageBlobTier;
             this.StandardBlobTier = other.StandardBlobTier;
             this.RehydrationStatus = other.RehydrationStatus;
+            this.BlobTierLastModifiedTime = other.BlobTierLastModifiedTime;
         }
 
         /// <summary>
@@ -189,15 +190,22 @@ namespace Microsoft.Azure.Storage.Blob
         /// <remarks>Only applicable for block blobs in this version of the library.</remarks>
         public RehydrationStatus? RehydrationStatus { get; internal set; }
 
+        /// <summary>
         /// Gets a value indicating the tier of the premium page blob.
         /// </summary>
         /// <value>A <see cref="PremiumPageBlobTier"/> object that indicates the page blob tier.</value>
         public PremiumPageBlobTier? PremiumPageBlobTier { get; internal set; }
 
         /// <summary>
-        /// Gets a value indicating if the tier of the premium page blob has been inferred.
+        /// Gets a value indicating if the tier of the blob has been inferred.
         /// </summary>
-        /// <value>A bool representing if the premium blob tier has been inferred.</value>
+        /// <value>A bool representing if the blob tier has been inferred.</value>
         public bool? BlobTierInferred { get; internal set; }
+
+        /// <summary>
+        /// Gets the time for when the tier of the blob was last-modified, expressed as a UTC value.
+        /// </summary>
+        /// <value>A <see cref="DateTimeOffset"/> containing the time for when the tier of the blob was last-modified, in UTC format.</value>
+        public DateTimeOffset? BlobTierLastModifiedTime { get; internal set; }
     }
 }

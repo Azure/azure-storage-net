@@ -141,6 +141,21 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
+#if !WINDOWS_RT
+        /// <summary>
+        /// Uploads an enumerable collection of seekable streams.
+        /// </summary>
+        /// <param name="streamList">An enumerable collection of seekable streams to be uploaded.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning", Justification = "Reviewed.")]
+        [DoesServiceRequest]
+        internal async Task UploadFromMultiStreamAsync(IEnumerable<Stream> streamList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
+#else
         /// <summary>
         /// Uploads an enumerable collection of seekable streams.
         /// </summary>
@@ -153,6 +168,7 @@ namespace Microsoft.Azure.Storage.Blob
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning", Justification = "Reviewed.")]
         [DoesServiceRequest]
         internal async Task UploadFromMultiStreamAsync(IEnumerable<Stream> streamList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+#endif
         {
             CommonUtility.AssertNotNull("streamList", streamList);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
@@ -193,7 +209,11 @@ namespace Microsoft.Azure.Storage.Blob
 
                 try
                 {
+#if !WINDOWS_RT
+                    Task uploadTask = this.PutBlockAsync(blockId, block, null, accessCondition, modifiedOptions, operationContext, progressIncrementer, cancellationToken);
+#else
                     Task uploadTask = this.PutBlockAsync(blockId, block, null, accessCondition, modifiedOptions, operationContext, cancellationToken);
+#endif
                     Task cleanupTask = uploadTask.ContinueWith(finishedUpload =>
                     {
                         localBlock.Dispose();

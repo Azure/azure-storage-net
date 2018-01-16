@@ -1758,7 +1758,7 @@ namespace Microsoft.Azure.Storage.Queue
             CloudQueue queue = client.GetQueueReference(name);
             queue.Create();
 
-            queue.AddMessage(futureMessage, TimeSpan.FromDays(2));
+            queue.AddMessage(futureMessage, null, TimeSpan.FromDays(2));
             VerifyAddMessageResult(futureMessage);
 
             // We should not be able to see the future message yet.

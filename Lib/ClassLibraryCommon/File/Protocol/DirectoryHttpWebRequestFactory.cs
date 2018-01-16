@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest GetProperties(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
             DirectoryHttpWebRequestFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
@@ -139,7 +139,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest GetMetadata(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
             DirectoryHttpWebRequestFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
@@ -173,7 +173,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="useVersionHeader">A flag indicating whether to set the x-ms-version HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static HttpWebRequest List(Uri uri, int? timeout, FileListingContext listingContext, DateTimeOffset? shareSnapshot, bool useVersionHeader, OperationContext operationContext)
+        public static HttpWebRequest List(Uri uri, int? timeout, FileListingContext listingContext, DateTimeOffset? shareSnapshot, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder directoryBuilder = GetDirectoryUriQueryBuilder();
             DirectoryHttpWebRequestFactory.AddShareSnapshot(directoryBuilder, shareSnapshot);
