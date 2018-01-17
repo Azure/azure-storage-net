@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Analytics
+namespace Microsoft.Azure.Storage.Analytics
 {
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;

@@ -12,7 +12,7 @@
                     PhonePublisherId="1c748179-2fc4-4bb7-b806-6ae446b91c57"/>
 
   <Properties>
-    <DisplayName>Microsoft.WindowsAzure.StoragePhone81.Test</DisplayName>
+    <DisplayName>Microsoft.Azure.StoragePhone81.Test</DisplayName>
     <PublisherDisplayName>veudayab</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -31,10 +31,10 @@
                  Executable="AGHost.exe"
                  EntryPoint="MainPage.xaml">
       <m3:VisualElements
-          DisplayName="Microsoft.WindowsAzure.StoragePhone81.Test"
+          DisplayName="Microsoft.Azure.StoragePhone81.Test"
           Square150x150Logo="Assets\SquareTile150x150.png"
           Square44x44Logo="Assets\Logo.png"
-          Description="Microsoft.WindowsAzure.StoragePhone81.Test"
+          Description="Microsoft.Azure.StoragePhone81.Test"
           ForegroundText="light"
           BackgroundColor="#464646">
         <m3:DefaultTile Square71x71Logo="Assets\SquareTile71x71.png"/>

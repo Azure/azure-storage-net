@@ -8,7 +8,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>4a6f2277-85aa-47d3-acba-25e256debda9</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Microsoft.WindowsAzure.Storage</RootNamespace>
+    <RootNamespace>Microsoft.Azure.Storage</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>

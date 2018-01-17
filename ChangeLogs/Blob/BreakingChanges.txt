@@ -1,0 +1,7 @@
+Tracking Breaking Changes since 8.0 combined package:
+
+- Removed dependency to OData libraries.
+- Removed support for WindowsPhone8.
+- Windows8.0 target is replaced with Windows8.1.
+- Removed Analytics client support.
+- Removed support for copy APIs with a source of CloudFile type.

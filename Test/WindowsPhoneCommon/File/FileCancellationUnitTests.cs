@@ -22,7 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class FileCancellationUnitTests : FileTestBase

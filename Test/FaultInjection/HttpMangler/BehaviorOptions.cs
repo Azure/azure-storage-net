@@ -23,7 +23,7 @@
 //     The BehaviorOptions class controls how many sessions a behavior will apply to, and for how long it should be applied.
 // </summary>
 //-----------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Test.Network
+namespace Microsoft.Azure.Test.Network
 {
     using System;
     using System.Threading;

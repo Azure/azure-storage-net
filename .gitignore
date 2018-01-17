@@ -138,8 +138,19 @@ buildfre.*
 objfre/
 *.playlist
 
+<<<<<<< Updated upstream
 # NetCore Dependency
 *project.lock.json
+=======
+<<<<<<< HEAD
+# Project.lock.json
+*.lock.json
+=======
+# NetCore Dependency
+*project.lock.json
+
+>>>>>>> cd8d5e200c8dda2a20c71acbd0b0a21eae85b739
+>>>>>>> Stashed changes
 
 # VS14 Misc.
 UpgradeLog.htm

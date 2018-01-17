@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 
-namespace Microsoft.WindowsAzure.Test.Network
+namespace Microsoft.Azure.Test.Network
 {
     using Fiddler;
     using System;

@@ -1,4 +1,5 @@
-# Microsoft Azure Storage SDK for .NET (8.7.0)
+# Microsoft Azure Storage SDK for .NET (8.8.0-preview)
+
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -8,9 +9,6 @@ complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http:
 
 ## Features
 
-- Tables
-    - Create/Delete Tables
-    - Query/Create/Read/Update/Delete Entities
 - Blobs
     - Create/Read/Update/Delete Blobs
 - Files
@@ -45,7 +43,7 @@ Through the bait and switch technique, the reference assembly enables other port
 
 ## Requirements
 
-- Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://account.windowsazure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
+- Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://account.Azure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
 - Hosting: To host your .NET code in Microsoft Azure, you additionally need to download the full Microsoft Azure SDK for .NET - which includes packaging,
     emulation, and deployment tools, or use Microsoft Azure Web Sites to deploy ASP.NET web applications.
 
@@ -60,7 +58,7 @@ Through the bait and switch technique, the reference assembly enables other port
 
 ## Download & Install
 
-The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
+The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `Azure.Storage` package. 
 
 This version of the Storage Client Library ships with the storage version 2017-04-17.
 
@@ -76,11 +74,11 @@ cd azure-storage-net
 ### Via NuGet
 
 To get the binaries of this library as distributed by Microsoft, ready for use
-within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/WindowsAzure.Storage/).
+within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/Azure.Storage/).
 
 Please note that the minimum nuget client version requirement has been updated to 2.12 in order to support multiple netstandard targets in the nuget package.
 
-`Install-Package WindowsAzure.Storage`
+`Install-Package Azure.Storage`
 
 ## Dependencies
 
@@ -166,8 +164,8 @@ First, include the classes you need (in this case we'll include the Storage and 
 and further demonstrate creating a table):
 
 ```csharp
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Table;
 ```
 
 To perform an operation on any Microsoft Azure resource you will first instantiate
@@ -205,4 +203,4 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 
 - [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/)
 - [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/wa_storage_30_reference_home.aspx)
-- [Azure Storage Team Blog](http://blogs.msdn.com/b/windowsazurestorage/)
+- [Azure Storage Team Blog](http://blogs.msdn.com/b/Azurestorage/)

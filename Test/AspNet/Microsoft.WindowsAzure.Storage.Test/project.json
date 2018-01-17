@@ -5,7 +5,7 @@
     "dependencies": {
         "xunit": "2.1.0",
         "dotnet-test-xunit": "2.2.0-preview2-build1029",
-        "Microsoft.WindowsAzure.Storage": "8.7.0.0",
+        "Microsoft.Azure.Storage": "8.7.0.0",
         "XUnitForMsTest": "1.0.0-*"
     },
 

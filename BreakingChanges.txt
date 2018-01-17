@@ -1,3 +1,12 @@
+Tracking Breaking Changes since 8.0 combined package:
+
+- Removed dependencies on OData libraries.
+- Removed support for WindowsPhone8.
+- Windows8.0 target is replaced with Windows8.1.
+- Removed Analytics client support.
+- Files: support for copy APIs with a source of CloudBlob type
+- Blobs: Removed support for copy APIs with a source of CloudFile type
+
 Tracking Breaking Changes since 7.0
 
 - All: (Desktop) Updated the desktop library to target .Net 4.5.0
@@ -59,7 +68,7 @@ Tracking Breaking Changes since 5.0
 
 Tracking Breaking Changes since 4.0
 
-- All: Removed dependency on Microsoft.WindowsAzure.ConfigurationManager.
+- All: Removed dependency on Microsoft.Azure.ConfigurationManager.
 - All: Deprecated the overload for GetSharedAccessSignature that takes a SAS version because the SAS tokens generated using the current version work fine with old libraries.
 - All: Updated the error message for the error that is thrown for having more than 5 shared access policy identifiers to include shares.
 - All: Changed behavior to stop stripping out query parameters passed in with the resource URI. Some query parameters such as comp, restype, snapshot and api-version will still be removed.
@@ -78,7 +87,7 @@ Tracking Breaking Changes since 3.0
 - CloudBlobDirectory.GetDirectoryReference throws an ArgumentException if the directory name is empty.
 - Renamed DoesServiceRequest to DoesServiceRequestAttribute.
 - Deprecated the WCF DataServices Table implementation namespace via the Obsolete attribute.
-- No longer shipping the WindowsAzure.Storage.Table-Preview package or the WindowsAzure.Storage-Preview package; everything is included in the WindowsAzure.Storage package.
+- No longer shipping the Azure.Storage.Table-Preview package or the Azure.Storage-Preview package; everything is included in the Azure.Storage package.
 - Windows RT classes "TableBatchOperationExtensions", "TableQueryExtensions", and "CloudTableExtensions" no longer exist; functionality has been moved to the "TableBatchOperation", "TableQuery", and "CloudTable" classes.  If the methods were being used as extention methods, this should require no code change, but it will require a recompile of dependant code.
 - Windows RT class "TableOperationFactory" no longer exists; functionality has been moved to the "TableOperation" class.
 - All Windows RT code is in a single DLL (no longer creating the winmd).
@@ -94,14 +103,14 @@ Tracking Breaking Changes since 2.1 RTM
 
 - Inserts in table operations no longer echo content. This will cause the resulting HTTP status code on the TableResult for successful inserts to be 204 (no-content) rather than 201 (Created). Echo content can be re-enabled by using the insert(TableEntity, boolean) method and specifying true. 
 
-- QueueContinuationToken is moved to Queue namespace(Microsoft.WindowsAzure.Storage.Queue).
+- QueueContinuationToken is moved to Queue namespace(Microsoft.Azure.Storage.Queue).
 
 - ContinuationTokens are written with an additional <ContinuationToken> element enclosing them if WriteXml() method is used - ReadXml() parser is updated to handle this.
 
 - Only the ServiceProperties that are provided are changed. In previous REST versions ommitting a properties section such as Metrics would result in those settings being removed by the service.
 
 - Please refer to the blog post about Breaking Changes on the server side in the new storage protocol version(2013-08-15) here: 
-http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/23/windows-azure-storage-breaking-changes-for-windows-azure-tables-november-2013.aspx.
+http://blogs.msdn.com/b/Azurestorage/archive/2013/11/23/windows-azure-storage-breaking-changes-for-windows-azure-tables-november-2013.aspx.
 Additionally, the following error messages have changed in the Table Service:
 
 Entity over 1MB – 

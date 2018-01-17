@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.Azure.Storage.Auth;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +24,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobClientTest : BlobTestBase

@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata minClientVersion="2.12">
+    <id>Microsoft.Azure.Storage.Blob</id>
+    <version>8.7.0-preview</version>
+    <title>Azure Storage Blob</title>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=331471</licenseUrl>
+    <projectUrl>http://go.microsoft.com/fwlink/?LinkId=235168</projectUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
+    <description>This client library enables working with the Microsoft Azure Storage Blob service for storing binary and text data.
+      For this release see notes - https://github.com/Azure/azure-storage-net/blob/master/ReadMe/Blob/README.md and https://github.com/Azure/azure-storage-net/blob/master/Changelogs/Blob/changelog.txt
+	  in addition to the breaking changes https://github.com/Azure/azure-storage-net/blob/master/Changelogs/Blob/BreakingChanges.txt
+      Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/</description>
+    <summary>A client library for working with Microsoft Azure Storage Blob service</summary>
+    <tags>Microsoft, Azure, Blob, StorageScalable, azureofficial</tags>
+    <dependencies>
+      <group targetFramework=".NETStandard1.0">
+        <dependency id="NETStandard.Library" version="1.6.1" />
+      </group>
+      <group targetFramework=".NETStandard1.3">
+        <dependency id="NETStandard.Library" version="1.6.1" />
+        <dependency id="Newtonsoft.Json" version="10.0.2" />
+      </group>
+      <group targetFramework=".NETFramework4.5">
+        <dependency id="Newtonsoft.Json" version="10.0.2" />
+        <dependency id="Microsoft.Azure.KeyVault.Core" version="1.0.0" />
+      </group>
+      <group targetFramework="Windows8.1">
+        <dependency id="Newtonsoft.Json" version="10.0.2" />
+      </group>
+      <group targetFramework="WindowsPhoneApp0.0">
+        <dependency id="Newtonsoft.Json" version="10.0.2" />
+      </group>
+    </dependencies>
+    <references>
+      <reference file="Microsoft.Azure.Storage.Blob.dll" />
+    </references>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.Data" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="System.Data.DataSetExtensions" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="System.Runtime" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="System.Runtime.Serialization.Xml" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="System.Net.Http" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="mscorlib" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="System" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="Microsoft.CSharp" targetFramework="ASP.NET5.0" />
+      <frameworkAssembly assemblyName="System.Data" targetFramework=".NETFramework4.0-Client" />
+      <frameworkAssembly assemblyName="System.Xml" targetFramework="" />
+      <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework="" />
+    </frameworkAssemblies>
+  </metadata>
+</package>

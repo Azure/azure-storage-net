@@ -15,15 +15,15 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Analytics
+namespace Microsoft.Azure.Storage.Analytics
 {
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Table;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Table;
+    using Microsoft.Azure.Storage.Shared.Protocol;
 #if WINDOWS_DESKTOP
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System.Collections;

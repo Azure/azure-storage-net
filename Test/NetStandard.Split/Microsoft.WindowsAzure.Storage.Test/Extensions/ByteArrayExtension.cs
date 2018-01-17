@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Test.Extensions
+namespace Microsoft.Azure.Storage.Test.Extensions
 {
     /// <summary>
     /// byte array Extension to share code with WinRT calls

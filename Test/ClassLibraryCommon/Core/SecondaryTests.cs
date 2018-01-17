@@ -22,7 +22,6 @@ namespace Microsoft.Azure.Storage.Core
     using Microsoft.Azure.Storage.File;
     using Microsoft.Azure.Storage.Queue;
     using Microsoft.Azure.Storage.RetryPolicies;
-    using Microsoft.Azure.Storage.Table;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -115,27 +114,6 @@ namespace Microsoft.Azure.Storage.Core
             TestPrimaryOnlyCommand((opt, ctx) => queue.DeleteIfExists(opt, ctx), options);
             TestPrimaryOnlyCommand((opt, ctx) => queue.EndDeleteIfExists(queue.BeginDeleteIfExists(opt, ctx, null, null)), options);
         }
-
-        [TestMethod]
-        [Description("Table If*Exists request should not be sent to secondary location")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void TableIfExistsShouldNotHitSecondary()
-        {
-            AssertSecondaryEndpoint();
-
-            TableRequestOptions options = new TableRequestOptions();
-
-            CloudTableClient client = GenerateCloudTableClient();
-            CloudTable table = client.GetTableReference(TableTestBase.GenerateRandomTableName());
-            TestPrimaryOnlyCommand((opt, ctx) => table.CreateIfNotExists(opt, ctx), options);
-            TestPrimaryOnlyCommand((opt, ctx) => table.EndCreateIfNotExists(table.BeginCreateIfNotExists(opt, ctx, null, null)), options);
-            TestPrimaryOnlyCommand((opt, ctx) => table.DeleteIfExists(opt, ctx), options);
-            TestPrimaryOnlyCommand((opt, ctx) => table.EndDeleteIfExists(table.BeginDeleteIfExists(opt, ctx, null, null)), options);
-        }
-
         private void TestPrimaryOnlyCommand<T>(Action<T, OperationContext> command, T options)
             where T : IRequestOptions
         {
@@ -173,7 +151,6 @@ namespace Microsoft.Azure.Storage.Core
             List<Task> tasks = new List<Task>();
             tasks.Add(MultiLocationRetries(SecondaryTests.TestContainerFetchAttributes));
             tasks.Add(MultiLocationRetries(SecondaryTests.TestQueueFetchAttributes));
-            tasks.Add(MultiLocationRetries(SecondaryTests.TestTableRetrieve));
             Task.WaitAll(tasks.ToArray());
         }
 
@@ -316,25 +293,6 @@ namespace Microsoft.Azure.Storage.Core
                 TestHelper.ExpectedException(
                     () => queue.FetchAttributes(options, helper.OperationContext),
                     "FetchAttributes on a non-existing queue should fail",
-                    HttpStatusCode.NotFound);
-            }
-        }
-
-        private static void TestTableRetrieve(LocationMode? optionsLocationMode, LocationMode clientLocationMode, StorageLocation initialLocation, IList<RetryContext> retryContextList, IList<RetryInfo> retryInfoList)
-        {
-            CloudTable table = GenerateCloudTableClient().GetTableReference(TableTestBase.GenerateRandomTableName());
-            using (MultiLocationTestHelper helper = new MultiLocationTestHelper(table.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
-            {
-                table.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
-                TableRequestOptions options = new TableRequestOptions()
-                {
-                    LocationMode = optionsLocationMode,
-                    RetryPolicy = helper.RetryPolicy,
-                };
-
-                TestHelper.ExpectedException(
-                    () => table.GetPermissions(options, helper.OperationContext),
-                    "GetPermissions on a non-existing table should fail",
                     HttpStatusCode.NotFound);
             }
         }

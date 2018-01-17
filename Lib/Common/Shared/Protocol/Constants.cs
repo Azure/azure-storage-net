@@ -888,7 +888,6 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-
             public const string UserAgentProductVersion = "8.7.0-preview";
 
             /// <summary>

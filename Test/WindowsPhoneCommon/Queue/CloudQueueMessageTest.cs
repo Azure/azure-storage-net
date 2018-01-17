@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
     [TestClass]
     public class CloudQueueMessageTest : QueueTestBase

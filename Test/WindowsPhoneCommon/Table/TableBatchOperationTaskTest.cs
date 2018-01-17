@@ -16,16 +16,16 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Core;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
-using Microsoft.WindowsAzure.Storage.Table.Entities;
+using Microsoft.Azure.Storage.Core;
+using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableBatchOperationTaskTest : TableTestBase

@@ -21,7 +21,6 @@ using Microsoft.Azure.Storage.Auth;
 using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.File;
 using Microsoft.Azure.Storage.Queue;
-using Microsoft.Azure.Storage.Table;
 using Microsoft.Azure.Storage.Shared.Protocol;
 
 #if WINDOWS_DESKTOP
@@ -869,25 +868,21 @@ namespace Microsoft.Azure.Storage.Core.Util
             CloudStorageAccount account = new CloudStorageAccount(TestBase.StorageCredentials, false);
             CloudBlobClient blob = account.CreateCloudBlobClient();
             CloudQueueClient queue = account.CreateCloudQueueClient();
-            CloudTableClient table = account.CreateCloudTableClient();
             CloudFileClient file = account.CreateCloudFileClient();
 
             // check endpoints
             Assert.AreEqual(account.BlobEndpoint, blob.BaseUri, "Blob endpoint doesn't match account");
             Assert.AreEqual(account.QueueEndpoint, queue.BaseUri, "Queue endpoint doesn't match account");
-            Assert.AreEqual(account.TableEndpoint, table.BaseUri, "Table endpoint doesn't match account");
             Assert.AreEqual(account.FileEndpoint, file.BaseUri, "File endpoint doesn't match account");
 
             // check storage uris
             Assert.AreEqual(account.BlobStorageUri, blob.StorageUri, "Blob endpoint doesn't match account");
             Assert.AreEqual(account.QueueStorageUri, queue.StorageUri, "Queue endpoint doesn't match account");
-            Assert.AreEqual(account.TableStorageUri, table.StorageUri, "Table endpoint doesn't match account");
             Assert.AreEqual(account.FileStorageUri, file.StorageUri, "File endpoint doesn't match account");
 
             // check creds
             Assert.AreEqual(account.Credentials, blob.Credentials, "Blob creds don't match account");
             Assert.AreEqual(account.Credentials, queue.Credentials, "Queue creds don't match account");
-            Assert.AreEqual(account.Credentials, table.Credentials, "Table creds don't match account");
             Assert.AreEqual(account.Credentials, file.Credentials, "File creds don't match account");
         }
 
@@ -937,20 +932,6 @@ namespace Microsoft.Azure.Storage.Core.Util
             // the queue on the service, nor validates its existence.
             CloudQueue queue = queueClient.GetQueueReference("queue1");
 
-
-            // Create a CloudTableClient object from the storage account.
-            // This object is the root object for all operations on the 
-            // table service for this particular account.
-            CloudTableClient tableClient = cloudStorageAccount.CreateCloudTableClient();
-
-            // Get a reference to a CloudTable object in this account. 
-            // This object can be used to create the table on the service, 
-            // delete the table, insert entities, etc. This operation does 
-            // not make a call to the Azure Storage service.  It neither 
-            // creates the table on the service, nor validates its existence.
-            CloudTable table = tableClient.GetTableReference("table1");
-
-
             // Create a CloudFileClient object from the storage account.
             // This object is the root object for all operations on the 
             // file service for this particular account.
@@ -966,7 +947,6 @@ namespace Microsoft.Azure.Storage.Core.Util
 
             Assert.AreEqual(cloudStorageAccount.BlobEndpoint.ToString() + "container1", container.Uri.ToString());
             Assert.AreEqual(cloudStorageAccount.QueueEndpoint.ToString() + "queue1", queue.Uri.ToString());
-            Assert.AreEqual(cloudStorageAccount.TableEndpoint.ToString() + "table1", table.Uri.ToString());
             Assert.AreEqual(cloudStorageAccount.FileEndpoint.ToString() + "share1", share.Uri.ToString());
         }
 

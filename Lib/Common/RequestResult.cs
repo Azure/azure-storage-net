@@ -33,7 +33,7 @@ namespace Microsoft.Azure.Storage
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     [Serializable]
 #endif
-    public sealed class RequestResult
+    public class RequestResult
     {
         private volatile Exception exception = null;
 

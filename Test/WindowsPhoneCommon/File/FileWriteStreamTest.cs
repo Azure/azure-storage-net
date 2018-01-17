@@ -23,7 +23,7 @@ using System.Net;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class FileWriteStreamTest : FileTestBase

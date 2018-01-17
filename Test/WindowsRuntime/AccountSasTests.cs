@@ -25,7 +25,6 @@ namespace Microsoft.Azure.Storage
     using Microsoft.Azure.Storage.Queue;
     using Microsoft.Azure.Storage.Queue.Protocol;
     using Microsoft.Azure.Storage.Shared.Protocol;
-    using Microsoft.Azure.Storage.Table;
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Shared;
     using System;
@@ -57,14 +56,13 @@ namespace Microsoft.Azure.Storage
             // Parallelized, 1 minute.
             for (int i = 0; i < 0x100; i++)
             {
-                Task[] tasks = new Task[4]; //each permission (0x100) times four services.
+                Task[] tasks = new Task[3]; //each permission (0x100) times four services.
                 SharedAccessAccountPermissions permissions = (SharedAccessAccountPermissions)i;
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.Permissions = permissions;
                 tasks[0] = this.RunPermissionsTestBlobs(policy);
-                tasks[1] = this.RunPermissionsTestTables(policy);
-                tasks[2] = this.RunPermissionsTestQueues(policy);
-                tasks[3] = this.RunPermissionsTestFiles(policy);
+                tasks[1] = this.RunPermissionsTestQueues(policy);
+                tasks[2] = this.RunPermissionsTestFiles(policy);
                 Task.WaitAll(tasks);
             }
             
@@ -78,16 +76,15 @@ namespace Microsoft.Azure.Storage
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void AccountSASResourceTypes()
         {
-            Task[] tasks = new Task[8*4];
+            Task[] tasks = new Task[8*3];
             for (int i = 0; i < 0x8; i++)
             {
                 SharedAccessAccountResourceTypes resourceTypes = (SharedAccessAccountResourceTypes)i;
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.ResourceTypes = resourceTypes;
                 tasks[i] = this.RunPermissionsTestBlobs(policy);
-                tasks[8 + i] = this.RunPermissionsTestTables(policy);
-                tasks[16 + i] = this.RunPermissionsTestQueues(policy);
-                tasks[24 + i] = this.RunPermissionsTestFiles(policy);
+                tasks[8 + i] = this.RunPermissionsTestQueues(policy);
+                tasks[16 + i] = this.RunPermissionsTestFiles(policy);
             }
             Task.WaitAll(tasks);
         }
@@ -127,15 +124,6 @@ namespace Microsoft.Azure.Storage
                else
                {
                    await RunQueueTest(policy, null);
-               }
-
-               if (expectTableException)
-               {
-                   await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed without Table access.", HttpStatusCode.Forbidden, "AuthorizationServiceMismatch");
-               }
-               else
-               {
-                   await RunTableTest(policy, null);
                }
 
                if (expectFileException)
@@ -192,14 +180,12 @@ namespace Microsoft.Azure.Storage
                     {
                         await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid start/expiry times.", HttpStatusCode.Forbidden, "AuthenticationFailed");
                         await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid start/expiry times.", HttpStatusCode.Forbidden, "AuthenticationFailed");
-                        await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid start/expiry times.", HttpStatusCode.Forbidden, "AuthenticationFailed");
                         await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid start/expiry times.", HttpStatusCode.Forbidden, "AuthenticationFailed");
                     }
                     else
                     {
                         await RunBlobTest(policy, null);
                         await RunQueueTest(policy, null);
-                        await RunTableTest(policy, null);
                         await RunFileTest(policy, null);
                     }
                 } 
@@ -222,13 +208,10 @@ namespace Microsoft.Azure.Storage
 
             await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
             await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
             await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
 
             policy.IPAddressOrRange = null;
             await RunBlobTest(policy, null);
-
-            await RunTableTest(policy, null);
 
             await RunQueueTest(policy, null);
 
@@ -238,7 +221,6 @@ namespace Microsoft.Azure.Storage
 
             await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
             await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
-            await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
             await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed with invalid IP access.", HttpStatusCode.Forbidden, "AuthorizationFailure");
         }
         
@@ -287,20 +269,17 @@ namespace Microsoft.Azure.Storage
                 {
                     await TestHelper.ExpectedExceptionAsync((async () => await RunBlobTest(policy, null, opContext)), opContext, "Operation should have failed without using Https.", HttpStatusCode.Unused, null);
                     await TestHelper.ExpectedExceptionAsync((async () => await RunQueueTest(policy, null, opContext)), opContext, "Operation should have failed without using Https.", HttpStatusCode.Unused, null);
-                    await TestHelper.ExpectedExceptionAsync((async () => await RunTableTest(policy, null, opContext)), opContext, "Operation should have failed without using Https.", HttpStatusCode.Unused, null);
                     await TestHelper.ExpectedExceptionAsync((async () => await RunFileTest(policy, null, opContext)), opContext, "Operation should have failed without using Https.", HttpStatusCode.Unused, null);
                 }
                 else
                 {
                     await RunBlobTest(policy, null);
                     await RunQueueTest(policy, null);
-                    await RunTableTest(policy, null);
                     await RunFileTest(policy, null);
                 }
 
                 await RunBlobTest(policy, blobHttpsPort);
                 await RunQueueTest(policy, queueHttpsPort);
-                await RunTableTest(policy, tableHttpsPort);
                 await RunFileTest(policy, fileHttpsPort);
             }
         }
@@ -430,204 +409,6 @@ namespace Microsoft.Azure.Storage
             finally
             {
                 blobClient.GetContainerReference(containerName).DeleteIfExistsAsync().Wait();
-            }
-        }
-
-        public async Task RunPermissionsTestTables(SharedAccessAccountPolicy policy)
-        {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = "t" + Guid.NewGuid().ToString("N");
-            ServiceProperties initialProperties = await tableClient.GetServicePropertiesAsync();
-            try
-            {
-                CloudStorageAccount account = new CloudStorageAccount(tableClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, tableClient.StorageUri, null);
-                CloudTableClient tableClientWithSAS = accountWithSAS.CreateCloudTableClient();
-                CloudTable tableWithSAS = tableClientWithSAS.GetTableReference(tableName);
-                CloudTable table = tableClient.GetTableReference(tableName);
-
-                // General pattern - If current perms support doing a thing with SAS, do the thing with SAS and validate with shared
-                // Otherwise, make sure SAS fails and then do the thing with shared key.
-
-                // Things to do:
-                // Create the table (Create or Write perms, Container RT)
-                // List tables (List perms, Container RT)
-                // Set table service properties (Write perms, Service RT)
-                // Insert an entity (Add perms, Object RT)
-                // Merge an entity (Update perms, Object RT)
-                // Insert or merge an entity (Add and update perms, Object RT) (test this twice, once for insert, once for merge.)
-                // Query the table for the entity (Read perms, Object RT)
-                // Delete the entity (Delete perms, Object RT)
-
-                if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Container) == SharedAccessAccountResourceTypes.Container))
-                {
-                    await tableWithSAS.CreateAsync();
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(
-                        async () => await tableWithSAS.CreateAsync(), 
-                        "Creating a table with SAS should fail without Add and Container-level permissions.");
-                    await table.CreateAsync();
-                }
-                Assert.IsTrue(await table.ExistsAsync());
-
-                if (((policy.Permissions & SharedAccessAccountPermissions.List) == SharedAccessAccountPermissions.List) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Container) == SharedAccessAccountResourceTypes.Container))
-                {
-                    Assert.AreEqual(tableName, (await tableClientWithSAS.ListTablesSegmentedAsync(tableName, null)).First().Name);
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => (await tableClientWithSAS.ListTablesSegmentedAsync(tableName, null)).Results.First(), "Listing tables with SAS should fail without Read and Container-level permissions.");
-                }
-
-                ServiceProperties properties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
-                properties.Logging = initialProperties.Logging;
-                properties.HourMetrics = initialProperties.HourMetrics;
-                properties.MinuteMetrics = initialProperties.MinuteMetrics;
-                properties.DefaultServiceVersion = initialProperties.DefaultServiceVersion;
-                CorsRule rule = new CorsRule();
-                string sampleOriginText = "sampleOrigin";
-                rule.AllowedOrigins.Add(sampleOriginText);
-                rule.AllowedMethods = CorsHttpMethods.Get;
-                rule.MaxAgeInSeconds = 100;
-                properties.Cors.CorsRules.Add(rule);
-                if (((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Service) == SharedAccessAccountResourceTypes.Service))
-                {
-                    await tableClientWithSAS.SetServicePropertiesAsync(properties);
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableClientWithSAS.SetServicePropertiesAsync(properties), "Setting table service properites should fail with SAS without Write and Service-level permissions.");
-                    await tableClient.SetServicePropertiesAsync(properties);
-                }
-                Assert.AreEqual(sampleOriginText, rule.AllowedOrigins.First());
-
-                string propName = "prop";
-                string propName2 = "prop2";
-                DynamicTableEntity entity1 = new DynamicTableEntity();
-
-                string partitionKey = "PK";
-                string rowKeyPrefix = "RK";
-                entity1.PartitionKey = partitionKey;
-                entity1.RowKey = rowKeyPrefix + "1";
-                entity1.Properties = new Dictionary<string, EntityProperty>() { { propName, EntityProperty.GeneratePropertyForInt(4) } };
-                entity1.ETag = "*";
-
-                if (((policy.Permissions & SharedAccessAccountPermissions.Add) == SharedAccessAccountPermissions.Add) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
-                {
-                    await tableWithSAS.ExecuteAsync(TableOperation.Insert(entity1));
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Insert(entity1)), "Inserting an entity should fail without Add and Object-level permissions.");
-                    await table.ExecuteAsync(TableOperation.Insert(entity1));
-                }
-                TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity1.PartitionKey, entity1.RowKey));
-                Assert.AreEqual(entity1.Properties[propName].Int32Value, table.ExecuteQuery(query).First().Properties[propName].Int32Value);
-                entity1.ETag = "*";
-
-                DynamicTableEntity entity1changed = new DynamicTableEntity();
-                entity1changed.PartitionKey = "PK";
-                entity1changed.RowKey = "RK1";
-                entity1changed.Properties = new Dictionary<string, EntityProperty>() { { propName2, EntityProperty.GeneratePropertyForInt(5) } };
-                entity1changed.ETag = "*";
-
-                if (((policy.Permissions & SharedAccessAccountPermissions.Update) == SharedAccessAccountPermissions.Update) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
-                {
-                    await tableWithSAS.ExecuteAsync(TableOperation.Merge(entity1changed));
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Merge(entity1changed)), "Merging an entity should fail without Update and Object-level permissions.");
-                    await table.ExecuteAsync(TableOperation.Merge(entity1changed));
-                }
-
-                DynamicTableEntity result = table.ExecuteQuery(query).First();
-                Assert.AreEqual(entity1.Properties[propName].Int32Value, result.Properties[propName].Int32Value);
-                Assert.AreEqual(entity1changed.Properties[propName2].Int32Value, result.Properties[propName2].Int32Value);
-                entity1changed.ETag = "*";
-
-                DynamicTableEntity entity2 = new DynamicTableEntity();
-                entity2.PartitionKey = partitionKey;
-                entity2.RowKey = rowKeyPrefix + "2";
-                entity2.Properties = new Dictionary<string, EntityProperty>() { { propName, EntityProperty.GeneratePropertyForInt(4) } };
-                entity2.ETag = "*";
-
-                if ((((policy.Permissions & SharedAccessAccountPermissions.Add) == SharedAccessAccountPermissions.Add) && ((policy.Permissions & SharedAccessAccountPermissions.Update) == SharedAccessAccountPermissions.Update)) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
-                {
-                    await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2));
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2)), "Inserting or merging an entity should fail without Add and Update and Object-level permissions.");
-                    await table.ExecuteAsync(TableOperation.InsertOrMerge(entity2));
-                }
-                query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity2.PartitionKey, entity2.RowKey));
-                Assert.AreEqual(entity2.Properties[propName].Int32Value, table.ExecuteQuery(query).First().Properties[propName].Int32Value);
-                entity2.ETag = "*";
-
-                DynamicTableEntity entity2changed = new DynamicTableEntity();
-                entity2changed.PartitionKey = partitionKey;
-                entity2changed.RowKey = rowKeyPrefix + "2";
-                entity2changed.Properties = new Dictionary<string, EntityProperty>() { { propName2, EntityProperty.GeneratePropertyForInt(5) } };
-                entity2changed.ETag = "*";
-                if ((((policy.Permissions & SharedAccessAccountPermissions.Add) == SharedAccessAccountPermissions.Add) && ((policy.Permissions & SharedAccessAccountPermissions.Update) == SharedAccessAccountPermissions.Update)) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
-                {
-                    await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2changed));
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.InsertOrMerge(entity2changed)), "Inserting or merging an entity should fail without Add and Update and Object-level permissions.");
-                    await table.ExecuteAsync(TableOperation.InsertOrMerge(entity2changed));
-                }
-                entity2changed.ETag = "*";
-
-                result = table.ExecuteQuery(query).First();
-                Assert.AreEqual(entity2.Properties[propName].Int32Value, result.Properties[propName].Int32Value);
-                Assert.AreEqual(entity2changed.Properties[propName2].Int32Value, result.Properties[propName2].Int32Value);
-
-                query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey ge '{1}') and (RowKey le '{2}')", entity1.PartitionKey, entity1.RowKey, entity2.RowKey));
-                if (((policy.Permissions & SharedAccessAccountPermissions.Read) == SharedAccessAccountPermissions.Read) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
-                {
-                    List<DynamicTableEntity> entities = tableWithSAS.ExecuteQuery(query).ToList();
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => (await tableWithSAS.ExecuteQuerySegmentedAsync(query, null)).ToList(), "Querying tables should fail with SAS without Read and Object-level permissions.");
-                }
-
-                if (((policy.Permissions & SharedAccessAccountPermissions.Delete) == SharedAccessAccountPermissions.Delete) &&
-                    ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
-                {
-                    await tableWithSAS.ExecuteAsync(TableOperation.Delete(entity1));
-                }
-                else
-                {
-                    await TestHelper.ExpectedExceptionAsync<StorageException>(async () => await tableWithSAS.ExecuteAsync(TableOperation.Delete(entity1)), "Deleting an entity should fail with SAS without Delete and Object-level permissions.");
-                    await table.ExecuteAsync(TableOperation.Delete(entity1));
-                }
-
-                query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity1.PartitionKey, entity1.RowKey));
-                Assert.IsFalse(table.ExecuteQuery(query).Any());
-            }
-            finally
-            {
-                tableClient.GetTableReference(tableName).DeleteIfExistsAsync().Wait();
-                if (initialProperties != null)
-                {
-                    tableClient.SetServicePropertiesAsync(initialProperties).Wait();
-                }
             }
         }
 
@@ -938,49 +719,6 @@ namespace Microsoft.Azure.Storage
             }
         }
 
-        public async Task RunTableTest(SharedAccessAccountPolicy policy, int? httpsPort, OperationContext opContext = null)
-        {
-            CloudTableClient tableClient = GenerateCloudTableClient();
-            string tableName = "t" + Guid.NewGuid().ToString("N");
-            try
-            {
-                CloudStorageAccount account = new CloudStorageAccount(tableClient.Credentials, false);
-                string accountSASToken = account.GetSharedAccessSignature(policy);
-                StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-
-                StorageUri storageUri = tableClient.StorageUri;
-                if (httpsPort != null)
-                {
-                    storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
-                }
-
-                CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, storageUri, null);
-                CloudTableClient tableClientWithSAS = accountWithSAS.CreateCloudTableClient();
-                CloudTable tableWithSAS = tableClientWithSAS.GetTableReference(tableName);
-                CloudTable table = tableClient.GetTableReference(tableName);
-                await table.CreateAsync();
-
-                string propName = "prop";
-                int propValue = 4;
-                DynamicTableEntity entity1 = new DynamicTableEntity();
-
-                string partitionKey = "PK";
-                string rowKeyPrefix = "RK";
-                entity1.PartitionKey = partitionKey;
-                entity1.RowKey = rowKeyPrefix + "1";
-                entity1.Properties = new Dictionary<string, EntityProperty>() { { propName, EntityProperty.GeneratePropertyForInt(propValue) } };
-
-                await table.ExecuteAsync(TableOperation.Insert(entity1));
-
-                TableQuery query = new TableQuery().Where(string.Format("(PartitionKey eq '{0}') and (RowKey eq '{1}')", entity1.PartitionKey, entity1.RowKey));
-
-                Assert.AreEqual(propValue, (await tableWithSAS.ExecuteQuerySegmentedAsync(query, null, null, opContext)).Results.First().Properties[propName].Int32Value);
-            }
-            finally
-            {
-                tableClient.GetTableReference(tableName).DeleteIfExistsAsync().Wait();
-            }
-        }
 
         public async Task RunQueueTest(SharedAccessAccountPolicy policy, int? httpsPort, OperationContext opContext = null)
         {

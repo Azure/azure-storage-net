@@ -6,11 +6,10 @@
     "xunit": "2.1.0",
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "XUnitForMsTest": "1.0.0-*",
-    "Microsoft.Azure.Storage.Common": "8.4.0.0",
     "Microsoft.Azure.Storage.Blob": "1.0.0-*",
     "Microsoft.Azure.Storage.File": "1.0.0-*",
     "Microsoft.Azure.Storage.Queue": "1.0.0-*",
-    "Microsoft.Azure.Storage.Table": "1.0.0-*"
+    "Microsoft.Azure.Storage.Common": "8.6.0.0-preview"
   },
 
     "frameworks": {
@@ -38,15 +37,10 @@
             "../../Common/Core/*.cs",
             "../../Common/File/*.cs",
             "../../Common/Queue/*.cs",
-            "../../Common/Table/*.cs",
-            "../../Common/Table/Entities/*.cs",
-            "../../Common/TestConfigProcess/**/*.cs",
-
             "../../WindowsRuntime/Core/**/*.cs",
             "../../WindowsRuntime/Blob/**/*.cs",
             "../../WindowsRuntime/Queue/**/*.cs",
-            "../../WindowsRuntime/File/**/*.cs",
-            "../../WindowsRuntime/Table/**/*.cs"
+          "../../WindowsRuntime/File/**/*.cs"
         ]
     }
 }

@@ -20,7 +20,6 @@ using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.Core;
 using Microsoft.Azure.Storage.File;
 using Microsoft.Azure.Storage.Queue;
-using Microsoft.Azure.Storage.Table;
 using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Linq;
@@ -73,31 +72,6 @@ namespace Microsoft.Azure.Storage
 
         public static MockBufferManager QueueBufferManager = new MockBufferManager((int)Constants.KB);
 #endif
-
-        public static CloudTableClient GenerateCloudTableClient()
-        {
-            CloudTableClient client;
-            if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.TableServiceSecondaryEndpoint))
-            {
-                Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint);
-                client = new CloudTableClient(baseAddressUri, TestBase.StorageCredentials);
-            }
-            else
-            {
-                StorageUri baseAddressUri = new StorageUri(
-                    new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint),
-                    new Uri(TestBase.TargetTenantConfig.TableServiceSecondaryEndpoint));
-                client = new CloudTableClient(baseAddressUri, TestBase.StorageCredentials);
-            }
-
-            client.AuthenticationScheme = DefaultAuthenticationScheme;
-
-#if WINDOWS_DESKTOP
-            client.BufferManager = BlobBufferManager;
-#endif
-
-            return client;
-        }
 
         public static CloudBlobClient GenerateCloudBlobClient()
         {

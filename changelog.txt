@@ -1,6 +1,14 @@
 Changes in 8.8.0-preview:
 - Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
 
+Changes in 8.7.0-preview (split packages):
+- Removed dependencies on OData libraries.
+- Removed support for WindowsPhone8.
+- Windows8.0 target is replaced with Windows8.1.
+- Removed Analytics client support.
+- Files: support for copy APIs with a source of CloudBlob type.
+- Blobs: Removed support for copy APIs with a source of CloudFile type.
+
 Changes in 8.7.0:
 - Blobs: Parsing the snapshot parameter when creating a CloudBlockBlob from a URI is now case insensitive
 - Blobs (Desktop): Added a new API supporting downloading a blob to a file by making concurrent service requests.
@@ -207,8 +215,8 @@ Changes in 5.0.0 :
  - All: Deprecated the overload for GetSharedAccessSignature that takes a SAS version because the SAS tokens generated using the current version work fine with old libraries.
  - All: Updated the error message for the error that is thrown for having more than 5 shared access policy identifiers to include shares.
  - All: Made SyncMemoryStream, a MemoryStream implementation that runs synchronously even when asynchronous overloads are called public.
- - All: Removed dependency on Microsoft.WindowsAzure.ConfigurationManager.
- - All: Updated OData dependencies to v5.6.4 and Newtonsoft.Json dependency to 6.0.8. Removed Microsoft.WindowsAzure.ConfigurationManager dependency.
+ - All: Removed dependency on Microsoft.Azure.ConfigurationManager.
+ - All: Updated OData dependencies to v5.6.4 and Newtonsoft.Json dependency to 6.0.8. Removed Microsoft.Azure.ConfigurationManager dependency.
  - All: Changed behavior to stop stripping out query parameters passed in with the resource URI. Some query parameters such as comp, restype, snapshot and api-version will still be removed.
  - Blobs: MultiBufferMemoryStream objects passed as argument to upload methods are not disposed by the client library.
  - Blobs: Added CloudAppendBlob class. For more information on this, please refer to the REST API link.
@@ -289,7 +297,7 @@ Changes in 4.0.0 :
   - All: Renamed DoesServiceRequest to DoesServiceRequestAttribute.
   - All: Added DefaultRequestOptions to the Service Clients.
   - All: Deprecated all service client request options properties (RetryPolicy, LocationMode, ServerTimeout, MaximumExecutionTime, SingleBlobUploadThresholdInBytes, ParallelOperationThreadCount, and TablePayloadFormat) via the Obsolete attribute.
-  - All: No longer shipping the WindowsAzure.Storage.Table-Preview package or the WindowsAzure.Storage-Preview package; everything is included in the WindowsAzure.Storage RTM package.
+  - All: No longer shipping the Azure.Storage.Table-Preview package or the Azure.Storage-Preview package; everything is included in the Azure.Storage RTM package.
   - All: Introduced AnalyticsClient and related entity types to simplify downloading logging and metrics data.
   - All: MultiBufferMemoryStream, the BufferManager-aware high performance memory stream, is public. 
   - All: Shared Access Signature requests use the api-version query parameter instead of the x-ms-version header.
@@ -364,7 +372,7 @@ Issues fixed in 3.0.1 :
   
 Changes in 3.0.0 :
 
-  - All: Support for 2013-08-15 REST version - see here for additional details: http://blogs.msdn.com/b/windowsazurestorage/archive/2013/11/27/windows-azure-storage-release-introducing-cors-json-minute-metrics-and-more.aspx.
+  - All: Support for 2013-08-15 REST version - see here for additional details: http://blogs.msdn.com/b/Azurestorage/archive/2013/11/27/windows-azure-storage-release-introducing-cors-json-minute-metrics-and-more.aspx.
   - All: Suppress warning for FiddlerCore EntensionAttribute conflict.
   - Blobs: Added support for XML serialize/deserialize of BlobContinuationToken.
   - Blobs: Added ParallelOperationThreadCount and SingleBlobUploadThresholdInBytes to BlobRequestOptions.
@@ -466,7 +474,7 @@ Issues fixed in 2.0.6 :
   - All: Default RetryPolicy filters updated to not retry 100-407, 409-499, 501, and 505
   - All: Support for all flavors of SharedKey and SharedKeyLite message signing through AuthenticationScheme property on client classes.
   - All: Unusable HttpWebRequestFactory and WebRequestExtensions are not public anymore
-  - All: TranslateFromExceptionMessage has been deprecated in Microsoft.WindowsAzure.Storage.dll and is now available only in Microsoft.WindowsAzure.Storage.WinMD
+  - All: TranslateFromExceptionMessage has been deprecated in Microsoft.Azure.Storage.dll and is now available only in Microsoft.Azure.Storage.WinMD
   - All: StorageCredentials supports empty account keys.
   - All: RequestResult deserialization does not fail when Content-MD5 is missing
   - Blobs (RT): DownloadToStreamAsync and DownloadRangeToStreamAsync writes the entire data to the given stream before returning back to the caller.

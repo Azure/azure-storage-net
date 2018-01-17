@@ -1,0 +1,6 @@
+Changes in 8.7.0-preview:
+
+- Removed dependency to OData libraries.
+- Removed support for WindowsPhone8.
+- Windows8.0 target is replaced with Windows8.1.
+- Removed Analytics client support.

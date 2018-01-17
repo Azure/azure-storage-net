@@ -19,7 +19,7 @@ using Fiddler;
 using System;
 using System.Timers;
 
-namespace Microsoft.WindowsAzure.Test.Network.Behaviors
+namespace Microsoft.Azure.Test.Network.Behaviors
 {
     /// <summary>
     /// Factory for Behaviours to execute an action based on a time or network based delay

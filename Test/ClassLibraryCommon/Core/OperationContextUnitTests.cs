@@ -18,7 +18,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.Queue;
-using Microsoft.Azure.Storage.Table;
 using Microsoft.Azure.Test.Network;
 using System;
 using System.Collections.Generic;
@@ -218,67 +217,6 @@ namespace Microsoft.Azure.Storage.Core
             act = () => queue.ExistsAsync(null, ctx).Wait();
 
             TestHelper.VerifyHeaderWasSent(ctx.UserHeaders.Keys.First(), ctx.UserHeaders[ctx.UserHeaders.Keys.First()], AzureStorageSelectors.QueueTraffic().IfHostNameContains(qClient.Credentials.AccountName), act);
-#endif
-        }
-
-
-        [TestMethod]
-        [Description("Test client request id on table request")]
-        [TestCategory(ComponentCategory.Queue)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.Cloud)]
-        public void OpContextTestClientRequestIDOnTable()
-        {
-            CloudTableClient tClient = GenerateCloudTableClient();
-            CloudTable table = tClient.GetTableReference("test");
-
-            string uniqueID = Guid.NewGuid().ToString();
-
-            Action act = () => table.Exists(null, new OperationContext() { ClientRequestID = uniqueID });
-
-            TestHelper.VerifyHeaderWasSent("x-ms-client-request-id", uniqueID, AzureStorageSelectors.TableTraffic().IfHostNameContains(tClient.Credentials.AccountName), act);
-
-            act = () => table.EndExists(table.BeginExists(null, new OperationContext() { ClientRequestID = uniqueID }, null, null));
-
-            TestHelper.VerifyHeaderWasSent("x-ms-client-request-id", uniqueID, AzureStorageSelectors.TableTraffic().IfHostNameContains(tClient.Credentials.AccountName), act);
-
-#if TASK
-            act = () => table.ExistsAsync(null, new OperationContext() { ClientRequestID = uniqueID }).Wait();
-
-            TestHelper.VerifyHeaderWasSent("x-ms-client-request-id", uniqueID, AzureStorageSelectors.TableTraffic().IfHostNameContains(tClient.Credentials.AccountName), act);
-#endif
-        }
-
-        [TestMethod]
-        [Description("Test custom user headers on table request")]
-        [TestCategory(ComponentCategory.Queue)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.Cloud)]
-        public void OpContextTestUserHeadersOnTable()
-        {
-            CloudTableClient tClient = GenerateCloudTableClient();
-            CloudTable table = tClient.GetTableReference("test");
-
-            string uniqueID = Guid.NewGuid().ToString();
-
-            OperationContext ctx = new OperationContext();
-            ctx.UserHeaders = new Dictionary<string, string>();
-            ctx.UserHeaders.Add("foo", "bar");
-
-            Action act = () => table.Exists(null, ctx);
-
-            TestHelper.VerifyHeaderWasSent(ctx.UserHeaders.Keys.First(), ctx.UserHeaders[ctx.UserHeaders.Keys.First()], AzureStorageSelectors.TableTraffic().IfHostNameContains(tClient.Credentials.AccountName), act);
-
-            act = () => table.EndExists(table.BeginExists(null, ctx, null, null));
-
-            TestHelper.VerifyHeaderWasSent(ctx.UserHeaders.Keys.First(), ctx.UserHeaders[ctx.UserHeaders.Keys.First()], AzureStorageSelectors.TableTraffic().IfHostNameContains(tClient.Credentials.AccountName), act);
-
-#if TASK
-            act = () => table.ExistsAsync(null, ctx).Wait();
-
-            TestHelper.VerifyHeaderWasSent(ctx.UserHeaders.Keys.First(), ctx.UserHeaders[ctx.UserHeaders.Keys.First()], AzureStorageSelectors.TableTraffic().IfHostNameContains(tClient.Credentials.AccountName), act);
 #endif
         }
 

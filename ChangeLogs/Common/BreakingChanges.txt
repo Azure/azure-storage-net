@@ -1,0 +1,6 @@
+Tracking Breaking Changes since 8.0 combined package(WindowsAzure.Storage):
+
+- Removed dependency to OData libraries.
+- Removed support for WindowsPhone8.
+- Windows8.0 target is replaced with Windows8.1.
+- Removed Analytics client support.

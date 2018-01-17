@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 
-namespace Microsoft.WindowsAzure.Test.Network
+namespace Microsoft.Azure.Test.Network
 {
     /// <summary>
     /// BlobBehaviors are pre-built ProxyBehaviors for use with the Azure Storage Blob Front End.
