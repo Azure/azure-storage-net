@@ -46,9 +46,6 @@
       <HintPath>..\..\..\packages\Microsoft.Azure.Storage.Common.8.7.0-preview\lib\win81\Microsoft.Azure.Storage.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\portable-net45+win8+wpa81+wp8\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
