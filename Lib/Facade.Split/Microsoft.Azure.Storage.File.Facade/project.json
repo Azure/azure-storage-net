@@ -1,7 +1,6 @@
 {
     "title": "Microsoft.Azure.Storage.File",
-    "version": "8.7.0-preview.0",
-
+    "version": "8.7.0-preview",
     "authors": [ "Microsoft Corporation" ],
   "description": "Azure Storage File SDK for NetCore",
 

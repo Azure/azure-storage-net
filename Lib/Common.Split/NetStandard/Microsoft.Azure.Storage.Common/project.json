@@ -1,6 +1,6 @@
 {
   "title": "Microsoft.Azure.Storage.Common",
-  "version": "8.7.0.0-preview",
+  "version": "8.7.0-preview",
 
   "authors": [ "Microsoft Corporation" ],
   "description": "Azure Storage Common SDK for NetCore",
