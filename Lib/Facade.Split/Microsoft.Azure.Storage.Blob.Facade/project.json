@@ -1,11 +1,11 @@
 {
   "title": "Microsoft.Azure.Storage.Blob",
-  "version": "8.6.0-preview.0",
+  "version": "8.7.0-preview",
   "authors": [ "Microsoft Corporation" ],
   "description": "Azure Storage Blob SDK for NetCore",
 
   "dependencies": {
-    "Microsoft.Azure.Storage.Common": "8.6.0-preview",
+    "Microsoft.Azure.Storage.Common": "8.7.0-preview",
     "NETStandard.Library": "1.6.1"
   },
 

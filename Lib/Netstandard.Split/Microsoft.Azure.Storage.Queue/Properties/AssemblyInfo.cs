@@ -5,10 +5,14 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
+[assembly: AssemblyTitle("Microsoft.Azure.Storage.Queue.dll")]
+[assembly: AssemblyDescription("Azure Storage Queue SDK for Windows")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Microsoft.Azure.Storage.Queue")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyProduct("Windows Azure Storage")]
+[assembly: AssemblyCopyright("Copyright © 2013 Microsoft Corp.")]
+[assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
+[assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
 // to COM components.  If you need to access a type in this assembly from
@@ -17,6 +21,10 @@ using System.Runtime.InteropServices;
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("9d154050-0b01-4f70-afa3-8e2176e9cd73")]
+
+[assembly: AssemblyVersion("8.7.0")]
+[assembly: AssemblyFileVersion("8.7.0")]
+[assembly: AssemblyInformationalVersion("8.7.0.0-preview")]
 
 [assembly: InternalsVisibleTo(
     "Microsoft.WindowsAzure.Storage.Test, PublicKey=" +
