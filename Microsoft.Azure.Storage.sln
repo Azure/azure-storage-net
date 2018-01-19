@@ -71,12 +71,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStorageMangler", "Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpMangler", "Test\FaultInjection\HttpMangler\HttpMangler.csproj", "{CA607E8F-2906-4065-A1A9-4A3733F0CC31}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AE09C7CB-89A9-4F74-BA98-CD041CC94D83}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-		Nuget.config = Nuget.config
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Lib\Common.Split\Shared\Blob.Shared\Microsoft.Azure.Storage.Common.Blob.projitems*{04928920-d800-41d5-808d-4ed254c9e4c1}*SharedItemsImports = 4

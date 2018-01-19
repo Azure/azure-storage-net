@@ -42,7 +42,7 @@
     <CodeAnalysisRuleSet>CodeAnalysisWindowsRuntime.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Azure.Storage.Common, Version=8.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=8.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Microsoft.Azure.Storage.Common.8.7.0-preview\lib\win81\Microsoft.Azure.Storage.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>

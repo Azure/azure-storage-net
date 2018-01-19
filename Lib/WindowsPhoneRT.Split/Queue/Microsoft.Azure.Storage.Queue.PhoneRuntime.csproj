@@ -9,12 +9,12 @@
     <ProjectGuid>{614A3DD7-59AA-48BC-B704-845742FB7FFF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.WindowsAzure.Storage</RootNamespace>
+    <RootNamespace>Microsoft.Azure.Storage</RootNamespace>
     <AssemblyName>Microsoft.Azure.Storage.Queue</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
-    <QueueAlignment>512</QueueAlignment>
+    <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{76F1466A-8B6D-4E39-A767-685A06062A39};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -28,7 +28,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyQueue>MSSharedLibKey.snk</AssemblyOriginatorKeyQueue>
+    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
     <DelaySign>true</DelaySign>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
@@ -39,7 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <Reference Include="Microsoft.Azure.Storage.Common, Version=8.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=8.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Microsoft.Azure.Storage.Common.8.7.0-preview\lib\wpa\Microsoft.Azure.Storage.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>
