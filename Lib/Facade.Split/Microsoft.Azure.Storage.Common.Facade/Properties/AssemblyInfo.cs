@@ -31,9 +31,9 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("8.7.0")]
-[assembly: AssemblyFileVersion("8.7.0")]
-[assembly: AssemblyInformationalVersion("8.7.0.0-preview")]
+[assembly: AssemblyVersion("8.7.0.1")]
+[assembly: AssemblyFileVersion("8.7.0.1")]
+[assembly: AssemblyInformationalVersion("8.7.0.1-preview")]
 
 [assembly: InternalsVisibleTo(
     "Microsoft.Azure.Storage.Blob, PublicKey=" +
