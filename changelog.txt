@@ -1,3 +1,5 @@
+- Tables: Added converience method TableQuery.CombineManyFilters() for combining an arbitrary number of query filters.
+
 Changes in 8.7.0:
 - Blobs: Parsing the snapshot parameter when creating a CloudBlockBlob from a URI is now case insensitive
 - Blobs (Desktop): Added a new API supporting downloading a blob to a file by making concurrent service requests.
