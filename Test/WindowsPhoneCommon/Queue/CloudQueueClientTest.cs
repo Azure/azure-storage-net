@@ -16,13 +16,13 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+using Microsoft.Azure.Storage.Queue.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
     [TestClass]
     public class CloudQueueClientTest : QueueTestBase

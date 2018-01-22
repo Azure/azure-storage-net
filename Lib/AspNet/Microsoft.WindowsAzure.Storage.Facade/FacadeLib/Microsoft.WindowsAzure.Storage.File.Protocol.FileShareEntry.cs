@@ -24,9 +24,9 @@ internal sealed class FileShareEntry
         get; internal set;
     }
 
-    internal DateTimeOffset? SnapshotTime
+    public DateTimeOffset? SnapshotTime
     {
-        get; set;
+        get; internal set;
     }
 
     internal FileShareEntry()

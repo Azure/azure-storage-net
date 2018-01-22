@@ -222,6 +222,11 @@ namespace Microsoft.Azure.Storage.Table
             {
                 return new EntityProperty((byte[])value);
             }
+            else if (type == typeof(byte))
+            {
+                byte[] temp = new byte[] { (byte)value};
+                return new EntityProperty(temp);
+            }
             else if (type == typeof(bool))
             {
                 return new EntityProperty((bool)value);
@@ -443,6 +448,11 @@ namespace Microsoft.Azure.Storage.Table
             if (type == typeof(ulong))
             {
                 return unchecked((ulong)(long)propertyValue);
+            }
+
+            if (type == typeof(byte))
+            {
+                return ((byte[])propertyValue)[0];
             }
 
             return Convert.ChangeType(propertyValue, type, CultureInfo.InvariantCulture);

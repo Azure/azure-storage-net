@@ -18,11 +18,14 @@
 namespace Microsoft.Azure.Storage.File
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Threading;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class FileUploadDownloadTest : FileTestBase
@@ -51,6 +54,53 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(0, TestBase.FileBufferManager.OutstandingBufferCount);
             }
         }
+
+#if !(WINDOWS_RT || NETCORE)
+        [TestMethod]
+        [Description("Download a file, with progress")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileDownloadToStreamTestAsyncWithProgress()
+        {
+            byte[] uploadBuffer = GetRandomBuffer(20 * 1024 * 1024);
+
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                using (MemoryStream srcStream = new MemoryStream(uploadBuffer))
+                {
+                    await file.UploadFromStreamAsync(srcStream);
+                }
+
+                List<StorageProgress> progressList = new List<StorageProgress>();
+
+                using (MemoryStream targetStream = new MemoryStream())
+                {
+                    CancellationToken cancellationToken = new CancellationToken();
+                    IProgress<StorageProgress> progressHandler = new Progress<StorageProgress>(progress => progressList.Add(progress));
+
+                    await file.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken);
+
+                    Assert.IsTrue(progressList.Count > 2, "Too few progress received");
+
+                    StorageProgress lastProgress = progressList.Last();
+
+                    Assert.AreEqual(targetStream.Length, lastProgress.BytesTransferred, "Final progress has unexpected value");
+                }
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
 
         [TestMethod]
         [Description("Download a specific range of the file to a stream")]
@@ -90,6 +140,47 @@ namespace Microsoft.Azure.Storage.File
             }
         }
 
+#if !(WINDOWS_RT || NETCORE)
+        [TestMethod]
+        [Description("Upload a stream to a file, with progress")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileUploadFromStreamTestAsyncWithProgress()
+        {
+            byte[] buffer = GetRandomBuffer(20 * 1024 * 1024);
+
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                await share.CreateAsync();
+
+                List<StorageProgress> progressList = new List<StorageProgress>();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                using (MemoryStream srcStream = new MemoryStream(buffer))
+                {
+                    IProgress<StorageProgress> progressHandler = new Progress<StorageProgress>(progress => progressList.Add(progress));
+                    CancellationToken cancellationToken = new CancellationToken();
+
+                    await file.UploadFromStreamAsync(srcStream, null, null, null, progressHandler, cancellationToken);
+
+                    Assert.IsTrue(progressList.Count > 2, "Too few progress received");
+
+                    StorageProgress lastProgress = progressList.Last();
+
+                    Assert.AreEqual(srcStream.Length, lastProgress.BytesTransferred, "Final progress has unexpected value");
+                }
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
         [TestMethod]
         [Description("Upload a stream to a file")]
         [TestCategory(ComponentCategory.File)]

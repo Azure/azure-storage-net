@@ -6,7 +6,7 @@ using System.Text;
 using System.Xml;
 namespace Microsoft.Azure.Storage
 {
-public sealed class RequestResult
+public class RequestResult
 {
 
     public int HttpStatusCode

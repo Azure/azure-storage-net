@@ -1,14 +1,15 @@
 {
   "title": "Microsoft.Azure.Storage.Blob",
-  "version": "1.0.0-*",
+  "version": "8.7.0-preview",
 
   "dependencies": {
-    "Microsoft.Azure.Storage.Common": "8.6.0-preview",
+    "Microsoft.Azure.Storage.Common": "8.7.0-preview",
     "NETStandard.Library": "1.6.1"
   },
 
   "frameworks": {
     "netstandard1.3": {
+      "imports": "dnxcore50"
     }
   },
 

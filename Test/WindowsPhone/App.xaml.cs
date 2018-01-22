@@ -17,14 +17,14 @@
 
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
-using Microsoft.WindowsAzure.Storage.Resources;
+using Microsoft.Azure.Storage.Resources;
 using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Markup;
 using System.Windows.Navigation;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     public partial class App : Application
     {

@@ -1,6 +1,6 @@
-﻿using Microsoft.WindowsAzure.StoragePhone81.Test.Resources;
+﻿using Microsoft.Azure.StoragePhone81.Test.Resources;
 
-namespace Microsoft.WindowsAzure.StoragePhone81.Test
+namespace Microsoft.Azure.StoragePhone81.Test
 {
     /// <summary>
     /// Provides access to string resources.

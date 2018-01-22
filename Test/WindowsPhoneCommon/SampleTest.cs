@@ -16,10 +16,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     [TestClass]
     public class SampleTest : BlobTestBase

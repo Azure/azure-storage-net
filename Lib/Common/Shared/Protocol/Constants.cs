@@ -52,6 +52,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const int DefaultSubStreamBufferSize = (int)(4 * Constants.MB);
 
         /// <summary>
+        /// Default range size when downloading a blob in parallel.
+        /// </summary>
+        public const long DefaultParallelDownloadRangeSizeBytes = 16 * Constants.MB;
+
+        /// <summary>
         /// The maximum size of a blob before it must be separated into blocks.
         /// </summary>
         public const long MaxSingleUploadBlobSize = 256 * MB;
@@ -65,6 +70,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// The maximum size of a single block for Append Blobs.
         /// </summary>
         public const int MaxAppendBlockSize = (int)(4 * Constants.MB);
+
+        /// <summary>
+        /// The maximum allowed time between write calls to the stream for parallel download streams.
+        /// </summary>
+        public const int MaxIdleTimeMs = 120000;
 
         /// <summary>
         /// The maximum size of a range get operation that returns content MD5.
@@ -523,6 +533,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const string AccessTierElement = "AccessTier";
 
         /// <summary>
+        /// Constant for the access tier being inferred.
+        /// </summary>
+        public const string AccessTierInferred = "AccessTierInferred";
+
+        /// <summary>
+        /// Constant for the access tier change time.
+        /// </summary>
+        public const string AccessTierChangeTimeElement = "AccessTierChangeTime";
+
+        /// <summary>
         /// Constant for the archive status.
         /// </summary>
         public const string ArchiveStatusElement = "ArchiveStatus";
@@ -868,7 +888,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "8.6.0-preview";
+            public const string UserAgentProductVersion = "8.7.0-preview";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -1039,6 +1059,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header for the blob tier inferred.
             /// </summary>
             public const string AccessTierInferredHeader = PrefixForStorageHeader + "access-tier-inferred";
+
+            /// <summary>
+            /// Header for the last time the tier was modified.
+            /// </summary>
+            public const string AccessTierChangeTimeHeader = PrefixForStorageHeader + "access-tier-change-time";
 
             /// <summary>
             /// Header that specifies blob caching control.

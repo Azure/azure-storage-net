@@ -1,5 +1,21 @@
+<<<<<<< HEAD
 Changes in 9.x.x:
 - Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
+=======
+Changes in 8.7.0:
+- Blobs: Parsing the snapshot parameter when creating a CloudBlockBlob from a URI is now case insensitive
+- Blobs (Desktop): Added a new API supporting downloading a blob to a file by making concurrent service requests.
+- Blobs (Desktop): Fixed a race-condition where cancelling a blob upload could result in deadlock.
+- Blobs: Fixed StorageException when storing encrypted blobs with Formatting.Indented set in default JsonSerializerSettings.
+- Blobs/Files: Added support for progress notification in async upload and download APIs.
+
+Changes in 8.6.0 :
+- Tables : Added support for Byte type property in TableEntity Flatten/ConvertBack methods.
+- Blobs : Added support for the last time blobTier was modified.
+
+Changes in 8.5.0 :
+- Files: Added support for creating the snapshot of a share. See the service documentation for more information on how to use this API.
+>>>>>>> cd8d5e200c8dda2a20c71acbd0b0a21eae85b739
 
 Changes in 8.4.0 :
 - BlockBlobs: For Blob Storage Accounts, added support for getting and setting the tier on a block blob.

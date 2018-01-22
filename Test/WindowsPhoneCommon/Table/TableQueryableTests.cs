@@ -21,15 +21,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 
-using Microsoft.WindowsAzure.Storage.Table.Entities;
-using Microsoft.WindowsAzure.Storage.Table.Queryable;
+using Microsoft.Azure.Storage.Table.Entities;
+using Microsoft.Azure.Storage.Table.Queryable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableQueryableTests : TableTestBase

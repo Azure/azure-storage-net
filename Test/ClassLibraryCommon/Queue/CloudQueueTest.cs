@@ -1462,11 +1462,12 @@ namespace Microsoft.Azure.Storage.Queue
                 catch (StorageException)
                 {
                     exceptionThrown = true;
-                    Assert.IsNotNull(actualIP);
+                    //The IP should not be included in the error details for security reasons
+                    Assert.IsNull(actualIP);
                 }
 
                 Assert.IsTrue(exceptionThrown);
-                ipAddressOrRange = generateFinalIPAddressOrRange(actualIP);
+                ipAddressOrRange = null;
                 queueToken = queue.GetSharedAccessSignature(policy, null, null, ipAddressOrRange);
                 queueSAS = new StorageCredentials(queueToken);
                 queueSASUri = queueSAS.TransformUri(queue.Uri);

@@ -6,11 +6,11 @@ using System.Resources;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Microsoft.WindowsAzure.StoragePhone81.Test")]
+[assembly: AssemblyTitle("Microsoft.Azure.StoragePhone81.Test")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("Microsoft.WindowsAzure.StoragePhone81.Test")]
+[assembly: AssemblyProduct("Microsoft.Azure.StoragePhone81.Test")]
 [assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
 [assembly: AssemblyCulture("")]
@@ -34,7 +34,7 @@ using System.Resources;
 // by using the '*' as shown below:
 
 
-[assembly: AssemblyVersion("8.4.0.0")]
-[assembly: AssemblyFileVersion("8.4.0.0")]
+[assembly: AssemblyVersion("8.7.0.0")]
+[assembly: AssemblyFileVersion("8.7.0.0")]
 
 [assembly: NeutralResourcesLanguageAttribute("en-US")]

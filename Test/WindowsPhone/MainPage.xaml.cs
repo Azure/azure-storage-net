@@ -21,7 +21,7 @@ using Microsoft.VisualStudio.TestPlatform.TestExecutor;
 using System.Threading;
 using vstest_executionengine_platformbridge;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     public partial class MainPage : PhoneApplicationPage
     {

@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Microsoft.WindowsAzure.StorageRT.Test.dll")]
+[assembly: AssemblyTitle("Microsoft.Azure.StorageRT.Test.dll")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("8.4.0.0")]
-[assembly: AssemblyFileVersion("8.4.0.0")]
+[assembly: AssemblyVersion("8.7.0.0")]
+[assembly: AssemblyFileVersion("8.7.0.0")]
 
 [assembly: ComVisible(false)]

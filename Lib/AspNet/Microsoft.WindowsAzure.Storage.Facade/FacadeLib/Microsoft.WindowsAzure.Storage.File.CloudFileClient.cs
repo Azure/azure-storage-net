@@ -136,7 +136,7 @@ public class CloudFileClient
     {
         throw new System.NotImplementedException();
     }
-    internal CloudFileShare GetShareReference(string shareName, DateTimeOffset? snapshotTime)
+    public CloudFileShare GetShareReference(string shareName, DateTimeOffset? snapshotTime)
     {
         throw new System.NotImplementedException();
     }

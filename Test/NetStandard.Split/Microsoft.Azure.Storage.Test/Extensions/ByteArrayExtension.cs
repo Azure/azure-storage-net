@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------------------------
-// <copyright file="TestBase.cs" company="Microsoft">
+// <copyright file="ByteArrayExtension.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,33 +15,21 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage.Test.Extensions
 {
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using System.IO;
-    using System.Xml.Linq;
-
     /// <summary>
-    /// Base test class
+    /// byte array Extension to share code with WinRT calls
     /// </summary>
-    [TestClass]
-    public partial class TestBase
+    internal static class ByteArrayExtension
     {
         /// <summary>
-        /// Initialize unit tests with configuration
+        /// return the byte array itself
         /// </summary>
-        static TestBase()
-        {   
-            XElement element;
-            using (var stream = new FileStream(TestConfigurations.DefaultTestConfigFilePath, FileMode.Open))
-            {
-                element = XElement.Load(stream);
-            }
-
-            TestConfigurations configurations = TestConfigurations.ReadFromXml(element);
-
-            TestBase.Initialize(configurations);
+        /// <param name="buffer">input buffer</param>
+        /// <returns>The input buffer.</returns>
+        public static byte[] AsBuffer(this byte[] buffer)
+        {
+            return buffer;
         }
     }
 }
-

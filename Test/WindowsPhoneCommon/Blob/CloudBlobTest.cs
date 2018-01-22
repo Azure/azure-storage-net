@@ -14,7 +14,7 @@
 //    limitations under the License.
 // </copyright>
 // -----------------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
     using System;

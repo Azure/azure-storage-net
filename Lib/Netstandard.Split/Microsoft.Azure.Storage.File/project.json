@@ -1,13 +1,15 @@
 {
-  "version": "1.0.0-*",
+  "title": "Microsoft.Azure.Storage.File",
+  "version": "8.7.0-preview",
 
   "dependencies": {
-    "Microsoft.Azure.Storage.Common": "8.4.0.0",
+    "Microsoft.Azure.Storage.Common": "8.7.0-preview",
     "NETStandard.Library": "1.6.1"
   },
 
   "frameworks": {
     "netstandard1.3": {
+      "imports": "dnxcore50"
     }
   },
 

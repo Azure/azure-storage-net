@@ -1,22 +1,20 @@
 {
-    "title": "Microsoft.Azure.Storage.Common",
-    "version": "8.6.0.0-preview",
+  "title": "Microsoft.Azure.Storage.Common",
+  "version": "8.7.0-preview",
+  "authors": [ "Microsoft Corporation" ],
+  "description": "Azure Storage Common SDK for NetCore",
 
-    "authors": [ "Microsoft Corporation" ],
-    "description": "Azure Storage Common SDK for NetCore",
-    "dependencies": {
-
-      "Newtonsoft.Json": "10.0.2"
+  "dependencies": {
+    "NETStandard.Library": "1.6.1"
   },
 
-    "frameworks": {
-        "netstandard1.0": {
-            "dependencies": {
-                "NETStandard.Library": "1.6.1"
-            }
-        }
+  "frameworks": {
+    "netstandard1.0": {
+      "imports": "dnxcore50"
 
-    },
+    }
+
+  },
 
   "buildOptions": {
     "allowUnsafe": false,

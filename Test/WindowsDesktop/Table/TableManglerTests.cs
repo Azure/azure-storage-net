@@ -16,11 +16,11 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Test.Network;
-using Microsoft.WindowsAzure.Test.Network.Behaviors;
+using Microsoft.Azure.Test.Network;
+using Microsoft.Azure.Test.Network.Behaviors;
 using System;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableManglerTests : TableTestBase

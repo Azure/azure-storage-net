@@ -23,7 +23,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class FileReadStreamTest : FileTestBase

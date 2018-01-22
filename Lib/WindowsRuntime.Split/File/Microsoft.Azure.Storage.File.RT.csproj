@@ -42,8 +42,9 @@
     <CodeAnalysisRuleSet>CodeAnalysisWindowsRuntime.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\portable-net45+win8+wpa81+wp8\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=8.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Microsoft.Azure.Storage.Common.8.7.0-preview\lib\win81\Microsoft.Azure.Storage.Common.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
@@ -68,19 +69,13 @@
     <Compile Include="..\..\Common\File\Account\*.cs">
       <Link>File\Account\Account</Link>
     </Compile>
-	<Compile Include="..\..\Common\File\Shared\*.cs">
+    <Compile Include="..\..\Common\File\Shared\*.cs">
       <Link>File\Shared\Shared</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MSSharedLibKey.snk" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Common.Split\Runtime\Microsoft.Azure.Storage.Common.RT.csproj">
-      <Project>{f05021ea-cdfc-4cab-a109-cfccd8b8b882}</Project>
-      <Name>Microsoft.Azure.Storage.Common.RT</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>

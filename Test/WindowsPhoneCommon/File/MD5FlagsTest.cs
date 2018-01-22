@@ -18,7 +18,7 @@
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class MD5FlagsTest : FileTestBase

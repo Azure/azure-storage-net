@@ -87,9 +87,6 @@
     <Compile Include="..\Common\Queue\*.cs">
       <Link>Queue\Queue</Link>
     </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
     <Compile Include="..\Common\TestConfigProcess\*.cs">
       <Link>TestConfigProcess\TestConfigProcess</Link>
     </Compile>
@@ -109,12 +106,6 @@
     <Compile Include="..\WindowsRuntime\TestHelper.cs" />
     <Compile Include="..\WindowsRuntime\Queue\*.cs">
       <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\Table\SAS\*.cs">
-      <Link>Table\SAS\SAS</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +130,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="packages.config" />
     <None Include="UnitTestApp1_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
@@ -150,10 +142,6 @@
     <Content Include="Assets\WideLogo.scale-240.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lib\Common.Split\PhoneRuntime\Microsoft.Azure.Storage.Common.PhoneRuntime.csproj">
-      <Project>{008d78b8-5c78-4bd7-9779-d2a6b2d35091}</Project>
-      <Name>Microsoft.Azure.Storage.Common.PhoneRuntime</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Lib\WindowsPhoneRT.Split\Blob\Microsoft.Azure.Storage.Blob.PhoneRuntime.csproj">
       <Project>{1854e0c4-e776-4efb-88ad-43751be15412}</Project>
       <Name>Microsoft.Azure.Storage.Blob.PhoneRuntime</Name>
@@ -166,13 +154,19 @@
       <Project>{614a3dd7-59aa-48bc-b704-845742fb7fff}</Project>
       <Name>Microsoft.Azure.Storage.Queue.PhoneRuntime</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Lib\WindowsPhoneRT.Split\Table\Microsoft.Azure.Storage.Table.PhoneRuntime.csproj">
-      <Project>{1b37e1b6-f55a-41a9-9ec8-7100c7249c19}</Project>
-      <Name>Microsoft.Azure.Storage.Table.PhoneRuntime</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=8.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.Azure.Storage.Common.8.7.0-preview\lib\wpa\Microsoft.Azure.Storage.Common.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.10.0.2\lib\portable-net45+win8+wpa81+wp8\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

@@ -553,6 +553,24 @@ namespace Microsoft.Azure.Storage.Blob
         /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginUploadFromStream(Stream source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        {
+            return this.BeginUploadFromStreamHelper(source, null /* length */, premiumPageBlobTier, accessCondition, options, operationContext, progressIncrementer, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
@@ -585,7 +603,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -603,16 +621,54 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        {
+            return this.BeginUploadFromStreamHelper(source, length, premiumPageBlobTier, accessCondition, options, operationContext, progressIncrementer, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         [DoesServiceRequest]
         internal ICancellableAsyncResult BeginUploadFromStreamHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginUploadFromStreamHelper(source, length, premiumPageBlobTier, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginUploadFromStreamHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -663,7 +719,7 @@ namespace Microsoft.Azure.Storage.Blob
                             storageAsyncResult.OperationState = blobStream;
 
                             source.WriteToAsync(
-                                blobStream,
+                                progressIncrementer.CreateProgressIncrementingStream(blobStream),
                                 length,
                                 null /* maxLength */,
                                 false,
@@ -804,6 +860,23 @@ namespace Microsoft.Azure.Storage.Blob
         /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromStreamAsync(Stream source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromStream, this.EndUploadFromStream, source, premiumPageBlobTier, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -873,6 +946,23 @@ namespace Microsoft.Azure.Storage.Blob
             return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromStream, this.EndUploadFromStream, source, length, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
         }
 
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a stream to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+        /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromStreamAsync(Stream source, long length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromStream, this.EndUploadFromStream, source, length, premiumPageBlobTier, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+        }
 #if SYNC
         /// <summary>
         /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
@@ -950,6 +1040,24 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromFile(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginUploadFromFile(path, premiumPageBlobTier, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginUploadFromFile(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        {
             CommonUtility.AssertNotNull("path", path);
 
             FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
@@ -960,7 +1068,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                ICancellableAsyncResult asyncResult = this.BeginUploadFromStream(fileStream, premiumPageBlobTier, accessCondition, options, operationContext, this.UploadFromFileCallback, storageAsyncResult);
+                ICancellableAsyncResult asyncResult = this.BeginUploadFromStream(fileStream, premiumPageBlobTier, accessCondition, options, operationContext, progressIncrementer, this.UploadFromFileCallback, storageAsyncResult);
                 storageAsyncResult.CancelDelegate = asyncResult.Cancel;
                 return storageAsyncResult;
             }
@@ -1071,7 +1179,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1081,6 +1189,23 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task UploadFromFileAsync(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromFile, this.EndUploadFromFile, path, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromFileAsync(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromFile, this.EndUploadFromFile, path, premiumPageBlobTier, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
         }
 #endif
 
@@ -1171,10 +1296,30 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginUploadFromByteArray(buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="buffer">An array of bytes.</param>
+        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
+        /// <param name="count">The number of bytes to be written to the blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        {
             CommonUtility.AssertNotNull("buffer", buffer);
 
             SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
-            return this.BeginUploadFromStream(stream, premiumPageBlobTier, accessCondition, options, operationContext, callback, state);
+            return this.BeginUploadFromStream(stream, premiumPageBlobTier, accessCondition, options, operationContext, progressIncrementer, callback, state);
         }
 
         /// <summary>
@@ -1263,6 +1408,25 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromByteArray, this.EndUploadFromByteArray, buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="buffer">An array of bytes.</param>
+        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
+        /// <param name="count">The number of bytes to be written to the blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginUploadFromByteArray, this.EndUploadFromByteArray, buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
         }
 #endif
 
@@ -2164,9 +2328,34 @@ namespace Microsoft.Azure.Storage.Blob
         /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
         /// to <c>null</c>, then the client library will calculate the MD5 value internally.
         /// </remarks>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginWritePages(pageData, startOffset, contentMD5, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to write pages to a page blob.
+        /// </summary>
+        /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
         {
             CommonUtility.AssertNotNull("pageData", pageData);
 
@@ -2177,7 +2366,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             if (pageData.CanSeek && !requiresContentMD5)
             {
-                this.WritePagesHandler(pageData, startOffset, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
+                this.WritePagesHandler(progressIncrementer.CreateProgressIncrementingStream(pageData), startOffset, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
             }
             else
             {
@@ -2229,7 +2418,7 @@ namespace Microsoft.Azure.Storage.Blob
                                 }
 
                                 seekableStream.Position = startPosition;
-                                this.WritePagesHandler(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
+                                this.WritePagesHandler(progressIncrementer.CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
                             }
                             catch (Exception e)
                             {
@@ -2380,6 +2569,30 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginWritePages, this.EndWritePages, pageData, startOffset, contentMD5, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to write pages to a page blob.
+        /// </summary>
+        /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginWritePages, this.EndWritePages, pageData, startOffset, contentMD5, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
         }
 #endif
 

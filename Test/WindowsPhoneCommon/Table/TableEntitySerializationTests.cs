@@ -16,11 +16,11 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Table.Entities;
+using Microsoft.Azure.Storage.Table.Entities;
 using System;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableEntitySerializationTests : TableTestBase

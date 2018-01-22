@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="shareAddress">The absolute URI to the share.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-        internal CloudFileShare(Uri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
+        public CloudFileShare(Uri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
             : this(new StorageUri(shareAddress), snapshotTime, credentials)
         {
         }
@@ -79,7 +79,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="shareAddress">The absolute URI to the share.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-        internal CloudFileShare(StorageUri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
+        public CloudFileShare(StorageUri shareAddress, DateTimeOffset? snapshotTime, StorageCredentials credentials)
         {
             CommonUtility.AssertNotNull("shareAddress", shareAddress);
             CommonUtility.AssertNotNull("shareAddress", shareAddress.PrimaryUri);
@@ -151,13 +151,13 @@ namespace Microsoft.Azure.Storage.File
         /// <remarks>
         /// If the share is not a snapshot, the value of this property is <c>null</c>.
         /// </remarks>
-        internal DateTimeOffset? SnapshotTime { get; set; }
+        public DateTimeOffset? SnapshotTime { get; internal set; }
 
         /// <summary>
         /// Gets a value indicating whether this share is a snapshot.
         /// </summary>
         /// <value><c>true</c> if this share is a snapshot; otherwise, <c>false</c>.</value>
-        internal bool IsSnapshot
+        public bool IsSnapshot
         {
             get
             {
@@ -169,7 +169,7 @@ namespace Microsoft.Azure.Storage.File
         /// Gets the absolute URI to the share, including query string information if the share is a snapshot.
         /// </summary>
         /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the share, including snapshot query information if the share is a snapshot.</value>
-        internal Uri SnapshotQualifiedUri
+        public Uri SnapshotQualifiedUri
         {
             get
             {
@@ -191,7 +191,7 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <value>An object of type <see cref="StorageUri"/> containing the share's URIs for both the primary and secondary locations, 
         /// including snapshot query information if the share is a snapshot.</value>
-        internal StorageUri SnapshotQualifiedStorageUri
+        public StorageUri SnapshotQualifiedStorageUri
         {
             get
             {

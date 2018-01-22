@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+using Microsoft.Azure.Storage.Blob.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,7 +26,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     [TestClass]
     public class LeaseTests : BlobTestBase

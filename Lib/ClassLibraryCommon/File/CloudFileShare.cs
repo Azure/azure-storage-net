@@ -334,7 +334,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="CloudFileShare"/> object that is a share snapshot.</returns>
         [DoesServiceRequest]
-        internal CloudFileShare Snapshot(IDictionary<string, string> metadata = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        public CloudFileShare Snapshot(IDictionary<string, string> metadata = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -352,7 +352,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal ICancellableAsyncResult BeginSnapshot(AsyncCallback callback, object state)
+        public ICancellableAsyncResult BeginSnapshot(AsyncCallback callback, object state)
         {
             return this.BeginSnapshot(null /* metadata */, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
@@ -368,7 +368,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal ICancellableAsyncResult BeginSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public ICancellableAsyncResult BeginSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -385,7 +385,7 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         /// <returns>A <see cref="CloudFileShare"/> object that is a share snapshot.</returns>
-        internal CloudFileShare EndSnapshot(IAsyncResult asyncResult)
+        public CloudFileShare EndSnapshot(IAsyncResult asyncResult)
         {
             return Executor.EndExecuteAsync<CloudFileShare>(asyncResult);
         }
@@ -396,7 +396,7 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal Task<CloudFileShare> SnapshotAsync()
+        public Task<CloudFileShare> SnapshotAsync()
         {
             return this.SnapshotAsync(CancellationToken.None);
         }
@@ -407,7 +407,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
+        public Task<CloudFileShare> SnapshotAsync(CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, cancellationToken);
         }
@@ -421,7 +421,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             return this.SnapshotAsync(metadata, accessCondition, options, operationContext, CancellationToken.None);
         }
@@ -436,7 +436,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFileShare"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public Task<CloudFileShare> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, metadata, accessCondition, options, operationContext, cancellationToken);
         }
@@ -463,7 +463,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        internal virtual void Delete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual void Delete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
@@ -480,11 +480,11 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual ICancellableAsyncResult BeginDelete(AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginDelete(AsyncCallback callback, object state)
         {
             return this.BeginDelete(DeleteShareSnapshotsOption.None, null /* accessCondition */, null /* options */, null /*operationContext */, callback, state);
         }
-        
+
         /// <summary>
         /// Begins an asynchronous operation to delete a share.
         /// </summary>
@@ -495,7 +495,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             return this.BeginDelete(DeleteShareSnapshotsOption.None, accessCondition, options, operationContext, callback, state);
         }
@@ -511,7 +511,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual ICancellableAsyncResult BeginDelete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
+        public virtual ICancellableAsyncResult BeginDelete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -591,7 +591,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        internal virtual Task DeleteAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task DeleteAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);
         }
@@ -620,7 +620,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns><c>true</c> if the share did not already exist and was created; otherwise <c>false</c>.</returns>
         [DoesServiceRequest]
-        internal virtual bool DeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual bool DeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
@@ -706,7 +706,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="IAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal virtual ICancellableAsyncResult BeginDeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
+        public virtual ICancellableAsyncResult BeginDeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
@@ -878,7 +878,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        internal virtual Task<bool> DeleteIfExistsAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
+        public virtual Task<bool> DeleteIfExistsAsync(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);

@@ -20,7 +20,6 @@ namespace Microsoft.Azure.Storage.Core
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.RetryPolicies;
-    using Microsoft.Azure.Storage.Table;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -29,7 +28,7 @@ namespace Microsoft.Azure.Storage.Core
     using System.Threading;
     using System.Threading.Tasks;
     [TestClass]
-    public class RetryPoliciesTests : TableTestBase
+    public class RetryPoliciesTests : BlobTestBase
     {
         [TestMethod]
         [Description("Test to ensure that the time when we wait for a retry is cancellable")]

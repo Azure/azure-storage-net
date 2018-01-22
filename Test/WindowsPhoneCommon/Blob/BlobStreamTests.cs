@@ -21,7 +21,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     [TestClass]
     public class BlobStreamTests : BlobTestBase

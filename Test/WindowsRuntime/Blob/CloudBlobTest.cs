@@ -137,6 +137,11 @@ namespace Microsoft.Azure.Storage.Blob
                 await snapshot1Clone.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties);
 
+                // The query parser should not be case sensitive in detecting a snapshot in the query string
+                CloudBlob snapshotParseVerifier = new CloudBlob(new Uri(blob.Uri + "?sNapshOt=" + snapshot1.SnapshotTime.Value.ToString("O")), blob.ServiceClient.Credentials);
+                Assert.IsNotNull(snapshotParseVerifier.SnapshotTime, "Snapshot parse verifier did not successfully detect the snapshot time");
+                Assert.AreEqual(snapshot1.SnapshotTime.Value, snapshotParseVerifier.SnapshotTime.Value);
+
                 CloudBlob snapshotCopy = container.GetBlobReference("blob2");
                 await snapshotCopy.StartCopyAsync(TestHelper.Defiddler(snapshot1.Uri));
                 await WaitForCopyAsync(snapshotCopy);

@@ -6,7 +6,7 @@ using System.Resources;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Microsoft.WindowsAzure.StorageWP.Test.dll")]
+[assembly: AssemblyTitle("Microsoft.Azure.StorageWP.Test.dll")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
@@ -33,7 +33,7 @@ using System.Resources;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("8.4.0.0")]
-[assembly: AssemblyFileVersion("8.4.0.0")]
+[assembly: AssemblyVersion("8.7.0.0")]
+[assembly: AssemblyFileVersion("8.7.0.0")]
 
 [assembly: NeutralResourcesLanguageAttribute("en-US")]

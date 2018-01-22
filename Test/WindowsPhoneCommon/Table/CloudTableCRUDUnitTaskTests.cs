@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     /// <summary>
     /// Summary description for CloudTableCRUDUnitTaskTests

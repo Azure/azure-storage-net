@@ -6,9 +6,9 @@ using System.Windows.Markup;
 using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
-using Microsoft.WindowsAzure.StoragePhone81.Test.Resources;
+using Microsoft.Azure.StoragePhone81.Test.Resources;
 
-namespace Microsoft.WindowsAzure.StoragePhone81.Test
+namespace Microsoft.Azure.StoragePhone81.Test
 {
     public partial class App : Application
     {

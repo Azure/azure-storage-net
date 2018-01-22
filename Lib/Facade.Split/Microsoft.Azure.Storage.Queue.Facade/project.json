@@ -1,22 +1,18 @@
 {
-    "title": "Microsoft.Azure.Storage.Queue",
-    "version": "8.6.0-preview.0",
-
-    "authors": [ "Microsoft Corporation" ],
-    "description": "Azure Storage Queue SDK for NetCore",
+  "title": "Microsoft.Azure.Storage.Queue",
+  "version": "8.7.0-preview",
+  "authors": [ "Microsoft Corporation" ],
+  "description": "Azure Storage Queue SDK for NetCore",
   "dependencies": {
-    "Microsoft.Azure.Storage.Common.Facade": "8.6.0-preview.0",
-    "Newtonsoft.Json": "10.0.2"
+    "Microsoft.Azure.Storage.Common": "8.7.0-preview",
+    "NETStandard.Library": "1.6.1"
   },
 
-    "frameworks": {
-        "netstandard1.0": {
-            "dependencies": {
-                "NETStandard.Library": "1.6.1"
-            }
-        }
-
-    },
+  "frameworks": {
+    "netstandard1.0": {
+      "imports": "dnxcore50"
+    }
+  },
 
   "buildOptions": {
     "allowUnsafe": false,

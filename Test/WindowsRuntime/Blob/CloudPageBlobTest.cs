@@ -1416,7 +1416,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
                 CloudPageBlob blob3 = (CloudPageBlob)results.Results.ToList().First();
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
-                Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob3.Properties.BlobTierInferred.HasValue);
 
                 byte[] data = GetRandomBuffer(512);
 
@@ -1491,7 +1491,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobResultSegment results = await container.ListBlobsSegmentedAsync(null);
                 CloudPageBlob blob3 = (CloudPageBlob)results.Results.ToList().First();
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
-                Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
+                Assert.IsFalse(blob3.Properties.BlobTierInferred.HasValue);
                 Assert.IsFalse(blob3.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob3.Properties.RehydrationStatus.HasValue);
 

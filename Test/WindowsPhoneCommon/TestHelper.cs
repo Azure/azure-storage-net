@@ -21,7 +21,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     public partial class TestHelper
     {

@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Test.Network
+namespace Microsoft.Azure.Test.Network
 {
     /// <summary>
     /// Holds well-known information about Windows Azure Storage.

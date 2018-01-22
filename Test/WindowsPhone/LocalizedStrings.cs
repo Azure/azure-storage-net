@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.WindowsAzure.Storage.Resources;
+using Microsoft.Azure.Storage.Resources;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     /// <summary>
     /// Provides access to string resources.

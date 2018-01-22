@@ -16,9 +16,13 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 #if !NETCORE
@@ -74,6 +78,296 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(0, TestBase.BlobBufferManager.OutstandingBufferCount);
             }
         }
+
+#if NETCORE
+        [TestMethod]
+        [Description("Upload a stream to a block blob, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobUploadFromStreamTestAsyncWithProgress()
+        {
+            await DoBlobUploadFromStreamTestAsyncWithProgress(
+               () => this.testContainer.GetBlockBlobReference("blob1"),
+               (blob, stream, progressHandler, cancellationToken) =>
+                   blob.UploadFromStreamAsync(stream, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken)
+                   );
+        }
+
+        [TestMethod]
+        [Description("Upload a stream to a page blob, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobUploadFromStreamTestAsyncWithProgress()
+        {
+            await DoBlobUploadFromStreamTestAsyncWithProgress(
+               () => this.testContainer.GetPageBlobReference("blob1"),
+               (blob, stream, progressHandler, cancellationToken) =>
+                   blob.UploadFromStreamAsync(stream, null, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken),
+               5000
+                   );
+        }
+
+        [TestMethod]
+        [Description("Upload a stream to an append blob, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobUploadFromStreamTestAsyncWithProgress()
+        {
+            await DoBlobUploadFromStreamTestAsyncWithProgress(
+               () => this.testContainer.GetAppendBlobReference("blob1"),
+               (blob, stream, progressHandler, cancellationToken) =>
+                   blob.UploadFromStreamAsync(stream, null, null, null, progressHandler, cancellationToken)
+                   );
+        }
+
+        private static async Task DoBlobUploadFromStreamTestAsyncWithProgress<T>(
+            Func<T> blobFactory,
+            Func<T, Stream, IProgress<StorageProgress>, CancellationToken, Task> uploadTask,
+            int delay = 0
+            )
+            where T : ICloudBlob
+        {
+            byte[] uploadBuffer = GetRandomBuffer(2 * 1024 * 1024);
+
+            T uploadBlob = blobFactory();
+            byte[] buffer = GetRandomBuffer(2 * 1024 * 1024);
+
+            T blob = blobFactory();
+            List<StorageProgress> progressList = new List<StorageProgress>();
+
+            using (MemoryStream srcStream = new MemoryStream(buffer))
+            {
+                CancellationToken cancellationToken = new CancellationToken();
+                IProgress<StorageProgress> progressHandler = new Progress<StorageProgress>(progress => progressList.Add(progress));
+
+                await uploadTask(blob, srcStream, progressHandler, cancellationToken);
+
+                await Task.Delay(delay);
+
+                Assert.IsTrue(progressList.Count > 2, "Too few progress received");
+
+                StorageProgress lastProgress = progressList.Last();
+
+                Assert.AreEqual(srcStream.Length, srcStream.Position, "Final position has unexpected value");
+                Assert.AreEqual(srcStream.Length, lastProgress.BytesTransferred, "Final progress has unexpected value");
+            }
+        }
+
+        [TestMethod]
+        [Description("Download a block blob to a stream, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobDownloadToStreamTestAsyncWithProgress()
+        {
+            await DoBlobDownloadToStreamTestAsyncWithProgress(
+                () => this.testContainer.GetBlockBlobReference("blob1"),
+                (blob, targetStream, progressHandler, cancellationToken) =>
+                    blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
+                    );
+        }
+
+        [TestMethod]
+        [Description("Download a page blob to a stream, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobDownloadToStreamTestAsyncWithProgress()
+        {
+            await DoBlobDownloadToStreamTestAsyncWithProgress(
+                () => this.testContainer.GetPageBlobReference("blob1"),
+                (blob, targetStream, progressHandler, cancellationToken) =>
+                    blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
+                    );
+        }
+
+        [TestMethod]
+        [Description("Download an append blob to a stream, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobDownloadToStreamTestAsyncWithProgress()
+        {
+            await DoBlobDownloadToStreamTestAsyncWithProgress(
+                () => this.testContainer.GetAppendBlobReference("blob1"),
+                (blob, targetStream, progressHandler, cancellationToken) =>
+                    blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
+                    );
+        }
+
+        private static async Task DoBlobDownloadToStreamTestAsyncWithProgress<T>(
+            Func<T> blobFactory,
+            Func<T, Stream, IProgress<StorageProgress>, CancellationToken, Task> downloadTask
+            )
+            where T : ICloudBlob
+        {
+            byte[] uploadBuffer = GetRandomBuffer(20 * 1024 * 1024);
+
+            T uploadBlob = blobFactory();
+
+            using (MemoryStream srcStream = new MemoryStream(uploadBuffer))
+            {
+                await uploadBlob.UploadFromStreamAsync(srcStream);
+            }
+
+            T downloadBlob = blobFactory();
+            List<StorageProgress> progressList = new List<StorageProgress>();
+
+            using (MemoryStream targetStream = new MemoryStream())
+            {
+                CancellationToken cancellationToken = new CancellationToken();
+                IProgress<StorageProgress> progressHandler = new Progress<StorageProgress>(progress => progressList.Add(progress));
+
+                await downloadTask(downloadBlob, targetStream, progressHandler, cancellationToken);
+
+                Assert.IsTrue(progressList.Count > 2, "Too few progress received");
+
+                StorageProgress lastProgress = progressList.Last();
+
+                Assert.AreEqual(targetStream.Length, lastProgress.BytesTransferred, "Final progress has unexpected value");
+            }
+        }
+
+        [TestMethod]
+        [Description("Test blob upload using parallel multi-filestream upload strategy.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobTestParallelUploadFromFileStreamWithProgress()
+        {
+            CloudBlobContainer container = this.testContainer;
+            string inputFileName = "i_" + Path.GetRandomFileName();
+            string outputFileName = "o_" + Path.GetRandomFileName();
+            int bufferSize_25 = 25 * 1024 * 1024;
+            int writeSize_5 = 5 * 1024 * 1024;
+            int writeSize_6_plus_1 = 6 * 1024 * 1024 + 1;
+            int delay = 5000;
+
+            BlobRequestOptions options = new BlobRequestOptions()
+            {
+                StoreBlobContentMD5 = false,
+                ParallelOperationThreadCount = 1
+            };
+
+            byte[] buffer = GetRandomBuffer(bufferSize_25);
+
+            using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+            {
+                fs.Write(buffer, 0, buffer.Length);
+            }
+
+            CloudBlockBlob blob1 = container.GetBlockBlobReference("blob1");
+            CloudBlockBlob blob2 = container.GetBlockBlobReference("blob2");
+            CloudBlockBlob blob3 = container.GetBlockBlobReference("blob3");
+            CloudBlockBlob blob4 = container.GetBlockBlobReference("blob4");
+
+            List<StorageProgress> uploadProgressList = new List<StorageProgress>();
+            IProgress<StorageProgress> uploadProgressHandler = new Progress<StorageProgress>(progress => uploadProgressList.Add(progress));
+
+            List<StorageProgress> downloadProgressList = new List<StorageProgress>();
+            IProgress<StorageProgress> downloadProgressHandler = new Progress<StorageProgress>(progress => downloadProgressList.Add(progress));
+
+            StorageProgress lastUploadProgress;
+            StorageProgress lastDownloadProgress;
+
+            blob1.StreamWriteSizeInBytes = writeSize_5;
+            await blob1.UploadFromFileAsync(inputFileName, default(AccessCondition), options, default(OperationContext), uploadProgressHandler, CancellationToken.None);
+            await blob1.DownloadToFileAsync(outputFileName, FileMode.Create, default(AccessCondition), options, default(OperationContext), downloadProgressHandler, CancellationToken.None);
+
+            await Task.Delay(delay);
+
+            lastUploadProgress = uploadProgressList.Last();
+            lastDownloadProgress = downloadProgressList.Last();
+
+            Assert.AreEqual(lastUploadProgress.BytesTransferred, lastDownloadProgress.BytesTransferred);
+            Assert.AreEqual(buffer.Length, lastUploadProgress.BytesTransferred);
+
+            uploadProgressList.Clear();
+            downloadProgressList.Clear();
+
+            using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                 outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+            {
+                TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+            }
+
+            blob2.StreamWriteSizeInBytes = writeSize_5;
+            options.ParallelOperationThreadCount = 4;
+            await blob2.UploadFromFileAsync(inputFileName, default(AccessCondition), options, default(OperationContext), uploadProgressHandler, CancellationToken.None);
+            await blob2.DownloadToFileAsync(outputFileName, FileMode.Create, default(AccessCondition), options, default(OperationContext), downloadProgressHandler, CancellationToken.None);
+
+            await Task.Delay(delay);
+
+            lastUploadProgress = uploadProgressList.Last();
+            lastDownloadProgress = downloadProgressList.Last();
+
+            Assert.AreEqual(lastUploadProgress.BytesTransferred, lastDownloadProgress.BytesTransferred);
+            Assert.AreEqual(buffer.Length, lastUploadProgress.BytesTransferred);
+
+            uploadProgressList.Clear();
+            downloadProgressList.Clear();
+
+            using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                 outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+            {
+                TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+            }
+
+            blob3.StreamWriteSizeInBytes = writeSize_6_plus_1;
+            options.ParallelOperationThreadCount = 1;
+            await blob3.UploadFromFileAsync(inputFileName, default(AccessCondition), options, default(OperationContext), uploadProgressHandler, CancellationToken.None);
+            await blob3.DownloadToFileAsync(outputFileName, FileMode.Create, default(AccessCondition), options, default(OperationContext), downloadProgressHandler, CancellationToken.None);
+
+            await Task.Delay(delay);
+
+            lastUploadProgress = uploadProgressList.Last();
+            lastDownloadProgress = downloadProgressList.Last();
+
+            Assert.AreEqual(lastUploadProgress.BytesTransferred, lastDownloadProgress.BytesTransferred);
+            Assert.AreEqual(buffer.Length, lastUploadProgress.BytesTransferred);
+
+            uploadProgressList.Clear();
+            downloadProgressList.Clear();
+
+            using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                 outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+            {
+                TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+            }
+
+            blob4.StreamWriteSizeInBytes = writeSize_6_plus_1;
+            options.ParallelOperationThreadCount = 3;
+            await blob4.UploadFromFileAsync(inputFileName, default(AccessCondition), options, default(OperationContext), uploadProgressHandler, CancellationToken.None);
+            await blob4.DownloadToFileAsync(outputFileName, FileMode.Create, default(AccessCondition), options, default(OperationContext), downloadProgressHandler, CancellationToken.None);
+
+            await Task.Delay(delay);
+
+            lastUploadProgress = uploadProgressList.Last();
+            lastDownloadProgress = downloadProgressList.Last();
+
+            Assert.AreEqual(lastUploadProgress.BytesTransferred, lastDownloadProgress.BytesTransferred);
+            Assert.AreEqual(buffer.Length, lastUploadProgress.BytesTransferred);
+
+            uploadProgressList.Clear();
+            downloadProgressList.Clear();
+
+            using (FileStream inputFileStream = new FileStream(inputFileName, FileMode.Open, FileAccess.Read),
+                outputFileStream = new FileStream(outputFileName, FileMode.Open, FileAccess.Read))
+            {
+                TestHelper.AssertStreamsAreEqualFast(inputFileStream, outputFileStream);
+            }
+        }
+#endif
 
         [TestMethod]
         [Description("Download a specific range of the blob")]

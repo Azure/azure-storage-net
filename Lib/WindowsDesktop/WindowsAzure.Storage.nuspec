@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata minClientVersion="2.12">
-    <id>WindowsAzure.Storage</id>
-    <version>8.4.0</version>
+    <id>Azure.Storage</id>
+    <version>8.7.0</version>
     <title>Windows Azure Storage</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -12,9 +12,9 @@
     <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
     <description>This client library enables working with the Microsoft Azure storage services which include the blob and file service for storing binary and text data, the table service for storing structured non-relational data, and the queue service for storing messages that may be accessed by a client.
       For this release see notes - https://github.com/Azure/azure-storage-net/blob/master/README.md and https://github.com/Azure/azure-storage-net/blob/master/changelog.txt
-      Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/</description>
+      Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/Azurestorage/</description>
     <summary>A client library for working with Microsoft Azure storage services including blobs, files, tables, and queues.</summary>
-    <tags>Microsoft, Azure, Storage, Table, Blob, File, Queue, Scalable, windowsazureofficial</tags>
+    <tags>Microsoft, Azure, Storage, Table, Blob, File, Queue, Scalable, Azureofficial</tags>
     <dependencies>
       <group targetFramework=".netstandard1.0">
         <dependency id="NETStandard.Library" version="1.6.0" />
@@ -49,7 +49,7 @@
       </group>
     </dependencies>
     <references>
-      <reference file="Microsoft.WindowsAzure.Storage.dll" />
+      <reference file="Microsoft.Azure.Storage.dll" />
     </references>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System.Data" targetFramework="ASP.NET5.0" />
