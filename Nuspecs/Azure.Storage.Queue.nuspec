@@ -11,8 +11,8 @@
     <projectUrl>http://go.microsoft.com/fwlink/?LinkId=235168</projectUrl>
     <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
     <description>This client library enables working with the Microsoft Azure Storage Queue service for storing messages that may be accessed by a client.
-      For this release see notes - https://github.com/Azure/azure-storage-net/blob/master/ReadMe/Queue/README.md and https://github.com/Azure/azure-storage-net/blob/master/Changelogs/Queue/changelog.txt
-	  in addition to the breaking changes https://github.com/Azure/azure-storage-net/blob/master/Changelogs/Queue/BreakingChanges.txt
+      For this release see notes - https://github.com/Azure/azure-storage-net/blob/dev-split/ReadMe/Queue/README.md and https://github.com/Azure/azure-storage-net/blob/dev-split/Changelogs/Queue/changelog.txt
+	  in addition to the breaking changes https://github.com/Azure/azure-storage-net/blob/dev-split/Changelogs/Queue/BreakingChanges.txt
       Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/</description>
     <summary>A client library which enables working with Microsoft Azure storage Queue service.</summary>
     <tags>Microsoft, Azure, Queue, StorageScalable, azureofficial</tags>
