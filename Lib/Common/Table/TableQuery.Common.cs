@@ -200,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
 
         /// <summary>
-        /// Creates a filter condition using the specified logical operator on two filter conditions.
+        /// Creates a filter condition by combining two filter conditions using the specified logical operator.
         /// </summary>
         /// <param name="filterA">A string containing the first formatted filter condition.</param>
         /// <param name="operatorString">A string containing the operator to use (AND, OR).</param>
@@ -210,6 +210,29 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public static string CombineFilters(string filterA, string operatorString, string filterB)
         {
             return string.Format(CultureInfo.InvariantCulture, "({0}) {1} ({2})", filterA, operatorString, filterB);
+        }
+
+        /// <summary>
+        /// Creates a filter condition by combining two or more filter conditions using the specified logical operator.
+        /// </summary>
+        /// <param name="operatorString">A string containing the operator to use (AND, OR).</param>
+        /// <param name="filters">Two or more strings containing formatted filter conditions to combine.</param>
+        /// <returns>A string containing the combined filter expression.</returns>
+        [SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Consistency across overloads.")]
+        public static string CombineManyFilters(string operatorString, params string[] filters)
+        {
+            if (filters.Length < 2)
+            {
+                throw new ArgumentException("At least two filters must be supplied.", nameof(filters));
+            }
+
+            var result = filters[0];
+            for (var i = 1; i < filters.Length; i++)
+            {
+                result = CombineFilters(result, operatorString, filters[i]);
+            }
+
+            return result;
         }
 
         #endregion
