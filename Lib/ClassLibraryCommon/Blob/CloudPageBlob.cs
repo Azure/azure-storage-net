@@ -713,6 +713,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                             source.WriteToAsync(
                                 progressIncrementer.CreateProgressIncrementingStream(blobStream),
+                                this.ServiceClient.BufferManager,
                                 length,
                                 null /* maxLength */,
                                 false,
@@ -2380,6 +2381,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 StreamDescriptor streamCopyState = new StreamDescriptor();
                 pageData.WriteToAsync(
                     writeToStream,
+                    this.ServiceClient.BufferManager,
                     null /* copyLength */,
                     Constants.MaxBlockSize,
                     requiresContentMD5,

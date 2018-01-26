@@ -511,9 +511,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                     // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
 #if NETCORE
-                    await source.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+                    await source.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
 #else
-                    await source.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+                    await source.WriteToAsync(blobStream, this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
 #endif
                     await blobStream.CommitAsync();
                 }
@@ -1389,7 +1389,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         StreamDescriptor streamCopyState = new StreamDescriptor();
                         long startPosition = seekableStream.Position;
-                        await blockDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
+                        await blockDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
                         seekableStream.Position = startPosition;
 
                         if (requiresContentMD5)

@@ -176,7 +176,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                             try
                             {
                                 cmd.ErrorStream = new MemoryStream();
-                                await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), timeoutTokenSource.Token);
+                                await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), timeoutTokenSource.Token);
                                 cmd.ErrorStream.Seek(0, SeekOrigin.Begin);
 #if NETCORE
                                 executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null), cmd.ErrorStream, executionState.Resp);
@@ -212,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                                 {
                                     executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
                                     Logger.LogInformational(executionState.OperationContext, SR.TraceDownload);
-                                    await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, null /* copyLength */, null /* maxLength */, cmd.CalculateMd5ForResponseStream, executionState, cmd.StreamCopyState, timeoutTokenSource.Token);
+                                    await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, cmd.CalculateMd5ForResponseStream, executionState, cmd.StreamCopyState, timeoutTokenSource.Token);
                                 }
                                 finally
                                 {
