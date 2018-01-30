@@ -49,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         public CloudBlockBlob(Uri blobAbsoluteUri)
-            : this(blobAbsoluteUri, null /* credentials */)
+            : this(blobAbsoluteUri, default(StorageCredentials) /* credentials */)
         {
         }
 
@@ -59,7 +59,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlockBlob(Uri blobAbsoluteUri, StorageCredentials credentials)
-            : this(blobAbsoluteUri, null /* snapshotTime */, credentials)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlockBlob(Uri blobAbsoluteUri, CloudBlobClient client)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, client)
         {
         }
 
@@ -77,11 +87,34 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
         /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlockBlob(Uri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+            : this(new StorageUri(blobAbsoluteUri), snapshotTime, client)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
+        /// </summary>
         /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlockBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
             : base(blobAbsoluteUri, snapshotTime, credentials)
+        {
+            this.Properties.BlobType = BlobType.BlockBlob;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlockBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+            : base(blobAbsoluteUri, snapshotTime, client)
         {
             this.Properties.BlobType = BlobType.BlockBlob;
         }
