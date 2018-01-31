@@ -1725,6 +1725,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                             source.WriteToAsync(
                                 progressIncrementer.CreateProgressIncrementingStream(fileStream),
+                                this.ServiceClient.BufferManager,
                                 length,
                                 null /* maxLength */,
                                 false,
@@ -3704,6 +3705,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 StreamDescriptor streamCopyState = new StreamDescriptor();
                 rangeData.WriteToAsync(
                     writeToStream,
+                    this.ServiceClient.BufferManager,
                     null /* copyLength */,
                     Constants.MaxBlockSize,
                     requiresContentMD5,
