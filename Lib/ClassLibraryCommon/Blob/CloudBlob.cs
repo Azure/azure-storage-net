@@ -869,7 +869,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Then adjust the rangeSizeInBytes so that parallelIOCount times rangeSizeInBytes equals the amount of memory you want the process to consume.
         /// 
         /// ## Examples
-        /// [!code-csharp[DownloadToFileParallel](~/azure-storage-net/Test/Common/Blob/BlobLargeDownloadToFileTests.cs#sample_DownloadToFileParallel "DownloadToFileParallel Sample")]
+        /// [!code-csharp[DownloadToFileParallel](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobDownloadToFileParallelTests.cs#sample_DownloadToFileParallel "DownloadToFileParallel Sample")]
         /// </remarks>
         [DoesServiceRequest]
         public virtual Task DownloadToFileParallelAsync(string path, FileMode mode, int parallelIOCount, long? rangeSizeInBytes, CancellationToken cancellationToken)

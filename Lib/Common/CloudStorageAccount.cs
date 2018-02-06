@@ -40,6 +40,10 @@ namespace Microsoft.WindowsAzure.Storage
     /// <summary>
     /// Represents a Microsoft Azure Storage account.
     /// </summary>
+    /// <remarks>
+    ///  ## Examples
+    ///  [!code-csharp[Cloud_Storage_Account_Sample](~/azure-storage-net/Test/Common/Core/CloudStorageAccountTests.cs#sample_CloudStorageAccount_Constructor "Cloud Storage Account Sample")]
+    ///  </remarks>
     public class CloudStorageAccount
     {
         /// <summary>
@@ -597,6 +601,10 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Creates the Blob service client.
         /// </summary>
+        /// <remarks>
+        ///## Examples
+        ///[!code-csharp[Create_Cloud_Blob_Client_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_UploadBlob_EndToEnd "Create Cloud Blob Client Sample")] 
+        /// </remarks>
         /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
         public virtual CloudBlobClient CreateCloudBlobClient()
         {
