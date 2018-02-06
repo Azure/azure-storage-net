@@ -1563,11 +1563,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// </summary>
             public const string CopyId = "copyid";
             
-            /// <summary>
-            /// Query component for the permanent delete type.
-            /// </summary>
-            public const string DeleteType = "deletetype";
-
         }
 
         /// <summary>

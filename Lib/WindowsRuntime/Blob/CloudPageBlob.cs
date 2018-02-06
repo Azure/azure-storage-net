@@ -390,7 +390,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #if NETCORE
                 await sourceAsStream.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #else
-                await sourceAsStream.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+                await sourceAsStream.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #endif
                 await blobStream.CommitAsync().ConfigureAwait(false);
             }

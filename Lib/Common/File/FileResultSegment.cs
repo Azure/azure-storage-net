@@ -24,12 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     /// </summary>
     public class FileResultSegment
     {
-        public FileResultSegment()
-        {
-
-        }
-
-        internal FileResultSegment(IEnumerable<IListFileItem> files, FileContinuationToken continuationToken)
+        public FileResultSegment(IEnumerable<IListFileItem> files, FileContinuationToken continuationToken)
         {
             this.Results = files;
             this.ContinuationToken = continuationToken;
