@@ -493,7 +493,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
-            {
+            {               
                 await container.CreateAsync();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
@@ -555,7 +555,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 BlobResultSegment resultSegment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null);
                 List<IListBlobItem> blobs = resultSegment.Results.ToList();
-                Assert.AreEqual(5, blobs.Count);
+                Assert.AreEqual(4, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                 AssertAreEqual(blob, (CloudBlob)blobs[2]);

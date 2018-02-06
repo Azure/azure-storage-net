@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
-                Assert.AreEqual(5, blobs.Count);
+                Assert.AreEqual(4, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                 AssertAreEqual(blob, (CloudBlob)blobs[2]);
@@ -215,7 +215,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
 
                     List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
-                    Assert.AreEqual(5, blobs.Count);
+                    Assert.AreEqual(4, blobs.Count);
                     AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                     AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                     AssertAreEqual(blob, (CloudBlob)blobs[2]);
@@ -299,7 +299,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                              .Result
                              .Results
                              .ToList();
-                Assert.AreEqual(5, blobs.Count);
+                Assert.AreEqual(4, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                 AssertAreEqual(blob, (CloudBlob)blobs[2]);
@@ -472,6 +472,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 //Enables a delete retention policy on the blob with 1 day of default retention days
                 container.ServiceClient.EnableSoftDelete();
+                Thread.Sleep(15000);
                 container.Create();
 
                 // Upload some data to the blob.

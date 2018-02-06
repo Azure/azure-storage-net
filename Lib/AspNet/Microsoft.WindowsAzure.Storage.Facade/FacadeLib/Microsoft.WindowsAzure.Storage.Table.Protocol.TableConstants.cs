@@ -1,11 +1,9 @@
-using Microsoft.Data.OData;
 using System;
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
 internal static class TableConstants
 {
     public static readonly DateTimeOffset MinDateTime = new DateTimeOffset(1601, 1, 1, 0, 0, 0, TimeSpan.Zero);
-    internal static ODataVersion ODataProtocolVersion = ODataVersion.V3;
     public const int TableServiceBatchMaximumOperations = 100;
     public const string TableServicePrefixForTableContinuation = "x-ms-continuation-";
     public const string TableServiceNextPartitionKey = "NextPartitionKey";
