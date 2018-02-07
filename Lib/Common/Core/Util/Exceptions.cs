@@ -53,6 +53,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     {
                         currentResult.ContentMd5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
                     }
+
+                    currentResult.ErrorCode = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(response.Headers, Constants.HeaderConstants.StorageErrorCodeHeader);
+                    
                 }
                 catch (Exception)
                 {
@@ -68,7 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     }
                     else
                     {
-                        currentResult.ExtendedErrorInformation = await StorageExtendedErrorInformation.ReadFromStreamAsync(errStream.AsInputStream());
+                        currentResult.ExtendedErrorInformation = await StorageExtendedErrorInformation.ReadFromStreamAsync(errStream.AsInputStream()).ConfigureAwait(false);
                     }
                 }
                 catch (Exception)

@@ -89,6 +89,18 @@ public class CloudBlob : IListBlobItem
         }
     }
 
+    public bool IsDeleted
+    {
+        get
+        {
+            throw new System.NotImplementedException();
+        }
+        private set
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
     public Uri SnapshotQualifiedUri
     {
         get
@@ -113,7 +125,7 @@ public class CloudBlob : IListBlobItem
         }
     }
 
-    public string Name
+    public virtual string Name
     {
         get; private set;
     }
@@ -333,8 +345,19 @@ public class CloudBlob : IListBlobItem
     {
         throw new System.NotImplementedException();
     }
-    [DoesServiceRequest]
-    public virtual Task<bool> DeleteIfExistsAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+    public virtual Task UndeleteAsync()
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task UndeleteAsync(CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task UndeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
+    public virtual Task UndeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }
@@ -479,6 +502,10 @@ public class CloudBlob : IListBlobItem
         throw new System.NotImplementedException();
     }
     private RESTCommand<NullType> DeleteBlobImpl(BlobAttributes attributes, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    private RESTCommand<NullType> UndeleteBlobImpl(BlobAttributes blobAttributes, AccessCondition accessCondition, BlobRequestOptions options)
     {
         throw new System.NotImplementedException();
     }

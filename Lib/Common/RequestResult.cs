@@ -100,6 +100,12 @@ namespace Microsoft.WindowsAzure.Storage
         public StorageExtendedErrorInformation ExtendedErrorInformation { get; internal set; }
 
         /// <summary>
+        /// Gets the storage service error code.
+        /// </summary>
+        /// <value>A string containing the storage service error code.</value>
+        public string ErrorCode { get; internal set; }
+
+        /// <summary>
         /// Gets whether or not the data for a write operation is encrypted server-side.
         /// </summary>
         public bool IsRequestServerEncrypted { get; internal set; }
@@ -220,6 +226,16 @@ namespace Microsoft.WindowsAzure.Storage
             this.ContentMd5 = CommonUtility.ReadElementAsString("ContentMd5", reader);
             this.Etag = CommonUtility.ReadElementAsString("Etag", reader);
             this.RequestDate = CommonUtility.ReadElementAsString("RequestDate", reader);
+            try
+            {
+                this.ErrorCode = CommonUtility.ReadElementAsString("ErrorCode", reader);
+            }
+            catch (XmlException)
+            { 
+                /* The ErrorCode property only exists after service version 07-17. 
+                 * If it is not present, we are reading an old version and can ignore this property.
+                 */
+            }
 #if WINDOWS_RT || NETCORE
             this.StartTime = DateTimeOffset.Parse(CommonUtility.ReadElementAsString("StartTime", reader), CultureInfo.InvariantCulture);
             this.EndTime = DateTimeOffset.Parse(CommonUtility.ReadElementAsString("EndTime", reader), CultureInfo.InvariantCulture);
@@ -264,6 +280,7 @@ namespace Microsoft.WindowsAzure.Storage
             writer.WriteElementString("ContentMd5", this.ContentMd5);
             writer.WriteElementString("Etag", this.Etag);
             writer.WriteElementString("RequestDate", this.RequestDate);
+            writer.WriteElementString("ErrorCode", this.ErrorCode);
 
             // Dates - using RFC 1123 pattern
             writer.WriteElementString("StartTime", this.StartTime.ToUniversalTime().ToString("R", CultureInfo.InvariantCulture));

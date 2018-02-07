@@ -18,15 +18,16 @@
 namespace Microsoft.WindowsAzure.Storage
 {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Runtime.Serialization.Formatters.Binary;
-    using System.Security.Cryptography;
-    using System.Text;
-    using System.Xml;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography;
+using System.Text;
+using System.Xml;
 
     [TestClass]
     public class StorageExceptionTests
@@ -258,6 +259,102 @@ namespace Microsoft.WindowsAzure.Storage
             Assert.AreEqual(opContext.LastResult.HttpStatusMessage, retrResult.HttpStatusMessage);
             Assert.AreEqual(opContext.LastResult.ContentMd5, retrResult.ContentMd5);
             Assert.AreEqual(opContext.LastResult.Etag, retrResult.Etag);
+        }
+
+        [TestMethod]
+        [Description("Verify RequestResult ErrorCode property set")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void RequestResultErrorCode()
+        {
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
+            CloudBlobClient client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials);
+            CloudBlobContainer container = client.GetContainerReference(Guid.NewGuid().ToString("N"));
+
+            byte[] buffer = TestBase.GetRandomBuffer(4 * 1024 * 1024);
+            MD5 md5 = MD5.Create();
+            string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+
+            try
+            {
+                RequestResult requestResult;
+                XmlWriterSettings settings;
+                StringBuilder sb;
+                container.Create();
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                List<string> blocks = new List<string>();
+                for (int i = 0; i < 2; i++)
+                {
+                    blocks.Add(Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
+                }
+
+                // Verify the ErrorCode property is set and that it is serialized correctly
+                using (MemoryStream memoryStream = new MemoryStream(buffer))
+                {
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    blob.PutBlock(blocks[0], memoryStream, contentMD5);
+
+                    int offset = buffer.Length - 1024;
+                    memoryStream.Seek(offset, SeekOrigin.Begin);
+                    StorageException e = TestHelper.ExpectedException<StorageException>(
+                        () => blob.PutBlock(blocks[1], memoryStream, contentMD5),
+                        "Invalid MD5 should fail with mismatch");
+
+                    Assert.AreEqual(e.RequestInformation.ErrorCode, StorageErrorCodeStrings.Md5Mismatch);
+
+                    requestResult = new RequestResult();
+                    settings = new XmlWriterSettings();
+                    settings.Indent = true;
+                    sb = new StringBuilder();
+                    using (XmlWriter writer = XmlWriter.Create(sb, settings))
+                    {
+                        e.RequestInformation.WriteXml(writer);
+                    }
+
+                    using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                    {
+                        requestResult.ReadXml(reader);
+                    }
+
+                    // ExtendedErrorInformation.ErrorCode will be depricated, but it should still match on a non HEAD request
+                    Assert.AreEqual(e.RequestInformation.ErrorCode, requestResult.ErrorCode);
+                    Assert.AreEqual(e.RequestInformation.ExtendedErrorInformation.ErrorCode, requestResult.ErrorCode);
+                }
+
+                // Verify the ErrorCode property is set on a HEAD request
+                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob2");
+                blob2.CreateOrReplace();
+                StorageException e2 = TestHelper.ExpectedException<StorageException>(
+                    () => blob2.FetchAttributes(AccessCondition.GenerateIfMatchCondition("garbage")),
+                    "Mismatched etag should fail");
+                Assert.AreEqual(e2.RequestInformation.ErrorCode, StorageErrorCodeStrings.ConditionNotMet);
+
+                // Verify the ErrorCode property is not set on a successful request and that it is serialized correctly
+                OperationContext ctx = new OperationContext();
+                blob2.FetchAttributes(operationContext: ctx);
+                Assert.AreEqual(ctx.RequestResults[0].ErrorCode, null);
+                requestResult = new RequestResult();
+                settings = new XmlWriterSettings();
+                settings.Indent = true;
+                sb = new StringBuilder();
+                using (XmlWriter writer = XmlWriter.Create(sb, settings))
+                {
+                    ctx.RequestResults[0].WriteXml(writer);
+                }
+
+                using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                {
+                    requestResult.ReadXml(reader);
+                }
+
+                Assert.AreEqual(ctx.RequestResults[0].ErrorCode, requestResult.ErrorCode);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
         }
     }
 #endif
