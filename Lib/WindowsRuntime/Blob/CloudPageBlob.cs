@@ -107,7 +107,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// object generated using <see cref="AccessCondition.GenerateIfNotExistsCondition"/>.
         /// </remarks>
         [DoesServiceRequest]
-        internal virtual Task<CloudBlobStream> OpenWriteAsync(long? size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        internal virtual async Task<CloudBlobStream> OpenWriteAsync(long? size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.attributes.AssertNoSnapshot();
             bool createNew = size.HasValue;
@@ -117,26 +117,23 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new ArgumentException(SR.MD5NotPossible);
             }
 
-            return Task.Run(async () =>
+            if (createNew)
             {
-                if (createNew)
-                {
-                    await this.CreateAsync(size.Value, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken);
-                }
-                else
-                {
-                    await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken);
-                    size = this.Properties.Length;
-                }
+                await this.CreateAsync(size.Value, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                size = this.Properties.Length;
+            }
 
-                if (accessCondition != null)
-                {
-                    accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
-                }
+            if (accessCondition != null)
+            {
+                accessCondition = AccessCondition.GenerateLeaseCondition(accessCondition.LeaseId);
+            }
 
-                CloudBlobStream stream = new BlobWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext);
-                return stream;
-            }, cancellationToken);
+            CloudBlobStream stream = new BlobWriteStream(this, size.Value, createNew, accessCondition, modifiedOptions, operationContext);
+            return stream;
         }
 
         /// <summary>
@@ -342,7 +339,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        private Task UploadFromStreamAsyncHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
+        private async Task UploadFromStreamAsyncHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
 #else
         /// <summary>
         /// Uploads a stream to a page blob. 
@@ -356,7 +353,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        internal Task UploadFromStreamAsyncHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        internal async Task UploadFromStreamAsyncHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
             CommonUtility.AssertNotNull("source", source);
@@ -390,20 +387,17 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new ArgumentException(SR.InvalidPageSize, "source");
             }
 
-            return Task.Run(async () =>
+            using (CloudBlobStream blobStream = await this.OpenWriteAsync(length, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false))
             {
-                using (CloudBlobStream blobStream = await this.OpenWriteAsync(length, premiumPageBlobTier, accessCondition, options, operationContext, cancellationToken))
-                {
-                    // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
-                    // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
+                // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
+                // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
 #if NETCORE
-                    await sourceAsStream.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+                await sourceAsStream.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #else
-                    await sourceAsStream.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken);
+                await sourceAsStream.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #endif
-                    await blobStream.CommitAsync();
-                }
-            }, cancellationToken);
+                await blobStream.CommitAsync().ConfigureAwait(false);
+            }
         }
 
         /// <summary>
@@ -479,17 +473,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(StorageFile source, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task UploadFromFileAsync(StorageFile source, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
 
-            return Task.Run(async () =>
+            using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken).ConfigureAwait(false))
             {
-                using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken))
-                {
-                    await this.UploadFromStreamAsync(stream.AsStream(), premiumBlobTier, accessCondition, options, operationContext, cancellationToken);
-                }
-            });
+                await this.UploadFromStreamAsync(stream.AsStream(), premiumBlobTier, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            }
         }
 #endif
 
@@ -521,17 +512,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(string path, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        public virtual async Task UploadFromFileAsync(string path, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("path", path);
 
-            return Task.Run(async () =>
+            using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                using (Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    await this.UploadFromStreamAsync(stream, premiumBlobTier, accessCondition, options, operationContext, progressHandler, cancellationToken);
-                }
-            }, cancellationToken);
+                await this.UploadFromStreamAsync(stream, premiumBlobTier, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
+            }
         }
 #endif
 
@@ -702,11 +690,11 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task CreateAsync(long size, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.CreateImpl(size, premiumBlobTier, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -747,11 +735,11 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task ResizeAsync(long size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.ResizeImpl(size, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -795,11 +783,11 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task SetSequenceNumberAsync(SequenceNumberAction sequenceNumberAction, long? sequenceNumber, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetSequenceNumberImpl(sequenceNumberAction, sequenceNumber, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -841,11 +829,11 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task<IEnumerable<PageRange>> GetPageRangesAsync(long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.GetPageRangesImpl(offset, length, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -890,11 +878,11 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task<IEnumerable<PageDiffRange>> GetPageRangesDiffAsync(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.GetPageRangesDiffImpl(previousSnapshotTime, offset, length, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -935,11 +923,11 @@ namespace Microsoft.Azure.Storage.Blob
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.CreateSnapshotImpl(metadata, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -987,9 +975,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
+            await this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken).ConfigureAwait(false);
         }
 #endif
 
@@ -1008,7 +996,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
 #else
         /// <summary>
         /// Writes pages to a page blob.
@@ -1023,7 +1011,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
@@ -1034,57 +1022,54 @@ namespace Microsoft.Azure.Storage.Blob
 #else
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 #endif
-            return Task.Run(async () =>
+            Stream pageDataAsStream = pageData;
+            Stream seekableStream = pageDataAsStream;
+            bool seekableStreamCreated = false;
+
+            try
             {
-                Stream pageDataAsStream = pageData;
-                Stream seekableStream = pageDataAsStream;
-                bool seekableStreamCreated = false;
-
-                try
+                if (!pageDataAsStream.CanSeek || requiresContentMD5)
                 {
-                    if (!pageDataAsStream.CanSeek || requiresContentMD5)
+                    Stream writeToStream;
+                    if (pageDataAsStream.CanSeek)
                     {
-                        Stream writeToStream;
-                        if (pageDataAsStream.CanSeek)
-                        {
-                            writeToStream = Stream.Null;
-                        }
-                        else
-                        {
-                            seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                            seekableStreamCreated = true;
-                            writeToStream = seekableStream;
-                        }
-
-                        StreamDescriptor streamCopyState = new StreamDescriptor();
-                        long startPosition = seekableStream.Position;
-                        await pageDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
-                        seekableStream.Position = startPosition;
-
-                        if (requiresContentMD5)
-                        {
-                            contentMD5 = streamCopyState.Md5;
-                        }
+                        writeToStream = Stream.Null;
+                    }
+                    else
+                    {
+                        seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                        seekableStreamCreated = true;
+                        writeToStream = seekableStream;
                     }
 
-                    await Executor.ExecuteAsyncNullReturn(
+                    StreamDescriptor streamCopyState = new StreamDescriptor();
+                    long startPosition = seekableStream.Position;
+                    await pageDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    seekableStream.Position = startPosition;
+
+                    if (requiresContentMD5)
+                    {
+                        contentMD5 = streamCopyState.Md5;
+                    }
+                }
+
+                await Executor.ExecuteAsyncNullReturn(
 #if NETCORE
-                        this.PutPageImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
+                    this.PutPageImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
 #else
-                        this.PutPageImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+                    this.PutPageImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
 #endif
-                        modifiedOptions.RetryPolicy,
-                        operationContext,
-                        cancellationToken);
-                }
-                finally
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (seekableStreamCreated)
                 {
-                    if (seekableStreamCreated)
-                    {
-                        seekableStream.Dispose();
-                    }
+                    seekableStream.Dispose();
                 }
-            }, cancellationToken);
+            }
         }
 
         /// <summary>
@@ -1128,11 +1113,11 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task ClearPagesAsync(long startOffset, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.ClearPageImpl(startOffset, length, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1216,7 +1201,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, null /* premiumBlobTier */, sourceAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, null /* premiumBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -1277,11 +1262,11 @@ namespace Microsoft.Azure.Storage.Blob
         {
             CommonUtility.AssertNotNull("sourceSnapshot", sourceSnapshot);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.StartCopyImpl(this.attributes, sourceSnapshot, true /*incrementalCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1321,11 +1306,11 @@ namespace Microsoft.Azure.Storage.Blob
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.SetBlobTierImpl(premiumBlobTier, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1476,12 +1461,9 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
-                return Task.Factory.StartNew(() =>
-                {
-                    GetPageRangesResponse getPageRangesResponse = new GetPageRangesResponse(cmd.ResponseStream);
-                    IEnumerable<PageRange> pageRanges = new List<PageRange>(getPageRangesResponse.PageRanges);
-                    return pageRanges;
-                });
+                GetPageRangesResponse getPageRangesResponse = new GetPageRangesResponse(cmd.ResponseStream);
+                IEnumerable<PageRange> pageRanges = new List<PageRange>(getPageRangesResponse.PageRanges);
+                return Task.FromResult(pageRanges);
             };
 
             return getCmd;
@@ -1513,12 +1495,9 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
-                return Task.Factory.StartNew(() =>
-                {
-                    GetPageDiffRangesResponse getPageDiffRangesResponse = new GetPageDiffRangesResponse(cmd.ResponseStream);
-                    IEnumerable<PageDiffRange> pageDiffRanges = new List<PageDiffRange>(getPageDiffRangesResponse.PageDiffRanges);
-                    return pageDiffRanges;
-                });
+                GetPageDiffRangesResponse getPageDiffRangesResponse = new GetPageDiffRangesResponse(cmd.ResponseStream);
+                IEnumerable<PageDiffRange> pageDiffRanges = new List<PageDiffRange>(getPageDiffRangesResponse.PageDiffRanges);
+                return Task.FromResult(pageDiffRanges);
             };
 
             return getCmd;

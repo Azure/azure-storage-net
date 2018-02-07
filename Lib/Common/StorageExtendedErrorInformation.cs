@@ -54,6 +54,7 @@ namespace Microsoft.Azure.Storage
         /// Gets the storage service error code.
         /// </summary>
         /// <value>A string containing the storage service error code.</value>
+        [System.Obsolete("Use RequestResult.ErrorCode instead", false)]
         public string ErrorCode { get; internal set; }
 
         /// <summary>
@@ -74,9 +75,9 @@ namespace Microsoft.Azure.Storage
             return ReadFromStream(inputStream.AsStreamForRead());
         }
 
-        public static async Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
+        public static Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
         {
-            return await ReadFromStreamAsync(inputStream.AsStreamForRead());
+            return ReadFromStreamAsync(inputStream.AsStreamForRead());
         }
 #endif
 
@@ -136,7 +137,7 @@ namespace Microsoft.Azure.Storage
 
                 using (XmlReader reader = XmlReader.Create(inputStream, settings))
                 {
-                    await reader.ReadAsync();
+                    await reader.ReadAsync().ConfigureAwait(false);
                     extendedErrorInfo.ReadXml(reader);
                 }
 
@@ -178,7 +179,9 @@ namespace Microsoft.Azure.Storage
                 {
                     if ((string.Compare(reader.LocalName, Constants.ErrorCode, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorCodePreview, StringComparison.Ordinal) == 0))
                     {
+#pragma warning disable 618
                         this.ErrorCode = reader.ReadElementContentAsString();
+#pragma warning restore 618
                     }
                     else if ((string.Compare(reader.LocalName, Constants.ErrorMessage, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorMessagePreview, StringComparison.Ordinal) == 0))
                     {
@@ -237,7 +240,9 @@ namespace Microsoft.Azure.Storage
             CommonUtility.AssertNotNull("writer", writer);
 
             writer.WriteStartElement(Constants.ErrorRootElement);
+#pragma warning disable 618
             writer.WriteElementString(Constants.ErrorCode, this.ErrorCode);
+#pragma warning restore 618
             writer.WriteElementString(Constants.ErrorMessage, this.ErrorMessage);
 
             foreach (string key in this.AdditionalDetails.Keys)

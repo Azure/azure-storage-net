@@ -146,7 +146,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
             using (MemoryStream srcStream = new MemoryStream(buffer))
             {
-                blob.UploadFromStream(srcStream);
+                blob.UploadFromStream(srcStream);               
                 byte[] testBuffer = new byte[2048];
                 MemoryStream dstStream = new MemoryStream(testBuffer);
                 blob.DownloadRangeToStream(dstStream, null, null);

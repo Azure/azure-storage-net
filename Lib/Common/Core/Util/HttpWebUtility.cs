@@ -21,8 +21,11 @@ namespace Microsoft.Azure.Storage.Core.Util
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
+#if NETCORE || WINDOWS_RT
+    using System.Net.Http.Headers;
+#endif
 
-#if WINDOWS_DESKTOP 
+#if WINDOWS_DESKTOP
     using System.Net;
 #endif
 
@@ -115,6 +118,19 @@ namespace Microsoft.Azure.Storage.Core.Util
             return (headerValues.Count() == 0) ?
                 null :
                 string.Join(",", headerValues);
+        }
+#endif
+#if NETCORE
+        public static string GetHeaderValues(string headerName, HttpHeaders headers)
+        {
+            IEnumerable<string> headerValues = null;
+
+            if (headers.TryGetValues(headerName, out headerValues))
+            {
+                return CombineHttpHeaderValues(headerValues);
+            }
+
+            return null;
         }
 #endif
 

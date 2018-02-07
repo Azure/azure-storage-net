@@ -815,12 +815,12 @@ namespace Microsoft.Azure.Storage.Blob
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 TestHelper.ExpectedException(
-                    () => blob.Create(-1),
-                    "Creating a page blob with size<0 should fail",
-                    HttpStatusCode.BadRequest);
+                () => blob.Create(-1),
+                "Creating a page blob with size<0 should fail",
+                HttpStatusCode.BadRequest);
                 TestHelper.ExpectedException(
                     () => blob.Create(1L * 1024 * 1024 * 1024 * 1024 + 1),
-                    "Creating a page blob with size>1TB should fail",
+                    "Creating a page blob with size > 1TB should fail",
                     HttpStatusCode.BadRequest);
             }
             finally

@@ -229,6 +229,14 @@ namespace Microsoft.Azure.Storage.Blob
         {
             string name = "bb" + GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
+            blobClient.SetServiceProperties(new ServiceProperties()
+            {
+                DeleteRetentionPolicy = new DeleteRetentionPolicy()
+                {
+                    RetentionDays = 10,
+                    Enabled = true
+                }
+            });
             CloudBlobContainer rootContainer = blobClient.GetRootContainerReference();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 
@@ -689,8 +697,6 @@ namespace Microsoft.Azure.Storage.Blob
             }
 
             IEnumerable<CloudBlobContainer> results = blobClient.ListContainers();
-
-
             foreach (CloudBlobContainer container in results)
             {
                 if (containerNames.Remove(container.Name))

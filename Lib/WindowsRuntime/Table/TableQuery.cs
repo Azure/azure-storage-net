@@ -71,11 +71,11 @@ namespace Microsoft.Azure.Storage.Table
 
             RESTCommand<TableQuerySegment> cmdToExecute = QueryImpl(this, continuationToken, client, tableName, EntityUtilities.ResolveEntityByType<DynamicTableEntity>, modifiedOptions);
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                            cmdToExecute,
-                                                            modifiedOptions.RetryPolicy,
-                                                            operationContext,
-                                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private static RESTCommand<TableQuerySegment> QueryImpl(TableQuery query, TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<DynamicTableEntity> resolver, TableRequestOptions requestOptions)
@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Storage.Table
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                ResultSegment<DynamicTableEntity> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<DynamicTableEntity>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
+                ResultSegment<DynamicTableEntity> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<DynamicTableEntity>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName).ConfigureAwait(false);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;
@@ -119,11 +119,11 @@ namespace Microsoft.Azure.Storage.Table
 
             RESTCommand<TableQuerySegment<TResult>> cmdToExecute = this.QueryImpl<TResult>(continuationToken, client, tableName, resolver, modifiedOptions);
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                            cmdToExecute,
-                                                            modifiedOptions.RetryPolicy,
-                                                            operationContext,
-                                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<RESULT_TYPE>(TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions)
@@ -147,7 +147,7 @@ namespace Microsoft.Azure.Storage.Table
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
+                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName).ConfigureAwait(false);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;

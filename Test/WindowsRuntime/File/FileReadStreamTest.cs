@@ -155,13 +155,13 @@ namespace Microsoft.Azure.Storage.File
                 return;
             }
 #else
-            catch (IOException ex)
+            catch (StorageException ex)
             {
-                Assert.AreEqual((int)expectedStatusCode, ((StorageException)ex.InnerException).RequestInformation.HttpStatusCode, "Http status code is unexpected.");
+                Assert.AreEqual((int)expectedStatusCode, ex.RequestInformation.HttpStatusCode, "Http status code is unexpected.");
                 if (!string.IsNullOrEmpty(requestErrorCode))
                 {
-                    Assert.IsNotNull(operationContext.LastResult.ExtendedErrorInformation);
-                    Assert.AreEqual(requestErrorCode, operationContext.LastResult.ExtendedErrorInformation.ErrorCode);
+                    Assert.IsNotNull(ex.RequestInformation.ExtendedErrorInformation);
+                    Assert.AreEqual(requestErrorCode, ex.RequestInformation.ExtendedErrorInformation.ErrorCode);
                 }
                 return;
             }

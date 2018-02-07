@@ -334,7 +334,7 @@ namespace Microsoft.Azure.Storage.Blob
 
         private static ServiceProperties DefaultServiceProperties()
         {
-            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties());
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), null, new DeleteRetentionPolicy());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
@@ -347,6 +347,8 @@ namespace Microsoft.Azure.Storage.Blob
             props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.Version = "1.0";
+
+            props.DeleteRetentionPolicy.RetentionDays = 5;
 
             props.DefaultServiceVersion = "2013-08-15";
 

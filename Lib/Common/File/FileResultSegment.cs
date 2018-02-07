@@ -22,9 +22,9 @@ namespace Microsoft.Azure.Storage.File
     /// <summary>
     /// Represents a segment of <see cref="IListFileItem"/> results, with continuation information for pagination scenarios.
     /// </summary>
-    public sealed class FileResultSegment
+    public class FileResultSegment
     {
-        internal FileResultSegment(IEnumerable<IListFileItem> files, FileContinuationToken continuationToken)
+        public FileResultSegment(IEnumerable<IListFileItem> files, FileContinuationToken continuationToken)
         {
             this.Results = files;
             this.ContinuationToken = continuationToken;

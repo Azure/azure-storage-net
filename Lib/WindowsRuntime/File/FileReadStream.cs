@@ -96,7 +96,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="count">The maximum number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous read operation.</returns>
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("buffer", buffer);
             CommonUtility.AssertInBounds("offset", offset, 0, buffer.Length);
@@ -109,16 +109,16 @@ namespace Microsoft.Azure.Storage.File
 
             if ((this.currentOffset == this.Length) || (count == 0))
             {
-                return 0;
+                return Task.FromResult(0);
             }
 
             int readCount = this.ConsumeBuffer(buffer, offset, count);
             if (readCount > 0)
             {
-                return readCount;
+                return Task.FromResult(readCount);
             }
 
-            return await this.DispatchReadASync(buffer, offset, count);
+            return this.DispatchReadASync(buffer, offset, count);
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace Microsoft.Azure.Storage.File
                     this.GetReadSize(),
                     null /* accessCondition */,
                     this.options,
-                    this.operationContext);
+                    this.operationContext).ConfigureAwait(false);
 
                 if (!this.file.Properties.ETag.Equals(this.accessCondition.IfMatchETag, StringComparison.Ordinal))
                 {

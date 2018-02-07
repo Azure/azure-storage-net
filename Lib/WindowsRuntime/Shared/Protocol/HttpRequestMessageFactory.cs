@@ -223,6 +223,25 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Undeletes the specified URI.
+        /// </summary>
+        /// <param name="uri">The URI of the resource to delete.</param>
+        /// <param name="timeout">The timeout.</param>
+        /// <param name="builder">The builder.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        internal static StorageRequestMessage Undelete(Uri uri, int? timeout, UriQueryBuilder builder, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            if (builder == null)
+            {
+                builder = new UriQueryBuilder();
+            }
+
+            builder.Add(Constants.QueryConstants.Component, "undelete");
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            return request;
+        }
+
+        /// <summary>
         /// Creates a web request to get the properties of the service.
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>

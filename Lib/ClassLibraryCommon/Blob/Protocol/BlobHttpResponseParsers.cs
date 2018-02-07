@@ -132,7 +132,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             {
                 properties.AppendBlobCommittedBlockCount = int.Parse(comittedBlockCount, CultureInfo.InvariantCulture);
             }
-
+            
             // Get the tier of the blob
             string premiumPageBlobTierInferredString = response.Headers[Constants.HeaderConstants.AccessTierInferredHeader];
             if (!string.IsNullOrEmpty(premiumPageBlobTierInferredString))

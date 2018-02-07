@@ -18,7 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #if WINDOWS_DESKTOP
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
@@ -37,7 +37,6 @@ namespace Microsoft.Azure.Storage.Blob
         public static CloudBlobContainer GetRandomContainerReference()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
-
             string name = GetRandomContainerName();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 

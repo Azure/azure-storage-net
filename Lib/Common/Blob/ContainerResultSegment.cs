@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Storage.Blob
     /// </summary>
     public class ContainerResultSegment
     {
-        internal ContainerResultSegment(IEnumerable<CloudBlobContainer> containers, BlobContinuationToken continuationToken)
+        public ContainerResultSegment(IEnumerable<CloudBlobContainer> containers, BlobContinuationToken continuationToken)
         {
             this.Results = containers;
             this.ContinuationToken = continuationToken;

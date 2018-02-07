@@ -25,6 +25,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
     using System.Net.Http;
 
 #if NETCORE
+    using System.Net.Http.Headers;
     public
 #else
     internal
@@ -43,6 +44,13 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             if (response.Content != null)
             {
                 properties.LastModified = response.Content.Headers.LastModified;
+#if NETCORE
+                HttpContentHeaders contentHeaders = response.Content.Headers;
+                properties.ContentEncoding = HttpWebUtility.GetHeaderValues("Content-Encoding", contentHeaders);
+                properties.ContentLanguage = HttpWebUtility.GetHeaderValues("Content-Language", contentHeaders);
+                properties.ContentDisposition = HttpWebUtility.GetHeaderValues("Content-Disposition", contentHeaders);
+                properties.ContentType = HttpWebUtility.GetHeaderValues("Content-Type", contentHeaders);
+#else
                 properties.ContentEncoding = HttpWebUtility.CombineHttpHeaderValues(response.Content.Headers.ContentEncoding);
                 properties.ContentLanguage = HttpWebUtility.CombineHttpHeaderValues(response.Content.Headers.ContentLanguage);
 
@@ -50,6 +58,11 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 {
                     properties.ContentDisposition = response.Content.Headers.ContentDisposition.ToString();
                 }
+                if (response.Content.Headers.ContentType != null)
+                {
+                    properties.ContentType = response.Content.Headers.ContentType.ToString();
+                }
+#endif
 
                 if (response.Content.Headers.ContentMD5 != null && response.Content.Headers.ContentRange == null)
                 {
@@ -58,11 +71,6 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 else if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header)))
                 {
                     properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
-                }
-
-                if (response.Content.Headers.ContentType != null)
-                {
-                    properties.ContentType = response.Content.Headers.ContentType.ToString();
                 }
 
                 string blobEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
@@ -87,11 +95,14 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     properties.Length = response.Content.Headers.ContentLength.Value;
                 }
             }
-
+#if NETCORE
+            properties.CacheControl = HttpWebUtility.GetHeaderValues("Cache-Control", response.Headers);
+#else
             if (response.Headers.CacheControl != null)
             {
                 properties.CacheControl = response.Headers.CacheControl.ToString();
             }
+#endif
 
             if (response.Headers.ETag != null)
             {

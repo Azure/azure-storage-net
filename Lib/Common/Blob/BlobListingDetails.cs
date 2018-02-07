@@ -51,8 +51,13 @@ namespace Microsoft.Azure.Storage.Blob
         Copy = 0x8,
 
         /// <summary>
-        /// List all available committed blobs, uncommitted blobs, and snapshots, and return all metadata and copy status for those blobs.
+        /// Include deleted blobs in the listing.
         /// </summary>
-        All = 0xF
+        Deleted = 0x10,
+
+        /// <summary>
+        /// List all available committed blobs, uncommitted blobs, snapshots and deleted blobs and return all metadata and copy status for those blobs.
+        /// </summary>
+        All = 0x1F
     }
 }

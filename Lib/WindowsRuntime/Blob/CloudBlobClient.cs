@@ -111,19 +111,16 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment of containers.</returns>
         [DoesServiceRequest]
-        public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
-            {
-                BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-                ResultSegment<CloudBlobContainer> resultSegment = await Executor.ExecuteAsync(
-                    this.ListContainersImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
+            ResultSegment<CloudBlobContainer> resultSegment = await Executor.ExecuteAsync(
+                this.ListContainersImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
 
-                return new ContainerResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
-            }, cancellationToken);
+            return new ContainerResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
         }
 
         /// <summary>
@@ -218,11 +215,11 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNull("blobUri", blobUri);
 
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.GetBlobReferenceImpl(blobUri, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -251,24 +248,21 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
+                ListContainersResponse listContainersResponse = new ListContainersResponse(cmd.ResponseStream);
+                List<CloudBlobContainer> containersList = listContainersResponse.Containers.Select(item => new CloudBlobContainer(item.Properties, item.Metadata, item.Name, this)).ToList();
+                BlobContinuationToken continuationToken = null;
+                if (listContainersResponse.NextMarker != null)
                 {
-                    ListContainersResponse listContainersResponse = new ListContainersResponse(cmd.ResponseStream);
-                    List<CloudBlobContainer> containersList = listContainersResponse.Containers.Select(item => new CloudBlobContainer(item.Properties, item.Metadata, item.Name, this)).ToList();
-                    BlobContinuationToken continuationToken = null;
-                    if (listContainersResponse.NextMarker != null)
+                    continuationToken = new BlobContinuationToken()
                     {
-                        continuationToken = new BlobContinuationToken()
-                        {
-                            NextMarker = listContainersResponse.NextMarker,
-                            TargetLocation = cmd.CurrentResult.TargetLocation,
-                        };
-                    }
-
-                    return new ResultSegment<CloudBlobContainer>(containersList)
-                    {
-                        ContinuationToken = continuationToken,
+                        NextMarker = listContainersResponse.NextMarker,
+                        TargetLocation = cmd.CurrentResult.TargetLocation,
                     };
+                }
+
+                return Task.FromResult(new ResultSegment<CloudBlobContainer>(containersList)
+                {
+                    ContinuationToken = continuationToken,
                 });
             };
 
@@ -414,12 +408,11 @@ namespace Microsoft.Azure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(
-                async () => await Executor.ExecuteAsync(
-                    this.GetServicePropertiesImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetServicePropertiesImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<ServiceProperties> GetServicePropertiesImpl(BlobRequestOptions requestOptions)
@@ -435,7 +428,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             retCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() => BlobHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
+                return Task.FromResult(BlobHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
             };
 
             requestOptions.ApplyToStorageCommand(retCmd);
@@ -479,11 +472,11 @@ namespace Microsoft.Azure.Storage.Blob
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this);
             operationContext = operationContext ?? new OperationContext();
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-                 this.SetServicePropertiesImpl(properties, modifiedOptions),
+            return Executor.ExecuteAsyncNullReturn(
+                this.SetServicePropertiesImpl(properties, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         private RESTCommand<NullType> SetServicePropertiesImpl(ServiceProperties properties, BlobRequestOptions requestOptions)
@@ -546,12 +539,11 @@ namespace Microsoft.Azure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(
-                async () => await Executor.ExecuteAsync(
-                    this.GetServiceStatsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetServiceStatsImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(BlobRequestOptions requestOptions)
@@ -567,7 +559,7 @@ namespace Microsoft.Azure.Storage.Blob
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
+            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.FromResult(BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;
         }
 #endregion

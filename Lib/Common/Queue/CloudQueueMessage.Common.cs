@@ -49,17 +49,17 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// The maximum amount of time a message is kept in the queue.
         /// </summary>
-        private static readonly TimeSpan MaximumTimeToLive = TimeSpan.FromDays(7);
+        private static readonly TimeSpan MaximumVisibilityTimeout = TimeSpan.FromDays(7);
 
         /// <summary>
         /// Gets the maximum amount of time a message is kept in the queue.
         /// </summary>
         /// <value>A <see cref="TimeSpan"/> specifying the maximum amount of time a message is kept in the queue.</value>
-        public static TimeSpan MaxTimeToLive
+        public static TimeSpan MaxVisibilityTimeout
         {
             get
             {
-                return MaximumTimeToLive;
+                return MaximumVisibilityTimeout;
             }
         }
 

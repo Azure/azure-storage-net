@@ -50,6 +50,7 @@ namespace Microsoft.Azure.Storage.Core
         public const string CannotCreateSASSignatureForGivenCred = "Cannot create Shared Access Signature as the credentials does not have account name information. Please check that the credentials used support creating Shared Access Signature.";
         public const string CannotCreateSASWithoutAccountKey = "Cannot create Shared Access Signature unless Account Key credentials are used.";
         public const string CannotModifySnapshot = "Cannot perform this operation on a blob representing a snapshot.";
+        public const string CannotModifyDeletedBlob = "Cannot perform this operation on a deleted blob.";
         public const string CannotModifyShareSnapshot = "Cannot perform this operation on a share representing a snapshot.";
         public const string CannotTransformNonHttpsUriWithHttpsOnlyCredentials = "Cannot transform a Uri object using a StorageCredentials object that is marked HTTPS only.";
         public const string CannotUpdateKeyWithoutAccountKeyCreds = "Cannot update key unless Account Key credentials are used.";
@@ -110,6 +111,7 @@ namespace Microsoft.Azure.Storage.Core
         public const string InvalidLoggingLevel = "Invalid logging operations specified.";
         public const string InvalidMetricsLevel = "Invalid metrics level specified.";
         public const string InvalidBlockSize = "Append block data should not exceed the maximum blob size condition value.";
+        public const string InvalidDeleteRetentionDaysValue = "The delete retention policy is enabled but the RetentionDays property is not specified or has an invalid value. RetentionDays must be greater than 0 and less than or equal to 365 days.";
         public const string InvalidPageSize = "Page data must be a multiple of 512 bytes.";
         public const string InvalidProtocolsInSAS = "Invalid value {0} for the SharedAccessProtocol parameter when creating a SharedAccessSignature.  Use 'null' if you do not wish to include a SharedAccessProtocol.";
         public const string InvalidResourceName = "Invalid {0} name. Check MSDN for more information about valid {0} naming.";

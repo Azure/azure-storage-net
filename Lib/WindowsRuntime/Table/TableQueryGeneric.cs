@@ -76,11 +76,11 @@ namespace Microsoft.Azure.Storage.Table
 
             RESTCommand<TableQuerySegment<TElement>> cmdToExecute = QueryImpl(this, token, client, tableName, EntityUtilities.ResolveEntityByType<TElement>, modifiedOptions);
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                        cmdToExecute,
-                                                        modifiedOptions.RetryPolicy,
-                                                        operationContext,
-                                                        cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         internal IEnumerable<TResult> Execute<TResult>(CloudTableClient client, string tableName, EntityResolver<TResult> resolver, TableRequestOptions requestOptions, OperationContext operationContext)
@@ -119,11 +119,11 @@ namespace Microsoft.Azure.Storage.Table
 
             RESTCommand<TableQuerySegment<TResult>> cmdToExecute = QueryImpl(this, token, client, tableName, resolver, modifiedOptions);
 
-            return Task.Run(() => Executor.ExecuteAsync(
-                                            cmdToExecute,
-                                            modifiedOptions.RetryPolicy,
-                                            operationContext,
-                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                cmdToExecute,
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private static RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<T, RESULT_TYPE>(TableQuery<T> query, TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions) where T : ITableEntity, new()
@@ -147,7 +147,7 @@ namespace Microsoft.Azure.Storage.Table
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
-                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName);
+                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx, client.AccountName).ConfigureAwait(false);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;

@@ -130,7 +130,7 @@ namespace Microsoft.Azure.Storage.File
 
                 if (bytesToWrite == maxBytesToWrite)
                 {
-                    await this.DispatchWriteAsync();
+                    await this.DispatchWriteAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -160,7 +160,7 @@ namespace Microsoft.Azure.Storage.File
                 throw this.lastException;
             }
 
-            await this.DispatchWriteAsync();
+            await this.DispatchWriteAsync().ConfigureAwait(false);
             await Task.Run(() => this.noPendingWritesEvent.Wait(), cancellationToken);
 
             if (this.lastException != null)
@@ -197,7 +197,7 @@ namespace Microsoft.Azure.Storage.File
         /// <returns>A task that represents the asynchronous commit operation.</returns>
         public override async Task CommitAsync()
         {
-            await this.FlushAsync();
+            await this.FlushAsync().ConfigureAwait(false);
             this.committed = true;
 
             try
@@ -205,7 +205,7 @@ namespace Microsoft.Azure.Storage.File
                 if (this.fileMD5 != null)
                 {
                     this.file.Properties.ContentMD5 = this.fileMD5.ComputeHash();
-                    await this.file.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext);
+                    await this.file.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -240,7 +240,7 @@ namespace Microsoft.Azure.Storage.File
 
             long offset = this.currentFileOffset;
             this.currentFileOffset += bufferToUpload.Length;
-            await this.WriteRangeAsync(bufferToUpload, offset, bufferMD5);
+            await this.WriteRangeAsync(bufferToUpload, offset, bufferMD5).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -253,7 +253,7 @@ namespace Microsoft.Azure.Storage.File
         private async Task WriteRangeAsync(Stream rangeData, long offset, string contentMD5)
         {
             this.noPendingWritesEvent.Increment();
-            await this.parallelOperationSemaphore.WaitAsync();
+            await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
             Task writePagesTask = this.file.WriteRangeAsync(rangeData, offset, contentMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(task =>
             {
                 if (task.Exception != null)

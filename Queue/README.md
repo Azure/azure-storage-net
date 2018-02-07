@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Queue SDK for .NET (8.7.0-preview)
+﻿# Microsoft Azure Storage Queue SDK for .NET (9.0.0-preview)
 
 The Microsoft Azure Storage Queue SDK for .NET allows you to build Azure applications that take advantage of scalable cloud computing resources.
 
@@ -37,11 +37,17 @@ Through the bait and switch technique, the reference assembly enables other port
 
 - The Storage Client Libraries use [the semantic versioning scheme.](http://semver.org/)
 
+## Use with the Azure Storage Emulator
+
+- The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.3. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+
 ## Download & Install
 
-You'll find the latest version and hotfixes on NuGet via the `Azure.Storage.Queue` package. 
+The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. 
+You'll find the latest version and hotfixes on NuGet via the `Microsoft.Azure.Storage.Queue` package.  
 
-This version of the Storage Client Library Queue package ships with the storage version 2017-04-17.
+This version of the Storage Client Library ships with the storage version 2017-07-29.
 
 ### Via Git
 

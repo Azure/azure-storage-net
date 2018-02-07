@@ -13,7 +13,7 @@ public class ShareResultSegment
         get; private set;
     }
 
-    internal ShareResultSegment(IEnumerable<CloudFileShare> shares, FileContinuationToken continuationToken)
+    public ShareResultSegment(IEnumerable<CloudFileShare> shares, FileContinuationToken continuationToken)
     {
         throw new System.NotImplementedException();
     }

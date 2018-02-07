@@ -715,7 +715,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         {
             Uri uri = BlobClientTests.ConstructUri(context.Address, containerName, blobName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = BlobHttpWebRequestFactory.Delete(uri, context.Timeout, null /* snapshot */, DeleteSnapshotsOption.None, accessCondition, opContext);
+            HttpWebRequest request = BlobHttpWebRequestFactory.Delete(uri, context.Timeout, null /* snapshot */, DeleteSnapshotsOption.None, accessCondition, true, opContext);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
             Assert.AreEqual("DELETE", request.Method);
