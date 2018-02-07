@@ -1,8 +1,8 @@
 ﻿{
   "version": "8.0.0.0",
   "dependencies": {
+    "WindowsAzure.Storage": "9.0.0"
   },
-
   "frameworks": {
     "wp81": {}
   },
@@ -12,12 +12,10 @@
     "win-x86": {},
     "win-anycpu": {}
   },
-
   "buildOptions": {
     "allowUnsafe": false,
     "warningsAsErrors": true,
     "delaySign": true,
     "keyFile": "MSSharedLibKey.snk"
   }
-
 }
