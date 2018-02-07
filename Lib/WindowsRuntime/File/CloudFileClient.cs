@@ -105,19 +105,16 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment of shares.</returns>
         [DoesServiceRequest]
-        public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
-            {
-                FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
-                ResultSegment<CloudFileShare> resultSegment = await Executor.ExecuteAsync(
-                    this.ListSharesImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
+            ResultSegment<CloudFileShare> resultSegment = await Executor.ExecuteAsync(
+                this.ListSharesImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
 
-                return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
-            }, cancellationToken);
+            return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
         }
 
         /// <summary>
@@ -155,12 +152,11 @@ namespace Microsoft.Azure.Storage.File
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(
-                async () => await Executor.ExecuteAsync(
-                    this.GetServicePropertiesImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetServicePropertiesImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         /// <summary>
@@ -200,11 +196,11 @@ namespace Microsoft.Azure.Storage.File
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-                 this.SetServicePropertiesImpl(properties, modifiedOptions),
+            return Executor.ExecuteAsyncNullReturn(
+                this.SetServicePropertiesImpl(properties, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -232,25 +228,22 @@ namespace Microsoft.Azure.Storage.File
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
+                ListSharesResponse listSharesResponse = new ListSharesResponse(cmd.ResponseStream);
+                List<CloudFileShare> sharesList = listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, item.SnapshotTime, this)).ToList();
+                FileContinuationToken continuationToken = null;
+                if (listSharesResponse.NextMarker != null)
+                {
+                    continuationToken = new FileContinuationToken()
                     {
-                        ListSharesResponse listSharesResponse = new ListSharesResponse(cmd.ResponseStream);
-                        List<CloudFileShare> sharesList = listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, item.SnapshotTime, this)).ToList();
-                        FileContinuationToken continuationToken = null;
-                        if (listSharesResponse.NextMarker != null)
-                        {
-                            continuationToken = new FileContinuationToken()
-                            {
-                                NextMarker = listSharesResponse.NextMarker,
-                                TargetLocation = cmd.CurrentResult.TargetLocation,
-                            };
-                        }
+                        NextMarker = listSharesResponse.NextMarker,
+                        TargetLocation = cmd.CurrentResult.TargetLocation,
+                    };
+                }
 
-                        return new ResultSegment<CloudFileShare>(sharesList)
-                        {
-                            ContinuationToken = continuationToken,
-                        };
-                    });
+                return Task.FromResult(new ResultSegment<CloudFileShare>(sharesList)
+                {
+                    ContinuationToken = continuationToken,
+                });
             };
 
             return getCmd;
@@ -269,7 +262,7 @@ namespace Microsoft.Azure.Storage.File
 
             retCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() => FileHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
+                return Task.FromResult(FileHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
             };
 
             requestOptions.ApplyToStorageCommand(retCmd);

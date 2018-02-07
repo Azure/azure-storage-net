@@ -109,21 +109,18 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A result segment of queues.</returns>
         [DoesServiceRequest]
-        public virtual Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<QueueResultSegment> ListQueuesSegmentedAsync(string prefix, QueueListingDetails detailsIncluded, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
-            {
-                ResultSegment<CloudQueue> resultSegment = await Executor.ExecuteAsync(
-                    this.ListQueuesImpl(prefix, maxResults, detailsIncluded, modifiedOptions, currentToken),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
+            ResultSegment<CloudQueue> resultSegment = await Executor.ExecuteAsync(
+                this.ListQueuesImpl(prefix, maxResults, detailsIncluded, modifiedOptions, currentToken),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
 
-                return new QueueResultSegment(resultSegment.Results, (QueueContinuationToken)resultSegment.ContinuationToken);
-            }, cancellationToken);
+            return new QueueResultSegment(resultSegment.Results, (QueueContinuationToken)resultSegment.ContinuationToken);
         }
 
         /// <summary>
@@ -151,26 +148,23 @@ namespace Microsoft.Azure.Storage.Queue
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
+                ListQueuesResponse listQueuesResponse = new ListQueuesResponse(cmd.ResponseStream);
+
+                List<CloudQueue> queuesList = listQueuesResponse.Queues.Select(item => new CloudQueue(item.Metadata, item.Name, this)).ToList();
+
+                QueueContinuationToken continuationToken = null;
+                if (listQueuesResponse.NextMarker != null)
                 {
-                    ListQueuesResponse listQueuesResponse = new ListQueuesResponse(cmd.ResponseStream);
-
-                    List<CloudQueue> queuesList = listQueuesResponse.Queues.Select(item => new CloudQueue(item.Metadata, item.Name, this)).ToList();
-
-                    QueueContinuationToken continuationToken = null;
-                    if (listQueuesResponse.NextMarker != null)
+                    continuationToken = new QueueContinuationToken()
                     {
-                        continuationToken = new QueueContinuationToken()
-                        {
-                            NextMarker = listQueuesResponse.NextMarker,
-                            TargetLocation = cmd.CurrentResult.TargetLocation,
-                        };
-                    }
-
-                    return new ResultSegment<CloudQueue>(queuesList)
-                    {
-                        ContinuationToken = continuationToken,
+                        NextMarker = listQueuesResponse.NextMarker,
+                        TargetLocation = cmd.CurrentResult.TargetLocation,
                     };
+                }
+
+                return Task.FromResult(new ResultSegment<CloudQueue>(queuesList)
+                {
+                    ContinuationToken = continuationToken,
                 });
             };
 
@@ -214,11 +208,11 @@ namespace Microsoft.Azure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-              this.GetServicePropertiesImpl(modifiedOptions),
-              modifiedOptions.RetryPolicy,
-              operationContext,
-              cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetServicePropertiesImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<ServiceProperties> GetServicePropertiesImpl(QueueRequestOptions requestOptions)
@@ -232,7 +226,7 @@ namespace Microsoft.Azure.Storage.Queue
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             retCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() => QueueHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
+                return Task.FromResult(QueueHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
             };
 
             requestOptions.ApplyToStorageCommand(retCmd);
@@ -276,11 +270,11 @@ namespace Microsoft.Azure.Storage.Queue
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-                 this.SetServicePropertiesImpl(properties, modifiedOptions),
+            return Executor.ExecuteAsyncNullReturn(
+                this.SetServicePropertiesImpl(properties, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         private RESTCommand<NullType> SetServicePropertiesImpl(ServiceProperties properties, QueueRequestOptions requestOptions)
@@ -342,12 +336,11 @@ namespace Microsoft.Azure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(
-                async () => await Executor.ExecuteAsync(
-                    this.GetServiceStatsImpl(modifiedOptions),
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetServiceStatsImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         private RESTCommand<ServiceStats> GetServiceStatsImpl(QueueRequestOptions requestOptions)
@@ -363,7 +356,7 @@ namespace Microsoft.Azure.Storage.Queue
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.Factory.StartNew(() => QueueHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
+            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.FromResult(QueueHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
             return retCmd;
         }
 

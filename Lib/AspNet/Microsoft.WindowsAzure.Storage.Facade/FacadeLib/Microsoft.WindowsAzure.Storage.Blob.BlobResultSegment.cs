@@ -13,7 +13,7 @@ public class BlobResultSegment
         get; private set;
     }
 
-    internal BlobResultSegment(IEnumerable<IListBlobItem> blobs, BlobContinuationToken continuationToken)
+    public BlobResultSegment(IEnumerable<IListBlobItem> blobs, BlobContinuationToken continuationToken)
     {
         throw new System.NotImplementedException();
     }

@@ -132,80 +132,10 @@ namespace Microsoft.Azure.Storage.Table.Protocol
             }
 
             return result;
-
-
-
-            /*            return Task.Run(() =>
-            {
-                if (operation.OperationType != TableOperationType.Retrieve && operation.OperationType != TableOperationType.Insert)
-                {
-                    result.Etag = resp.Headers.ETag.ToString();
-                    operation.Entity.ETag = result.Etag;
-                }
-                else if (operation.OperationType == TableOperationType.Insert && (!operation.EchoContent))
-                {
-                    if (resp.Headers.ETag != null)
-                    {
-                        result.Etag = resp.Headers.ETag.ToString();
-                        operation.Entity.ETag = result.Etag;
-                        operation.Entity.Timestamp = ParseETagForTimestamp(result.Etag);
-                    }
-                }
-                else
-                {
-                    // Parse entity
-                    ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
-                    readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
-                    IEnumerable<string> contentType;
-                    resp.Content.Headers.TryGetValues(Constants.HeaderConstants.PayloadContentTypeHeader, out contentType);
-
-                    if (contentType != null && contentType.FirstOrDefault() != null && contentType.FirstOrDefault().Contains(Constants.JsonContentTypeHeaderValue) &&
-                            contentType.FirstOrDefault().Contains(Constants.NoMetadata))
-                    {
-                        IEnumerable<string> etag;
-                        resp.Headers.TryGetValues(Constants.HeaderConstants.EtagHeader, out etag);
-                        if (etag != null)
-                        {
-                            result.Etag = etag.FirstOrDefault();
-                        }
-
-                        ReadEntityUsingJsonParser(result, operation, cmd.ResponseStream, ctx, options);
-                    }
-                    else
-                    {
-                        ReadOdataEntity(result, operation, new HttpResponseAdapterMessage(resp, cmd.ResponseStream), ctx, readerSettings, accountName);
-                    }
-                }
-
-                return result;
-            });
- * */
         }
 
         internal static async Task<IList<TableResult>> TableBatchOperationPostProcess(IList<TableResult> result, TableBatchOperation batch, RESTCommand<IList<TableResult>> cmd, HttpResponseMessage resp, OperationContext ctx, TableRequestOptions options, CancellationToken cancellationToken)
         {
-            //            return Task.Run(() =>
-            //            {
-/*            ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
-            readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
-
-            //                using (ODataMessageReader responseReader = new ODataMessageReader(new HttpResponseAdapterMessage(resp, cmd.ResponseStream), readerSettings))
-            //              {
-            // create a reader
-            ODataBatchReader reader = responseReader.CreateODataBatchReader();
-
-            // Initial => changesetstart 
-            if (reader.State == ODataBatchReaderState.Initial)
-            {
-                reader.Read();
-            }
-
-            if (reader.State == ODataBatchReaderState.ChangesetStart)
-            {
-                // ChangeSetStart => Operation
-                reader.Read();
-            }*/
-
             Stream responseStream = cmd.ResponseStream;
             StreamReader streamReader = new StreamReader(responseStream);
             string currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
@@ -255,11 +185,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                 TableResult currentResult = new TableResult() { Result = currentOperation.Entity };
                 result.Add(currentResult);
 
-/*                ODataBatchOperationResponseMessage mimePartResponseMessage = reader.CreateOperationResponseMessage();
-                string contentType = mimePartResponseMessage.GetHeader(Constants.ContentTypeElement);
-
-                currentResult.HttpStatusCode = mimePartResponseMessage.StatusCode;
- * */
                 string contentType = null;
 
                 if (headers.ContainsKey(Constants.ContentTypeElement))
@@ -287,9 +212,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                     if (statusCode == (int)HttpStatusCode.NotFound)
                     {
                         index++;
-
-                        // Operation => next
-//                        reader.Read();
                         continue;
                     }
 
@@ -368,11 +290,8 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                     throw new StorageException(cmd.CurrentResult, string.Format(SR.BatchErrorInOperation, indexString), null) { IsRetryable = true };
                 }
 
-                // Update etag
-                //if (!string.IsNullOrEmpty(mimePartResponseMessage.GetHeader("ETag")))
                 if ((headers.ContainsKey(Constants.HeaderConstants.EtagHeader)) && (!string.IsNullOrEmpty(headers[Constants.HeaderConstants.EtagHeader])))
                 {
-//                    currentResult.Etag = mimePartResponseMessage.GetHeader("ETag");
                     currentResult.Etag = headers[Constants.HeaderConstants.EtagHeader];
 
                     if (currentOperation.Entity != null)
@@ -384,17 +303,7 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                 // Parse Entity if needed
                 if (currentOperation.OperationType == TableOperationType.Retrieve || (currentOperation.OperationType == TableOperationType.Insert && currentOperation.EchoContent))
                 {
-                    /*
-                    if (mimePartResponseMessage.GetHeader(Constants.ContentTypeElement).Contains(Constants.JsonContentTypeHeaderValue) &&
-                        mimePartResponseMessage.GetHeader(Constants.ContentTypeElement).Contains(Constants.NoMetadata))
-                    {
-                        ReadEntityUsingJsonParser(currentResult, currentOperation, mimePartResponseMessage.GetStream(), ctx, options);
-                    }
-                    else
-                    {
-                        ReadOdataEntity(currentResult, currentOperation, mimePartResponseMessage, ctx, readerSettings, accountName);
-                    }
-                     * */
+
                     if (headers[Constants.ContentTypeElement].Contains(Constants.JsonNoMetadataAcceptHeaderValue))
                     {
                         await ReadEntityUsingJsonParserAsync(currentResult, currentOperation, bodyStream, ctx, options, cancellationToken).ConfigureAwait(false);
@@ -411,85 +320,40 @@ namespace Microsoft.Azure.Storage.Table.Protocol
 
                 index++;
 
-                // Operation =>
-//                reader.Read();
             }
-            //                }
 
             return result;
-            //            });
         }
 
         internal static async Task<ResultSegment<TElement>> TableQueryPostProcessGeneric<TElement>(Stream responseStream, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, HttpResponseMessage resp, TableRequestOptions options, OperationContext ctx, string accountName)
         {
-//            return Task.Run(() =>
-  //          {
-                ResultSegment<TElement> retSeg = new ResultSegment<TElement>(new List<TElement>());
-                retSeg.ContinuationToken = ContinuationFromResponse(resp);
-                IEnumerable<string> contentType;
-                IEnumerable<string> eTag;
+            ResultSegment<TElement> retSeg = new ResultSegment<TElement>(new List<TElement>());
+            retSeg.ContinuationToken = ContinuationFromResponse(resp);
+            IEnumerable<string> contentType;
+            IEnumerable<string> eTag;
 
-                resp.Content.Headers.TryGetValues(Constants.ContentTypeElement, out contentType);
-                resp.Headers.TryGetValues(Constants.EtagElement, out eTag);
+            resp.Content.Headers.TryGetValues(Constants.ContentTypeElement, out contentType);
+            resp.Headers.TryGetValues(Constants.EtagElement, out eTag);
 
-                string ContentType = contentType != null ? contentType.FirstOrDefault() : null;
-                string ETag = eTag != null ? eTag.FirstOrDefault() : null;
-                if (ContentType.Contains(Constants.JsonContentTypeHeaderValue) && ContentType.Contains(Constants.NoMetadata))
+            string ContentType = contentType != null ? contentType.FirstOrDefault() : null;
+            string ETag = eTag != null ? eTag.FirstOrDefault() : null;
+            if (ContentType.Contains(Constants.JsonContentTypeHeaderValue) && ContentType.Contains(Constants.NoMetadata))
+            {
+                await ReadQueryResponseUsingJsonParserAsync(retSeg, responseStream, ETag, resolver, options.PropertyResolver, typeof(TElement), null, options, System.Threading.CancellationToken.None).ConfigureAwait(false);
+            }
+            else
+            {
+                List<KeyValuePair<string, Dictionary<string, object>>> results = await ReadQueryResponseUsingJsonParserMetadataAsync(responseStream, System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+                foreach (KeyValuePair<string, Dictionary<string, object>> kvp in results)
                 {
-                    await ReadQueryResponseUsingJsonParserAsync(retSeg, responseStream, ETag, resolver, options.PropertyResolver, typeof(TElement), null, options, System.Threading.CancellationToken.None).ConfigureAwait(false);
-
-//                    ReadQueryResponseUsingJsonParser(retSeg, responseStream, ETag, resolver, options.PropertyResolver, typeof(TElement), null);
-                }
-                else
-                {
-                    List<KeyValuePair<string, Dictionary<string, object>>> results = await ReadQueryResponseUsingJsonParserMetadataAsync(responseStream, System.Threading.CancellationToken.None).ConfigureAwait(false);
-
-                    foreach (KeyValuePair<string, Dictionary<string, object>> kvp in results)
-                    {
-                        retSeg.Results.Add(ReadAndResolve(kvp.Key, kvp.Value, resolver, options));
-                    }
-                    Logger.LogInformational(ctx, SR.RetrieveWithContinuationToken, retSeg.Results.Count, retSeg.ContinuationToken);
-                    /*
-                    ODataMessageReaderSettings readerSettings = new ODataMessageReaderSettings();
-                    readerSettings.MessageQuotas = new ODataMessageQuotas() { MaxPartsPerBatch = TableConstants.TableServiceMaxResults, MaxReceivedMessageSize = TableConstants.TableServiceMaxPayload };
-
-                    using (ODataMessageReader responseReader = new ODataMessageReader(new HttpResponseAdapterMessage(resp, responseStream), readerSettings, new TableStorageModel(accountName)))
-                    {
-                        // create a reader
-                        ODataReader reader = responseReader.CreateODataFeedReader();
-
-                        // Start => FeedStart
-                        if (reader.State == ODataReaderState.Start)
-                        {
-                            reader.Read();
-                        }
-
-                        // Feedstart 
-                        if (reader.State == ODataReaderState.FeedStart)
-                        {
-                            reader.Read();
-                        }
-
-                        while (reader.State == ODataReaderState.EntryStart)
-                        {
-                            // EntryStart => EntryEnd
-                            reader.Read();
-
-                            ODataEntry entry = (ODataEntry)reader.Item;
-
-                            retSeg.Results.Add(ReadAndResolve(entry, resolver));
-
-                            // Entry End => ?
-                            reader.Read();
-                        }
-
-                        DrainODataReader(reader);
-                    }
-                     * */
+                    retSeg.Results.Add(ReadAndResolve(kvp.Key, kvp.Value, resolver, options));
                 }
 
-                return retSeg;
-//            });
+                Logger.LogInformational(ctx, SR.RetrieveWithContinuationToken, retSeg.Results.Count, retSeg.ContinuationToken); 
+            }
+
+            return retSeg;
         }
 
         public static async Task ReadQueryResponseUsingJsonParserAsync<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx, TableRequestOptions options, System.Threading.CancellationToken cancellationToken)
@@ -664,19 +528,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
 
             return properties;
         }
-        
-        /*private static void DrainODataReader(ODataReader reader)
-        {
-            if (reader.State == ODataReaderState.FeedEnd)
-            {
-                reader.Read();
-            }
-
-            if (reader.State != ODataReaderState.Completed)
-            {
-                throw new InvalidOperationException(string.Format(SR.ODataReaderNotInCompletedState, reader.State));
-            }
-        }*/
 
         /// <summary>
         /// Gets the table continuation from response.
@@ -735,36 +586,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
             }
         }
         
-        /*
-        private static void ReadOdataEntity(TableResult result, TableOperation operation, IODataResponseMessage respMsg, OperationContext ctx, ODataMessageReaderSettings readerSettings, string accountName)
-        {
-            using (ODataMessageReader messageReader = new ODataMessageReader(respMsg, readerSettings, new TableStorageModel(accountName)))
-            {
-                // Create a reader.
-                ODataReader reader = messageReader.CreateODataEntryReader();
-
-                while (reader.Read())
-                {
-                    if (reader.State == ODataReaderState.EntryEnd)
-                    {
-                        ODataEntry entry = (ODataEntry)reader.Item;
-
-                        if (operation.OperationType == TableOperationType.Retrieve)
-                        {
-                            result.Result = ReadAndResolve(entry, operation.RetrieveResolver);
-                            result.Etag = entry.ETag;
-                        }
-                        else
-                        {
-                            result.Etag = ReadAndUpdateTableEntity(operation.Entity, entry, EntityReadFlags.Timestamp | EntityReadFlags.Etag, ctx);
-                        }
-                    }
-                }
-
-                DrainODataReader(reader);
-            }
-        }
-        */
         private static async Task ReadEntityUsingJsonParserAsync(TableResult result, TableOperation operation, Stream stream, OperationContext ctx, TableRequestOptions options, System.Threading.CancellationToken cancellationToken)
         {
             StreamReader streamReader = new StreamReader(stream);
@@ -834,53 +655,7 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                 }
             }
         }
-        /*private static void ReadQueryResponseUsingJsonParser<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx)
-        {
-            StreamReader streamReader = new StreamReader(responseStream);
-            using (JsonReader reader = new JsonTextReader(streamReader))
-            {
-                reader.DateParseHandling = DateParseHandling.None;
-                JObject dataSet = JObject.Load(reader);
-                JToken dataTable = dataSet["value"];
-
-                foreach (JToken token in dataTable)
-                {
-                    Dictionary<string, string> properties = token.ToObject<Dictionary<string, string>>();
-                    retSeg.Results.Add(ReadAndResolveWithEdmTypeResolver(properties, resolver, propertyResolver, etag, type, ctx));
-                }
-
-                if (reader.Read())
-                {
-                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.JsonReaderNotInCompletedState));
-                }
-            }
-        }
-         
-
-        private static void ReadEntityUsingJsonParser(TableResult result, TableOperation operation, Stream stream, OperationContext ctx, TableRequestOptions options)
-        {
-            StreamReader streamReader = new StreamReader(stream);
-            using (JsonReader reader = new JsonTextReader(streamReader))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                Dictionary<string, string> properties = serializer.Deserialize<Dictionary<string, string>>(reader);
-                if (operation.OperationType == TableOperationType.Retrieve)
-                {
-                    result.Result = ReadAndResolveWithEdmTypeResolver(properties, operation.RetrieveResolver, options.PropertyResolver, result.Etag, operation.PropertyResolverType, ctx);
-                }
-                else
-                {
-                    ReadAndUpdateTableEntityWithEdmTypeResolver(operation.Entity, properties, EntityReadFlags.Timestamp | EntityReadFlags.Etag, options.PropertyResolver, ctx);
-                }
-
-                if (reader.Read())
-                {
-                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.JsonReaderNotInCompletedState));
-                }
-            }
-        }
-         * */
-
+       
         internal static void ReadAndUpdateTableEntityWithEdmTypeResolver(ITableEntity entity, Dictionary<string, string> entityAttributes, EntityReadFlags flags, Func<string, string, string, string, EdmType> propertyResolver, OperationContext ctx)
         {
             Dictionary<string, EntityProperty> entityProperties = (flags & EntityReadFlags.Properties) > 0 ? new Dictionary<string, EntityProperty>() : null;
@@ -966,7 +741,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
             }
         }
 
-//        private static T ReadAndResolve<T>(ODataEntry entry, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver)
         private static T ReadAndResolve<T>(string etag, Dictionary<string, object> props, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, TableRequestOptions options)
         {
             string pk = null;
@@ -1077,8 +851,7 @@ namespace Microsoft.Azure.Storage.Table.Protocol
 
             return resolver(pk, rk, ts, properties, etag);
         }
-
-        // returns etag
+        
         internal static string ReadAndUpdateTableEntity(ITableEntity entity, string etag, Dictionary<string, object> props, EntityReadFlags flags, OperationContext ctx)
         {
             if ((flags & EntityReadFlags.Etag) > 0)
@@ -1091,7 +864,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
             if (flags > 0)
             {
                 foreach (KeyValuePair<string, object> prop in props)
-                    //foreach (ODataProperty prop in entry.Properties)
                 {
                     if (prop.Key == TableConstants.PartitionKey)
                     {

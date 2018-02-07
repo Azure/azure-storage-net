@@ -70,6 +70,12 @@ namespace Microsoft.Azure.Storage.Blob
         public DateTimeOffset? SnapshotTime { get; internal set; }
 
         /// <summary>
+        /// Gets the value indicating whether or not this blob has been deleted.
+        /// </summary>
+        /// <value>A bool representing if the has been deleted.</value>
+        public bool IsDeleted { get; internal set; }
+
+        /// <summary>
         /// Gets the state of the most recent or pending copy operation.
         /// </summary>
         /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if no copy blob state exists for this blob.</value>
@@ -83,6 +89,18 @@ namespace Microsoft.Azure.Storage.Blob
             if (this.SnapshotTime.HasValue)
             {
                 string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotModifySnapshot);
+                throw new InvalidOperationException(errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the blob has not been deleted.
+        /// </summary>
+        internal void AssertNotDeleted()
+        {
+            if (this.IsDeleted)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotModifyDeletedBlob);
                 throw new InvalidOperationException(errorMessage);
             }
         }

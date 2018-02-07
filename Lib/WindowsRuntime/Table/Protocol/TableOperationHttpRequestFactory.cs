@@ -104,34 +104,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                     SetContentTypeForHttpWebRequest(msg);
                 }
                 return msg;
-
-
-
-                /*
-                
-                // create the writer, indent for readability of the examples.  
-                ODataMessageWriterSettings writerSettings = new ODataMessageWriterSettings()
-                {
-                    CheckCharacters = false,   // sets this flag on the XmlWriter for ATOM  
-                    Version = TableConstants.ODataProtocolVersion // set the Odata version to use when writing the entry 
-                };
-
-                HttpRequestAdapterMessage adapterMsg = new HttpRequestAdapterMessage(msg, client.BufferManager, (int)Constants.KB);
-                if (!operation.HttpMethod.Equals("HEAD") && !operation.HttpMethod.Equals("GET"))
-                {
-                    adapterMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
-                }
-
-                cmd.StreamToDispose = adapterMsg.GetStream();
-
-                ODataMessageWriter odataWriter = new ODataMessageWriter(adapterMsg, writerSettings, new TableStorageModel(client.AccountName));
-                ODataWriter writer = odataWriter.CreateODataEntryWriter();
-                WriteOdataEntity(operation.Entity, operation.OperationType, ctx, writer);
-
-                ms.Seek(0, SeekOrigin.Begin);
-                msg.Content = new StreamContent(ms);
-                return msg;
-                 * */
             }
 
             return msg;
@@ -222,29 +194,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
 
                 contentWriter.WriteLine(batchSeparator);
 
-                /*
-
-
-
-            // create the writer, indent for readability of the examples.  
-            ODataMessageWriterSettings writerSettings = new ODataMessageWriterSettings()
-            {
-                CheckCharacters = false,   // sets this flag on the XmlWriter for ATOM  
-                Version = TableConstants.ODataProtocolVersion // set the Odata version to use when writing the entry 
-            };
-
-            HttpRequestAdapterMessage adapterMsg = new HttpRequestAdapterMessage(msg, client.BufferManager, 64 * (int)Constants.KB);
-            cmd.StreamToDispose = adapterMsg.GetStream();
-
-            // Start Batch
-            ODataMessageWriter odataWriter = new ODataMessageWriter(adapterMsg, writerSettings);
-            ODataBatchWriter batchWriter = odataWriter.CreateODataBatchWriter();
-            batchWriter.WriteStartBatch();
-
-
-                */
-
-
                 bool isQuery = batch.Count == 1 && batch[0].OperationType == TableOperationType.Retrieve;
 
                 // Query operations should not be inside changeset in payload
@@ -253,8 +202,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                     // Start Operation
                     contentWriter.WriteLine(Constants.ChangesetBoundaryMarker + changesetID);
                     contentWriter.WriteLine();
-                    //batchWriter.WriteStartChangeset();
-                    //batchWriter.Flush();
                 }
 
                 foreach (TableOperation operation in batch)
@@ -288,27 +235,15 @@ namespace Microsoft.Azure.Storage.Table.Protocol
 
                     contentWriter.WriteLine(Constants.HeaderConstants.DataServiceVersion + ": " + Constants.HeaderConstants.DataServiceVersionValue);
 
-
-                    //                ODataBatchOperationRequestMessage mimePartMsg = batchWriter.CreateOperationRequestMessage(httpMethod, operation.GenerateRequestURI(uri, tableName));
-                    //                SetAcceptAndContentTypeForODataBatchMessage(mimePartMsg, payloadFormat);
-
                     // etag
                     if (operation.OperationType == TableOperationType.Delete ||
                         operation.OperationType == TableOperationType.Replace ||
                         operation.OperationType == TableOperationType.Merge)
                     {
-                        //mimePartMsg.SetHeader("If-Match", operation.Entity.ETag);
                         contentWriter.WriteLine(Constants.HeaderConstants.IfMatch + @": " + operation.ETag);
                     }
 
                     contentWriter.WriteLine();
-
-                    /*// Prefer header
-                    if (operation.OperationType == TableOperationType.Insert)
-                    {
-                        mimePartMsg.SetHeader("Prefer", operation.EchoContent ? "return-content" : "return-no-content");
-                    }
-                     * */
 
                     if (operation.OperationType != TableOperationType.Delete && operation.OperationType != TableOperationType.Retrieve)
                     {
@@ -318,24 +253,12 @@ namespace Microsoft.Azure.Storage.Table.Protocol
                             WriteEntityContent(operation, ctx, jsonWriter);
                         }
                         contentWriter.WriteLine();
-
-
-                        /*
-                                            using (ODataMessageWriter batchEntryWriter = new ODataMessageWriter(mimePartMsg, writerSettings, new TableStorageModel(client.AccountName)))
-                                            {
-                                                // Write entity
-                                                ODataWriter entryWriter = batchEntryWriter.CreateODataEntryWriter();
-                                                WriteOdataEntity(operation.Entity, operation.OperationType, ctx, entryWriter);
-                                            }
-                         * */
-                    }
+                   }
                 }
 
                 if (!isQuery)
                 {
                     contentWriter.WriteLine(changesetSeparator + "--");
-                    // End Operation
-                    //                batchWriter.WriteEndChangeset();
                 }
 
                 contentWriter.WriteLine(batchSeparator + "--");
@@ -345,9 +268,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
             msg.Content = new StreamContent(batchContentStream);
             msg.Content.Headers.ContentLength = batchContentStream.Length;
             msg.Content.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(Constants.BatchBoundaryMarker + batchID);//new System.Net.Http.Headers.MediaTypeHeaderValue(Constants.BatchBoundaryMarker + batchID);
-            // End Batch
-            //            batchWriter.WriteEndBatch();
-            //          batchWriter.Flush();
 
             return msg;
         }
@@ -357,25 +277,21 @@ namespace Microsoft.Azure.Storage.Table.Protocol
         internal static IEnumerable<KeyValuePair<string, object>> GetPropertiesFromDictionary(IDictionary<string, EntityProperty> properties)
         {
             return properties.Select(kvp => new KeyValuePair<string, object>(kvp.Key, kvp.Value.PropertyAsObject));
-//            return properties.Select(kvp => new ODataProperty() { Name = kvp.Key, Value = kvp.Value.PropertyAsObject }).ToList();
         }
 
         internal static IEnumerable<KeyValuePair<string, object>> GetPropertiesWithKeys(ITableEntity entity, OperationContext operationContext, TableOperationType operationType)
         {
-//            List<ODataProperty> retProps = GetPropertiesFromDictionary(entity.WriteEntity(operationContext));
             List<KeyValuePair<string, object>> retProps = GetPropertiesFromDictionary(entity.WriteEntity(operationContext)).ToList();
             if (operationType == TableOperationType.Insert)
             {
                 if (entity.PartitionKey != null)
                 {
                     retProps.Add(new KeyValuePair<string, object>(TableConstants.PartitionKey, entity.PartitionKey));
-//                    retProps.Add(new ODataProperty() { Name = TableConstants.PartitionKey, Value = entity.PartitionKey });
                 }
 
                 if (entity.RowKey != null)
                 {
                     retProps.Add(new KeyValuePair<string, object>(TableConstants.RowKey, entity.RowKey));
-//                    retProps.Add(new ODataProperty() { Name = TableConstants.RowKey, Value = entity.RowKey });
                 }
             }
 
@@ -409,26 +325,6 @@ namespace Microsoft.Azure.Storage.Table.Protocol
 
             msg.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(Constants.JsonContentTypeHeaderValue);
         }
-
-/*        private static void SetAcceptAndContentTypeForODataBatchMessage(ODataBatchOperationRequestMessage mimePartMsg, TablePayloadFormat payloadFormat)
-        {
-            if (payloadFormat == TablePayloadFormat.JsonFullMetadata)
-            {
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadAcceptHeader, Constants.JsonFullMetadataAcceptHeaderValue);
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
-            }
-            else if (payloadFormat == TablePayloadFormat.Json)
-            {
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadAcceptHeader, Constants.JsonLightAcceptHeaderValue);
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
-            }
-            else
-            {
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadAcceptHeader, Constants.JsonNoMetadataAcceptHeaderValue);
-                mimePartMsg.SetHeader(Constants.HeaderConstants.PayloadContentTypeHeader, Constants.JsonContentTypeHeaderValue);
-            }
-        }
- * */
         #endregion
     }
 }

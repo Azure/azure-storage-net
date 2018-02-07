@@ -237,6 +237,17 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             return CheckIfTrue(incrementalCopyHeader);
         }
 
+
+        /// <summary>
+        /// Determines if a blob has been deleted.
+        /// </summary>
+        /// <param name="deletedHeader">String giving the deletion status of the blob</param>
+        /// <returns><c>true</c> if blob has been deleted or <c>false</c> if not.</returns>
+        public static bool GetDeletionStatus(string deletedHeader)
+        {
+            return CheckIfTrue(deletedHeader);
+        }
+
         /// <summary>
         /// Determines if the header is equal to the value true.
         /// </summary>

@@ -4,9 +4,9 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
 public static class HeaderConstants
 {
-    public static readonly string UserAgent = "Azure-Storage/8.7.0 ";
+    public static readonly string UserAgent = "Azure-Storage/9.0.0 ";
     public const string UserAgentProductName = "Azure-Storage";
-    public const string UserAgentProductVersion = "8.7.0";
+    public const string UserAgentProductVersion = "9.0.0";
     public const string PrefixForStorageHeader = "x-ms-";
     public const string TrueHeader = "true";
     public const string FalseHeader = "false";
@@ -68,7 +68,7 @@ public static class HeaderConstants
     public const string ClientRequestIdHeader = "x-ms-client-request-id";
     public const string BlobPublicAccess = "x-ms-blob-public-access";
     public const string RangeHeaderFormat = "bytes={0}-{1}";
-    public const string TargetStorageVersion = "2017-04-17";
+    public const string TargetStorageVersion = "2017-07-29";
     public const string File = "File";
     public const string PageBlob = "PageBlob";
     public const string BlockBlob = "BlockBlob";
@@ -97,8 +97,6 @@ public static class HeaderConstants
     public const string CopyDestinationSnapshotHeader = "x-ms-copy-destination-snapshot";
     public const string ShareSize = "x-ms-share-size";
     public const string ShareQuota = "x-ms-share-quota";
-    internal const string PayloadAcceptHeader = "Accept";
-    internal const string PayloadContentTypeHeader = "Content-Type";
 }
 
 }

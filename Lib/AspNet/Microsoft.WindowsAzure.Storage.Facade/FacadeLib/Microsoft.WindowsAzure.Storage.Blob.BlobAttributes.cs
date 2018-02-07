@@ -33,6 +33,11 @@ internal sealed class BlobAttributes
         get; internal set;
     }
 
+    public bool IsDeleted
+    {
+        get; internal set;
+    }
+
     public CopyState CopyState
     {
         get; internal set;
@@ -43,6 +48,10 @@ internal sealed class BlobAttributes
         throw new System.NotImplementedException();
     }
     internal void AssertNoSnapshot()
+    {
+        throw new System.NotImplementedException();
+    }
+    internal void AssertNotDeleted()
     {
         throw new System.NotImplementedException();
     }

@@ -257,39 +257,38 @@ namespace Microsoft.Azure.Storage.Table
         /// <returns><c>true</c> if table was created; otherwise, <c>false</c>.</returns>
         /// <remarks>This API performs an existence check and therefore requires list permissions.</remarks>
         [DoesServiceRequest]
-        public virtual Task<bool> CreateIfNotExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> CreateIfNotExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
+            try
             {
-                try
+                await this.CreateAsync(requestOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception)
+            {
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
                 {
-                    await this.CreateAsync(requestOptions, operationContext, cancellationToken);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                    StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                    if ((extendedInfo == null) ||
+#pragma warning disable 618
+                        (extendedInfo.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
+#pragma warning restore 618
                     {
-                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                        if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == TableErrorCodeStrings.TableAlreadyExists))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        return false;
                     }
                     else
                     {
                         throw;
                     }
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
         #endregion
 
@@ -371,54 +370,53 @@ namespace Microsoft.Azure.Storage.Table
         /// <returns><c>true</c> if the table already existed and was deleted; otherwise, <c>false</c>.</returns>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
+            try
             {
-                try
+                if (!await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken).ConfigureAwait(false))
                 {
-                    if (!await this.ExistsAsync(true, requestOptions, operationContext, cancellationToken))
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
+            }
+
+            try
+            {
+                await this.DeleteAsync(requestOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception)
+            {
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                    if ((extendedInfo == null) ||
+#pragma warning disable 618
+                        (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
+#pragma warning restore 618
                     {
                         return false;
-                    }
-                }
-                catch (StorageException e)
-                {
-                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
-                    {
-                        throw;
-                    }
-                }
-
-                try
-                {
-                    await this.DeleteAsync(requestOptions, operationContext, cancellationToken);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                    {
-                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                        if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == StorageErrorCodeStrings.ResourceNotFound))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
                     }
                     else
                     {
                         throw;
                     }
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
         #endregion
 
@@ -467,7 +465,7 @@ namespace Microsoft.Azure.Storage.Table
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the table exists.</returns>
         [DoesServiceRequest]
-        private Task<bool> ExistsAsync(bool primaryOnly, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        private async Task<bool> ExistsAsync(bool primaryOnly, TableRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
             requestOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
@@ -478,13 +476,10 @@ namespace Microsoft.Azure.Storage.Table
             operation.IsTableEntity = true;
             operation.IsPrimaryOnlyRetrieve = primaryOnly;
 
-            return Task.Run(async () =>
-            {
-                TableResult res = await this.ServiceClient.ExecuteAsync(TableConstants.TableServiceTablesName, operation, requestOptions, operationContext, cancellationToken);
+            TableResult res = await this.ServiceClient.ExecuteAsync(TableConstants.TableServiceTablesName, operation, requestOptions, operationContext, cancellationToken).ConfigureAwait(false);
 
-                // Only other option is not found, other status codes will throw prior to this.            
-                return res.HttpStatusCode == (int)HttpStatusCode.OK;
-            }, cancellationToken);
+            // Only other option is not found, other status codes will throw prior to this.            
+            return res.HttpStatusCode == (int)HttpStatusCode.OK;
         }
         #endregion
 
@@ -527,11 +522,11 @@ namespace Microsoft.Azure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-                                                            this.SetPermissionsImpl(permissions, modifiedOptions),
-                                                            modifiedOptions.RetryPolicy,
-                                                            operationContext,
-                                                            cancellationToken), cancellationToken);
+            return Executor.ExecuteAsyncNullReturn(
+                this.SetPermissionsImpl(permissions, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         /// <summary>
@@ -596,11 +591,11 @@ namespace Microsoft.Azure.Storage.Table
             TableRequestOptions modifiedOptions = TableRequestOptions.ApplyDefaults(requestOptions, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
-                                                        this.GetPermissionsImpl(modifiedOptions),
-                                                        modifiedOptions.RetryPolicy,
-                                                        operationContext,
-                                                        cancellationToken), cancellationToken);
+            return Executor.ExecuteAsync(
+                this.GetPermissionsImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         /// <summary>
@@ -620,12 +615,9 @@ namespace Microsoft.Azure.Storage.Table
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task<TablePermissions>.Factory.StartNew(() =>
-                {
-                    TablePermissions TableAcl = new TablePermissions();
-                    HttpResponseParsers.ReadSharedAccessIdentifiers(TableAcl.SharedAccessPolicies, new TableAccessPolicyResponse(cmd.ResponseStream));
-                    return TableAcl;
-                });
+                TablePermissions TableAcl = new TablePermissions();
+                HttpResponseParsers.ReadSharedAccessIdentifiers(TableAcl.SharedAccessPolicies, new TableAccessPolicyResponse(cmd.ResponseStream));
+                return Task.FromResult(TableAcl);
             };
 
             return getCmd;

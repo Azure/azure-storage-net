@@ -136,6 +136,9 @@ namespace Microsoft.Azure.Storage.Blob
                                      }
                 });
 
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 5;
+
             client.SetServiceProperties(props);
 
             TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties());
@@ -187,6 +190,9 @@ namespace Microsoft.Azure.Storage.Blob
                                      }
                 });
 
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 8;
+
             using (ManualResetEvent evt = new ManualResetEvent(false))
             {
                 IAsyncResult result = null;
@@ -236,6 +242,9 @@ namespace Microsoft.Azure.Storage.Blob
             props.HourMetrics.RetentionDays = 6;
             props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
 
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 7;
+
             client.SetServicePropertiesAsync(props).Wait();
 
             // Wait for analytics server to update
@@ -256,6 +265,8 @@ namespace Microsoft.Azure.Storage.Blob
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 8;
             props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 7;
 
             client.SetServicePropertiesAsync(props).Wait();
 
@@ -280,6 +291,8 @@ namespace Microsoft.Azure.Storage.Blob
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 9;
             props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 7;
 
             client.SetServicePropertiesAsync(props, cancellationToken).Wait();
 
@@ -305,6 +318,8 @@ namespace Microsoft.Azure.Storage.Blob
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 10;
             props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 10;
 
             client.SetServicePropertiesAsync(props, requestOptions, operationContext).Wait();
 
@@ -329,6 +344,8 @@ namespace Microsoft.Azure.Storage.Blob
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             props.HourMetrics.RetentionDays = 11;
             props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 8;
 
             client.SetServicePropertiesAsync(props, requestOptions, operationContext, cancellationToken).Wait();
 
@@ -899,7 +916,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.Cloud)]
         public void TestSetServicePropertiesWithoutCorsProperties()
         {
-            ServiceProperties serviceProperties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties());
+            ServiceProperties serviceProperties = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), deleteRetentionPolicy: new DeleteRetentionPolicy());
 
             serviceProperties.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
             serviceProperties.Logging.RetentionDays = 5;
@@ -912,6 +929,9 @@ namespace Microsoft.Azure.Storage.Blob
             serviceProperties.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
             serviceProperties.MinuteMetrics.RetentionDays = 6;
             serviceProperties.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+
+            serviceProperties.DeleteRetentionPolicy.RetentionDays = 7;
+            serviceProperties.DeleteRetentionPolicy.Enabled = true;
 
             client.SetServiceProperties(serviceProperties);
         }
@@ -928,8 +948,73 @@ namespace Microsoft.Azure.Storage.Blob
             TestHelper.ExpectedException<ArgumentException>(() => client.SetServiceProperties(serviceProperties), "At least one service property needs to be non-null for SetServiceProperties API.");
         }
 
+
+        #region Blob Delete Retention Policy 
+
+        [TestMethod]
+        [Description("Test Blob Delete Retention Policies")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void TestSetGetDeleteRetentionPolicy()
+        {
+            ServiceProperties props = DefaultServiceProperties();
+
+            props.DefaultServiceVersion = Constants.HeaderConstants.TargetStorageVersion;
+            props.DeleteRetentionPolicy = new DeleteRetentionPolicy()
+            {
+                Enabled = true,
+                RetentionDays = 365
+            };
+
+            client.SetServicePropertiesAsync(props).Wait();
+            TestHelper.AssertServicePropertiesAreEqual(props, client.GetServicePropertiesAsync().Result);
+
+            //Disable DeleteRetentionPolicy to test that the RetentionDays are ignored by service
+            props.DeleteRetentionPolicy = new DeleteRetentionPolicy
+            {
+                Enabled = false,
+                RetentionDays = 1
+            };
+            
+            client.SetServicePropertiesAsync(props).Wait();
+            Assert.IsNull(client.GetServicePropertiesAsync().Result.DeleteRetentionPolicy.RetentionDays);
+
+            //Test invalid values for Retention Days ( < 1 or > 365)
+            props.DeleteRetentionPolicy = new DeleteRetentionPolicy
+            {
+                Enabled = true,
+                RetentionDays = 0
+            };
+
+            TestHelper.ExpectedException<ArgumentException>(() => client.SetServiceProperties(props), "The delete retention policy is enabled but the RetentionDays property is not specified or has an invalid value. The specified value must be between 1 and 365.");
+
+
+            //Test invalid values for Retention Days ( < 1 or > 365) or null if Enabled set to true
+            props.DeleteRetentionPolicy = new DeleteRetentionPolicy
+            {
+                Enabled = true,
+                RetentionDays = 366
+            };
+
+            TestHelper.ExpectedException<ArgumentException>(() => client.SetServiceProperties(props), "The delete retention policy is enabled but the RetentionDays property is not specified or has an invalid value. The specified value must be between 1 and 365.");
+
+
+            props.DeleteRetentionPolicy = new DeleteRetentionPolicy
+            {
+                Enabled = true,
+                RetentionDays = null
+            };
+
+            TestHelper.ExpectedException<ArgumentException>(() => client.SetServiceProperties(props), "The delete retention policy is enabled but the RetentionDays property is not specified or has an invalid value. The specified value must be between 1 and 365.");
+        }
+
+        #endregion
+
         #region Test Helpers
-        private void TestCorsRules(CloudBlobClient client, IList<CorsRule> corsProps)
+
+       private void TestCorsRules(CloudBlobClient client, IList<CorsRule> corsProps)
         {
             props.Cors.CorsRules.Clear();
 
@@ -944,7 +1029,7 @@ namespace Microsoft.Azure.Storage.Blob
 
         private static ServiceProperties DefaultServiceProperties()
         {
-            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties(), new DeleteRetentionPolicy());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
@@ -960,10 +1045,14 @@ namespace Microsoft.Azure.Storage.Blob
 
             props.Cors.CorsRules = new List<CorsRule>();
 
+            props.DeleteRetentionPolicy.Enabled = false;
+            props.DeleteRetentionPolicy.RetentionDays = null;
+
             props.DefaultServiceVersion = "2013-08-15";
 
             return props;
         }
+
         #endregion
     }
 }

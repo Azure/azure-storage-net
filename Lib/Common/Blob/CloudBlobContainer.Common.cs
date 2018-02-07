@@ -255,6 +255,10 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="blobName">A string containing the name of the block blob.</param>
         /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
+        /// <remarks>
+        /// ## Examples
+        /// [!code-csharp[Get_Block_Blob_Reference_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_UploadBlob_EndToEnd "Get Block Blob Reference Sample")] 
+        /// </remarks>
         public virtual CloudBlockBlob GetBlockBlobReference(string blobName)
         {
             return this.GetBlockBlobReference(blobName, null /* snapshotTime */);

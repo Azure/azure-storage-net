@@ -20,6 +20,10 @@ namespace Microsoft.Azure.Storage.Blob
     /// <summary>
     /// Represents the permissions for a container.
     /// </summary>
+    /// /// <remarks>
+    /// ## Examples
+    ///  [!code-csharp[BlobContainerPermissions_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/SASTests.cs#sample_CloudBlobContainer_GetSetPermissions "BlobContainerPermissions Sample")]
+    /// </remarks>
     public sealed class BlobContainerPermissions
     {
         /// <summary>

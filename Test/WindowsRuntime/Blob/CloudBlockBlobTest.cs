@@ -305,7 +305,52 @@ namespace Microsoft.Azure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#if NETCORE
+        [TestMethod]
+        [Description("Verify setting the properties of a blob with spacial characters such as '<' and getting them")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobSetPropertiesSpecialCharactersAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
 
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                await CreateForTestAsync(blob, 1, 1024);
+                string eTag = blob.Properties.ETag;
+                DateTimeOffset lastModified = blob.Properties.LastModified.Value;
+
+                await Task.Delay(1000);
+
+                blob.Properties.CacheControl = "no-trans>form";
+                blob.Properties.ContentDisposition = "a<ttachment";
+                blob.Properties.ContentEncoding = "gzi<p";
+                blob.Properties.ContentLanguage = "tr,en>";
+                blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                blob.Properties.ContentType = "text</html";
+                await blob.SetPropertiesAsync();
+                Assert.IsTrue(blob.Properties.LastModified > lastModified);
+                Assert.AreNotEqual(eTag, blob.Properties.ETag);
+
+                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
+                await blob2.FetchAttributesAsync();
+                Assert.AreEqual("no-trans>form", blob2.Properties.CacheControl);
+                Assert.AreEqual("a<ttachment", blob2.Properties.ContentDisposition);
+                Assert.AreEqual("gzi<p", blob2.Properties.ContentEncoding);
+                Assert.AreEqual("tr,en>", blob2.Properties.ContentLanguage);
+                Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
+                Assert.AreEqual("text</html", blob2.Properties.ContentType);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
         [TestMethod]
         [Description("Try retrieving properties of a block blob using a page blob reference")]
         [TestCategory(ComponentCategory.Blob)]

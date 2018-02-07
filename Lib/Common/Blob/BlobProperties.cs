@@ -60,6 +60,8 @@ namespace Microsoft.Azure.Storage.Blob
             this.StandardBlobTier = other.StandardBlobTier;
             this.RehydrationStatus = other.RehydrationStatus;
             this.BlobTierLastModifiedTime = other.BlobTierLastModifiedTime;
+            this.DeletedTime = other.DeletedTime;
+            this.RemainingDaysBeforePermanentDelete = other.RemainingDaysBeforePermanentDelete;
         }
 
         /// <summary>
@@ -207,5 +209,18 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <value>A <see cref="DateTimeOffset"/> containing the time for when the tier of the blob was last-modified, in UTC format.</value>
         public DateTimeOffset? BlobTierLastModifiedTime { get; internal set; }
+
+
+        /// <summary>
+        /// If the blob is deleted, gets the the deletion time for the blob, expressed as a UTC value.
+        /// </summary>
+        /// <value>A <see cref="DateTimeOffset"/> containing the blob's deletion time, in UTC format.</value>
+        public DateTimeOffset? DeletedTime { get; internal set; }
+
+        /// <summary>
+        /// If the blob is an soft-deleted, gets the number of remaining days before the blob is permenantly deleted.
+        /// </summary>
+        /// <value>An integer containing the number of remaining days before permenant delete.</value>
+        public int? RemainingDaysBeforePermanentDelete { get; internal set; }
     }
 }

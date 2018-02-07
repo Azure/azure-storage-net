@@ -9,7 +9,8 @@ public enum BlobListingDetails
     Metadata = 2,
     UncommittedBlobs = 4,
     Copy = 8,
-    All = Copy | UncommittedBlobs | Metadata | Snapshots,
+    Deleted = 16,
+    All = Deleted | Copy | UncommittedBlobs | Metadata | Snapshots,
 }
 
 }
