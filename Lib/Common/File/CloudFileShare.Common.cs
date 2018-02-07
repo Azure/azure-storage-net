@@ -341,7 +341,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <returns>A reference to the root directory.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Reviewed")]
-        public CloudFileDirectory GetRootDirectoryReference()
+        public virtual CloudFileDirectory GetRootDirectoryReference()
         {
             return new CloudFileDirectory(this.StorageUri, string.Empty, this);
         }

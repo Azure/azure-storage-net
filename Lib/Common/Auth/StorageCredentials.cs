@@ -33,6 +33,10 @@ namespace Microsoft.WindowsAzure.Storage.Auth
     /// <summary>
     /// Represents a set of credentials used to authenticate access to a Microsoft Azure storage account.
     /// </summary>
+    /// <remarks>
+    /// ## Examples
+    /// [!code-csharp[Storage_Credentials_Sample](~/azure-storage-net/Test/Common/Core/CloudStorageAccountTests.cs#sample_CloudStorageAccount_Constructor "Storage Credentials Sample")] 
+    /// </remarks>
     public sealed class StorageCredentials
     {
         private SasQueryBuilder queryBuilder;

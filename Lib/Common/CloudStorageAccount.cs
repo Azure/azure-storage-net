@@ -40,7 +40,11 @@ namespace Microsoft.WindowsAzure.Storage
     /// <summary>
     /// Represents a Microsoft Azure Storage account.
     /// </summary>
-    public sealed class CloudStorageAccount
+    /// <remarks>
+    ///  ## Examples
+    ///  [!code-csharp[Cloud_Storage_Account_Sample](~/azure-storage-net/Test/Common/Core/CloudStorageAccountTests.cs#sample_CloudStorageAccount_Constructor "Cloud Storage Account Sample")]
+    ///  </remarks>
+    public class CloudStorageAccount
     {
         /// <summary>
         /// The FISMA compliance default value.
@@ -560,7 +564,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Creates the Table service client.
         /// </summary>
         /// <returns>A <see cref="CloudTableClient"/> object.</returns>
-        public CloudTableClient CreateCloudTableClient()
+        public virtual CloudTableClient CreateCloudTableClient()
         {
             if (this.TableEndpoint == null)
             {
@@ -579,7 +583,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Creates the Queue service client.
         /// </summary>
         /// <returns>A <see cref="CloudQueueClient"/> object.</returns>
-        public CloudQueueClient CreateCloudQueueClient()
+        public virtual CloudQueueClient CreateCloudQueueClient()
         {
             if (this.QueueEndpoint == null)
             {
@@ -597,8 +601,12 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Creates the Blob service client.
         /// </summary>
+        /// <remarks>
+        ///## Examples
+        ///[!code-csharp[Create_Cloud_Blob_Client_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_UploadBlob_EndToEnd "Create Cloud Blob Client Sample")] 
+        /// </remarks>
         /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
-        public CloudBlobClient CreateCloudBlobClient()
+        public virtual CloudBlobClient CreateCloudBlobClient()
         {
             if (this.BlobEndpoint == null)
             {
@@ -638,7 +646,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// Creates the File service client.
         /// </summary>
         /// <returns>A client object that specifies the File service endpoint.</returns>
-        public CloudFileClient CreateCloudFileClient()
+        public virtual CloudFileClient CreateCloudFileClient()
         {
             if (this.FileEndpoint == null)
             {

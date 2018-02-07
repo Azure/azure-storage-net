@@ -10,7 +10,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
 internal sealed class BlobWriteStream : BlobWriteStreamBase
 {
-
+    internal BlobWriteStream(CloudBlockBlob blockBlob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+      : base(blockBlob, accessCondition, options, operationContext)
+    {
+        throw new System.NotImplementedException();
+    }
     internal BlobWriteStream(CloudPageBlob pageBlob, long pageBlobSize, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
       : base(pageBlob, pageBlobSize, createNew, accessCondition, options, operationContext)
     {

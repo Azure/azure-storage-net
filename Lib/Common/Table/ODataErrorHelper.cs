@@ -17,33 +17,36 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-    using Microsoft.Data.OData;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Microsoft.WindowsAzure.Storage.Table.Protocol;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
 #if WINDOWS_RT   || NETCORE
     using System.Net.Http;
 #endif
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Microsoft.WindowsAzure.Storage.Table.DataServices;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 #elif WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
 
     /// <summary>
     /// Represents additional functionality for processing extended error information returned by the Windows Azure storage services for Tables.
-    /// The class was created to only load the OData library when required for parsing the ExtendedErrorInformation of Tables.
     /// </summary>
-    public static class ODataErrorHelper 
+    public static class ODataErrorHelper
     {
         /// <summary>
-        /// Gets the error details from the stream using OData library.
+        /// Gets the error details from the stream.
         /// </summary>
         /// <param name="inputStream">The input stream.</param>
         /// <param name="response">The web response.</param>
@@ -55,6 +58,7 @@ namespace Microsoft.WindowsAzure.Storage
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream,
                 HttpWebResponse response, string contentType)
 #endif
+
         {
             CommonUtility.AssertNotNull("inputStream", inputStream);
             CommonUtility.AssertNotNull("response", response);
@@ -64,82 +68,96 @@ namespace Microsoft.WindowsAzure.Storage
                 return null;
             }
 
-            HttpResponseAdapterMessage responseMessage = new HttpResponseAdapterMessage(response,
-                new NonCloseableStream(inputStream), contentType);
-            return ReadAndParseExtendedError(responseMessage);
-        }
-
-        /// <summary>
-        /// Gets the error details from the stream using OData library.
-        /// </summary>
-        /// <param name="inputStream">The input stream.</param>
-        /// <param name="responseHeaders">The web response headers.</param>
-        /// <param name="contentType">The response Content-Type.</param>
-        /// <returns>The error details.</returns>
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        public static StorageExtendedErrorInformation ReadDataServiceResponseFromStream(Stream inputStream,
-            IDictionary<string, string> responseHeaders, string contentType)
-        {
-            CommonUtility.AssertNotNull("inputStream", inputStream);
-
-            if (inputStream.CanSeek && inputStream.Length <= 0)
+#if WINDOWS_RT || NETCORE
+            string actualContentType = response.Content.Headers.ContentType.ToString();
+#else
+            string actualContentType = response.ContentType;
+#endif
+            // Some table operations respond with XML - request body too large, for example.
+            if (actualContentType.Contains(@"xml"))
             {
-                return null;
+                return StorageExtendedErrorInformation.ReadFromStream(inputStream);
             }
 
-            DataServicesResponseAdapterMessage responseMessage = new DataServicesResponseAdapterMessage(responseHeaders,
-                inputStream, contentType);
-            return ReadAndParseExtendedError(responseMessage);
+            return ReadAndParseExtendedError(new NonCloseableStream(inputStream));
         }
-#endif
 
         /// <summary>
-        /// Parses the error details from the stream using OData library.
+        /// Parses the error details from the stream
         /// </summary>
-        /// <param name="responseMessage">The IODataResponseMessage to parse.</param>
+        /// <param name="inputStream">The stream to parse.</param>
         /// <returns>The error details.</returns>
-        public static StorageExtendedErrorInformation ReadAndParseExtendedError(IODataResponseMessage responseMessage)
+        public static StorageExtendedErrorInformation ReadAndParseExtendedError(Stream inputStream)
         {
-            StorageExtendedErrorInformation storageExtendedError = null;
-            using (ODataMessageReader reader = new ODataMessageReader(responseMessage))
-            {
-                try
-                {
-                    ODataError error = reader.ReadError();
-                    if (error != null)
-                    {
-                        storageExtendedError = new StorageExtendedErrorInformation();
-                        storageExtendedError.AdditionalDetails = new Dictionary<string, string>();
-                        storageExtendedError.ErrorCode = error.ErrorCode;
-                        storageExtendedError.ErrorMessage = error.Message;
-                        if (error.InnerError != null)
-                        {
-                            storageExtendedError.AdditionalDetails[Constants.ErrorExceptionMessage] =
-                                error.InnerError.Message;
-                            storageExtendedError.AdditionalDetails[Constants.ErrorExceptionStackTrace] =
-                                error.InnerError.StackTrace;
-                        }
+            return ReadAndParseExtendedErrorAsync(inputStream, CancellationToken.None).GetAwaiter().GetResult();
+        }
 
-#if !(WINDOWS_PHONE && WINDOWS_DESKTOP)
-                        if (error.InstanceAnnotations.Count > 0)
+        /// <summary>
+        /// Parses the error details from the stream.
+        /// </summary>
+        /// <param name="responseStream">The stream to parse.</param>
+        /// <param name="cancellationToken">Cancellation token used to cancel the request.</param>
+        /// <returns>The error details.</returns>
+        public static async Task<StorageExtendedErrorInformation> ReadAndParseExtendedErrorAsync(Stream responseStream, CancellationToken cancellationToken)
+        {
+            try
+            {
+                StreamReader streamReader = new StreamReader(responseStream);
+                using (JsonReader reader = new JsonTextReader(streamReader))
+                {
+                    reader.DateParseHandling = DateParseHandling.None;
+                    JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
+
+                    Dictionary<string, object> properties = dataSet.ToObject<Dictionary<string, object>>();
+
+                    StorageExtendedErrorInformation errorInformation = new StorageExtendedErrorInformation();
+
+                    errorInformation.AdditionalDetails = new Dictionary<string, string>();
+                    if (properties.ContainsKey(@"odata.error"))
+                    {
+                        Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>();
+                        if (errorProperties.ContainsKey(@"code"))
                         {
-                            foreach (ODataInstanceAnnotation annotation in error.InstanceAnnotations)
+#pragma warning disable 618
+                            errorInformation.ErrorCode = (string)errorProperties[@"code"];
+#pragma warning restore 618
+                        }
+                        if (errorProperties.ContainsKey(@"message"))
+                        {
+                            Dictionary<string, object> errorMessageProperties = ((JObject)errorProperties[@"message"]).ToObject<Dictionary<string, object>>();
+                            if (errorMessageProperties.ContainsKey(@"value"))
                             {
-                                storageExtendedError.AdditionalDetails[annotation.Name] =
-                                    annotation.Value.GetAnnotation<string>();
+                                errorInformation.ErrorMessage = (string)errorMessageProperties[@"value"];
                             }
                         }
-#endif
+                        if (errorProperties.ContainsKey(@"innererror"))
+                        {
+                            Dictionary<string, object> innerErrorDictionary = ((JObject)errorProperties[@"innererror"]).ToObject<Dictionary<string, object>>();
+                            if (innerErrorDictionary.ContainsKey(@"message"))
+                            {
+                                errorInformation.AdditionalDetails[Constants.ErrorExceptionMessage] = (string)innerErrorDictionary[@"message"];
+                            }
+
+                            if (innerErrorDictionary.ContainsKey(@"type"))
+                            {
+                                errorInformation.AdditionalDetails[Constants.ErrorException] = (string)innerErrorDictionary[@"type"];
+                            }
+
+                            if (innerErrorDictionary.ContainsKey(@"stacktrace"))
+                            {
+                                errorInformation.AdditionalDetails[Constants.ErrorExceptionStackTrace] = (string)innerErrorDictionary[@"stacktrace"];
+                            }
+                        }
                     }
-                }
-                catch (Exception)
-                {
-                    // Error cannot be parsed. 
-                    return null;
+
+                    return errorInformation;
                 }
             }
-
-            return storageExtendedError;
+            catch (Exception)
+            {
+                // Exception cannot be parsed, better to throw the original exception than the error-parsing exception.
+                return null;
+            }
         }
     }
 }

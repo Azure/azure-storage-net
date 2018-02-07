@@ -278,6 +278,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 file.Properties.ContentLanguage = "tr,en";
                 file.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 file.Properties.ContentType = "text/html";
+
                 await file.SetPropertiesAsync();
                 Assert.IsTrue(file.Properties.LastModified > lastModified);
                 Assert.AreNotEqual(eTag, file.Properties.ETag);
@@ -289,7 +290,6 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Assert.AreEqual("tr,en", file2.Properties.ContentLanguage);
                 Assert.AreEqual("MDAwMDAwMDA=", file2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", file2.Properties.ContentType);
-
                 CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream stream = new MemoryStream())
                 {
@@ -317,6 +317,54 @@ namespace Microsoft.WindowsAzure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
+#if NETCORE
+        [TestMethod]
+        [Description("Verify setting the properties of a file with spacial characters such as '<' and getting them")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileSetPropertiesSpecialCharactersAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                await file.CreateAsync(1024);
+                string eTag = file.Properties.ETag;
+                DateTimeOffset lastModified = file.Properties.LastModified.Value;
+
+                await Task.Delay(1000);
+
+                file.Properties.CacheControl = "no-tr>ansform";
+                file.Properties.ContentEncoding = "gzi<p";
+                file.Properties.ContentLanguage = "tr,e>n";
+                file.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                file.Properties.ContentType = "text/html>";
+
+                file.Properties.ContentDisposition = "in<aliContentDisposition";
+                await file.SetPropertiesAsync();
+                Assert.IsTrue(file.Properties.LastModified > lastModified);
+                Assert.AreNotEqual(eTag, file.Properties.ETag);
+
+                CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
+                await file2.FetchAttributesAsync();
+                Assert.AreEqual("no-tr>ansform", file2.Properties.CacheControl);
+                Assert.AreEqual("gzi<p", file2.Properties.ContentEncoding);
+                Assert.AreEqual("tr,e>n", file2.Properties.ContentLanguage);
+                Assert.AreEqual("MDAwMDAwMDA=", file2.Properties.ContentMD5);
+                Assert.AreEqual("text/html>", file2.Properties.ContentType);
+                Assert.AreEqual("in<aliContentDisposition", file2.Properties.ContentDisposition);
+
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
 
         [TestMethod]
         [Description("Verify that creating a file can also set its metadata")]

@@ -263,6 +263,27 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Undeletes the specified URI.
+        /// </summary>
+        /// <param name="uri">The URI of the resource to delete.</param>
+        /// <param name="timeout">The timeout.</param>
+        /// <param name="builder">The builder.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        internal static HttpWebRequest Undelete(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            if (builder == null)
+            {
+                builder = new UriQueryBuilder();
+            }
+
+            builder.Add(Constants.QueryConstants.Component, "undelete");
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
+            return request;
+        }
+
+        /// <summary>
         /// Creates a web request to get the properties of the service.
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>
