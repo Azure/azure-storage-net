@@ -1,19 +1,20 @@
-# Microsoft Azure Storage Blob SDK for .NET (8.7.0-preview)
+﻿# Microsoft Azure Storage File SDK for .NET (9.0.0-preview)
 
-The Microsoft Azure Storage Blob SDK for .NET allows you to build Azure applications that take advantage of scalable cloud computing resources.
+The Microsoft Azure Storage File SDK for .NET allows you to build Azure applications that take advantage of scalable cloud computing resources.
 
 For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
 
 ## Features
 
-- Blobs
-    - Create/Read/Update/Delete Blobs
+- Files
+    - Create/Update/Delete Directories
+    - Create/Read/Update/Delete Files
 
 ## Getting Started
 
 The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://azure.microsoft.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
 
-Please review [Get started with Azure Storage](https://docs.microsoft.com/en-us/azure/storage/storage-dotnet-how-to-use-blobs) if you are not familiar with Azure Storage.
+Please review [Get started with Azure Storage](https://docs.microsoft.com/en-us/azure/storage/storage-dotnet-how-to-use-Files) if you are not familiar with Azure Storage.
 
 For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
 
@@ -35,11 +36,17 @@ Through the bait and switch technique, the reference assembly enables other port
 
 - The Storage Client Libraries use [the semantic versioning scheme.](http://semver.org/)
 
+## Use with the Azure Storage Emulator
+
+- The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.3. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+
 ## Download & Install
 
-You'll find the latest version and hotfixes on NuGet via the `Azure.Storage.Blob` package. 
+The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. 
+You'll find the latest version and hotfixes on NuGet via the `Microsoft.Azure.Storage.File` package.  
 
-This version of the Storage Client Library Blob package ships with the storage version 2017-04-17.
+This version of the Storage Client Library ships with the storage version 2017-07-29.
 
 ### Via Git
 
@@ -53,11 +60,11 @@ cd azure-storage-net
 ### Via NuGet
 
 To get the binaries of this library as distributed by Microsoft, ready for use
-within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/Microsoft.Azure.Storage.Blob/).
+within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/Microsoft.Azure.Storage.File/).
 
 Please note that the minimum nuget client version requirement has been updated to 2.12 in order to support multiple netstandard targets in the nuget package.
 
-`Install-Package Microsoft.Azure.Storage.Blob`
+`Install-Package Microsoft.Azure.Storage.File`
 
 ## Dependencies
 

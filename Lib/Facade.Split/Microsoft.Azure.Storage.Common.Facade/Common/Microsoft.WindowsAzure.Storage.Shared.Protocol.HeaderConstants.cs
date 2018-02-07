@@ -4,9 +4,9 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 
 public static class HeaderConstants
 {
-    public static readonly string UserAgent = "Azure-Storage/8.7.0-preview ";
+    public static readonly string UserAgent = "Azure-Storage/9.0.0-preview ";
     public const string UserAgentProductName = "Azure-Storage";
-    public const string UserAgentProductVersion = "8.7.0-preview";
+    public const string UserAgentProductVersion = "9.0.0-preview";
     public const string PrefixForStorageHeader = "x-ms-";
     public const string TrueHeader = "true";
     public const string FalseHeader = "false";

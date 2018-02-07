@@ -1,15 +1,15 @@
 {
-    "version": "8.7.0-preview",
+    "version": "9.0.0-preview",
     "testRunner": "xunit",
 
   "dependencies": {
     "xunit": "2.1.0",
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "XUnitForMsTest": "1.0.0-*",
-    "Microsoft.Azure.Storage.Blob": "8.7.0-preview",
-    "Microsoft.Azure.Storage.File": "8.7.0-preview",
-    "Microsoft.Azure.Storage.Queue": "8.7.0-preview",
-    "Microsoft.Azure.Storage.Common": "8.7.0.1-preview"
+    "Microsoft.Azure.Storage.Blob": "9.0.0-preview",
+    "Microsoft.Azure.Storage.File": "9.0.0-preview",
+    "Microsoft.Azure.Storage.Queue": "9.0.0-preview",
+    "Microsoft.Azure.Storage.Common": "9.0.0.0-preview"
   },
 
     "frameworks": {
