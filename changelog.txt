@@ -1,3 +1,15 @@
+Changes in 9.0.0:
+- All: Support for 2017-07-29 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.3.
+- Tables: Removed dependencies on OData libraries.
+- Table: Added full async parsing to APIs.
+- Blobs : Added support for soft delete feature. If a delete retention policy is enabled through the set service properties API, then blobs or snapshots can be deleted softly and retained for a specified number of days, before being permanently removed by garbage collection.
+- Queues: Added support for infinite TTL on queue messages.
+- All:  When a storage request fails, the error code may now be retrieved directly from the RequestResult and StorageException classes. This error code is populated even in cases where there is no ExtendedErrorInformation available, such as in calls to FetchAttributes.
+- All: Upgarded NewtonSoft.json dependency to 10.0.2.
+- All: Upgraded Netstandard dependency to 1.6.1.
+- All (RT/NetCore): Improved performance by avoiding Task.Run
+- Blobs (RT/NetCore): Fixed an infinite loop bug for StartCopyAsync API on PageBlob.
+
 Changes in 8.7.0:
 - Blobs: Parsing the snapshot parameter when creating a CloudBlockBlob from a URI is now case insensitive
 - Blobs (Desktop): Added a new API supporting downloading a blob to a file by making concurrent service requests.
@@ -19,6 +31,7 @@ Changes in 8.4.0 :
 Changes in 8.3.0 :
 - All(Netstandard): Updated the hashing algorithm to IncrementalHash instead of the original method which required buffering the data for MD5 calculations.
 - All: Fixed a race condition in the resume-download logic where a failure during downloads could lead to corrupted data.
+- Tables: Removed dependencies on OData libraries.  Added full async parsing to table API's.
 
 Changes in 8.2.1 :
 - All: Fixed a bug where empty metadata headers would lead to an infinite loop when trying to list blobs on a container.

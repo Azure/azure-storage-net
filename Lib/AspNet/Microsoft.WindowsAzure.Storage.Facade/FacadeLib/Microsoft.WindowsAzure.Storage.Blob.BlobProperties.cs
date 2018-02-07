@@ -114,6 +114,16 @@ public sealed class BlobProperties
         get; internal set;
     }
 
+    public DateTimeOffset? DeletedTime
+    {
+        get; internal set;
+    }
+
+    public int? RemainingDaysBeforePermanentDelete
+    {
+        get; internal set;
+    }
+
     public BlobProperties()
     {
         throw new System.NotImplementedException();

@@ -251,6 +251,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If not set, the Storage Client uses an exponential backoff retry policy, where the wait time gets
         /// exponentially longer between requests, up to a total of around 30 seconds.
         /// The default retry policy is recommended for most scenarios.
+        /// 
+        ///## Examples
+        ///  [!code-csharp[Retry_Policy_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_RequestOptions_RetryPolicy "Retry Policy Sample")]         
         ///</remarks>
         public IRetryPolicy RetryPolicy { get; set; }
 
@@ -259,6 +262,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets or sets the encryption policy for the request.
         /// </summary>
         /// <value>An object of type <see cref="EncryptionPolicy"/>.</value>
+        /// <remarks>
+        /// ## Examples
+        /// [!code-csharp[Encryption_Policy_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobClientEncryptionTests.cs#sample_RequestOptions_EncryptionPolicy "Encryption Policy Sample")]        
+        /// </remarks>
         public BlobEncryptionPolicy EncryptionPolicy { get; set; }
 
         /// <summary>
@@ -271,6 +278,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// is not encrypted/decrypted with an encryption policy. If this value 
         /// is false (the default), any data being downloaded that is not encrypted
         /// will be returned as-is.
+        /// 
+        ///  ## Examples
+        ///  [!code-csharp[Require_Encryption_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_RequestOptions_RequireEncryption "Require Encryption Sample")]        
         /// </remarks>
         public bool? RequireEncryption { get; set; }
 
@@ -303,6 +313,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// failure on retry - accounting for the above possibility. However, this loses protection in the multi-writer
         /// scenario - if multiple threads are uploading to the blob at once, and this value is set to <c>true</c>, some data
         /// may be lost, because the client thinks the data was uploaded, when in fact it was the other process' data.
+        /// 
+        ///## Examples
+        ///[!code-csharp[Absorb_Conditional_Errors_On_Retry_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/CloudAppendBlobTest.cs#sample_BlobRequestOptions_AbsorbConditionalErrorsOnRetry "Absorb Conditional Errors On Retry Sample")]  
         /// </remarks>
         public bool? AbsorbConditionalErrorsOnRetry { get; set; }
 
@@ -313,6 +326,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <remarks>The LocationMode specifies in which locations the Storage Client 
         /// will attempt to make the request. This is only valid for RA-GRS accounts - accounts 
         /// where data can be read from either the primary or the secondary endpoint.
+        ///  ## Examples
+        ///  [!code-csharp[LocationMode_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_RequestOptions_LocationMode "LocationMode Sample")]        
         ///</remarks>
         public LocationMode? LocationMode { get; set; }
 
@@ -326,6 +341,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// (UploadFromStream, for example, or if the request retries), this timeout 
         /// will be applied separately to each request. This value is not 
         /// tracked or validated on the client, it is only passed to the Storage service.
+        /// 
+        ///  ## Examples
+        ///  [!code-csharp[Server_Timeout_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_RequestOptions_ServerTimeout_MaximumExecutionTime "Server Timeout Sample")]         
         /// </remarks>
         public TimeSpan? ServerTimeout { get; set; }
 
@@ -338,6 +356,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// If the total amount of time spent in the API - across all REST requests, 
         /// retries, etc - exceeds this value, the client will timeout. This value 
         /// is only tracked on the client, it is not sent to the service.
+        ///  ## Examples
+        ///  [!code-csharp[Maximum_Execution_Time_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_RequestOptions_ServerTimeout_MaximumExecutionTime "Maximum Execution Time Sample")]        
         /// </remarks>
         public TimeSpan? MaximumExecutionTime
         {
@@ -367,6 +387,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// at a given time. Default is 1 (no parallelism). Setting this value higher may result in 
         /// faster blob uploads, depending on the network between the client and the Azure Storage service.
         /// If blobs are small (less than 256 MB), keeping this value equal to 1 is advised.
+        ///  ## Examples
+        ///  [!code-csharp[Parallel_Operation_ThreadCount_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_BlobRequestOptions_ParallelOperationThreadCount "Parallel Operation ThreadCount Sample")]        
         ///</remarks>
         public int? ParallelOperationThreadCount
         {
@@ -423,6 +445,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// This option applies to both upload and download operations.
         /// Note that HTTPS does a similar check during transit. If you are using HTTPS, 
         /// we recommend this feature be off.
+        ///  ## Examples
+        ///  [!code-csharp[Use_Transactional_MD5_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/MD5FlagsTest.cs#sample_BlobRequestOptions_UseTransactionalMD5 "Use Transactional MD5 Sample")] 
         /// </remarks>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
@@ -462,6 +486,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// the MD5 hash of the content will be validated, unless "DisableContentMD5Validation" is set.
         /// Note that this value is not validated on the Azure Storage service on either upload or download of data; 
         /// it is merely stored and returned.
+        ///  ## Examples
+        ///  [!code-csharp[Store_Blob_Content_MD5_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/MD5FlagsTest.cs#sample_BlobRequestOptions_StoreBlobContentMD5 "Store Blob Content MD5 Sample")] 
         /// </remarks>
 #if  WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
@@ -496,6 +522,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// will include the MD5 hash of the entire blob as a header. This option controls 
         /// whether or not the Storage Client will validate that MD5 hash on download.
         /// See <see cref="BlobRequestOptions.StoreBlobContentMD5"/> for more details.
+        /// 
+        ///## Examples
+        ///[!code-csharp[Disable_Content_MD5_Validation_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/MD5FlagsTest.cs#sample_BlobRequestOptions_DisableContentMD5Validation "Disable Content MD5 Validation Sample")]        
         /// </remarks>
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>

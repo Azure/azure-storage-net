@@ -1,5 +1,3 @@
-using Microsoft.Data.Edm;
-using Microsoft.Data.OData;
 using Microsoft.WindowsAzure.Storage.Core;
 using Microsoft.WindowsAzure.Storage.Core.Executor;
 using Newtonsoft.Json;
@@ -11,19 +9,28 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
- 
+
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
 internal static class TableOperationHttpResponseParsers
 {
 
-    private static void DrainODataReader(ODataReader reader)
+    public static Task ReadQueryResponseUsingJsonParserAsync<TElement>(ResultSegment<TElement> retSeg, Stream responseStream, string etag, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, Func<string, string, string, string, EdmType> propertyResolver, Type type, OperationContext ctx, TableRequestOptions options, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }
-    private static void ReadEntityUsingJsonParser(TableResult result, TableOperation operation, Stream stream, OperationContext ctx, TableRequestOptions options)
+    public static Task<List<KeyValuePair<string, Dictionary<string, object>>>> ReadQueryResponseUsingJsonParserMetadataAsync(Stream responseStream, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    public static Task<KeyValuePair<string, Dictionary<string, object>>> ReadSingleItemResponseUsingJsonParserMetadataAsync(Stream responseStream, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    private static Dictionary<string, object> ReadSingleItem(JToken token, out string etag)
     {
         throw new System.NotImplementedException();
     }
@@ -31,7 +38,11 @@ internal static class TableOperationHttpResponseParsers
     {
         throw new System.NotImplementedException();
     }
-    internal static string ReadAndUpdateTableEntity(ITableEntity entity, ODataEntry entry, EntityReadFlags flags, OperationContext ctx)
+    private static T ReadAndResolve<T>(string etag, Dictionary<string, object> props, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, T> resolver, TableRequestOptions options)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal static string ReadAndUpdateTableEntity(ITableEntity entity, string etag, Dictionary<string, object> props, EntityReadFlags flags, OperationContext ctx)
     {
         throw new System.NotImplementedException();
     }

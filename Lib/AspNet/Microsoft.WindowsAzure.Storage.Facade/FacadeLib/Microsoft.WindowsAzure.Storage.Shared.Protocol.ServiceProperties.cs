@@ -57,11 +57,16 @@ public sealed class ServiceProperties
         get; set;
     }
 
+    public DeleteRetentionPolicy DeleteRetentionPolicy
+    {
+        get; set;
+    }
+
     public ServiceProperties()
     {
         throw new System.NotImplementedException();
     }
-    public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null)
+    public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null, DeleteRetentionPolicy deleteRetentionPolicy = null)
     {
         throw new System.NotImplementedException();
     }
@@ -89,6 +94,10 @@ public sealed class ServiceProperties
     {
         throw new System.NotImplementedException();
     }
+    private static XElement GenerateDeleteRetentionPolicyXml(DeleteRetentionPolicy deleteRetentionPolicy)
+    {
+        throw new System.NotImplementedException();
+    }
     private static LoggingProperties ReadLoggingPropertiesFromXml(XElement element)
     {
         throw new System.NotImplementedException();
@@ -98,6 +107,10 @@ public sealed class ServiceProperties
         throw new System.NotImplementedException();
     }
     internal static CorsProperties ReadCorsPropertiesFromXml(XElement element)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal static DeleteRetentionPolicy ReadDeleteRetentionPolicyFromXml(XElement element)
     {
         throw new System.NotImplementedException();
     }

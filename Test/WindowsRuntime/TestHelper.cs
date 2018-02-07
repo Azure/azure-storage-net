@@ -143,6 +143,7 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     Assert.IsNotNull(operationContext.LastResult.ExtendedErrorInformation);
                     Assert.AreEqual(requestErrorCode, operationContext.LastResult.ExtendedErrorInformation.ErrorCode);
+                    Assert.AreEqual(requestErrorCode, operationContext.LastResult.ErrorCode);
                 }
 
                 return;

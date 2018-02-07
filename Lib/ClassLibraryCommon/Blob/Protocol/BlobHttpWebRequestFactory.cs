@@ -643,21 +643,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpWebRequest Delete(Uri uri, int? timeout, DateTimeOffset? snapshot, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, OperationContext operationContext)
-        {
-            return BlobHttpWebRequestFactory.Delete(uri, timeout, snapshot, deleteSnapshotsOption, accessCondition, true /* useVersionHeader */, operationContext);
-        }
-
-        /// <summary>
-        /// Constructs a web request to delete a blob.
-        /// </summary>
-        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
-        /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="snapshot">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
-        /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to delete only blobs, only snapshots, or both.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
@@ -690,6 +675,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                         Constants.HeaderConstants.SnapshotsOnlyValue);
                     break;
             }
+
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to undelete a soft-deleted blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest Undelete(Uri uri, int? timeout, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+
+            HttpWebRequest request = HttpWebRequestFactory.Undelete(uri, builder, timeout, useVersionHeader, operationContext);
 
             request.ApplyAccessCondition(accessCondition);
             return request;

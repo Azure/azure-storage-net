@@ -493,7 +493,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
-            {
+            {               
                 await container.CreateAsync();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
@@ -544,6 +544,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
+                //overwriting the blob thus creating the 5th snapshot
                 await blob.CreateOrReplaceAsync();
 
                 using (Stream snapshotStream = (await snapshot1.OpenReadAsync()))
