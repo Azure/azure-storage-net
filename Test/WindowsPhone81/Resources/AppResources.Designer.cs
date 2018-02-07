@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.StoragePhone81.Test.Resources
+namespace Microsoft.Azure.StoragePhone81.Test.Resources
 {
     using System;
 
@@ -45,7 +45,7 @@ namespace Microsoft.WindowsAzure.StoragePhone81.Test.Resources
             {
                 if (object.ReferenceEquals(resourceMan, null))
                 {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.WindowsAzure.StoragePhone81.Test.Resources.AppResources", typeof(AppResources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.Azure.StoragePhone81.Test.Resources.AppResources", typeof(AppResources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

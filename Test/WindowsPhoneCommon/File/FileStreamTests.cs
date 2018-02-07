@@ -21,7 +21,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class FileStreamTests : FileTestBase

@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
-    using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using Microsoft.Azure.Storage.Auth.Protocol;
     using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                         newClient.DefaultRequestHeaders.ExpectContinue = false;
                         newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
                         newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
-                        newClient.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
+                        newClient.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion);
                         newClient.Timeout = Timeout.InfiniteTimeSpan;
 
                         return newClient;

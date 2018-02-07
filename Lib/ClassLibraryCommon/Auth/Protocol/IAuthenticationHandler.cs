@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
+namespace Microsoft.Azure.Storage.Auth.Protocol
 {
     using System.Net;
 

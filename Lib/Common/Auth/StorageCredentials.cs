@@ -17,11 +17,11 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.WindowsAzure.Storage.Auth
+namespace Microsoft.Azure.Storage.Auth
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
@@ -385,7 +385,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
                 throw new ArgumentException(errorMessage);
             }
             
-            newQueryBuilder.Add(Constants.QueryConstants.ApiVersion, Constants.HeaderConstants.TargetStorageVersion);
+            newQueryBuilder.Add(Constants.QueryConstants.ApiVersion, OperationContext.StorageVersion ?? OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion);
             this.queryBuilder = newQueryBuilder;
         }
     }

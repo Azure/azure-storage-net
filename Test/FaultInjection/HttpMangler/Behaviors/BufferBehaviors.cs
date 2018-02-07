@@ -17,7 +17,7 @@
 
 
 
-namespace Microsoft.WindowsAzure.Test.Network.Behaviors
+namespace Microsoft.Azure.Test.Network.Behaviors
 {
     /// <summary>
     /// BufferBehaviors describes behaviors that affect the buffering of responses before they're returned to the calling code.

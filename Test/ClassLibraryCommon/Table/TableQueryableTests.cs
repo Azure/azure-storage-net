@@ -16,18 +16,18 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
-using Microsoft.WindowsAzure.Storage.Table.Entities;
-using Microsoft.WindowsAzure.Storage.Table.Queryable;
-using Microsoft.WindowsAzure.Test.Network;
-using Microsoft.WindowsAzure.Test.Network.Behaviors;
+using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Table.Entities;
+using Microsoft.Azure.Storage.Table.Queryable;
+using Microsoft.Azure.Test.Network;
+using Microsoft.Azure.Test.Network.Behaviors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     [TestClass]
     public class TableQueryableTests : TableTestBase

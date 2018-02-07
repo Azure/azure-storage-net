@@ -15,14 +15,16 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.File.Protocol;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.Blob;
+#endif
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.File.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -351,7 +353,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
             using (CloudFileStream fileStream = await this.OpenWriteAsync(length, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false))
             {
@@ -1643,7 +1649,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
             DateTime streamCopyStartTime = DateTime.Now;
 
@@ -1760,7 +1770,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying an existing blob's contents, properties, and metadata to a new Azure file.
         /// </summary>
@@ -1775,6 +1785,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
         }
+#endif
 
         /// <summary>
         /// Begins an operation to start copying an existing Azure file's contents, properties, and metadata to a new Azure file.
@@ -1834,7 +1845,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 operationContext,
                 cancellationToken);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying a blob's contents, properties, and metadata to a new Azure file.
         /// </summary>
@@ -1853,6 +1864,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
+#endif
 
         /// <summary>
         /// Aborts an ongoing copy operation.

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>e7f33f50-9ef3-4f61-9287-087e8ac6b37b</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Microsoft.Azure.Storage.Common.Queue</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+      <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\Queue\*.cs" >
+    </Compile >
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Queue\Protocol\*.cs">
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Queue\Auth\*.cs">
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Queue\Account\*.cs">
+    </Compile>		
+  </ItemGroup>
+</Project>

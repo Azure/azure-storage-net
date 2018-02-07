@@ -20,7 +20,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
-namespace Microsoft.WindowsAzure.Storage.Table.Entities
+namespace Microsoft.Azure.Storage.Table.Entities
 {
     internal class InternalEntity : TableEntity
     {

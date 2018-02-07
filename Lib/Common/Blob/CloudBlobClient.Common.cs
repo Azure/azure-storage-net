@@ -15,14 +15,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Auth;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Auth;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
 
@@ -67,6 +67,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlobClient(StorageUri storageUri, StorageCredentials credentials)
         {
+#if !All_SERVICES
+            OperationContext.StorageVersion = /* constants.version */ "2016-10-16";
+            OperationContext.PackageVersion = /* contants.packageVersion */ "0.0.9";
+#endif
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
             this.DefaultRequestOptions = 

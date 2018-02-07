@@ -15,12 +15,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core.Util
+namespace Microsoft.Azure.Storage.Core.Util
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Auth;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
+#endif
+    using Microsoft.Azure.Storage.Core.Executor;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -28,9 +30,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
     using System.Threading;
     using System.Xml;
 
-#if WINDOWS_DESKTOP 
+#if WINDOWS_DESKTOP
     using System.Net;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
 #endif
 
     internal static class CommonUtility
@@ -61,7 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return CommandLocationMode.PrimaryOrSecondary;
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Create an ExecutionState object that can be used for pre-request operations
         /// such as buffering user's data.
@@ -95,7 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
         }
-
+#endif
         /// <summary>
         /// Returns the larger of two time spans.
         /// </summary>
@@ -349,7 +351,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             }
         }
 
-#if WINDOWS_DESKTOP 
+#if WINDOWS_DESKTOP
         /// <summary>
         /// Applies the request optimizations such as disabling buffering and 100 continue.
         /// </summary>

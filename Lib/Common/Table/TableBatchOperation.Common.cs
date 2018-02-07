@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
 
@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// Represents a batch operation on a table.
     /// </summary>
     /// <remarks><para>A batch operation is a collection of table operations which are executed by the Storage Service REST API as a single atomic operation, by invoking an 
-    /// <a href="http://msdn.microsoft.com/en-us/library/windowsazure/dd894038.aspx">Entity Group Transaction</a>.</para><para>A batch operation may contain up to 100 individual 
+    /// <a href="http://msdn.microsoft.com/en-us/library/Azure/dd894038.aspx">Entity Group Transaction</a>.</para><para>A batch operation may contain up to 100 individual 
     /// table operations, with the requirement that each operation entity must have same partition key. A batch with a retrieve operation cannot contain any other operations. 
     /// Note that the total payload of a batch operation is limited to 4MB.</para></remarks>
     public partial class TableBatchOperation : IList<TableOperation>

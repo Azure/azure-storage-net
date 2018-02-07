@@ -15,26 +15,29 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
-#if !(WINDOWS_RT || NETCORE)
-    using Microsoft.WindowsAzure.Storage.Analytics;
+#if ALL_SERVICES && !(WINDOWS_RT || NETCORE)
+    using Microsoft.Azure.Storage.Analytics;
 #endif
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Auth;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.Queue;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Storage.Auth;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
+    using Microsoft.Azure.Storage.Queue;
+    using Microsoft.Azure.Storage.Table;
+#endif
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Auth;
+    using Microsoft.Azure.Storage.Core.Util;
+
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
     using AccountSetting = System.Collections.Generic.KeyValuePair<string, System.Func<string, bool>>;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using ConnectionStringFilter = System.Func<System.Collections.Generic.IDictionary<string, string>, System.Collections.Generic.IDictionary<string, string>>;
 
     /// <summary>
@@ -560,6 +563,7 @@ namespace Microsoft.WindowsAzure.Storage
             }
         }
 
+#if ALL_SERVICES
         /// <summary>
         /// Creates the Table service client.
         /// </summary>
@@ -660,7 +664,7 @@ namespace Microsoft.WindowsAzure.Storage
 
             return new CloudFileClient(this.FileStorageUri, this.Credentials);
         }
-
+#endif
         /// <summary>
         /// Returns a shared access signature for the account.
         /// </summary>
@@ -677,8 +681,8 @@ namespace Microsoft.WindowsAzure.Storage
 
             StorageAccountKey accountKey = this.Credentials.Key;
 
-            string signature = SharedAccessSignatureHelper.GetHash(policy, this.Credentials.AccountName, Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion);
+            string signature = SharedAccessSignatureHelper.GetHash(policy, this.Credentials.AccountName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, accountKey.KeyValue);
+            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, signature, accountKey.KeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion);
             return builder.ToString();
         }
 

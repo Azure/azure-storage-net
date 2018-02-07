@@ -12,7 +12,7 @@
 //   //    limitations under the License.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
     using System.Collections.Generic;
 

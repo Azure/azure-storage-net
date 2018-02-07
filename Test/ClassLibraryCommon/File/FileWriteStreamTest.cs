@@ -22,7 +22,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class FileWriteStreamTest : FileTestBase

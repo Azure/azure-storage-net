@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
-    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.Azure.Storage.Core;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -27,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using System.Runtime.Serialization;
 
 #if NETCORE
-    using Microsoft.WindowsAzure.Storage.Extensions;
+    using Microsoft.Azure.Storage.Extensions;
 #endif
 
     /// <summary>

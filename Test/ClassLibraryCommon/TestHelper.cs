@@ -17,7 +17,7 @@
 
 using Fiddler;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Test.Network;
+using Microsoft.Azure.Test.Network;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -25,7 +25,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     public partial class TestHelper
     {

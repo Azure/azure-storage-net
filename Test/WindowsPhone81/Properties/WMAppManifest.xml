@@ -2,7 +2,7 @@
 
 <Deployment xmlns="http://schemas.microsoft.com/windowsphone/2014/deployment" AppPlatformVersion="8.1">
   <DefaultLanguage xmlns="" code="en-US"/>
-  <App xmlns="" ProductID="{5ad650da-6fce-413f-b5e5-d6d436359853}" Title="Microsoft.WindowsAzure.StoragePhone81.Test" RuntimeType="Silverlight" Version="1.0.0.0" Genre="apps.normal"  Author="Microsoft.WindowsAzure.StoragePhone81.Test author" Description="Sample description" SDOptOut ="false" BackUpOptOut ="false" Publisher="Microsoft.WindowsAzure.StoragePhone81.Test" PublisherID="{1c748179-2fc4-4bb7-b806-6ae446b91c57}">
+  <App xmlns="" ProductID="{5ad650da-6fce-413f-b5e5-d6d436359853}" Title="Microsoft.Azure.StoragePhone81.Test" RuntimeType="Silverlight" Version="1.0.0.0" Genre="apps.normal"  Author="Microsoft.Azure.StoragePhone81.Test author" Description="Sample description" SDOptOut ="false" BackUpOptOut ="false" Publisher="Microsoft.Azure.StoragePhone81.Test" PublisherID="{1c748179-2fc4-4bb7-b806-6ae446b91c57}">
     <IconPath IsRelative="true" IsResource="false">Assets\ApplicationIcon.png</IconPath>
     <Capabilities>
       <Capability Name="ID_CAP_NETWORKING"/>
@@ -15,12 +15,12 @@
       <DefaultTask Name ="_default" NavigationPage="MainPage.xaml" ActivationPolicy="Resume"/>
     </Tasks>
     <Tokens>
-      <PrimaryToken TokenID="Microsoft.WindowsAzure.StoragePhone81.TestToken" TaskName="_default">
+      <PrimaryToken TokenID="Microsoft.Azure.StoragePhone81.TestToken" TaskName="_default">
         <TemplateFlip>
           <SmallImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileSmall.png</SmallImageURI>
           <Count>0</Count>
           <BackgroundImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileMedium.png</BackgroundImageURI>
-          <Title>Microsoft.WindowsAzure.StoragePhone81.Test</Title>
+          <Title>Microsoft.Azure.StoragePhone81.Test</Title>
           <BackContent></BackContent>
           <BackBackgroundImageURI></BackBackgroundImageURI>
           <BackTitle></BackTitle>

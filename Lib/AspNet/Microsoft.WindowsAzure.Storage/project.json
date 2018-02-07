@@ -10,46 +10,59 @@
     "frameworks": {
         "netstandard1.3": {
             "dependencies": {
-                "NETStandard.Library": "1.6.0"
-            },
-            "imports": "dnxcore50" 
+                "NETStandard.Library": "1.6.1"
+            }
         }
 
     },
 
     "buildOptions": {
-        "define": [ "NETCORE" ],
+        "define": [ "NETCORE" , "ALL_SERVICES"],
         "allowUnsafe": false,
         "warningsAsErrors": true,
         "delaySign": true,
         "keyFile": "MSSharedLibKey.snk",
-        "compile": [
-            "**/*.cs",
+      "compile": {
+        "include" :
+        [
+          "**/*.cs",
 
-            "../../Common/*.cs",
-            "../../Common/Shared/**/*.cs",
-            "../../Common/Auth/**/*.cs",
-            "../../Common/Core/**/*.cs",
-            "../../Common/RetryPolicies/**/*.cs",
-            "../../Common/Blob/**/*.cs",
-            "../../Common/File/**/*.cs",
-            "../../Common/Queue/**/*.cs",
-            "../../Common/Table/*.cs",
-            "../../Common/Table/Protocol/*.cs",
+          "../../Common/*.cs",
+          "../../Common/Shared/**/*.cs",
+          "../../Common/Auth/**/*.cs",
+          "../../Common/Core/**/*.cs",
+          "../../Common/RetryPolicies/**/*.cs",
+          "../../Common/Blob/**/*.cs",
+          "../../Common/File/**/*.cs",
+          "../../Common/Queue/**/*.cs",
+          "../../Common/Table/*.cs",
+          "../../Common/Table/Protocol/*.cs",
 
-            "../../WindowsRuntime/*.cs",
-            "../../WindowsRuntime/Auth/**/*.cs",
-            "../../WindowsRuntime/Blob/Protocol/*.cs",
-            "../../WindowsRuntime/Blob/*.cs",
-            "../../WindowsRuntime/Core/**/*.cs",
-            "../../WindowsRuntime/Shared/**/*.cs",
-            "../../WindowsRuntime/Queue/*.cs",
-            "../../WindowsRuntime/Queue/Protocol/*.cs",
-            "../../WindowsRuntime/File/*.cs",
-            "../../WindowsRuntime/File/Protocol/*.cs",
-            "../../WindowsRuntime/Table/*.cs",
-            "../../WindowsRuntime/Table/DataServices/*.cs",
-            "../../WindowsRuntime/Table/Protocol/*.cs"
+          "../../WindowsRuntime/*.cs",
+          "../../WindowsRuntime/Auth/**/*.cs",
+          "../../WindowsRuntime/Blob/Protocol/*.cs",
+          "../../WindowsRuntime/Blob/*.cs",
+          "../../WindowsRuntime/Core/**/*.cs",
+          "../../WindowsRuntime/Shared/**/*.cs",
+          "../../WindowsRuntime/Queue/*.cs",
+          "../../WindowsRuntime/Queue/Protocol/*.cs",
+          "../../WindowsRuntime/File/*.cs",
+          "../../WindowsRuntime/File/Protocol/*.cs",
+          "../../WindowsRuntime/Table/*.cs",
+          "../../WindowsRuntime/Table/DataServices/*.cs",
+          "../../WindowsRuntime/Table/Protocol/*.cs"
+        ],
+        "exclude": [
+          "../../Common/File/Shared/**/*.cs",
+          "../../Common/File/Auth/**/*.cs",
+          "../../Common/Blob/Auth/**/*.cs",
+          "../../Common/Queue/Auth/**/*.cs",
+          "../../Common/Table/Auth/**/*.cs",
+          "../../Common/Blob/Account/**/*.cs",
+          "../../Common/Table/Account/**/*.cs",
+          "../../Common/Queue/Account/**/*.cs",
+          "../../Common/File/Account/**/*.cs"
         ]
-    }
+      }
+      }
 }

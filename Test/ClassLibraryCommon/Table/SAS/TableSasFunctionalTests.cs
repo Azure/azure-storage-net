@@ -16,12 +16,12 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Table.Entities;
+using Microsoft.Azure.Storage.Table.Entities;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.Table.SAS
+namespace Microsoft.Azure.Storage.Table.SAS
 {
     [TestClass]
     public class TableSasFunctionalTests : TableTestBase

@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.IO;
 using System.Linq;
@@ -24,7 +24,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     internal class BlobTestUtils
     {
@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             Assert.IsFalse(required && (request.Headers["x-ms-version"] == null));
             if (request.Headers["x-ms-version"] != null)
             {
-                Assert.AreEqual(Constants.HeaderConstants.TargetStorageVersion, request.Headers["x-ms-version"]);
+                Assert.AreEqual(OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, request.Headers["x-ms-version"]);
             }
         }
 

@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Blob.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -437,7 +437,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             using (CloudBlobStream blobStream = this.OpenWrite(createNew, accessCondition, modifiedOptions, operationContext))
             {
+#if ALL_SERVICES
                 using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#else
+                using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#endif
                 {
                     source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
                     blobStream.Commit();
@@ -446,18 +450,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        /// <summary>
-        /// Begins an asynchronous operation to upload a stream to an append blob. If the blob already exists, it will be overwritten. Recommended only for single-writer scenarios.
-        /// </summary>
-        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>
-        /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
-        /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
-        /// To append data to an append blob that already exists, see <see cref="BeginAppendFromStream(Stream, AsyncCallback, object)"/>.
-        /// </remarks>
+                /// <summary>
+                /// Begins an asynchronous operation to upload a stream to an append blob. If the blob already exists, it will be overwritten. Recommended only for single-writer scenarios.
+                /// </summary>
+                /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+                /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+                /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+                /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+                /// <remarks>
+                /// Use this method only in single-writer scenarios. Internally, this method uses the append-offset conditional header to avoid duplicate blocks, which may cause problems in multiple-writer scenarios.        
+                /// If you have a single-writer scenario, see <see cref="BlobRequestOptions.AbsorbConditionalErrorsOnRetry"/> to determine whether setting this flag to <c>true</c> is acceptable for your scenario.
+                /// To append data to an append blob that already exists, see <see cref="BeginAppendFromStream(Stream, AsyncCallback, object)"/>.
+                /// </remarks>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AsyncCallback callback, object state)
         {
@@ -745,8 +749,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
-
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
 
             ICancellableAsyncResult result = this.BeginOpenWrite(
@@ -2576,7 +2583,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (!blockData.CanSeek || requiresContentMD5)
                 {
+#if ALL_SERVICES
                     ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                    ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
                     Stream writeToStream;
                     if (blockData.CanSeek)
@@ -2616,13 +2627,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        /// <summary>
-        /// Begins an asynchronous operation to commit a new block of data to the end of the blob.
-        /// </summary>
-        /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+                    /// <summary>
+                    /// Begins an asynchronous operation to commit a new block of data to the end of the blob.
+                    /// </summary>
+                    /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
+                    /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+                    /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+                    /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAppendBlock(Stream blockData, AsyncCallback callback, object state)
         {
@@ -2708,7 +2719,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
+#if ALL_SERVICES
                 ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
                 storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
 
                 Stream seekableStream;

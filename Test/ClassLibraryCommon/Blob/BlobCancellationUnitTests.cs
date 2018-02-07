@@ -16,12 +16,12 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Test.Network;
-using Microsoft.WindowsAzure.Test.Network.Behaviors;
+using Microsoft.Azure.Test.Network;
+using Microsoft.Azure.Test.Network.Behaviors;
 using System.IO;
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     [TestClass]
     public class BlobCancellationUnitTests : BlobTestBase

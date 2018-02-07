@@ -15,13 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Queue;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Queue;
+    using Microsoft.Azure.Storage.RetryPolicies;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -92,18 +91,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             await MultiLocationRetriesAsync(SecondaryTests.TestQueueFetchAttributesAsync);
         }
 
-        [TestMethod]
-        [Description("Table requests should be sent to the correct location")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task TableMultiLocationRetriesAsync()
-        {
-            await MultiLocationRetriesAsync(SecondaryTests.TestTableRetrieveAsync);
-        }
-
-        private static async Task MultiLocationRetriesAsync(Func<LocationMode?, LocationMode, StorageLocation, IList<RetryContext>, IList<RetryInfo>, Task> testMethodAsync)
+         private static async Task MultiLocationRetriesAsync(Func<LocationMode?, LocationMode, StorageLocation, IList<RetryContext>, IList<RetryInfo>, Task> testMethodAsync)
         {
             AssertSecondaryEndpoint();
 
@@ -227,25 +215,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
             }
         }
 
-        private static async Task TestTableRetrieveAsync(LocationMode? optionsLocationMode, LocationMode clientLocationMode, StorageLocation initialLocation, IList<RetryContext> retryContextList, IList<RetryInfo> retryInfoList)
-        {
-            CloudTable table = GenerateCloudTableClient().GetTableReference(TableTestBase.GenerateRandomTableName());
-            using (MultiLocationTestHelper helper = new MultiLocationTestHelper(table.ServiceClient.StorageUri, initialLocation, retryContextList, retryInfoList))
-            {
-                table.ServiceClient.DefaultRequestOptions.LocationMode = clientLocationMode;
-                TableRequestOptions options = new TableRequestOptions()
-                {
-                    LocationMode = optionsLocationMode,
-                    RetryPolicy = helper.RetryPolicy,
-                };
-
-                await TestHelper.ExpectedExceptionAsync(
-                    async () => await table.GetPermissionsAsync(options, helper.OperationContext),
-                    helper.OperationContext,
-                    "GetPermissions on a non-existing table should fail",
-                    HttpStatusCode.NotFound);
-            }
-        }
 #endif
 
         private class MultiLocationTestHelper : IDisposable

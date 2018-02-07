@@ -15,11 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table.Queryable
+namespace Microsoft.Azure.Storage.Table.Queryable
 {
     #region Namespaces.
 
-    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.Azure.Storage.Core;
     using System;
     using System.Diagnostics;
     using System.Linq;

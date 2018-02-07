@@ -15,11 +15,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core.Executor
+namespace Microsoft.Azure.Storage.Core.Executor
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -37,7 +37,18 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             {
                 executionState.Req.Headers.Add(Constants.HeaderConstants.ClientRequestIdHeader, executionState.OperationContext.ClientRequestID);
             }
-            
+
+#if !ALL_SERVICES
+            if(!string.IsNullOrEmpty(OperationContext.StorageVersion))
+            {
+#if WINDOWS_DESKTOP
+            executionState.Req.UserAgent = Constants.HeaderConstants.UserAgentProductName + "/" + Constants.HeaderConstants.UserAgentProductVersion + "-" + OperationContext.PackageVersion + " " + Constants.HeaderConstants.UserAgentComment;
+#elif NETCORE || WINDOWS_RT
+            //executionState.Req.Headers.UserAgent   = string.Empty;            
+#endif
+            }
+#endif
+
 
             if (!string.IsNullOrEmpty(executionState.OperationContext.CustomUserAgent))
             {

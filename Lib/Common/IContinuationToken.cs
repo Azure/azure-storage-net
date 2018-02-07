@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     /// <summary>
     /// An interface required for continuation token types.
     /// </summary>
-    /// <remarks>The <see cref="Microsoft.WindowsAzure.Storage.Table.TableContinuationToken"/>, <see cref="Microsoft.WindowsAzure.Storage.Blob.BlobContinuationToken"/>, 
-    /// and <see cref="Microsoft.WindowsAzure.Storage.Queue.QueueContinuationToken"/> classes implement the <see cref="IContinuationToken"/> interface.</remarks>
+    /// <remarks>The <see cref="Microsoft.Azure.Storage.Blob.BlobContinuationToken"/>, 
+    /// and <see cref="Microsoft.Azure.Storage.Queue.QueueContinuationToken"/> classes implement the <see cref="IContinuationToken"/> interface.</remarks>
     public interface IContinuationToken
     {
         /// <summary>

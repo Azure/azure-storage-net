@@ -15,13 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Queue;
-    using Microsoft.WindowsAzure.Storage.Table;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Queue;
+    using Microsoft.Azure.Storage.File;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -172,7 +171,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             Assert.IsTrue(blobEndpoint.Equals(account.CreateCloudBlobClient().StorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.CreateCloudQueueClient().StorageUri));
-            Assert.IsTrue(tableEndpoint.Equals(account.CreateCloudTableClient().StorageUri));
             Assert.IsTrue(fileEndpoint.Equals(account.CreateCloudFileClient().StorageUri));
 
             Assert.IsTrue(blobEndpoint.PrimaryUri.Equals(account.BlobEndpoint));
@@ -295,37 +293,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
             Assert.IsTrue(queueUri.Equals(queue.StorageUri));
             Assert.IsTrue(queueUri.PrimaryUri.Equals(queue.Uri));
             Assert.IsTrue(endpoint.Equals(queue.ServiceClient.StorageUri));
-        }
-
-        [TestMethod]
-        [Description("Table types should work with StorageUri")]
-        [TestCategory(ComponentCategory.Table)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.Smoke)]
-        [TestCategory(TenantTypeCategory.Cloud)]
-        public void TableTypesWithStorageUri()
-        {
-            StorageUri endpoint = new StorageUri(
-                new Uri("http://" + AccountName + TableService + EndpointSuffix),
-                new Uri("http://" + AccountName + SecondarySuffix + TableService + EndpointSuffix));
-
-            CloudTableClient client = new CloudTableClient(endpoint, new StorageCredentials());
-            Assert.IsTrue(endpoint.Equals(client.StorageUri));
-            Assert.IsTrue(endpoint.PrimaryUri.Equals(client.BaseUri));
-
-            StorageUri tableUri = new StorageUri(
-                new Uri(endpoint.PrimaryUri + "table"),
-                new Uri(endpoint.SecondaryUri + "table"));
-
-            CloudTable table = client.GetTableReference("table");
-            Assert.IsTrue(tableUri.Equals(table.StorageUri));
-            Assert.IsTrue(tableUri.PrimaryUri.Equals(table.Uri));
-            Assert.IsTrue(endpoint.Equals(table.ServiceClient.StorageUri));
-
-            table = new CloudTable(tableUri, client.Credentials);
-            Assert.IsTrue(tableUri.Equals(table.StorageUri));
-            Assert.IsTrue(tableUri.PrimaryUri.Equals(table.Uri));
-            Assert.IsTrue(endpoint.Equals(table.ServiceClient.StorageUri));
         }
 
         [TestMethod]

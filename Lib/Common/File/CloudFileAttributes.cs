@@ -15,10 +15,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Core;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.Blob;
+#endif
+    using Microsoft.Azure.Storage.Core;
     using System;
     using System.Collections.Generic;
     using System.Globalization;

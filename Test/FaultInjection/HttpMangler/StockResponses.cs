@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 
-namespace Microsoft.WindowsAzure.Test.Network
+namespace Microsoft.Azure.Test.Network
 {
     /// <summary>
     /// StockResponses holds the filenames associated with several stock responses from HTTP servers.

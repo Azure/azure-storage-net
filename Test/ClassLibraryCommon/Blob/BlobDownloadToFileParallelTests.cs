@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 #if !WINDOWS_PHONE && !WINDOWS_RT && !WINDOWS_PHONE_RT
 #if WINDOWS_DESKTOP
@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;

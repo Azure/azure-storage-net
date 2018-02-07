@@ -15,14 +15,14 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Auth;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Auth;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
@@ -197,22 +197,28 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-         
+#if ALL_SERVICES
             string signature = SharedAccessSignatureHelper.GetHash(
-                policy,
+#else
+            string signature = TableSharedAccessSignatureHelper.GetHash(
+#endif
+            policy,
                 accessPolicyIdentifier,
                 startPartitionKey,
                 startRowKey,
                 endPartitionKey,
                 endRowKey,
                 resourceName,
-                Constants.HeaderConstants.TargetStorageVersion,
+                OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion,
                 protocols,
                 ipAddressOrRange,
                 accountKey.KeyValue);
-
+#if ALL_SERVICES
             UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
-                policy,
+#else
+            UriQueryBuilder builder = TableSharedAccessSignatureHelper.GetSignature(
+#endif
+            policy,
                 this.Name,
                 accessPolicyIdentifier,
                 startPartitionKey,
@@ -221,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 endRowKey,
                 signature,
                 accountKey.KeyName,
-                Constants.HeaderConstants.TargetStorageVersion,
+                OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion,
                 protocols,
                 ipAddressOrRange);
 

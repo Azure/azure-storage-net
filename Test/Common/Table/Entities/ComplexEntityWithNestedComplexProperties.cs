@@ -23,7 +23,7 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Runtime.Serialization;
 
-namespace Microsoft.WindowsAzure.Storage.Table.Entities
+namespace Microsoft.Azure.Storage.Table.Entities
 {
     public class ComplexEntityWithNestedComplexProperties
     {

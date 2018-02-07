@@ -16,11 +16,11 @@
 // -----------------------------------------------------------------------------------------
 
 #if !(WINDOWS_RT || NETCORE)
-namespace Microsoft.WindowsAzure.Storage.Table
+namespace Microsoft.Azure.Storage.Table
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Table.Queryable;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Table.Queryable;
     using System;
     using System.Globalization;
     using System.Linq;

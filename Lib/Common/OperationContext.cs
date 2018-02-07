@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     using System;
     using System.Collections.Generic;
@@ -78,10 +78,25 @@ namespace Microsoft.WindowsAzure.Storage
         /// Gets or sets the logging level to be used for an instance of the <see cref="OperationContext"/> class.
         /// </summary>
         /// <value>A value of type <see cref="LogLevel"/> that specifies which events are logged by the <see cref="OperationContext"/>.</value>
-        public LogLevel LogLevel { get; set; } 
+        public LogLevel LogLevel { get; set; }
 
         #endregion
+
+#if !ALL_SERVICES
+        #region Service Specific Fields 
+        /// <summary>
+        /// The target storage version if the service-specific package
+        /// </summary>
+        internal static string StorageVersion;
         
+        /// <summary>
+        /// The version of the service-specific package
+        /// </summary>
+        internal static string PackageVersion;
+
+        #endregion
+#endif
+
         #region Events
 
         /// <summary>

@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Blob.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -31,7 +31,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Text;
     using System.Threading.Tasks;
     using System.Threading;
-    using Microsoft.WindowsAzure.Storage.File;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.File;
+#endif
 #if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -337,7 +339,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
             bool lessThanSingleBlobThreshold = sourceAsStream.CanSeek
                                                && (length ?? sourceAsStream.Length - sourceAsStream.Position)
@@ -950,7 +956,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             bool requiresContentMD5 = string.IsNullOrEmpty(contentMD5) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
             Stream blockDataAsStream = blockData;
             Stream seekableStream = blockDataAsStream;
@@ -1109,7 +1119,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
         /// </summary>
@@ -1128,7 +1138,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source));
         }
-
+#endif
         /// <summary>
         /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
         /// </summary>
@@ -1166,7 +1176,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
         /// </summary>
@@ -1204,7 +1214,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
-
+#endif
         /// <summary>
         /// Sets the tier for a blob.
         /// </summary>

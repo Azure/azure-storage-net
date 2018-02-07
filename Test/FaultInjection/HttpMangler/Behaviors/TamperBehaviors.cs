@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Test.Network.Behaviors
+namespace Microsoft.Azure.Test.Network.Behaviors
 {
     using Fiddler;
     using System;

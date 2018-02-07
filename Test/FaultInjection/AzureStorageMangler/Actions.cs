@@ -18,7 +18,7 @@
 using Fiddler;
 using System;
 
-namespace Microsoft.WindowsAzure.Test.Network
+namespace Microsoft.Azure.Test.Network
 {
     /// <summary>
     /// Class to provide Actions for Storage Traffic

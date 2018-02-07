@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Analytics
+namespace Microsoft.Azure.Storage.Analytics
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Table;
     using System;
     using System.Globalization;
     using System.Linq;

@@ -15,14 +15,16 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Blob.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.File;
+#endif
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -83,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
 
-#if !(WINDOWS_RT || NETCORE )
+#if !(WINDOWS_RT || NETCORE)
             modifiedOptions.AssertPolicyIfRequired();
 
             if (modifiedOptions.EncryptionPolicy != null)
@@ -371,7 +373,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         ICryptoTransform transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
                         CryptoStream cryptoStream = new CryptoStream(tempStream, transform, CryptoStreamMode.Write);
+#if ALL_SERVICES
                         using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(options))
+#else
+                        using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(options))
+#endif
                         {
                             source.WriteToSync(cryptoStream, length, null, false, true, tempExecutionState, null);
                             cryptoStream.FlushFinalBlock();
@@ -389,7 +395,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     string contentMD5 = null;
                     if (modifiedOptions.StoreBlobContentMD5.Value)
                     {
-                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#if ALL_SERVICES
+                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(options))
+#else
+                        using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(options))
+#endif
                         {
                             StreamDescriptor streamCopyState = new StreamDescriptor();
                             long startPosition = sourceStream.Position;
@@ -425,7 +435,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     using (CloudBlobStream blobStream = this.OpenWrite(accessCondition, modifiedOptions, operationContext))
                     {
+#if ALL_SERVICES
                         using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#else
+                        using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#endif
                         {
                             source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
                             blobStream.Commit();
@@ -449,13 +463,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
-        /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
-        /// </summary>
-        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+                        /// <summary>
+                        /// Begins an asynchronous operation to upload a stream to a block blob. If the blob already exists, it will be overwritten.
+                        /// </summary>
+                        /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
+                        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+                        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+                        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AsyncCallback callback, object state)
         {
@@ -591,8 +605,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.CheckAdjustBlockSize(length ?? (source.CanSeek ? (source.Length - source.Position) : length));
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
-
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
 
             bool lessThanSingleBlobThreshold = CloudBlockBlob.IsLessThanSingleBlobThreshold(source, length, modifiedOptions, false);
@@ -1766,7 +1783,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (!blockData.CanSeek || requiresContentMD5)
                 {
+#if ALL_SERVICES
                     ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                    ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
                     Stream writeToStream;
                     if (blockData.CanSeek)
@@ -1910,7 +1931,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             else
             {
-                ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#if ALL_SERVICES
+            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
                 storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
 
                 Stream seekableStream;
@@ -2277,6 +2302,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
 
 #if SYNC
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying an Azure file's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2295,7 +2321,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
-
+#endif
         /// <summary>
         /// Begins an operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2316,6 +2342,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
+#if ALL_SERVICES
         /// <summary>
         /// Begins an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2328,6 +2355,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.BeginStartCopy(CloudFile.SourceFileToUri(source), callback, state);
         }
+#endif
 
         /// <summary>
         /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
@@ -2341,7 +2369,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), callback, state);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2358,6 +2386,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.BeginStartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
+#endif
 
         /// <summary>
         /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
@@ -2377,6 +2406,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
 #if TASK
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2387,7 +2417,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(source, CancellationToken.None);
         }
-
+#endif
         /// <summary>
         /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2398,7 +2428,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(source, CancellationToken.None);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2410,7 +2440,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
         }
-
+#endif
         /// <summary>
         /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2422,7 +2452,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2437,7 +2467,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
-
+#endif
         /// <summary>
         /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2452,7 +2482,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a file's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2468,6 +2498,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
+#endif
 
         /// <summary>
         /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.

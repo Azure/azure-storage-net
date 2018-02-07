@@ -15,14 +15,16 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.File.Protocol;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.Blob;
+#endif
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.File.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -1547,7 +1549,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             using (CloudFileStream fileStream = this.OpenWrite(length, accessCondition, modifiedOptions, operationContext))
             {
+#if ALL_SERVICES
                 using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#else
+                using (ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
+#endif
                 {
                     source.WriteToSync(fileStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
                     fileStream.Commit();
@@ -1556,13 +1562,13 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-        /// <summary>
-        /// Begins an asynchronous operation to upload a stream to a file. If the file already exists on the service, it will be overwritten.
-        /// </summary>
-        /// <param name="source">The stream providing the file content.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+                /// <summary>
+                /// Begins an asynchronous operation to upload a stream to a file. If the file already exists on the service, it will be overwritten.
+                /// </summary>
+                /// <param name="source">The stream providing the file content.</param>
+                /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+                /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+                /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AsyncCallback callback, object state)
         {
@@ -1702,8 +1708,11 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-
+#if ALL_SERVICES
             ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+            ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
 
             ICancellableAsyncResult result = this.BeginOpenWrite(
@@ -3578,7 +3587,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 if (!rangeData.CanSeek || requiresContentMD5)
                 {
+#if ALL_SERVICES
                     ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                    ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
 
                     Stream writeToStream;
                     if (rangeData.CanSeek)
@@ -3618,16 +3631,16 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 #endif
 
-        /// <summary>
-        /// Begins an asynchronous operation to write a range to a file.
-        /// </summary>
-        /// <param name="rangeData">A stream providing the data.</param>
-        /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-        /// on the file. May be <c>null</c> or an empty string.</param>
-        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+                    /// <summary>
+                    /// Begins an asynchronous operation to write a range to a file.
+                    /// </summary>
+                    /// <param name="rangeData">A stream providing the data.</param>
+                    /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
+                    /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
+                    /// on the file. May be <c>null</c> or an empty string.</param>
+                    /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+                    /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+                    /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginWriteRange(Stream rangeData, long startOffset, string contentMD5, AsyncCallback callback, object state)
         {
@@ -3683,7 +3696,11 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
             else
             {
+#if ALL_SERVICES
                 ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#else
+                ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+#endif
                 storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
 
                 Stream seekableStream;
@@ -4043,7 +4060,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an operation to start copying a blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4062,7 +4079,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
-
+#endif
 #endif
         /// <summary>
         /// Begins an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -4089,7 +4106,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.BeginStartCopy(CloudFile.SourceFileToUri(source), callback, state);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Begins an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4102,6 +4119,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), callback, state);
         }
+#endif
 
         /// <summary>
         /// Begins an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -4146,6 +4164,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             return this.BeginStartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
 
+#if ALL_SERVICES
         /// <summary>
         /// Begins an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4162,6 +4181,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
+#endif
 
         /// <summary>
         /// Ends an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -4211,7 +4231,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(source, CancellationToken.None);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4222,6 +4242,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(source, CancellationToken.None);
         }
+#endif
 
         /// <summary>
         /// Initiates an asynchronous operation to start copying another file's contents, properties, and metadata to this file.
@@ -4234,7 +4255,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4246,7 +4267,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
         }
-
+#endif
         /// <summary>
         /// Initiates an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4292,7 +4313,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4307,7 +4328,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
-
+#endif
         /// <summary>
         /// Initiates an asynchronous operation to start copying another file's contents, properties, and metadata to this file.
         /// </summary>
@@ -4323,7 +4344,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4339,6 +4360,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
+#endif
 #endif
 
 #if SYNC

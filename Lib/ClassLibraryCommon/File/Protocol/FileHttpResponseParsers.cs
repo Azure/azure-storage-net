@@ -18,12 +18,14 @@
 // </summary>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+#if ALL_SERVICES
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Blob.Protocol;
+#endif
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -56,7 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             FileProperties properties = new FileProperties();
             properties.ETag = HttpResponseParsers.GetETag(response);
 
-#if WINDOWS_PHONE 
+#if WINDOWS_PHONE
             properties.LastModified = HttpResponseParsers.GetLastModified(response);
             properties.ContentLanguage = response.Headers[Constants.HeaderConstants.ContentLanguageHeader];
 #else
@@ -118,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             return HttpResponseParsers.GetMetadata(response);
         }
-
+#if ALL_SERVICES
         /// <summary>
         /// Extracts a <see cref="CopyState"/> object from the headers of a web response.
         /// </summary>
@@ -128,5 +130,107 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             return BlobHttpResponseParsers.GetCopyAttributes(response);
         }
+#else
+        /// <summary>
+        /// Builds a <see cref="CopyState"/> object from the given strings containing formatted copy information.
+        /// </summary>
+        /// <param name="copyStatusString">The copy status, as a string.</param>
+        /// <param name="copyId">The copy ID.</param>
+        /// <param name="copySourceString">The source URI of the copy, as a string.</param>
+        /// <param name="copyProgressString">A string formatted as progressBytes/TotalBytes.</param>
+        /// <param name="copyCompletionTimeString">The copy completion time, as a string, or <c>null</c>.</param>
+        /// <param name="copyStatusDescription">The copy status description, if any.</param>
+        /// <param name="copyDestinationSnapshotTimeString">The incremental destination snapshot time for the latest incremental copy</param>
+        /// <returns>A <see cref="CopyState"/> object populated from the given strings.</returns>
+        internal static CopyState GetCopyAttributes(
+            string copyStatusString,
+            string copyId,
+            string copySourceString,
+            string copyProgressString,
+            string copyCompletionTimeString,
+            string copyStatusDescription,
+            string copyDestinationSnapshotTimeString)
+        {
+            CopyState copyAttributes = new CopyState
+            {
+                CopyId = copyId,
+                StatusDescription = copyStatusDescription
+            };
+
+            switch (copyStatusString)
+            {
+                case Constants.CopySuccessValue:
+                    copyAttributes.Status = CopyStatus.Success;
+                    break;
+
+                case Constants.CopyPendingValue:
+                    copyAttributes.Status = CopyStatus.Pending;
+                    break;
+
+                case Constants.CopyAbortedValue:
+                    copyAttributes.Status = CopyStatus.Aborted;
+                    break;
+
+                case Constants.CopyFailedValue:
+                    copyAttributes.Status = CopyStatus.Failed;
+                    break;
+
+                default:
+                    copyAttributes.Status = CopyStatus.Invalid;
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(copyProgressString))
+            {
+                string[] progressSequence = copyProgressString.Split('/');
+                copyAttributes.BytesCopied = long.Parse(progressSequence[0], CultureInfo.InvariantCulture);
+                copyAttributes.TotalBytes = long.Parse(progressSequence[1], CultureInfo.InvariantCulture);
+            }
+
+            if (!string.IsNullOrEmpty(copySourceString))
+            {
+                copyAttributes.Source = new Uri(copySourceString);
+            }
+
+            if (!string.IsNullOrEmpty(copyCompletionTimeString))
+            {
+                copyAttributes.CompletionTime = copyCompletionTimeString.ToUTCTime();
+            }
+
+            if (!string.IsNullOrEmpty(copyDestinationSnapshotTimeString))
+            {
+                copyAttributes.DestinationSnapshotTime = copyDestinationSnapshotTimeString.ToUTCTime();
+            }
+
+            return copyAttributes;
+        }
+
+        /// <summary>
+        /// Extracts a <see cref="CopyState"/> object from the headers of a web response.
+        /// </summary>
+        /// <param name="response">The HTTP web response.</param>
+        /// <returns>A <see cref="CopyState"/> object, or <c>null</c> if the web response does not include copy state.</returns>
+        public static CopyState GetCopyAttributes(HttpWebResponse response)
+        {
+            CommonUtility.AssertNotNull("response", response);
+
+            string copyStatusString = response.Headers[Constants.HeaderConstants.CopyStatusHeader];
+            if (!string.IsNullOrEmpty(copyStatusString))
+            {
+                return GetCopyAttributes(
+                    copyStatusString,
+                    response.Headers[Constants.HeaderConstants.CopyIdHeader],
+                    response.Headers[Constants.HeaderConstants.CopySourceHeader],
+                    response.Headers[Constants.HeaderConstants.CopyProgressHeader],
+                    response.Headers[Constants.HeaderConstants.CopyCompletionTimeHeader],
+                    response.Headers[Constants.HeaderConstants.CopyDescriptionHeader],
+                    response.Headers[Constants.HeaderConstants.CopyDestinationSnapshotHeader]);
+            }
+            else
+            {
+                return null;
+            }
+        }
+#endif
     }
 }

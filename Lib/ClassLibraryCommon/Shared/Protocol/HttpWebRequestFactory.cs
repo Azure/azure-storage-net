@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 ﻿
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -73,7 +73,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
             if (useVersionHeader)
             {
-                request.Headers[Constants.HeaderConstants.StorageVersionHeader] = Constants.HeaderConstants.TargetStorageVersion;
+                request.Headers[Constants.HeaderConstants.StorageVersionHeader] = OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion;
             }
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
