@@ -506,9 +506,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                 // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
 #if NETCORE
-                await source.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                    await source.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #else
-                await source.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                    await source.WriteToAsync(blobStream, this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #endif
                 await blobStream.CommitAsync().ConfigureAwait(false);
             }
@@ -1362,9 +1362,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     else
                     {
+<<<<<<< HEAD
                         seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
                         seekableStreamCreated = true;
                         writeToStream = seekableStream;
+=======
+                        Stream writeToStream;
+                        if (blockDataAsStream.CanSeek)
+                        {
+                            writeToStream = Stream.Null;
+                        }
+                        else
+                        {
+                            seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
+                            seekableStreamCreated = true;
+                            writeToStream = seekableStream;
+                        }
+
+                        StreamDescriptor streamCopyState = new StreamDescriptor();
+                        long startPosition = seekableStream.Position;
+                        await blockDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
+                        seekableStream.Position = startPosition;
+
+                        if (requiresContentMD5)
+                        {
+                            contentMD5 = streamCopyState.Md5;
+                        }
+>>>>>>> ba83ca2c0ef349ed4fe4978862f97b3f7ef6e6e7
                     }
 
                     StreamDescriptor streamCopyState = new StreamDescriptor();

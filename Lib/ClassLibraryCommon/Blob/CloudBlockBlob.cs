@@ -633,7 +633,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         long startPosition = sourceStream.Position;
                         StreamDescriptor streamCopyState = new StreamDescriptor();
                         sourceStream.WriteToAsync(
-                            Stream.Null,
+                            Stream.Null, 
+                            this.ServiceClient.BufferManager,
                             length,
                             null /* maxLength */,
                             true,
@@ -684,7 +685,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             CryptoStream cryptoStream = new CryptoStream(syncMemoryStream, transform, CryptoStreamMode.Write);
                             StreamDescriptor streamCopyState = new StreamDescriptor();
 
-                            source.WriteToAsync(cryptoStream, length, null, false, tempExecutionState, streamCopyState, completedState =>
+                            source.WriteToAsync(cryptoStream, this.ServiceClient.BufferManager, length, null, false, tempExecutionState, streamCopyState, completedState =>
                                 {
                                     ContinueAsyncOperation(storageAsyncResult, completedState, () =>
                                         {
@@ -740,6 +741,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                                     source.WriteToAsync(
                                         progressIncrementer.CreateProgressIncrementingStream(blobStream),
+                                        this.ServiceClient.BufferManager,
                                         length,
                                         null /* maxLength */,
                                         false,
@@ -1931,6 +1933,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 StreamDescriptor streamCopyState = new StreamDescriptor();
                 blockData.WriteToAsync(
                     writeToStream,
+                    this.ServiceClient.BufferManager,
                     null /* copyLength */,
                     Constants.MaxBlockSize,
                     requiresContentMD5,

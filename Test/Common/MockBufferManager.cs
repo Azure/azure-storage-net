@@ -34,6 +34,7 @@ namespace Microsoft.WindowsAzure.Storage
     public class MockBufferManager : IBufferManager
     {
         private int defaultBufferSize = 0;
+        private int totalTakeBufferCalls = 0;
 
         public MockBufferManager(int defaultBufferSize)
         {
@@ -62,12 +63,21 @@ namespace Microsoft.WindowsAzure.Storage
         public byte[] TakeBuffer(int bufferSize)
         {
             Interlocked.Increment(ref outstandingBufferCount);
+            Interlocked.Increment(ref totalTakeBufferCalls);
             return new byte[bufferSize];
         }
 
         public int GetDefaultBufferSize()
         {
             return this.defaultBufferSize;
+        }
+
+        public int TotalTakeBufferCalls
+        {
+            get
+            {
+                return this.totalTakeBufferCalls;
+            }
         }
     }
 }

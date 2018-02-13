@@ -18,6 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
     using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -32,6 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         private StreamDescriptor streamCopyState = null;
 
         private int buffSize;
+        private IBufferManager bufferManager;
 
         private Stream src = null;
         private Stream dest = null;
@@ -55,15 +57,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <param name="src">The source stream.</param>
         /// <param name="dest">The destination stream.</param>
         /// <param name="state">An ExecutionState used to coordinate copy operation.</param>
-        /// <param name="buffSize">Size of read and write buffers used to move data.</param>
+        /// <param name="bufferManager">IBufferManager instance to use.  May be null.</param>
+        /// <param name="buffSize">Size of read and write buffers used to move data.  Overrides the default buffer size of bufferManager.</param>
         /// <param name="calculateMd5">Boolean value indicating whether the MD-5 should be calculated.</param>
         /// <param name="streamCopyState">An object that represents the state for the current operation.</param>
-        public AsyncStreamCopier(Stream src, Stream dest, ExecutionState<T> state, int buffSize, bool calculateMd5, StreamDescriptor streamCopyState)
+        public AsyncStreamCopier(Stream src, Stream dest, ExecutionState<T> state, IBufferManager bufferManager, int? buffSize, bool calculateMd5, StreamDescriptor streamCopyState)
         {
             this.src = src;
             this.dest = dest;
             this.state = state;
-            this.buffSize = buffSize;
+            this.bufferManager = bufferManager;
+            this.buffSize = buffSize ?? (bufferManager != null ? bufferManager.GetDefaultBufferSize() : Constants.DefaultBufferSize);
             this.streamCopyState = streamCopyState;
 
             if (streamCopyState != null && calculateMd5 && streamCopyState.Md5HashRef == null)
@@ -251,68 +255,84 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             token.ThrowIfCancellationRequested();
 
-            byte[] readBuff = new byte[this.buffSize];
-            byte[] writeBuff = new byte[this.buffSize];
-            byte[] swap;
+            byte[] readBuff = this.bufferManager != null ? this.bufferManager.TakeBuffer(this.buffSize) : new byte[this.buffSize];
+            byte[] writeBuff = this.bufferManager != null ? this.bufferManager.TakeBuffer(this.buffSize) : new byte[this.buffSize];
 
-            int bytesToCopy = CalculateBytesToCopy(copyLength, 0);
-            int bytesCopied = await this.src.ReadAsync(readBuff, 0, bytesToCopy, token).ConfigureAwait(false);            
-
-            long totalBytes = bytesCopied;
-            CheckMaxLength(maxLength, totalBytes);
-
-            swap = readBuff;
-            readBuff = writeBuff;
-            writeBuff = swap;
-            ExceptionDispatchInfo readException = null;
-
-            while (bytesCopied > 0)
+            try
             {
-                token.ThrowIfCancellationRequested();
+                byte[] swap;
 
-                Task writeTask = this.dest.WriteAsync(writeBuff, 0, bytesCopied, token);
+                int bytesToCopy = CalculateBytesToCopy(copyLength, 0);
+                int bytesCopied = await this.src.ReadAsync(readBuff, 0, bytesToCopy, token).ConfigureAwait(false);
 
-                bytesToCopy = CalculateBytesToCopy(copyLength, totalBytes);
-                Task<int> readTask = null;
-                if (bytesToCopy > 0)
-                {
-                    try
-                    {
-                        readTask = this.src.ReadAsync(readBuff, 0, bytesToCopy, token);
-                    }
-                    catch(Exception ex)
-                    {
-                        readException = ExceptionDispatchInfo.Capture(ex);
-                    }
-                }
-                else
-                {
-                    readTask = Task.FromResult<int>(0);
-                }
-
-                await writeTask.ConfigureAwait(false);
-
-                UpdateStreamCopyState(writeBuff, bytesCopied);
-
-                if (readException != null)
-                {
-                    readException.Throw();
-                }
-
-                bytesCopied = await readTask.WithCancellation(token).ConfigureAwait(false);
-
-                totalBytes = totalBytes + bytesCopied;
-
+                long totalBytes = bytesCopied;
                 CheckMaxLength(maxLength, totalBytes);
 
                 swap = readBuff;
                 readBuff = writeBuff;
                 writeBuff = swap;
-            }
+                ExceptionDispatchInfo readException = null;
 
-            if (copyLength.HasValue && totalBytes != copyLength.Value)
+                while (bytesCopied > 0)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    Task writeTask = this.dest.WriteAsync(writeBuff, 0, bytesCopied, token);
+
+                    bytesToCopy = CalculateBytesToCopy(copyLength, totalBytes);
+                    Task<int> readTask = null;
+                    if (bytesToCopy > 0)
+                    {
+                        try
+                        {
+                            readTask = this.src.ReadAsync(readBuff, 0, bytesToCopy, token);
+                        }
+                        catch (Exception ex)
+                        {
+                            readException = ExceptionDispatchInfo.Capture(ex);
+                        }
+                    }
+                    else
+                    {
+                        readTask = Task.FromResult<int>(0);
+                    }
+
+                    await writeTask.ConfigureAwait(false);
+
+                    UpdateStreamCopyState(writeBuff, bytesCopied);
+
+                    if (readException != null)
+                    {
+                        readException.Throw();
+                    }
+
+                    bytesCopied = await readTask.WithCancellation(token).ConfigureAwait(false);
+
+                    totalBytes = totalBytes + bytesCopied;
+
+                    CheckMaxLength(maxLength, totalBytes);
+
+                    swap = readBuff;
+                    readBuff = writeBuff;
+                    writeBuff = swap;
+                }
+
+                if (copyLength.HasValue && totalBytes != copyLength.Value)
+                {
+                    throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
+                }
+            }
+            finally
             {
-                throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
+                if (this.bufferManager != null && readBuff != null)
+                {
+                    this.bufferManager.ReturnBuffer(readBuff);
+                }
+
+                if (this.bufferManager != null && writeBuff != null)
+                {
+                    this.bufferManager.ReturnBuffer(writeBuff);
+                }
             }
 
             FinalizeStreamCopyState();
