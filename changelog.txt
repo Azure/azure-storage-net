@@ -1,3 +1,8 @@
+Changes in ###:
+- All: Support for 2017-11-09 REST version.
+- Blobs: Added support for blob creation time property.
+- Blobs: Added support for blob container immutability and legal hold policies.
+
 Changes in 9.0.0:
 - All: Support for 2017-07-29 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.3.
 - Tables: Removed dependencies on OData libraries.

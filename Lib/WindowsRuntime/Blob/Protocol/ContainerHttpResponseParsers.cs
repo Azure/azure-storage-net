@@ -57,6 +57,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             // Reading public access
             containerProperties.PublicAccess = GetAcl(response);
+
+            // WORM policy
+            string hasImmutability = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.HasImmutabilityPolicyHeader);
+            containerProperties.HasImmutabilityPolicy = string.IsNullOrEmpty(hasImmutability) ? (bool?)null : bool.Parse(hasImmutability);
+
+            string hasLegalHold = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.HasLegalHoldHeader);
+            containerProperties.HasLegalHold = string.IsNullOrEmpty(hasLegalHold) ? (bool?)null : bool.Parse(hasLegalHold);
+
             return containerProperties;
         }
 
