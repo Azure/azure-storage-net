@@ -31,6 +31,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public string ETag { get; internal set; }
 
         /// <summary>
+        /// Gets the HasImmutabilityPolicy value for the container.
+        /// </summary>
+        /// <value>True if the container has an immutability policy, or False if not.  The value may be null.</value>
+        public bool? HasImmutabilityPolicy { get; internal set; }
+
+        /// <summary>
+        /// Gets the HasLegalHold value for the container.
+        /// </summary>
+        /// <value>True if the container has legal hold, or False if not.  The value may be null.</value>
+        public bool? HasLegalHold { get; internal set; }
+
+        /// <summary>
         /// Gets the container's last-modified time.
         /// </summary>
         /// <value>A <see cref="DateTimeOffset"/> containing the container's last-modified time, in UTC format.</value>
