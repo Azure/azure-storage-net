@@ -644,12 +644,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(pageBlob.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
-                blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                blob = new CloudBlob(blockBlobSASStorageUri, null, credentials:null);
                 blob.FetchAttributes(operationContext: apiVersionCheckContext);
                 Assert.AreEqual(blob.BlobType, BlobType.BlockBlob);
                 Assert.IsTrue(blob.StorageUri.Equals(blockBlob.StorageUri));
 
-                blob = new CloudBlob(pageBlobSASStorageUri, null, null);
+                blob = new CloudBlob(pageBlobSASStorageUri, null, credentials: null);
                 blob.FetchAttributes(operationContext: apiVersionCheckContext);
                 Assert.AreEqual(blob.BlobType, BlobType.PageBlob);
                 Assert.IsTrue(blob.StorageUri.Equals(pageBlob.StorageUri));
@@ -730,7 +730,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsTrue(blob.StorageUri.PrimaryUri.Equals(blockBlob.Uri));
                 Assert.IsNull(blob.StorageUri.SecondaryUri);
 
-                blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                blob = new CloudBlob(blockBlobSASStorageUri, null, credentials: null);
                 blob.DownloadRangeToByteArray(target, 0, 0, 4, null, null, null);
                 for (int i = 0; i < 4; i++)
                 {
@@ -846,7 +846,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             blob = new CloudBlob(blockBlobSASUri);
                             TestHelper.ExpectedException(() => blob.FetchAttributes(), "Access a blob using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
 
-                            blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                            blob = new CloudBlob(blockBlobSASStorageUri, null, credentials: null);
                             TestHelper.ExpectedException(() => blob.FetchAttributes(), "Access a blob using SAS with a shared protocols that does not match", HttpStatusCode.Unused);
                         }
                         else
@@ -855,7 +855,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             blob.FetchAttributes();
                             Assert.AreEqual(blob.BlobType, BlobType.BlockBlob);
 
-                            blob = new CloudBlob(blockBlobSASStorageUri, null, null);
+                            blob = new CloudBlob(blockBlobSASStorageUri, null, credentials:null);
                             blob.FetchAttributes();
                             Assert.AreEqual(blob.BlobType, BlobType.BlockBlob);
                         }

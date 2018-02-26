@@ -383,7 +383,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                         // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-                        await sourceAsStream.WriteToAsync(blobStream, this.ServiceClient.BufferManager length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                        await sourceAsStream.WriteToAsync(blobStream, this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
                         await blobStream.CommitAsync().ConfigureAwait(false);
                     }
                 }

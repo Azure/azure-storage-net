@@ -1362,38 +1362,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                     else
                     {
-<<<<<<< HEAD
                         seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
                         seekableStreamCreated = true;
                         writeToStream = seekableStream;
-=======
-                        Stream writeToStream;
-                        if (blockDataAsStream.CanSeek)
-                        {
-                            writeToStream = Stream.Null;
-                        }
-                        else
-                        {
-                            seekableStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
-                            seekableStreamCreated = true;
-                            writeToStream = seekableStream;
-                        }
-
-                        StreamDescriptor streamCopyState = new StreamDescriptor();
-                        long startPosition = seekableStream.Position;
-                        await blockDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken);
-                        seekableStream.Position = startPosition;
-
-                        if (requiresContentMD5)
-                        {
-                            contentMD5 = streamCopyState.Md5;
-                        }
->>>>>>> ba83ca2c0ef349ed4fe4978862f97b3f7ef6e6e7
                     }
 
                     StreamDescriptor streamCopyState = new StreamDescriptor();
                     long startPosition = seekableStream.Position;
-                    await blockDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await blockDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxAppendBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     seekableStream.Position = startPosition;
 
                     if (requiresContentMD5)

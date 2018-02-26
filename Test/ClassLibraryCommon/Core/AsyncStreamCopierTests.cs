@@ -395,8 +395,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
                 input.WriteToAsync(output, mockBufferManager, copyLength, maxLength, false, state, copyState, _ => waitHandle.Set());
                 Assert.IsTrue(waitHandle.WaitOne(totalDelayInMs + 10 * 1000));
-
-                Assert.IsTrue(0 < mockBufferManager.TotalTakeBufferCalls, "IBufferManager not used?");
                 Assert.AreEqual(0, mockBufferManager.OutstandingBufferCount, "Outstanding buffers not returned to IBufferManager");
             }
 
