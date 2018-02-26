@@ -1,5 +1,4 @@
 Change in 9.1.0:
-- All: Updated AsyncStreamCopier to use IBufferManager.
 - All: Updated Get*BlobReference APIs to inherit the existing ServiceClient instance.
 - All: Removed the un-necessary stream wrapping when progress tracking is not requested.
 - Blob(RT/NetCore): Removed Task.Run from CloudBlob Undelete API.
