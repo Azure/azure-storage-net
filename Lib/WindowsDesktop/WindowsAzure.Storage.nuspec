@@ -17,11 +17,11 @@
     <tags>Microsoft, Azure, Storage, Table, Blob, File, Queue, Scalable, windowsazureofficial</tags>
     <dependencies>
       <group targetFramework=".netstandard1.0">
-        <dependency id="NETStandard.Library" version="1.6.0" />
+        <dependency id="NETStandard.Library" version="1.6.1" />
         <dependency id="Newtonsoft.Json" version="10.0.2" />
       </group>
       <group targetFramework=".netstandard1.3">
-        <dependency id="NETStandard.Library" version="1.6.0" />
+        <dependency id="NETStandard.Library" version="1.6.1" />
         <dependency id="Newtonsoft.Json" version="10.0.2" />
       </group>
       <group targetFramework=".netframework4.5">

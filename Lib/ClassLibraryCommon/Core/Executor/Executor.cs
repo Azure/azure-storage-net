@@ -159,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 else
                 {
                     // don't calculate md5 here as we should have already set this for auth purposes
-                    executionState.RestCMD.SendStream.WriteToAsync(executionState.ReqStream, executionState.RestCMD.SendStreamLength, null /* maxLength */, false, executionState, null /* streamCopyState */, EndSendStreamCopy);
+                    executionState.RestCMD.SendStream.WriteToAsync(executionState.ReqStream, default(IBufferManager), executionState.RestCMD.SendStreamLength, null /* maxLength */, false, executionState, null /* streamCopyState */, EndSendStreamCopy);
                 }
             }
             catch (Exception ex)
@@ -324,7 +324,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     Logger.LogInformational(executionState.OperationContext, SR.TraceDownloadError);
 
                     executionState.RestCMD.ErrorStream = new MemoryStream();
-                    executionState.RestCMD.ResponseStream.WriteToAsync(executionState.RestCMD.ErrorStream, null /* copyLength */, null /* maxLength */, false /* calculateMd5 */, executionState, new StreamDescriptor(), EndResponseStreamCopy);
+                    executionState.RestCMD.ResponseStream.WriteToAsync(executionState.RestCMD.ErrorStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, false /* calculateMd5 */, executionState, new StreamDescriptor(), EndResponseStreamCopy);
                 }
                 else
                 {
@@ -342,7 +342,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
                         executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
                         Logger.LogInformational(executionState.OperationContext, SR.TraceDownload);
-                        executionState.RestCMD.ResponseStream.WriteToAsync(executionState.RestCMD.DestinationStream, null /* copyLength */, null /* maxLength */, executionState.RestCMD.CalculateMd5ForResponseStream, executionState, executionState.RestCMD.StreamCopyState, EndResponseStreamCopy);
+                        executionState.RestCMD.ResponseStream.WriteToAsync(executionState.RestCMD.DestinationStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, executionState.RestCMD.CalculateMd5ForResponseStream, executionState, executionState.RestCMD.StreamCopyState, EndResponseStreamCopy);
                     }
                     else
                     {

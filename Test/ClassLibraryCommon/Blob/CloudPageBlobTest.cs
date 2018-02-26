@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             CloudPageBlob blob = container.GetPageBlobReference("blob1");
-            CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, null);
+            CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, credentials: null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
             Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);
