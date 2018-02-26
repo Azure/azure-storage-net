@@ -56,7 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public Stream CreateProgressIncrementingStream(Stream stream)
         {
-            return new ProgressIncrementingStream(stream, this);
+            return innerHandler != null ? new ProgressIncrementingStream(stream, this) : stream;
         }
 
         public AggregatingProgressIncrementer(IProgress<StorageProgress> innerHandler)

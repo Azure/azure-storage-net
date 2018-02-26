@@ -4,7 +4,7 @@ Tracking Breaking Changes since 8.0
 - Tables: Removed the deprecated WCF DataServices Table implementation namespace.
 - All: Updated the Newtonsoft.json dependency to version 10.0.2.
 - All: Upgraded Netstandard dependency to 1.6.1.
-- All: Deprecated the ErrorCode property on ExtendedErrorInformation via the obsolete attribute. Use the corresponding methods in RequestResult and StorageException instead.
+- All: (Only applies to v9.0.0): Deprecated the ErrorCode property on ExtendedErrorInformation via the obsolete attribute. Use the corresponding methods in RequestResult and StorageException instead. This change is reverted in v9.1.0+.
 - Unsealed CloudStorageAccount, FileResultSegment class.
 - Added the 'virtual' qualifier to Get*Client APIs and GetRoot*Reference methods.
 - Added a default constructor to Blob/File/Container/ShareResultSegment.
