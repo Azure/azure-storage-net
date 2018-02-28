@@ -1,7 +1,7 @@
 ﻿{
   "version": "8.0.0.0",
   "dependencies": {
-    "WindowsAzure.Storage": "9.0.0"
+    "WindowsAzure.Storage": "9.1.0"
   },
   "frameworks": {
     "wp81": {}

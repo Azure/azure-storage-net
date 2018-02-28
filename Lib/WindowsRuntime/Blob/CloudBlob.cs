@@ -881,11 +881,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task UndeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.UndeleteBlobImpl(this.attributes, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>

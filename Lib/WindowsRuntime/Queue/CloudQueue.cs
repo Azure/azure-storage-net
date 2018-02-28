@@ -1272,7 +1272,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Implementation for the GetPermissions method.
+        /// Implementation for the GetMessage method.
         /// </summary>
         /// <param name="visibilityTimeout">The visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>

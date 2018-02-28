@@ -358,9 +358,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                 // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                 // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
 #if NETCORE
-                await sourceAsStream.WriteToAsync(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(fileStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                await sourceAsStream.WriteToAsync(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(fileStream), this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #else
-                await sourceAsStream.WriteToAsync(fileStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                await sourceAsStream.WriteToAsync(fileStream, this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #endif
                 await fileStream.CommitAsync().ConfigureAwait(false);
             }
@@ -1669,7 +1669,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                     StreamDescriptor streamCopyState = new StreamDescriptor();
                     long startPosition = seekableStream.Position;
-                    await rangeDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await rangeDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     seekableStream.Position = startPosition;
 
                     if (requiresContentMD5)
@@ -1683,13 +1683,13 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
                 await Executor.ExecuteAsyncNullReturn(
 #if NETCORE
-                    this.PutRangeImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
+                this.PutRangeImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
 #else
-                    this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+                this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
 #endif
-                    modifiedOptions.RetryPolicy,
-                    operationContext,
-                    cancellationToken);
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
             }
             finally
             {

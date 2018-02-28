@@ -388,9 +388,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                 // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
 #if NETCORE
-                await sourceAsStream.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                await sourceAsStream.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #else
-                await sourceAsStream.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                await sourceAsStream.WriteToAsync(blobStream, this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
 #endif
                 await blobStream.CommitAsync().ConfigureAwait(false);
             }
@@ -1036,7 +1036,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     StreamDescriptor streamCopyState = new StreamDescriptor();
                     long startPosition = seekableStream.Position;
-                    await pageDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await pageDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     seekableStream.Position = startPosition;
 
                     if (requiresContentMD5)
