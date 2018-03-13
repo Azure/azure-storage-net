@@ -506,6 +506,35 @@ namespace Microsoft.WindowsAzure.Storage.Table
             Assert.AreEqual(1500, count);
         }
 
+        EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
+        {
+            BaseEntity entity = new BaseEntity(partitionKey, rowKey);
+            entity.ETag = etag;
+            entity.foo = properties["foo"].StringValue;
+            entity.A = properties["A"].StringValue;
+            entity.B = properties["B"].StringValue;
+            entity.C = properties["C"].StringValue;
+            entity.D = properties["D"].StringValue;
+            entity.E = properties["E"].Int32Value.Value;
+            entity.Binary = properties["Binary"].BinaryValue;
+            entity.DateTime = properties["DateTime"].DateTime.Value;
+            entity.Double = properties["Double"].DoubleValue.Value;
+            entity.DoubleInf = (properties["DoubleInf"].StringValue == "Infinity") ? Double.PositiveInfinity : default(Double);
+            entity.DoubleNan = (properties["DoubleNan"].StringValue == "NaN") ? Double.NaN : default(Double);
+            entity.DoubleNegInf = (properties["DoubleNegInf"].StringValue == "-Infinity") ? Double.NegativeInfinity : default(Double);
+            entity.False = properties["False"].BooleanValue.Value;
+            entity.Guid = properties["Guid"].GuidValue.Value;
+            entity.Int32 = properties["Int32"].Int32Value.Value;
+            entity.Int64 = properties["Int64"].Int64Value.Value;
+            entity.NotNullDouble = properties["NotNullDouble"].DoubleValue;
+            entity.NotNullDoubleInf = (properties["NotNullDoubleInf"].StringValue == "Infinity") ? Double.PositiveInfinity : default(Double);
+            entity.NotNullDoubleNan = (properties["NotNullDoubleNan"].StringValue == "NaN") ? Double.NaN : default(Double);
+            entity.NotNullDoubleNegInf = (properties["NotNullDoubleNegInf"].StringValue == "-Infinity") ? Double.NegativeInfinity : default(Double);
+            entity.NullDouble = properties.ContainsKey("NullDouble") ? properties["NullDouble"].DoubleValue.Value : default(Double?);
+            entity.True = properties["True"].BooleanValue.Value;
+            return entity;
+        };
+
         [TestMethod]
         [Description("Test Table ExecuteQuerySegmented - Task")]
         [TestCategory(ComponentCategory.Table)]
@@ -515,18 +544,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
 
             int count = 0;
@@ -588,18 +606,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenCancellationTokenTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
             CancellationToken cancellationToken = CancellationToken.None;
 
@@ -663,18 +670,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenRequestOptionsOperationContextTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
             TableRequestOptions requestOptions = new TableRequestOptions();
             OperationContext operationContext = new OperationContext();
@@ -707,18 +703,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenRequestOptionsOperationContextCancellationTokenTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
             TableRequestOptions requestOptions = new TableRequestOptions();
             OperationContext operationContext = new OperationContext();
