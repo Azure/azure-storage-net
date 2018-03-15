@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Newtonsoft.Json;
+    using Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -158,7 +159,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                     using (ICryptoTransform transform = myAes.CreateEncryptor())
                     {
-                        byte[] src = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(encryptionPropertyDetailsSet));
+                        byte[] src = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(encryptionPropertyDetailsSet, DefaultSerializerSettings.Create()));
                         byte[] dest = transform.TransformFinalBlock(src, 0, src.Length);
                         encryptedProperties.Add(Constants.EncryptionConstants.TableEncryptionPropertyDetails, new EntityProperty(dest));
                     }
@@ -166,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             // Add the key details to entity properties.
-            encryptedProperties.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails, new EntityProperty(JsonConvert.SerializeObject(encryptionData)));
+            encryptedProperties.Add(Constants.EncryptionConstants.TableEncryptionKeyDetails, new EntityProperty(JsonConvert.SerializeObject(encryptionData, DefaultSerializerSettings.Create())));
             return encryptedProperties;
         }
 
@@ -180,7 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             try
             {
-                encryptionData = JsonConvert.DeserializeObject<EncryptionData>(encryptionKeyProperty.StringValue);
+                encryptionData = JsonConvert.DeserializeObject<EncryptionData>(encryptionKeyProperty.StringValue, DefaultSerializerSettings.Create());
                 EncryptionData encryptionDataCopy = encryptionData; // This is necessary because you cannot use "out" variables in a lambda.
 
                 CommonUtility.AssertNotNull("ContentEncryptionIV", encryptionData.ContentEncryptionIV);
@@ -369,7 +370,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             TableEncryptionPolicy.ValidateKeyRotationArguments(rotationEntity, modifiedOptions, !String.IsNullOrWhiteSpace(encryptionDataString));
 
             // Deserialize the old encryption data and validate:
-            EncryptionData tableEncryptionData = Newtonsoft.Json.JsonConvert.DeserializeObject<EncryptionData>(encryptionDataString);
+            EncryptionData tableEncryptionData = Newtonsoft.Json.JsonConvert.DeserializeObject<EncryptionData>(encryptionDataString, DefaultSerializerSettings.Create());
             if (tableEncryptionData.WrappedContentKey.EncryptedKey == null)
             {
                 throw new InvalidOperationException(SR.KeyRotationNoKeyID);
@@ -391,7 +392,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             TaskCompletionSource<string> tcs = new TaskCompletionSource<string>();
             tableEncryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedNewKeyTuple.Item1, wrappedNewKeyTuple.Item2);
-            return Newtonsoft.Json.JsonConvert.SerializeObject(tableEncryptionData);
+            return Newtonsoft.Json.JsonConvert.SerializeObject(tableEncryptionData, DefaultSerializerSettings.Create());
         }
     }
 }

@@ -30,6 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Table.Protocol;
 
     [TestClass]
     public class BlobClientEncryptionTests : BlobTestBase
@@ -548,7 +549,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
                 {
                     string metadata = blob.Metadata[Constants.EncryptionConstants.BlobEncryptionData];
-                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata);
+                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata, DefaultSerializerSettings.Create());
                     myAes.IV = encryptionData.ContentEncryptionIV;
                     myAes.Key = aesKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
 
@@ -616,7 +617,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
                 {
                     string metadata = blob.Metadata[Constants.EncryptionConstants.BlobEncryptionData];
-                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata);
+                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata, DefaultSerializerSettings.Create());
                     myAes.IV = encryptionData.ContentEncryptionIV;
                     myAes.Key = aesKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
 

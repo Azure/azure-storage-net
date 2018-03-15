@@ -454,7 +454,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         private static Dictionary<string, object> ReadSingleItem(JToken token, out string etag)
         {
-            Dictionary<string, object> properties = token.ToObject<Dictionary<string, object>>();
+            Dictionary<string, object> properties = token.ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
 
             // Parse the etag, and remove all the "odata.*" properties we don't use.
             if (properties.ContainsKey(@"odata.etag"))
@@ -722,7 +722,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
             else
             {
-                encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+                encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length), DefaultSerializerSettings.Create());
             }
 
             return encryptedPropertyDetailsSet;

@@ -457,7 +457,25 @@ byte[] input)
             {
                 if (!this.IsNull)
                 {
-                    this.EnforceType(EdmType.Double);
+                    if (this.PropertyAsObject is string)
+                    {
+                        switch ((string)this.PropertyAsObject)
+                        {
+                            case "NaN":
+                                return double.NaN;
+                            case "Infinity":
+                                return double.PositiveInfinity;
+                            case "-Infinity":
+                                return double.NegativeInfinity;
+                            default:
+                                this.EnforceType(EdmType.Double);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        this.EnforceType(EdmType.Double);
+                    }
                 }
 
                 return (double?)this.PropertyAsObject;
@@ -896,7 +914,7 @@ byte[] input)
         /// Ensures that the given type matches the type of this entity
         /// property; throws an exception if the types do not match.
         /// </summary>
-        private void EnforceType(EdmType requestedType)
+        private void EnforceType(EdmType requestedType, params object[] exceptValues)
         {
             if (this.PropertyType != requestedType)
             {

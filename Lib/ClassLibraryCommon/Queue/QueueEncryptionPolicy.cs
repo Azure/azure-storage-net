@@ -27,6 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading;
+    using Table.Protocol;
 
     /// <summary>
     /// Represents an encryption policy for performing envelope encryption/decryption of messages in Azure queue.
@@ -98,7 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 }
 
                 encryptedMessage.EncryptionData = encryptionData;
-                return JsonConvert.SerializeObject(encryptedMessage);
+                return JsonConvert.SerializeObject(encryptedMessage, DefaultSerializerSettings.Create());
             }
         }
 

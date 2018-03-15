@@ -26,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading;
+    using Table.Protocol;
 
     [TestClass]
     public class CloudQueueMessageEncryptionTests : QueueTestBase 
@@ -340,7 +341,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 // Decrypt locally
                 CloudQueueMessage decryptedMessage;
-                CloudQueueEncryptedMessage encryptedMessage = JsonConvert.DeserializeObject<CloudQueueEncryptedMessage>(retrMessage.AsString);
+                CloudQueueEncryptedMessage encryptedMessage = JsonConvert.DeserializeObject<CloudQueueEncryptedMessage>(retrMessage.AsString, DefaultSerializerSettings.Create());
                 EncryptionData encryptionData = encryptedMessage.EncryptionData;
 
                 byte[] contentEncryptionKey = aesKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;

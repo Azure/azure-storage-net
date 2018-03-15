@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using Newtonsoft.Json.Serialization;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -177,7 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 propertyDictionary[kvp.Key] = kvp.Value;
             }
 
-            JObject json = JObject.FromObject(propertyDictionary);
+            JObject json = JObject.FromObject(propertyDictionary, DefaultSerializer.Create());
 
             json.WriteTo(jsonWriter);
         }

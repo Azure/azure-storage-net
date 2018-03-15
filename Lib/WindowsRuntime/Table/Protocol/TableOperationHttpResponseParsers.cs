@@ -465,7 +465,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         private static Dictionary<string, object> ReadSingleItem(JToken token, out string etag)
         {
-            Dictionary<string, object> properties = token.ToObject<Dictionary<string, object>>();
+            Dictionary<string, object> properties = token.ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
 
             // Parse the etag, and remove all the "odata.*" properties we don't use.
             if (properties.ContainsKey(@"odata.etag"))

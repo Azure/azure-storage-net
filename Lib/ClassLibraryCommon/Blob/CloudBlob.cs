@@ -28,6 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
+    using Table.Protocol;
 
     public partial class CloudBlob : IListBlobItem
     {
@@ -389,7 +390,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             // Update the encryption metadata with the newly wrapped CEK and call SetMetadata.
             encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.encryptedKey, wrappedKey.algorithm);
 
-            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData, Newtonsoft.Json.Formatting.None);
+            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData, DefaultSerializerSettings.Create());
 
             if (accessCondition == null)
             {
@@ -569,7 +570,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             encryptionData.WrappedContentKey = new WrappedKey(modifiedOptions.EncryptionPolicy.Key.Kid, wrappedKey.encryptedKey, wrappedKey.algorithm);
 
-            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData, Newtonsoft.Json.Formatting.None);
+            this.Metadata[Constants.EncryptionConstants.BlobEncryptionData] = Newtonsoft.Json.JsonConvert.SerializeObject(encryptionData, DefaultSerializerSettings.Create());
 
             if (accessCondition == null)
             {
@@ -4109,7 +4110,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.ValidateKeyRotationArguments(accessCondition, modifiedOptions, encryptionMetadataAvailable);
 
             // Deserialize the old encryption data and validate:
-            BlobEncryptionData encryptionData = Newtonsoft.Json.JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString);
+            BlobEncryptionData encryptionData = Newtonsoft.Json.JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString, DefaultSerializerSettings.Create());
             if (encryptionData.WrappedContentKey.EncryptedKey == null)
             {
                 throw new InvalidOperationException(SR.KeyRotationNoKeyID);

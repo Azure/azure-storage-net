@@ -153,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 propertyDictionary[kvp.Key] = kvp.Value;
             }
 
-            JObject json = JObject.FromObject(propertyDictionary);
+            JObject json = JObject.FromObject(propertyDictionary, DefaultSerializer.Create());
 
             json.WriteTo(jsonWriter);
         }

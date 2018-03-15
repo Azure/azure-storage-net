@@ -18,6 +18,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using Microsoft.WindowsAzure.Storage.Table.Protocol;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -90,6 +92,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
             currentTable.DeleteIfExists();
         }
 
+        class DummyContractResolver : IContractResolver
+        {
+            public JsonContract ResolveContract(Type type)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         [TestInitialize()]
         public void MyTestInitialize()
         {
@@ -97,7 +107,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TestBase.TableBufferManager.OutstandingBufferCount = 0;
             }
+
+            JsonConvert.DefaultSettings =
+                () =>
+                new JsonSerializerSettings
+                {
+                    ContractResolver = new DummyContractResolver()
+                };
         }
+
         //
         // Use TestCleanup to run code after each test has run
         [TestCleanup()]
@@ -519,17 +537,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
             entity.Binary = properties["Binary"].BinaryValue;
             entity.DateTime = properties["DateTime"].DateTime.Value;
             entity.Double = properties["Double"].DoubleValue.Value;
-            entity.DoubleInf = (properties["DoubleInf"].StringValue == "Infinity") ? Double.PositiveInfinity : default(Double);
-            entity.DoubleNan = (properties["DoubleNan"].StringValue == "NaN") ? Double.NaN : default(Double);
-            entity.DoubleNegInf = (properties["DoubleNegInf"].StringValue == "-Infinity") ? Double.NegativeInfinity : default(Double);
+            entity.DoubleInf = properties["DoubleInf"].DoubleValue.Value;
+            entity.DoubleNan = properties["DoubleNan"].DoubleValue.Value;
+            entity.DoubleNegInf = properties["DoubleNegInf"].DoubleValue.Value;
             entity.False = properties["False"].BooleanValue.Value;
             entity.Guid = properties["Guid"].GuidValue.Value;
             entity.Int32 = properties["Int32"].Int32Value.Value;
             entity.Int64 = properties["Int64"].Int64Value.Value;
             entity.NotNullDouble = properties["NotNullDouble"].DoubleValue;
-            entity.NotNullDoubleInf = (properties["NotNullDoubleInf"].StringValue == "Infinity") ? Double.PositiveInfinity : default(Double);
-            entity.NotNullDoubleNan = (properties["NotNullDoubleNan"].StringValue == "NaN") ? Double.NaN : default(Double);
-            entity.NotNullDoubleNegInf = (properties["NotNullDoubleNegInf"].StringValue == "-Infinity") ? Double.NegativeInfinity : default(Double);
+            entity.NotNullDoubleInf = properties["NotNullDoubleInf"].DoubleValue.Value;
+            entity.NotNullDoubleNan = properties["NotNullDoubleNan"].DoubleValue.Value;
+            entity.NotNullDoubleNegInf = properties["NotNullDoubleNegInf"].DoubleValue.Value;
             entity.NullDouble = properties.ContainsKey("NullDouble") ? properties["NullDouble"].DoubleValue.Value : default(Double?);
             entity.True = properties["True"].BooleanValue.Value;
             return entity;

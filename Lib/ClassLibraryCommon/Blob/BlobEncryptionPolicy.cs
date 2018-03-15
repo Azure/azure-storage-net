@@ -26,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Security.Cryptography;
     using System.Threading;
+    using Table.Protocol;
 
     /// <summary>
     /// Represents an encryption policy for performing envelope encryption/decryption of Azure blobs.
@@ -94,7 +95,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (encryptionDataString != null)
                 {
-                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString);
+                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString, DefaultSerializerSettings.Create());
 
                     CommonUtility.AssertNotNull("ContentEncryptionIV", encryptionData.ContentEncryptionIV);
                     CommonUtility.AssertNotNull("EncryptedKey", encryptionData.WrappedContentKey.EncryptedKey);
@@ -243,7 +244,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 encryptionData.KeyWrappingMetadata = new Dictionary<string, string>();
                 encryptionData.KeyWrappingMetadata[Constants.EncryptionConstants.AgentMetadataKey] = Constants.EncryptionConstants.AgentMetadataValue;
                 encryptionData.ContentEncryptionIV = aesProvider.IV;
-                metadata[Constants.EncryptionConstants.BlobEncryptionData] = JsonConvert.SerializeObject(encryptionData, Formatting.None);
+                metadata[Constants.EncryptionConstants.BlobEncryptionData] = JsonConvert.SerializeObject(encryptionData, DefaultSerializerSettings.Create());
                 return aesProvider.CreateEncryptor();
             }
         }
