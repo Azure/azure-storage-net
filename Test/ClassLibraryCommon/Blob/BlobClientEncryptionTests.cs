@@ -27,10 +27,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Table.Protocol;
 
     [TestClass]
     public class BlobClientEncryptionTests : BlobTestBase

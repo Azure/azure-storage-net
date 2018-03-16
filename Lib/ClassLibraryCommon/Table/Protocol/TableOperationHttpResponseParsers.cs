@@ -505,7 +505,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         properties[propName] = Boolean.Parse((string)properties[propName]);
                         break;
                     case Constants.EdmDateTime:
-                        properties[propName] = DateTime.Parse((string)properties[propName], null, DateTimeStyles.AdjustToUniversal);
+                        properties[propName] = DateTime.Parse((string)properties[propName], CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
                         break;
                     case Constants.EdmDouble:
                         properties[propName] = Double.Parse((string)properties[propName], CultureInfo.InvariantCulture);

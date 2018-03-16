@@ -17,22 +17,22 @@
 
 namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 {
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
-    using System.Globalization;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Executor;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Net;
     using System.Net.Http;
-    using System.Threading.Tasks;
     using System.Reflection;
-    using System.Threading;
     using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     internal static class TableOperationHttpResponseParsers
     {
@@ -516,7 +516,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                         properties[propName] = Boolean.Parse((string)properties[propName]);
                         break;
                     case Constants.EdmDateTime:
-                        properties[propName] = DateTime.Parse((string)properties[propName], null, DateTimeStyles.AdjustToUniversal);
+                        properties[propName] = DateTime.Parse((string)properties[propName], CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
                         break;
                     case Constants.EdmDouble:
                         properties[propName] = Double.Parse((string)properties[propName], CultureInfo.InvariantCulture);

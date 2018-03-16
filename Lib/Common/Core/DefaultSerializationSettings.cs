@@ -18,7 +18,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Microsoft.WindowsAzure.Storage.Table.Protocol
+namespace Microsoft.WindowsAzure.Storage.Core
 {
     static class DefaultSerializer
     {
@@ -30,6 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             };
         }
     }
+
     static class DefaultSerializerSettings
     {
         public static JsonSerializerSettings Create()

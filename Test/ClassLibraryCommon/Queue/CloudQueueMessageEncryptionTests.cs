@@ -24,9 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using Newtonsoft.Json;
     using System;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
-    using Table.Protocol;
 
     [TestClass]
     public class CloudQueueMessageEncryptionTests : QueueTestBase 

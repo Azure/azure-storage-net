@@ -26,7 +26,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.IO;
     using System.Security.Cryptography;
     using System.Threading;
-    using Table.Protocol;
 
     /// <summary>
     /// Represents an encryption policy for performing envelope encryption/decryption of Azure blobs.

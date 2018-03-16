@@ -28,7 +28,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
-    using Table.Protocol;
 
     public partial class CloudBlob : IListBlobItem
     {
