@@ -48,25 +48,36 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
             this.C = "c";
             this.D = "d";
             this.E = 1234;
-            this.Double = 1234.5678;
-            this.DoubleNan = double.NaN;
-            this.DoubleInf = double.PositiveInfinity;
-            this.DoubleNegInf = double.NegativeInfinity;
-            this.NotNullDouble = 5678.1234;
-            this.NotNullDoubleNan = double.NaN;
-            this.NotNullDoubleInf = double.PositiveInfinity;
-            this.NotNullDoubleNegInf = double.NegativeInfinity;
-            this.NullDouble = default(double?);
-            this.Int32 = 1234;
-            this.Int64 = 5678;
-            this.Guid = guidValue;
+            this.Double = (Double)1234.5678;
+            this.DoubleEpsilon = Double.Epsilon;
+            this.DoubleNan = Double.NaN;
+            this.DoublePositiveInfinity = Double.PositiveInfinity;
+            this.DoubleNegativeInfinity = Double.NegativeInfinity;
+            this.DoubleNullWithValue = (Double?)1234.5678;
+            this.DoubleNullWithNan = Double.NaN;
+            this.DoubleNullWithPositiveInfinity = Double.PositiveInfinity;
+            this.DoubleNullWithNegativeInfinity = Double.NegativeInfinity;
+            this.String = "testString";
+            this.Int32 = (Int32)1234;
+            this.Int32NullWithValue = (Int32?)1234;
+            this.Int64 = (Int64)1234;
+            this.Int64NullWithValue = (Int64?)1234;
             this.DateTime = dateTimeValue;
-            this.True = true;
-            this.False = false;
+            this.DateTimeNullWithValue = (DateTime?)dateTimeValue;
+            this.DateTimeOffset = dateTimeOffsetValue;
+            this.DateTimeOffsetNullWithValue = (DateTimeOffset?)dateTimeOffsetValue;
+            this.Guid = guidValue;
+            this.GuidNullWithValue = (Guid?)guidValue;
+            this.BooleanTrue = true;
+            this.BooleanFalse = false;
+            this.BooleanNull = default(Boolean?);
+            this.BooleanNullWithTrue = (Boolean?)true;
+            this.BooleanNullWithFalse = (Boolean?)false;
             this.Binary = Encoding.Unicode.GetBytes(guidValue.ToString() + dateTimeValue.ToString());
         }
 
         static DateTime dateTimeValue = DateTime.UtcNow;
+        static DateTimeOffset dateTimeOffsetValue = DateTimeOffset.UtcNow;
         static Guid guidValue = new Guid("{CA303396-5D78-42A6-A63E-7A63449E7CAF}");
 
         public string foo { get; set; }
@@ -75,22 +86,32 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
         public string C { get; set; }
         public string D { get; set; }
         public int E { get; set; }
-        public double Double { get; set; }
-        public double DoubleNan { get; set; }
-        public double DoubleInf { get; set; }
-        public double DoubleNegInf { get; set; }
-        public double? NotNullDouble { get; set; }
-        public double? NotNullDoubleNan { get; set; }
-        public double? NotNullDoubleInf { get; set; }
-        public double? NotNullDoubleNegInf { get; set; }
-        public double? NullDouble { get; set; }
-        public Int32 Int32 { get; set; }
-        public Int64 Int64 { get; set; }
-        public Guid Guid { get; set; }
+        public Boolean? BooleanNull { get; set; }
+        public Boolean? BooleanNullWithFalse { get; set; }
+        public Boolean? BooleanNullWithTrue { get; set; }
+        public Boolean BooleanFalse { get; set; }
+        public Boolean BooleanTrue { get; set; }
+        public Byte[] Binary { get; set; }
         public DateTime DateTime { get; set; }
-        public bool True { get; set; }
-        public bool False { get; set; }
-        public byte[] Binary { get; set; }
+        public DateTime? DateTimeNullWithValue { get; set; }
+        public DateTimeOffset DateTimeOffset { get; set; }
+        public DateTimeOffset? DateTimeOffsetNullWithValue { get; set; }
+        public Double Double { get; set; }
+        public Double DoubleEpsilon { get; set; }
+        public Double DoubleNan { get; set; }
+        public Double DoubleNegativeInfinity { get; set; }
+        public Double? DoubleNullWithNan { get; set; }
+        public Double? DoubleNullWithNegativeInfinity { get; set; }
+        public Double? DoubleNullWithPositiveInfinity { get; set; }
+        public Double? DoubleNullWithValue { get; set; }
+        public Double DoublePositiveInfinity { get; set; }
+        public Guid Guid { get; set; }
+        public Guid? GuidNullWithValue { get; set; }
+        public Int32 Int32 { get; set; }
+        public Int32? Int32NullWithValue { get; set; }
+        public Int64 Int64 { get; set; }
+        public Int64? Int64NullWithValue { get; set; }
+        public String String { get; set; }
 
         public void Validate()
         {
@@ -100,21 +121,40 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
             Assert.AreEqual("c", this.C);
             Assert.AreEqual("d", this.D);
             Assert.AreEqual(1234, this.E);
-            Assert.AreEqual(1234.5678, this.Double);
-            Assert.AreEqual(Double.NaN, this.DoubleNan);
-            Assert.AreEqual(Double.PositiveInfinity, this.DoubleInf);
-            Assert.AreEqual(Double.NegativeInfinity, this.DoubleNegInf);
-            Assert.AreEqual(5678.1234, this.NotNullDouble);
-            Assert.AreEqual(Double.NaN, this.NotNullDoubleNan);
-            Assert.AreEqual(Double.PositiveInfinity, this.NotNullDoubleInf);
-            Assert.AreEqual(Double.NegativeInfinity, this.NotNullDoubleNegInf);
-            Assert.IsFalse(this.NullDouble.HasValue);
-            Assert.AreEqual(1234, this.Int32);
-            Assert.AreEqual(5678, this.Int64);
-            Assert.AreEqual(guidValue, this.Guid);
-            Assert.AreEqual(dateTimeValue, this.DateTime);
-            Assert.AreEqual(true, this.True);
-            Assert.AreEqual(false, this.False);
+
+            Assert.AreEqual(this.Double, (Double)1234.5678);
+            Assert.AreEqual(this.DoubleEpsilon, Double.Epsilon);
+            Assert.AreEqual(this.DoubleNan, Double.NaN);
+            Assert.AreEqual(this.DoublePositiveInfinity, Double.PositiveInfinity);
+            Assert.AreEqual(this.DoubleNegativeInfinity, Double.NegativeInfinity);
+            Assert.AreEqual(this.DoubleNullWithValue, (Double?)1234.5678);
+            Assert.AreEqual(this.DoubleNullWithNan, Double.NaN);
+            Assert.AreEqual(this.DoubleNullWithPositiveInfinity, Double.PositiveInfinity);
+            Assert.AreEqual(this.DoubleNullWithNegativeInfinity, Double.NegativeInfinity);
+
+            Assert.AreEqual(this.String, "testString");
+
+            Assert.AreEqual(this.Int32, (Int32)1234);
+            Assert.AreEqual(this.Int32NullWithValue, (Int32?)1234);
+
+            Assert.AreEqual(this.Int64, (Int64)1234);
+            Assert.AreEqual(this.Int64NullWithValue, (Int64?)1234);
+
+            Assert.AreEqual(this.DateTime, dateTimeValue);
+            Assert.AreEqual(this.DateTimeNullWithValue, dateTimeValue);
+
+            Assert.AreEqual(this.DateTimeOffset, dateTimeOffsetValue);
+            Assert.AreEqual(this.DateTimeOffsetNullWithValue, (DateTimeOffset?)dateTimeOffsetValue);
+
+            Assert.AreEqual(this.Guid, guidValue);
+            Assert.AreEqual(this.GuidNullWithValue, guidValue);
+
+            Assert.AreEqual(this.BooleanTrue, true);
+            Assert.AreEqual(this.BooleanFalse, false);
+            Assert.AreEqual(this.BooleanNull, default(Boolean?));
+            Assert.AreEqual(this.BooleanNullWithTrue, (Boolean?)true);
+            Assert.AreEqual(this.BooleanNullWithFalse, (Boolean?)false);
+
             Assert.IsTrue(
                 Encoding.Unicode.GetBytes(guidValue.ToString() + dateTimeValue.ToString())
                 .SequenceEqual(this.Binary)
@@ -125,34 +165,61 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
         {
             switch (propName)
             {
-                case "foo":
-                case "A":
-                case "B":
-                case "C":
-                case "D":
+                case nameof(foo):
+                case nameof(A):
+                case nameof(B):
+                case nameof(C):
+                case nameof(D):
                     return EdmType.String;
-                case "E":
+
+                case nameof(E):
                     return EdmType.Int32;
-                case "Double":
-                case "DoubleNan":
-                case "DoubleInf":
-                case "DoubleNegInf":
-                    return EdmType.Double;
-                case "Int32":
-                    return EdmType.Int32;
-                case "Int64":
-                    return EdmType.Int64;
-                case "Guid":
-                    return EdmType.Guid;
-                case "DateTime":
-                    return EdmType.DateTime;
-                case "True":
-                case "False": return EdmType.Boolean;
-                case "Binary":
+
+                case nameof(BooleanNull):
+                case nameof(BooleanNullWithFalse):
+                case nameof(BooleanNullWithTrue):
+                case nameof(BooleanFalse):
+                case nameof(BooleanTrue):
+                    return EdmType.Boolean;
+
+                case nameof(Binary):
                     return EdmType.Binary;
+
+                case nameof(DateTime):
+                case nameof(DateTimeNullWithValue):
+                case nameof(DateTimeOffset):
+                case nameof(DateTimeOffsetNullWithValue):
+                    return EdmType.DateTime;
+
+                case nameof(Double):
+                case nameof(DoubleEpsilon):
+                case nameof(DoubleNan):
+                case nameof(DoubleNegativeInfinity):
+                case nameof(DoubleNullWithNan):
+                case nameof(DoubleNullWithNegativeInfinity):
+                case nameof(DoubleNullWithPositiveInfinity):
+                case nameof(DoubleNullWithValue):
+                case nameof(DoublePositiveInfinity):
+                    return EdmType.Double;
+
+                case nameof(Guid):
+                case nameof(GuidNullWithValue):
+                    return EdmType.Guid;
+
+                case nameof(Int32):
+                case nameof(Int32NullWithValue):
+                    return EdmType.Int32;
+
+                case nameof(Int64):
+                case nameof(Int64NullWithValue):
+                    return EdmType.Int64;
+
+                case nameof(String):
+                    return EdmType.String;
             }
             
             Assert.Fail("Unexpected property name");
+
             return default(EdmType); // never reached
         }
     }

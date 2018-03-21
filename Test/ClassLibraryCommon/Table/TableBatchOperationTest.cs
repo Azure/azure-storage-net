@@ -2367,7 +2367,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string pk = Guid.NewGuid().ToString();
             for (int m = 0; m < n; m++)
             {
-                batch.Insert(new BaseEntity(pk, Guid.NewGuid().ToString()), true);
+                var entity = new BaseEntity(pk, Guid.NewGuid().ToString());
+                entity.Populate();
+                batch.Insert(entity, true);
             }
 
             IList<TableResult> results = currentTable.ExecuteBatch(batch);

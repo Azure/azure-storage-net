@@ -457,6 +457,7 @@ byte[] input)
             {
                 if (!this.IsNull)
                 {
+                    // We have to special case these post-9.0, since they may be missing EdmType data at the server, and inferred as String
                     if (this.PropertyAsObject is string)
                     {
                         switch ((string)this.PropertyAsObject)
@@ -914,7 +915,7 @@ byte[] input)
         /// Ensures that the given type matches the type of this entity
         /// property; throws an exception if the types do not match.
         /// </summary>
-        private void EnforceType(EdmType requestedType, params object[] exceptValues)
+        private void EnforceType(EdmType requestedType)
         {
             if (this.PropertyType != requestedType)
             {

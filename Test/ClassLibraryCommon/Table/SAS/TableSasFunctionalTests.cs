@@ -102,7 +102,10 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             {
                 table.Create();
 
-                table.Execute(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+
+                table.Execute(TableOperation.Insert(entity));
 
                 TablePermissions expectedPermissions;
                 TablePermissions testPermissions;
@@ -215,7 +218,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 TablePermissions expected = new TablePermissions();
                 TablePermissions actual = table.GetPermissionsAsync().Result;
@@ -243,7 +248,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 TablePermissions expected = new TablePermissions();
                 TablePermissions actual = table.GetPermissionsAsync(cancellationToken).Result;
@@ -272,7 +279,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 TablePermissions expected = new TablePermissions();
                 TablePermissions actual = table.GetPermissionsAsync(requestOptions, operationContext).Result;
@@ -302,7 +311,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 TablePermissions expected = new TablePermissions();
                 TablePermissions actual = table.GetPermissionsAsync(requestOptions, operationContext, cancellationToken).Result;
@@ -337,7 +348,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 table.SetPermissionsAsync(permissions);
             }
@@ -371,7 +386,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 table.SetPermissionsAsync(permissions, cancellationToken);
             }
@@ -406,7 +423,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 table.SetPermissionsAsync(permissions, requestOptions, operationContext);
             }
@@ -442,7 +461,9 @@ namespace Microsoft.WindowsAzure.Storage.Table.SAS
             try
             {
                 table.CreateAsync().Wait();
-                table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK"))).Wait();
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.ExecuteAsync(TableOperation.Insert(entity)).Wait();
 
                 table.SetPermissionsAsync(permissions, requestOptions, operationContext, cancellationToken);
             }
