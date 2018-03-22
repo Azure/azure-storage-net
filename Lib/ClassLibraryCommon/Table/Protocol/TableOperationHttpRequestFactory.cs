@@ -193,7 +193,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     }
                     else
                     {
-                        propertyDictionary[kvp.Key] = Convert.ToString(kvp.Value, System.Globalization.CultureInfo.InvariantCulture);
+                        propertyDictionary[kvp.Key] = kvp.Value;
                     }
 
                     propertyDictionary[kvp.Key + Constants.OdataTypeString] = Constants.EdmDouble;
