@@ -1764,7 +1764,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// operation context. This operation marks the retrieved messages as invisible in the queue for the default 
         /// visibility timeout period. 
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1785,7 +1785,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to get messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -1800,7 +1800,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1835,7 +1835,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to get messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount)
@@ -1846,7 +1846,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to get messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -1860,7 +1860,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1876,7 +1876,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -2000,7 +2000,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Peeks a message from the queue, using the specified request options and operation context. A peek request retrieves a message from the queue without changing its visibility. 
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of <see cref="CloudQueueMessage"/> objects.</returns>
@@ -2020,7 +2020,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -2033,7 +2033,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -2067,7 +2067,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount)
@@ -2078,7 +2078,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
@@ -2090,7 +2090,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
@@ -2103,7 +2103,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
