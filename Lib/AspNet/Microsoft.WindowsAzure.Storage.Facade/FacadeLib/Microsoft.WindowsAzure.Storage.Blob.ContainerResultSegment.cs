@@ -12,8 +12,7 @@ public class ContainerResultSegment
     {
         get; private set;
     }
-
-    internal ContainerResultSegment(IEnumerable<CloudBlobContainer> containers, BlobContinuationToken continuationToken)
+    public ContainerResultSegment(IEnumerable<CloudBlobContainer> containers, BlobContinuationToken continuationToken)
     {
         throw new System.NotImplementedException();
     }

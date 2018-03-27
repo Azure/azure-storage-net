@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-            CloudAppendBlob blob2 = new CloudAppendBlob(blob.StorageUri, null, null);
+            CloudAppendBlob blob2 = new CloudAppendBlob(blob.StorageUri, null, credentials: null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
             Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);

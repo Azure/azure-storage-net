@@ -15,6 +15,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System.Threading.Tasks;
+
 namespace Microsoft.WindowsAzure.Storage.Core
 {
     /// <summary>
@@ -26,6 +28,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
         /// Represents a no-return from a task.
         /// </summary>
         internal static readonly NullType Value = new NullType();
+
+        /// <summary>
+        /// Represents a no-return from a task.
+        /// </summary>
+        internal static readonly Task<NullType> ValueTask = Task.FromResult(Value);
 
         /// <summary>
         /// Prevents a default instance of the <see cref="NullType"/> class from being created.

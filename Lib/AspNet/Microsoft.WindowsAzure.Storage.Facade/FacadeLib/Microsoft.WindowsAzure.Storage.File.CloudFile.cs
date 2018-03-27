@@ -112,7 +112,7 @@ public class CloudFile : IListFileItem
         }
     }
 
-    public string Name
+    public virtual string Name
     {
         get; private set;
     }

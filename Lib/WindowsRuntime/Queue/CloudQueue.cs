@@ -30,6 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Threading;
+    using System.Globalization;
 #if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -73,11 +74,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.CreateQueueImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -113,44 +114,43 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise <c>false</c>.</returns>
         /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
-        public virtual Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
+            try
             {
-                try
+                await this.CreateAsync(modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NoContent)
                 {
-                    await this.CreateAsync(modifiedOptions, operationContext, cancellationToken);
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NoContent)
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
+                {
+                    StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+#pragma warning disable 618
+                    if ((extendedInfo == null) ||
+                        (extendedInfo.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists))
+#pragma warning restore 618
                     {
                         return false;
-                    }
-
-                    return true;
-                }
-                catch (Exception)
-                {
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Conflict)
-                    {
-                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                        if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
                     }
                     else
                     {
                         throw;
                     }
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -188,11 +188,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.DeleteQueueImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -225,55 +225,54 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns><c>true</c> if the queue already existed and was deleted; otherwise, <c>false</c>.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () =>
+            try
             {
-                try
+                bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                if (!exists)
                 {
-                    bool exists = await this.ExistsAsync(modifiedOptions, operationContext, cancellationToken);
-                    if (!exists)
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
+            }
+
+            try
+            {
+                await this.DeleteAsync(modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (Exception)
+            {
+                if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
+                    if ((extendedInfo == null) ||
+#pragma warning disable 618
+                        (extendedInfo.ErrorCode == QueueErrorCodeStrings.QueueNotFound))
+#pragma warning restore 618
                     {
                         return false;
-                    }
-                }
-                catch (StorageException e)
-                {
-                    if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
-                    {
-                        throw;
-                    }
-                }
-
-                try
-                {
-                    await this.DeleteAsync(modifiedOptions, operationContext, cancellationToken);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    if (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                    {
-                        StorageExtendedErrorInformation extendedInfo = operationContext.LastResult.ExtendedErrorInformation;
-                        if ((extendedInfo == null) ||
-                            (extendedInfo.ErrorCode == QueueErrorCodeStrings.QueueNotFound))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            throw;
-                        }
                     }
                     else
                     {
                         throw;
                     }
                 }
-            }, cancellationToken);
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -314,11 +313,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetPermissionsImpl(permissions, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -356,11 +355,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.GetPermissionsImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -411,11 +410,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.ExistsImpl(modifiedOptions, primaryOnly),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -453,11 +452,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
-               this.FetchAttributesImpl(modifiedOptions),
+            return Executor.ExecuteAsyncNullReturn(
+                this.FetchAttributesImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -495,11 +494,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.SetMetadataImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -549,11 +548,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.AddMessageImpl(message, timeToLive, initialVisibilityDelay, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -600,11 +599,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.UpdateMessageImpl(message, visibilityTimeout, updateFields, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -672,11 +671,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.DeleteMessageImpl(messageId, popReceipt, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -719,11 +718,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.GetMessagesImpl(messageCount, visibilityTimeout, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -763,11 +762,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.GetMessageImpl(visibilityTimeout, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -808,11 +807,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.PeekMessagesImpl(messageCount, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -850,11 +849,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.PeekMessageImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -892,11 +891,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            return Task.Run(async () => await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.ClearImpl(modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken), cancellationToken);
+                cancellationToken);
         }
 
         /// <summary>
@@ -1083,12 +1082,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 this.GetMessageCountAndMetadataFromResponse(resp);
-                return Task<QueuePermissions>.Factory.StartNew(() =>
-                {
-                    QueuePermissions queueAcl = new QueuePermissions();
-                    QueueHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, queueAcl);
-                    return queueAcl;
-                });
+                QueuePermissions queueAcl = new QueuePermissions();
+                QueueHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, queueAcl);
+                return Task.FromResult(queueAcl);
             };
 
             return getCmd;
@@ -1105,18 +1101,32 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <returns>A <see cref="RESTCommand"/> that sets the permissions.</returns>
         private RESTCommand<NullType> AddMessageImpl(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options)
         {
-            int? timeToLiveInSeconds = null;
+            long? timeToLiveInSeconds = null;
             int? initialVisibilityDelayInSeconds = null;
 
             if (timeToLive.HasValue)
             {
-                CommonUtility.AssertInBounds("timeToLive", timeToLive.Value, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
-                timeToLiveInSeconds = (int)timeToLive.Value.TotalSeconds;
+                if (timeToLive.Value.Equals(TimeSpan.FromSeconds(-1)) || timeToLive.Value >= TimeSpan.Zero)
+                {
+                    timeToLiveInSeconds = (long)timeToLive.Value.TotalSeconds;
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException("timeToLive", string.Format(CultureInfo.InvariantCulture, SR.ArgumentOutOfRangeError, timeToLive));
+                }
             }
 
             if (initialVisibilityDelay.HasValue)
             {
-                CommonUtility.AssertInBounds("initialVisibilityDelay", initialVisibilityDelay.Value, TimeSpan.Zero, timeToLive ?? CloudQueueMessage.MaxTimeToLive);
+                // If ttl is null, it will default to 7 days (MaxVisibilityTimeout) on the service
+                TimeSpan? effectiveTtl = timeToLive ?? CloudQueueMessage.MaxVisibilityTimeout;
+
+                // Ensures the visibilityTimeout is less than the max allowed and strictly less than the TTL
+                TimeSpan visibilityUpperBound = ((effectiveTtl.Value < TimeSpan.Zero) ||
+                    (effectiveTtl.Value.Add(TimeSpan.FromSeconds(-1)) > CloudQueueMessage.MaxVisibilityTimeout)) ?
+                    CloudQueueMessage.MaxVisibilityTimeout : effectiveTtl.Value.Add(TimeSpan.FromSeconds(-1));
+                CommonUtility.AssertInBounds("initialVisibilityDelay", initialVisibilityDelay.Value, TimeSpan.Zero, visibilityUpperBound);
+
                 initialVisibilityDelayInSeconds = (int)initialVisibilityDelay.Value.TotalSeconds;
             }
 
@@ -1134,12 +1144,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
             putCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
-                {
-                    GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
-                    CopyMessage(message, messageResponse.Messages.ToList().First());
-                    return NullType.Value;
-                });
+                GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
+                CopyMessage(message, messageResponse.Messages.ToList().First());
+                return NullType.ValueTask;
             };
 
             return putCmd;
@@ -1158,7 +1165,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             CommonUtility.AssertNotNull("message", message);
             CommonUtility.AssertNotNullOrEmpty("messageId", message.Id);
             CommonUtility.AssertNotNullOrEmpty("popReceipt", message.PopReceipt);
-            CommonUtility.AssertInBounds("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxTimeToLive);
+            CommonUtility.AssertInBounds("visibilityTimeout", visibilityTimeout, TimeSpan.Zero, CloudQueueMessage.MaxVisibilityTimeout);
 
             if ((updateFields & MessageUpdateFields.Visibility) == 0)
             {
@@ -1227,14 +1234,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
-                {
-                    GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
+                GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
 
-                    IEnumerable<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item)).ToList();
+                IEnumerable<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item)).ToList();
 
-                    return messagesList;
-                });
+                return Task.FromResult(messagesList);
             };
 
             return getCmd;
@@ -1257,21 +1261,18 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
-                {
-                    GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
+                GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
 
-                    IEnumerable<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item)).ToList();
+                IEnumerable<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item)).ToList();
 
-                    return messagesList;
-                });
+                return Task.FromResult(messagesList);
             };
 
             return getCmd;
         }
 
         /// <summary>
-        /// Implementation for the GetPermissions method.
+        /// Implementation for the GetMessage method.
         /// </summary>
         /// <param name="visibilityTimeout">The visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
@@ -1286,18 +1287,15 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
+                using (IEnumerator<QueueMessage> enumerator = new GetMessagesResponse(cmd.ResponseStream).Messages.GetEnumerator())
                 {
-                    using (IEnumerator<QueueMessage> enumerator = new GetMessagesResponse(cmd.ResponseStream).Messages.GetEnumerator())
+                    if (enumerator.MoveNext())
                     {
-                        if (enumerator.MoveNext())
-                        {
-                            return SelectGetMessageResponse(enumerator.Current);
-                        }
+                        return Task.FromResult(SelectGetMessageResponse(enumerator.Current));
                     }
+                }
 
-                    return null;
-                });
+                return Null;
             };
 
             return getCmd;
@@ -1318,22 +1316,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
-                return Task.Factory.StartNew(() =>
+                using (IEnumerator<QueueMessage> enumerator = new GetMessagesResponse(cmd.ResponseStream).Messages.GetEnumerator())
                 {
-                    using (IEnumerator<QueueMessage> enumerator = new GetMessagesResponse(cmd.ResponseStream).Messages.GetEnumerator())
+                    if (enumerator.MoveNext())
                     {
-                        if (enumerator.MoveNext())
-                        {
-                            return SelectPeekMessageResponse(enumerator.Current);
-                        }
+                        return Task.FromResult(SelectPeekMessageResponse(enumerator.Current));
                     }
+                }
 
-                    return null;
-                });
+                return Null;
             };
 
             return getCmd;
         }
+
+        private static readonly Task<CloudQueueMessage> Null = Task.FromResult(default(CloudQueueMessage));
 
         /// <summary>
         /// Gets the ApproximateMessageCount and metadata from response.

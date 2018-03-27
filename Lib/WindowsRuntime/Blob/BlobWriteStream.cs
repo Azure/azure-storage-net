@@ -158,7 +158,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 if (bytesToWrite == maxBytesToWrite)
                 {
-                    await this.DispatchWriteAsync();
+                    await this.DispatchWriteAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -188,7 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
             }
 
-            await this.DispatchWriteAsync();
+            await this.DispatchWriteAsync().ConfigureAwait(false);
             await Task.Run(() => this.noPendingWritesEvent.Wait(), cancellationToken);
 
             if (this.lastException != null)
@@ -225,7 +225,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A task that represents the asynchronous commit operation.</returns>
         public override async Task CommitAsync()
         {
-            await this.FlushAsync();
+            await this.FlushAsync().ConfigureAwait(false);
             this.committed = true;
 
             try
@@ -237,14 +237,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         this.blockBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
                     }
 
-                    await this.blockBlob.PutBlockListAsync(this.blockList, this.accessCondition, this.options, this.operationContext);
+                    await this.blockBlob.PutBlockListAsync(this.blockList, this.accessCondition, this.options, this.operationContext).ConfigureAwait(false);
                 }
                 else
                 {
                     if (this.blobMD5 != null)
                     {
                         this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
-                        await this.Blob.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext);
+                        await this.Blob.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext).ConfigureAwait(false);
                     }
                 }
             }
@@ -282,7 +282,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 string blockId = this.GetCurrentBlockId();
                 this.blockList.Add(blockId);
-                await this.WriteBlockAsync(bufferToUpload, blockId, bufferMD5);
+                await this.WriteBlockAsync(bufferToUpload, blockId, bufferMD5).ConfigureAwait(false);
             }
             else if (this.pageBlob != null)
             {
@@ -294,7 +294,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 long offset = this.currentBlobOffset;
                 this.currentBlobOffset += bufferToUpload.Length;
-                await this.WritePagesAsync(bufferToUpload, offset, bufferMD5);
+                await this.WritePagesAsync(bufferToUpload, offset, bufferMD5).ConfigureAwait(false);
             }
             else
             {
@@ -310,7 +310,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw this.lastException;
                 }
 
-                await this.WriteAppendBlockAsync(bufferToUpload, offset, bufferMD5);
+                await this.WriteAppendBlockAsync(bufferToUpload, offset, bufferMD5).ConfigureAwait(false);
             }
         }
 
@@ -324,7 +324,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private async Task WriteBlockAsync(Stream blockData, string blockId, string blockMD5)
         {
             this.noPendingWritesEvent.Increment();
-            await this.parallelOperationSemaphore.WaitAsync();
+            await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
             Task putBlockTask = this.blockBlob.PutBlockAsync(blockId, blockData, blockMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(task =>
             {
                 if (task.Exception != null)
@@ -347,7 +347,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private async Task WritePagesAsync(Stream pageData, long offset, string contentMD5)
         {
             this.noPendingWritesEvent.Increment();
-            await this.parallelOperationSemaphore.WaitAsync();
+            await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
             Task writePagesTask = this.pageBlob.WritePagesAsync(pageData, offset, contentMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(task =>
             {
                 if (task.Exception != null)
@@ -372,7 +372,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private async Task WriteAppendBlockAsync(Stream blockData, long offset, string blockMD5)
         {
             this.noPendingWritesEvent.Increment();
-            await this.parallelOperationSemaphore.WaitAsync();
+            await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
 
             this.accessCondition.IfAppendPositionEqual = offset;
 
@@ -385,9 +385,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         && this.operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
                     {
                         StorageExtendedErrorInformation extendedInfo = this.operationContext.LastResult.ExtendedErrorInformation;
+#pragma warning disable 618
                         if (extendedInfo != null 
                             && (extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition || extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidMaxBlobSizeCondition)
                             && (this.operationContext.RequestResults.Count - previousResultsCount > 1))
+#pragma warning restore 618
                         {
                             // Pre-condition failure on a retry should be ignored in a single writer scenario since the request
                             // succeeded in the first attempt.

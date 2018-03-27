@@ -24,6 +24,8 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage.Core.Util;
+using System.Threading;
 
 #if NETCORE
 using System.Security.Cryptography;
@@ -305,7 +307,52 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+#if NETCORE
+        [TestMethod]
+        [Description("Verify setting the properties of a blob with spacial characters such as '<' and getting them")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobSetPropertiesSpecialCharactersAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
 
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                await CreateForTestAsync(blob, 1, 1024);
+                string eTag = blob.Properties.ETag;
+                DateTimeOffset lastModified = blob.Properties.LastModified.Value;
+
+                await Task.Delay(1000);
+
+                blob.Properties.CacheControl = "no-trans>form";
+                blob.Properties.ContentDisposition = "a<ttachment";
+                blob.Properties.ContentEncoding = "gzi<p";
+                blob.Properties.ContentLanguage = "tr,en>";
+                blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                blob.Properties.ContentType = "text</html";
+                await blob.SetPropertiesAsync();
+                Assert.IsTrue(blob.Properties.LastModified > lastModified);
+                Assert.AreNotEqual(eTag, blob.Properties.ETag);
+
+                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
+                await blob2.FetchAttributesAsync();
+                Assert.AreEqual("no-trans>form", blob2.Properties.CacheControl);
+                Assert.AreEqual("a<ttachment", blob2.Properties.ContentDisposition);
+                Assert.AreEqual("gzi<p", blob2.Properties.ContentEncoding);
+                Assert.AreEqual("tr,en>", blob2.Properties.ContentLanguage);
+                Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
+                Assert.AreEqual("text</html", blob2.Properties.ContentType);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+#endif
         [TestMethod]
         [Description("Try retrieving properties of a block blob using a page blob reference")]
         [TestCategory(ComponentCategory.Blob)]
@@ -701,6 +748,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobUploadFromStreamWithSeekableStreamAsyncWithProgress()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            await container.CreateAsync();
+            try
+            {
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 0, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 1024, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 0, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 1024, true);
+            }
+            finally
+            {
+                container.DeleteAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlockBlobUploadFromStreamAsync()
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -956,7 +1026,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private async Task CloudBlockBlobUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool testMd5)
+        private async Task CloudBlockBlobUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool testMd5, bool trackProgress = false)
         {
             byte[] buffer = GetRandomBuffer(size);
 
@@ -1016,18 +1086,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.FetchAttributesAsync();
                     Assert.AreEqual(md5, blob.Properties.ContentMD5);
                 }
+#if !WINDOWS_RT
+                if (!trackProgress)
 
-                using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())
                 {
-                    await blob.DownloadToStreamAsync(downloadedBlobStream);
-                    Assert.AreEqual(copyLength ?? originalBlobStream.Length, downloadedBlobStream.UnderlyingStream.Length);
-                    TestHelper.AssertStreamsAreEqualAtIndex(
-                        originalBlobStream,
-                        downloadedBlobStream.UnderlyingStream,
-                        0,
-                        0,
-                        copyLength.HasValue ? (int)copyLength : (int)originalBlobStream.Length);
+#endif
+                    using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())
+                    {
+                        await blob.DownloadToStreamAsync(downloadedBlobStream);
+                        Assert.AreEqual(copyLength ?? originalBlobStream.Length, downloadedBlobStream.UnderlyingStream.Length);
+                        TestHelper.AssertStreamsAreEqualAtIndex(
+                            originalBlobStream,
+                            downloadedBlobStream.UnderlyingStream,
+                            0,
+                            0,
+                            copyLength.HasValue ? (int)copyLength : (int)originalBlobStream.Length);
+                    }
+#if !WINDOWS_RT
                 }
+
+                else
+                {
+                    List<StorageProgress> progressList = new List<StorageProgress>();
+
+                    using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())
+                    {
+                        CancellationToken cancellationToken = new CancellationToken();
+                        IProgress<StorageProgress> progressHandler = new Progress<StorageProgress>(progress => progressList.Add(progress));
+
+                        await blob.DownloadToStreamAsync(downloadedBlobStream, null, null, null, progressHandler, cancellationToken);
+
+                        Assert.IsTrue(progressList.Count > 2, "Too few progress received");
+
+                        StorageProgress lastProgress = progressList.Last();
+
+                        Assert.AreEqual(downloadedBlobStream.Length, lastProgress.BytesTransferred, "Final progress has unexpected value");
+                    }
+                }
+#endif
             }
         }
 

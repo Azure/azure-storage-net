@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             CloudPageBlob blob = container.GetPageBlobReference("blob1");
-            CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, null);
+            CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, credentials: null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
             Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);
@@ -815,12 +815,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 TestHelper.ExpectedException(
-                    () => blob.Create(-1),
-                    "Creating a page blob with size<0 should fail",
-                    HttpStatusCode.BadRequest);
+                () => blob.Create(-1),
+                "Creating a page blob with size<0 should fail",
+                HttpStatusCode.BadRequest);
                 TestHelper.ExpectedException(
                     () => blob.Create(1L * 1024 * 1024 * 1024 * 1024 + 1),
-                    "Creating a page blob with size>1TB should fail",
+                    "Creating a page blob with size > 1TB should fail",
                     HttpStatusCode.BadRequest);
             }
             finally

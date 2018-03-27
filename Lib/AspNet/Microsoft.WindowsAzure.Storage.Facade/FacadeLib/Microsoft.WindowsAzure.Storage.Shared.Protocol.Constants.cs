@@ -11,9 +11,11 @@ internal static class Constants
     public const int MaxSharedAccessPolicyIdentifiers = 5;
     public const int DefaultWriteBlockSizeBytes = 4194304;
     public const int DefaultSubStreamBufferSize = 4194304;
+    public const long DefaultParallelDownloadRangeSizeBytes = 16777216;
     public const long MaxSingleUploadBlobSize = 268435456;
     public const int MaxBlockSize = 104857600;
     public const int MaxAppendBlockSize = 4194304;
+    public const int MaxIdleTimeMs = 120000;
     public const int MaxRangeGetContentMD5Size = 4194304;
     public const long MaxBlockNumber = 50000;
     public const long MaxBlobSize = 5242880000000;
@@ -75,6 +77,9 @@ internal static class Constants
     public const string CopyStatusDescriptionElement = "CopyStatusDescription";
     public const string IncrementalCopy = "IncrementalCopy";
     public const string CopyDestinationSnapshotElement = "CopyDestinationSnapshot";
+    public const string DeletedElement = "Deleted";
+    public const string DeletedTimeElement = "DeletedTime";
+    public const string RemainingRetentionDaysElement = "RemainingRetentionDays";
     public const string PageBlobValue = "PageBlob";
     public const string BlockBlobValue = "BlockBlob";
     public const string AppendBlobValue = "AppendBlob";
@@ -101,6 +106,8 @@ internal static class Constants
     public const string GeoLiveValue = "live";
     public const string GeoBootstrapValue = "bootstrap";
     public const string AccessTierElement = "AccessTier";
+    public const string AccessTierInferred = "AccessTierInferred";
+    public const string AccessTierChangeTimeElement = "AccessTierChangeTime";
     public const string ArchiveStatusElement = "ArchiveStatus";
     public const string BlobTypeElement = "BlobType";
     public const string LeaseStatusElement = "LeaseStatus";
@@ -249,7 +256,7 @@ internal static class Constants
         public const string TableEncryptionKeyDetails = "_ClientEncryptionMetadata1";
         public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
         public const string AgentMetadataKey = "EncryptionLibrary";
-        public const string AgentMetadataValue = ".NET 8.7.0";
+        public const string AgentMetadataValue = ".NET 9.1.0";
     }
 }
 

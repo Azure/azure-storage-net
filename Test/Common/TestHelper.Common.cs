@@ -501,7 +501,7 @@ namespace Microsoft.WindowsAzure.Storage
             else
             {
                 Assert.IsNull(propsA.Logging);
-                Assert.IsNull(propsA.Logging);
+                Assert.IsNull(propsB.Logging);
             }
 
             if (propsA.HourMetrics != null && propsB.HourMetrics != null)
@@ -569,6 +569,17 @@ namespace Microsoft.WindowsAzure.Storage
             {
                 Assert.IsNull(propsA.Cors);
                 Assert.IsNull(propsB.Cors);
+            }
+
+            if (propsA.DeleteRetentionPolicy != null && propsB.DeleteRetentionPolicy != null)
+            {
+                Assert.AreEqual(propsA.DeleteRetentionPolicy.Enabled, propsB.DeleteRetentionPolicy.Enabled);
+                Assert.AreEqual(propsA.DeleteRetentionPolicy.RetentionDays, propsB.DeleteRetentionPolicy.RetentionDays);
+            }
+            else
+            {
+                Assert.IsNull(propsA.DeleteRetentionPolicy);
+                Assert.IsNull(propsB.DeleteRetentionPolicy);
             }
         }
 

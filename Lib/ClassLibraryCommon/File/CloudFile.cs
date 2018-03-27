@@ -178,7 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Opens a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
-        /// <param name="size">The size of the file, in bytes. If <c>null</c>, the file must already exist.</param>
+        /// <param name="size">The size of the file to create, in bytes, or null.  If null, the file must already exist.  If not null, a new file of the given size will be created.  If size is not null but the file already exists on the service, the already-existing file will be deleted.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -218,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Begins an asynchronous operation to open a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
-        /// <param name="size">The size of the file, in bytes. If <c>null</c>, the file must already exist.</param>
+        /// <param name="size">The size of the file to create, in bytes, or null.  If null, the file must already exist.  If not null, a new file of the given size will be created.  If size is not null but the file already exists on the service, the already-existing file will be deleted.</param>
         /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Begins an asynchronous operation to open a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
-        /// <param name="size">The size of the file, in bytes. If <c>null</c>, the file must already exist.</param>
+        /// <param name="size">The size of the file to create, in bytes, or null.  If null, the file must already exist.  If not null, a new file of the given size will be created.  If size is not null but the file already exists on the service, the already-existing file will be deleted.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -334,7 +334,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Returns a task that performs an asynchronous operation to open a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
-        /// <param name="size">The size of the file, in bytes. If <c>null</c>, the file must already exist.</param>
+        /// <param name="size">The size of the file to create, in bytes, or null.  If null, the file must already exist.  If not null, a new file of the given size will be created.  If size is not null but the file already exists on the service, the already-existing file will be deleted.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
         public virtual Task<CloudFileStream> OpenWriteAsync(long? size)
@@ -345,7 +345,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Returns a task that performs an asynchronous operation to open a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
-        /// <param name="size">The size of the file, in bytes. If <c>null</c>, the file must already exist.</param>
+        /// <param name="size">The size of the file to create, in bytes, or null.  If null, the file must already exist.  If not null, a new file of the given size will be created.  If size is not null but the file already exists on the service, the already-existing file will be deleted.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
@@ -357,7 +357,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Returns a task that performs an asynchronous operation to open a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
-        /// <param name="size">The size of the file, in bytes. If <c>null</c>, the file must already exist.</param>
+        /// <param name="size">The size of the file to create, in bytes, or null.  If null, the file must already exist.  If not null, a new file of the given size will be created.  If size is not null but the file already exists on the service, the already-existing file will be deleted.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -371,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <summary>
         /// Returns a task that performs an asynchronous operation to open a stream for writing to the file. If the file already exists, then existing data in the file may be overwritten.
         /// </summary>
-        /// <param name="size">The size of the file, in bytes. If <c>null</c>, the file must already exist.</param>
+        /// <param name="size">The size of the file to create, in bytes, or null.  If null, the file must already exist.  If not null, a new file of the given size will be created.  If size is not null but the file already exists on the service, the already-existing file will be deleted.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>

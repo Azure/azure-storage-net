@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="content">The contents of the HTTP request message.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage AddMessage(Uri uri, int? timeout, int? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage AddMessage(Uri uri, int? timeout, long? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
 

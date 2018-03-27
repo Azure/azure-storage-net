@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
             using (MemoryStream srcStream = new MemoryStream(buffer))
             {
-                blob.UploadFromStream(srcStream);
+                blob.UploadFromStream(srcStream);               
                 byte[] testBuffer = new byte[2048];
                 MemoryStream dstStream = new MemoryStream(testBuffer);
                 blob.DownloadRangeToStream(dstStream, null, null);
@@ -2443,9 +2443,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             )
             where T : ICloudBlob
         {
-            byte[] uploadBuffer = GetRandomBuffer(2 * 1024 * 1024);
-
-            T uploadBlob = blobFactory();
             byte[] buffer = GetRandomBuffer(2 * 1024 * 1024);
 
             T blob = blobFactory();
