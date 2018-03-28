@@ -30,6 +30,11 @@ namespace Microsoft.WindowsAzure.Storage
         /// <summary>
         /// Signs HTTP requests using the Shared Key authentication scheme.
         /// </summary>
-        SharedKey
+        SharedKey,
+
+        /// <summary>
+        /// Signs HTTPS requests using the Bearer Token authentication scheme.
+        /// </summary>
+        Token
     }
 }

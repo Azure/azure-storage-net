@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="Auth\Protocol\StorageAuthenticationHttpHandler.cs" />
     <Compile Include="Auth\Protocol\StorageAuthenticationHttpHandler.SharedKey.cs" />
+    <Compile Include="Auth\Protocol\StorageAuthenticationHttpHandler.Token.cs" />
     <Compile Include="Blob\BlobReadStream.cs" />
     <Compile Include="Blob\BlobReadStreamHelper.cs" />
     <Compile Include="Blob\BlobWriteStream.cs" />

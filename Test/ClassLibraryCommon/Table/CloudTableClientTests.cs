@@ -26,6 +26,7 @@ using System.Text;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace Microsoft.WindowsAzure.Storage.Table
 {
@@ -150,6 +151,36 @@ namespace Microsoft.WindowsAzure.Storage.Table
             CloudTableClient tableClient2 = new CloudTableClient(baseAddressUri, null);
             Assert.IsTrue(tableClient2.BaseUri.ToString().Contains(TestBase.TargetTenantConfig.TableServiceEndpoint));
             Assert.AreEqual(AuthenticationScheme.SharedKey, tableClient2.AuthenticationScheme);
+        }
+
+        #endregion
+
+        #region OAuth test
+
+        [TestMethod]
+        [Description("Create a service client with token")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudTableClientWithToken()
+        {
+            TokenCredential token = new TokenCredential(TestBase.GenerateOAuthToken());
+            StorageCredentials credentials = new StorageCredentials(token);
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.TableServiceEndpoint);
+
+            CloudTableClient client = new CloudTableClient(baseAddressUri, credentials);
+            CloudTable table = client.GetTableReference("Testy");
+
+            try
+            {
+                table.Exists();
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(InvalidOperationException));
+            }
         }
 
         #endregion

@@ -83,6 +83,32 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Create a service client with token")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileClientWithToken()
+        {
+            TokenCredential token = new TokenCredential(TestBase.GenerateOAuthToken());
+            StorageCredentials credentials = new StorageCredentials(token);
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint);
+
+            CloudFileClient client = new CloudFileClient(baseAddressUri, credentials);
+            CloudFileShare share = client.GetShareReference("share");
+
+            try
+            {
+                share.Exists();
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsInstanceOfType(ex, typeof(InvalidOperationException));
+            }
+        }
+
+        [TestMethod]
         [Description("Compare service client properties of file objects")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

@@ -26,6 +26,7 @@ using System;
 using System.Linq;
 
 #if WINDOWS_DESKTOP
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.ServiceModel.Channels;
 #else
@@ -72,6 +73,22 @@ namespace Microsoft.WindowsAzure.Storage
         public static MockBufferManager TableBufferManager = new MockBufferManager(64 * (int)Constants.KB);
 
         public static MockBufferManager QueueBufferManager = new MockBufferManager((int)Constants.KB);
+#endif
+
+#if WINDOWS_DESKTOP
+        public static string GenerateOAuthToken()
+        {
+            string authority = string.Format("https://login.microsoftonline.com/{0}/oauth2/token", 
+                TestBase.TargetTenantConfig.ActiveDirectoryTenantId);
+
+            ClientCredential credential = new ClientCredential(TestBase.TargetTenantConfig.ActiveDirectoryApplicationId, 
+                TestBase.TargetTenantConfig.ActiveDirectoryApplicationSecret);
+
+            AuthenticationContext context = new AuthenticationContext(authority);
+            AuthenticationResult result = context.AcquireTokenAsync("https://storage.azure.com", credential).Result;
+
+            return result.AccessToken;
+        }
 #endif
 
         public static CloudTableClient GenerateCloudTableClient()

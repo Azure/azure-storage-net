@@ -56,7 +56,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 { 
                     RetryPolicy = new ExponentialRetry()
                 };
-            this.AuthenticationScheme = AuthenticationScheme.SharedKey;
+            this.AuthenticationScheme = this.Credentials.IsToken ? AuthenticationScheme.Token : AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
         }
 
