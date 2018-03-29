@@ -200,7 +200,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"Property: {property}");
                     switch (entityProperty.PropertyType)
                     {
                         case EdmType.String:

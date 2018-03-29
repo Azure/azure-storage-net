@@ -165,56 +165,56 @@ namespace Microsoft.WindowsAzure.Storage.Table.Entities
         {
             switch (propName)
             {
-                case nameof(foo):
-                case nameof(A):
-                case nameof(B):
-                case nameof(C):
-                case nameof(D):
+                case "foo":
+                case "A":
+                case "B":
+                case "C":
+                case "D":
                     return EdmType.String;
 
-                case nameof(E):
+                case "E":
                     return EdmType.Int32;
 
-                case nameof(BooleanNull):
-                case nameof(BooleanNullWithFalse):
-                case nameof(BooleanNullWithTrue):
-                case nameof(BooleanFalse):
-                case nameof(BooleanTrue):
+                case "BooleanNull":
+                case "BooleanNullWithFalse":
+                case "BooleanNullWithTrue":
+                case "BooleanFalse":
+                case "BooleanTrue":
                     return EdmType.Boolean;
 
-                case nameof(Binary):
+                case "Binary":
                     return EdmType.Binary;
 
-                case nameof(DateTime):
-                case nameof(DateTimeNullWithValue):
-                case nameof(DateTimeOffset):
-                case nameof(DateTimeOffsetNullWithValue):
+                case "DateTime":
+                case "DateTimeNullWithValue":
+                case "DateTimeOffset":
+                case "DateTimeOffsetNullWithValue":
                     return EdmType.DateTime;
 
-                case nameof(Double):
-                case nameof(DoubleEpsilon):
-                case nameof(DoubleNan):
-                case nameof(DoubleNegativeInfinity):
-                case nameof(DoubleNullWithNan):
-                case nameof(DoubleNullWithNegativeInfinity):
-                case nameof(DoubleNullWithPositiveInfinity):
-                case nameof(DoubleNullWithValue):
-                case nameof(DoublePositiveInfinity):
+                case "Double":
+                case "DoubleEpsilon":
+                case "DoubleNan":
+                case "DoubleNegativeInfinity":
+                case "DoubleNullWithNan":
+                case "DoubleNullWithNegativeInfinity":
+                case "DoubleNullWithPositiveInfinity":
+                case "DoubleNullWithValue":
+                case "DoublePositiveInfinity":
                     return EdmType.Double;
 
-                case nameof(Guid):
-                case nameof(GuidNullWithValue):
+                case "Guid":
+                case "GuidNullWithValue":
                     return EdmType.Guid;
 
-                case nameof(Int32):
-                case nameof(Int32NullWithValue):
+                case "Int32":
+                case "Int32NullWithValue":
                     return EdmType.Int32;
 
-                case nameof(Int64):
-                case nameof(Int64NullWithValue):
+                case "Int64":
+                case "Int64NullWithValue":
                     return EdmType.Int64;
 
-                case nameof(String):
+                case "String":
                     return EdmType.String;
             }
             

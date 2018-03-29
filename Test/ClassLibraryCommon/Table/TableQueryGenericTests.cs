@@ -530,45 +530,45 @@ namespace Microsoft.WindowsAzure.Storage.Table
             BaseEntity entity = new BaseEntity(partitionKey, rowKey);
             entity.ETag = etag;
             entity.foo = properties["foo"].StringValue;
-            entity.A = properties[nameof(entity.A)].StringValue;
-            entity.B = properties[nameof(entity.B)].StringValue;
-            entity.C = properties[nameof(entity.C)].StringValue;
-            entity.D = properties[nameof(entity.D)].StringValue;
-            entity.E = properties[nameof(entity.E)].Int32Value.Value;
+            entity.A = properties["A"].StringValue;
+            entity.B = properties["B"].StringValue;
+            entity.C = properties["C"].StringValue;
+            entity.D = properties["D"].StringValue;
+            entity.E = properties["E"].Int32Value.Value;
 
-            entity.Binary = properties[nameof(entity.Binary)].BinaryValue;
+            entity.Binary = properties["Binary"].BinaryValue;
 
-            entity.Double = properties[nameof(entity.Double)].DoubleValue.Value;
-            entity.DoubleEpsilon = properties[nameof(entity.DoubleEpsilon)].DoubleValue.Value;
-            entity.DoubleNan = properties[nameof(entity.DoubleNan)].DoubleValue.Value;
-            entity.DoublePositiveInfinity = properties[nameof(entity.DoublePositiveInfinity)].DoubleValue.Value;
-            entity.DoubleNegativeInfinity = properties[nameof(entity.DoubleNegativeInfinity)].DoubleValue.Value;
-            entity.DoubleNullWithValue = properties[nameof(entity.DoubleNullWithValue)].DoubleValue.Value;
-            entity.DoubleNullWithNan = properties[nameof(entity.DoubleNullWithNan)].DoubleValue.Value;
-            entity.DoubleNullWithPositiveInfinity = properties[nameof(entity.DoubleNullWithPositiveInfinity)].DoubleValue.Value;
-            entity.DoubleNullWithNegativeInfinity = properties[nameof(entity.DoubleNullWithNegativeInfinity)].DoubleValue.Value;
+            entity.Double = properties["Double"].DoubleValue.Value;
+            entity.DoubleEpsilon = properties["DoubleEpsilon"].DoubleValue.Value;
+            entity.DoubleNan = properties["DoubleNan"].DoubleValue.Value;
+            entity.DoublePositiveInfinity = properties["DoublePositiveInfinity"].DoubleValue.Value;
+            entity.DoubleNegativeInfinity = properties["DoubleNegativeInfinity"].DoubleValue.Value;
+            entity.DoubleNullWithValue = properties["DoubleNullWithValue"].DoubleValue.Value;
+            entity.DoubleNullWithNan = properties["DoubleNullWithNan"].DoubleValue.Value;
+            entity.DoubleNullWithPositiveInfinity = properties["DoubleNullWithPositiveInfinity"].DoubleValue.Value;
+            entity.DoubleNullWithNegativeInfinity = properties["DoubleNullWithNegativeInfinity"].DoubleValue.Value;
 
-            entity.String = properties[nameof(entity.String)].StringValue;
+            entity.String = properties["String"].StringValue;
 
-            entity.Int32 = properties[nameof(entity.Int32)].Int32Value.Value;
-            entity.Int32NullWithValue = properties[nameof(entity.Int32NullWithValue)].Int32Value.Value;
+            entity.Int32 = properties["Int32"].Int32Value.Value;
+            entity.Int32NullWithValue = properties["Int32NullWithValue"].Int32Value.Value;
 
-            entity.Int64 = properties[nameof(entity.Int64)].Int64Value.Value;
-            entity.Int64NullWithValue = properties[nameof(entity.Int64NullWithValue)].Int64Value.Value;
+            entity.Int64 = properties["Int64"].Int64Value.Value;
+            entity.Int64NullWithValue = properties["Int64NullWithValue"].Int64Value.Value;
 
-            entity.DateTime = properties[nameof(entity.DateTime)].DateTime.Value;
-            entity.DateTimeNullWithValue = properties[nameof(entity.DateTimeNullWithValue)].DateTime.Value;
-            entity.DateTimeOffset = properties[nameof(entity.DateTimeOffset)].DateTime.Value;
+            entity.DateTime = properties["DateTime"].DateTime.Value;
+            entity.DateTimeNullWithValue = properties["DateTimeNullWithValue"].DateTime.Value;
+            entity.DateTimeOffset = properties["DateTimeOffset"].DateTime.Value;
 
-            entity.DateTimeOffsetNullWithValue = properties[nameof(entity.DateTimeOffsetNullWithValue)].DateTimeOffsetValue.Value;
+            entity.DateTimeOffsetNullWithValue = properties["DateTimeOffsetNullWithValue"].DateTimeOffsetValue.Value;
 
-            entity.Guid = properties[nameof(entity.Guid)].GuidValue.Value;
-            entity.GuidNullWithValue = properties[nameof(entity.GuidNullWithValue)].GuidValue.Value;
+            entity.Guid = properties["Guid"].GuidValue.Value;
+            entity.GuidNullWithValue = properties["GuidNullWithValue"].GuidValue.Value;
 
-            entity.BooleanTrue = properties[nameof(entity.BooleanTrue)].BooleanValue.Value;
-            entity.BooleanFalse = properties[nameof(entity.BooleanFalse)].BooleanValue.Value;
-            entity.BooleanNullWithTrue = properties[nameof(entity.BooleanNullWithTrue)].BooleanValue.Value;
-            entity.BooleanNullWithFalse = properties[nameof(entity.BooleanNullWithFalse)].BooleanValue.Value;
+            entity.BooleanTrue = properties["BooleanTrue"].BooleanValue.Value;
+            entity.BooleanFalse = properties["BooleanFalse"].BooleanValue.Value;
+            entity.BooleanNullWithTrue = properties["BooleanNullWithTrue"].BooleanValue.Value;
+            entity.BooleanNullWithFalse = properties["BooleanNullWithFalse"].BooleanValue.Value;
 
             return entity;
         };
