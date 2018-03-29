@@ -200,10 +200,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 }
                 else
                 {
+                    System.Diagnostics.Debug.WriteLine($"Property: {property}");
                     switch (entityProperty.PropertyType)
                     {
                         case EdmType.String:
-                            if (property.PropertyType != typeof(string))
+                            if (property.PropertyType == typeof(double) || property.PropertyType == typeof(double?))
+                            {
+                                property.SetValue(entity, entityProperty.DoubleValue, null);
+                            }
+                            else if (property.PropertyType != typeof(string))
                             {
                                 continue;
                             }

@@ -196,7 +196,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #else
             TableQuery query = new TableQuery();
             TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query,
-               (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk) { foo = "bar", A = "a", B = "b", C = "c", D = "d", E = 1234 }, null, null, opContext);
+                (pk, rk, ts, prop, etag) => 
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    entity.foo = "bar";
+                    entity.A = "a";
+                    entity.B = "b";
+                    entity.C = "c";
+                    entity.D = "d";
+                    entity.E = 1234;
+                    return entity;
+                }, null, null, opContext);
 #endif
 
             int count = 0;
@@ -213,7 +224,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             seg = await currentTable.ExecuteQuerySegmentedAsync(query, seg.ContinuationToken, null, opContext);
 #else
             seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query,
-                (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk) { foo = "bar", A = "a", B = "b", C = "c", D = "d", E = 1234 },
+                (pk, rk, ts, prop, etag) => 
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    entity.foo = "bar";
+                    entity.A = "a";
+                    entity.B = "b";
+                    entity.C = "c";
+                    entity.D = "d";
+                    entity.E = 1234;
+                    return entity;
+                },
                 seg.ContinuationToken, null, opContext);
 #endif
 
@@ -356,7 +378,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             foreach (BaseEntity ent in ExecuteQuery(currentTable, query,
-                (pk, rk, ts, prop, etag) => new BaseEntity() { PartitionKey = pk, RowKey = rk, Timestamp = ts, A = prop["A"].StringValue, C = prop["C"].StringValue, ETag = etag }))
+                (pk, rk, ts, prop, etag) =>
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    entity.Timestamp = ts;
+                    entity.A = prop["A"].StringValue;
+                    entity.C = prop["C"].StringValue;
+                    entity.ETag = etag;
+                    return entity;
+                }))
             {
                 Assert.IsNotNull(ent.PartitionKey);
                 Assert.IsNotNull(ent.RowKey);
@@ -377,7 +408,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
 
             foreach (BaseEntity ent in ExecuteQuery(currentTable, query,
-                (pk, rk, ts, prop, etag) => new BaseEntity() { PartitionKey = pk, RowKey = rk, Timestamp = ts, A = prop["A"].StringValue, C = prop["C"].StringValue, ETag = etag }))
+                (pk, rk, ts, prop, etag) =>
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    entity.Timestamp = ts;
+                    entity.A = prop["A"].StringValue;
+                    entity.C = prop["C"].StringValue;
+                    entity.ETag = etag;
+                    return entity;
+                }))
             {
                 Assert.IsNotNull(ent.PartitionKey);
                 Assert.IsNotNull(ent.RowKey);
@@ -406,7 +446,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(ent, "ac");
             }
             foreach (BaseEntity ent in ExecuteQueryWithResolver(currentTable, query,
-                            (pk, rk, ts, prop, etag) => new BaseEntity() { PartitionKey = pk, RowKey = rk, Timestamp = ts, A = prop["A"].StringValue, C = prop["C"].StringValue, ETag = etag }))
+                (pk, rk, ts, prop, etag) =>
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    entity.Timestamp = ts;
+                    entity.A = prop["A"].StringValue;
+                    entity.C = prop["C"].StringValue;
+                    entity.ETag = etag;
+                    return entity;
+                }))
             {
                 Assert.IsNotNull(ent.PartitionKey);
                 Assert.IsNotNull(ent.RowKey);
@@ -699,7 +748,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             while (currSeg == null || currSeg.ContinuationToken != null)
             {
-                Task<TableQuerySegment<T>> task = Task.Run(() => table.ExecuteQuerySegmentedAsync(query, currSeg != null ? currSeg.ContinuationToken : null));
+                var task = table.ExecuteQuerySegmentedAsync(query, currSeg != null ? currSeg.ContinuationToken : null);
+                task.Start();
+                //Task<TableQuerySegment<T>> task = Task.Run(() => table.ExecuteQuerySegmentedAsync(query, currSeg != null ? currSeg.ContinuationToken : null));
                 task.Wait();
                 currSeg = task.Result;
                 retList.AddRange(currSeg.Results);
@@ -717,9 +768,18 @@ namespace Microsoft.WindowsAzure.Storage.Table
             while (currSeg == null || currSeg.ContinuationToken != null)
             {
                 Task<TableQuerySegment<T>> task = Task.Run(() => table.ExecuteQuerySegmentedAsync<T>(query, 
-                    (pk, rk, tse, prop, etag) => (T) new BaseEntity(pk, rk)
-                                        { foo = prop.ContainsKey("foo") ? "bar" : null, A = prop.ContainsKey("A") ? "a" : null, B = prop.ContainsKey("B") ? "b" : null, C = prop.ContainsKey("C") ? "c" : null,
-                                           D = prop.ContainsKey("D")? "d" : null, E = prop.ContainsKey("E") ? 1234 : 0},
+                (pk, rk, ts, prop, etag) =>
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    entity.foo = prop.ContainsKey("foo") ? "bar" : null;
+                    entity.A = prop.ContainsKey("A") ? "a" : null;
+                    entity.B = prop.ContainsKey("B") ? "b" : null;
+                    entity.C = prop.ContainsKey("C") ? "c" : null;
+                    entity.D = prop.ContainsKey("D") ? "d" : null;
+                    entity.E = prop.ContainsKey("E") ? 1234 : 0;
+                    return entity;
+                },
                     currSeg != null ? currSeg.ContinuationToken : null, null, null));
 
                 task.Wait();
