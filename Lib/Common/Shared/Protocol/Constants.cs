@@ -844,10 +844,14 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
         internal const string OdataTypeString = "@odata.type";
 
-        internal const string EdmDateTime = @"Edm.DateTime";
         internal const string EdmBinary = @"Edm.Binary";
-        internal const string EdmInt64 = @"Edm.Int64";
+        internal const string EdmBoolean = @"Emd.Boolean";
+        internal const string EdmDateTime = @"Edm.DateTime";
+        internal const string EdmDouble = @"Edm.Double";
         internal const string EdmGuid = @"Edm.Guid";
+        internal const string EdmInt32 = @"Edm.Int32";
+        internal const string EdmInt64 = @"Edm.Int64";
+        internal const string EdmString = @"Edm.String";
 
         internal const string BatchBoundaryMarker = @"multipart/mixed; boundary=batch_";
         internal const string ChangesetBoundaryMarker = @"Content-Type: multipart/mixed; boundary=changeset_";

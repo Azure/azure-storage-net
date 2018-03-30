@@ -115,7 +115,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 await table.CreateAsync();
 
-                await table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+
+                await table.ExecuteAsync(TableOperation.Insert(entity));
 
                 TablePermissions expectedPermissions;
                 TablePermissions testPermissions;

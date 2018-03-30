@@ -13,6 +13,7 @@
     <AssemblyName>Microsoft.WindowsAzure.StorageRT.Test</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>
+    <LangVersion>5</LangVersion>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>Microsoft.WindowsAzure.Storage.RT.Test_TemporaryKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>C6306A6B27B4138AE1AE2ECE3AC0FF655376E964</PackageCertificateThumbprint>

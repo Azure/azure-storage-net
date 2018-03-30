@@ -118,8 +118,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
             try
             {
                 await table.CreateAsync();
+                
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
 
-                await table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                await table.ExecuteAsync(TableOperation.Insert(entity));
 
                 // Prepare SAS authentication with full permissions
                 string sasToken = table.GetSharedAccessSignature(
@@ -148,7 +151,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
 #else
-                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(),(pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(),
+                (pk, rk, ts, prop, etag) => 
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    return entity;
+                }
+                , null)).Results.Count());
 #endif
 
                 // SAS via account constructor
@@ -159,7 +169,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
 #else
-                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(), (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(), 
+                (pk, rk, ts, prop, etag) => 
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    return entity;
+                }, null)).Results.Count());
 #endif
 
                 // SAS via client constructor URI + Creds
@@ -168,7 +184,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
 #else
-                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(), (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(),
+                (pk, rk, ts, prop, etag) => 
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    return entity;
+                }, null)).Results.Count());
 #endif
 
                 // SAS via CloudTable constructor Uri + Client
@@ -178,7 +200,13 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #if !FACADE_NETCORE
                 Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync(new TableQuery<BaseEntity>(), null)).Results.Count());
 #else
-                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(), (pk, rk, ts, prop, etag) => new BaseEntity(pk, rk), null)).Results.Count());
+                Assert.AreEqual(1, (await sasTable.ExecuteQuerySegmentedAsync<BaseEntity>(new TableQuery(),
+                (pk, rk, ts, prop, etag) => 
+                {
+                    var entity = new BaseEntity(pk, rk);
+                    entity.Populate();
+                    return entity;
+                }, null)).Results.Count());
 #endif
             }
             finally
@@ -206,7 +234,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 await table.CreateAsync();
 
-                await table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+
+                await table.ExecuteAsync(TableOperation.Insert(entity));
 
                 TablePermissions expectedPermissions = new TablePermissions();
                 TablePermissions testPermissions = await table.GetPermissionsAsync();
@@ -247,7 +278,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 await table.CreateAsync();
 
-                await table.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+
+                await table.ExecuteAsync(TableOperation.Insert(entity));
 
                 TablePermissions expectedPermissions = new TablePermissions();
 
@@ -881,6 +915,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // if we expect a success for creation - avoid inserting duplicate entities
             BaseEntity tableEntity = new BaseEntity(partitionKey, rowKey);
+            tableEntity.Populate();
             if (expectedStatusCode == HttpStatusCode.Created)
             {
                 try
@@ -1066,6 +1101,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 await table.CreateAsync();
 
                 BaseEntity entity = new BaseEntity("PK", "RK");
+                entity.Populate();
                 await table.ExecuteAsync(TableOperation.Insert(entity));
 
                 SharedAccessTablePolicy policy = new SharedAccessTablePolicy()
@@ -1079,8 +1115,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 StorageCredentials creds = new StorageCredentials(sasToken);
                 CloudTable sasTable = new CloudTable(table.Uri, creds);
                 OperationContext context = new OperationContext();
+                var entity2 = new BaseEntity("PK", "RK2");
+                entity2.Populate();
                 await TestHelper.ExpectedExceptionAsync(
-                    async () => await sasTable.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK2")), null, context),
+                    async () => await sasTable.ExecuteAsync(TableOperation.Insert(entity2), null, context),
                     context,
                     "Try to insert an entity when SAS doesn't allow inserts",
                     HttpStatusCode.Forbidden);
@@ -1099,7 +1137,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 sasTable = new CloudTable(table.Uri, creds);
 
-                await sasTable.ExecuteAsync(TableOperation.Insert(new BaseEntity("PK", "RK2")));
+                var entity3 = new BaseEntity("PK", "RK2");
+                entity3.Populate();
+                await sasTable.ExecuteAsync(TableOperation.Insert(entity3));
 
             }
             finally
@@ -1126,7 +1166,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 await table.CreateAsync();
 
                 BaseEntity entity = new BaseEntity("PK", "RK");
+                entity.Populate();
                 BaseEntity entity1 = new BaseEntity("PK", "RK1");
+                entity1.Populate();
                 await table.ExecuteAsync(TableOperation.Insert(entity));
                 await table.ExecuteAsync(TableOperation.Insert(entity1));
 
