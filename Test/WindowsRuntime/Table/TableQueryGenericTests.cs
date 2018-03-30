@@ -158,7 +158,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             tableClient.DefaultRequestOptions.PayloadFormat = format;
 #if !FACADE_NETCORE
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "tables_batch_1"));
-            TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, resolver, null);
+            TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, fullResolver, null);
 #else
             TableQuery query = new TableQuery().Where(TableQuery.GenerateFilterCondition("PartitionKey", "eq", "tables_batch_1"));
             TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query, null, null);
@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             OperationContext opContext = new OperationContext();
 #if !FACADE_NETCORE
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, resolver, null, null, opContext);
+            TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync(query, fullResolver, null, null, opContext);
 #else
             TableQuery query = new TableQuery();
             TableQuerySegment<BaseEntity> seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query, resolver, null, null, opContext);
@@ -209,7 +209,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             // Second segment
             Assert.IsNotNull(seg.ContinuationToken);
 #if !FACADE_NETCORE
-            seg = await currentTable.ExecuteQuerySegmentedAsync(query, resolver, seg.ContinuationToken, null, opContext);
+            seg = await currentTable.ExecuteQuerySegmentedAsync(query, fullResolver, seg.ContinuationToken, null, opContext);
 #else
             seg = await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query, resolver, seg.ContinuationToken, null, opContext);
 #endif
@@ -344,16 +344,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericWithResolver()
         {
-            EntityResolver<BaseEntity> entityResolver =
-                (pk, rk, ts, prop, etag) =>
-                    new BaseEntity(pk, rk)
-                    {
-                        ETag = etag,
-                        Timestamp = ts,
-                        A = prop["A"].StringValue,
-                        C = prop["C"].StringValue
-                    };
-
 #if !FACADE_NETCORE
             TableQuery<TableEntity> query = new TableQuery<TableEntity>().Select(new List<string>() { "A", "C" });
 
@@ -362,7 +352,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(ent, "ac");
             }
 
-            foreach (BaseEntity ent in ExecuteQuery(currentTable, query, entityResolver))
+            foreach (BaseEntity ent in ExecuteQuery(currentTable, query, acResolver))
             {
                 Assert.IsNotNull(ent.PartitionKey);
                 Assert.IsNotNull(ent.RowKey);
@@ -397,7 +387,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #endif
         }
 
-        static EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
+        static EntityResolver<BaseEntity> acResolver =
+                (pk, rk, ts, prop, etag) =>
+                    new BaseEntity(pk, rk)
+                    {
+                        ETag = etag,
+                        Timestamp = ts,
+                        A = prop["A"].StringValue,
+                        C = prop["C"].StringValue
+                    };
+
+        static EntityResolver<BaseEntity> fullResolver = (partitionKey, rowKey, timestamp, properties, etag) =>
         {
             BaseEntity entity = new BaseEntity(partitionKey, rowKey);
             entity.ETag = etag;
@@ -458,7 +458,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 Assert.AreEqual(ent, "ac");
             }
-            foreach (BaseEntity ent in ExecuteQueryWithResolver(currentTable, query, resolver))
+            foreach (BaseEntity ent in ExecuteQueryWithResolver(currentTable, query, acResolver))
             {
                 Assert.IsNotNull(ent.PartitionKey);
                 Assert.IsNotNull(ent.RowKey);
