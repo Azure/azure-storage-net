@@ -22,14 +22,12 @@ namespace Microsoft.WindowsAzure.Storage.Table
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Table.Entities;
     using Newtonsoft.Json;
-    using Protocol;
     using Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -1474,7 +1472,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 if (entityIndex % 2 == 0)
                 {
                     // Assert that it's encrypted with the correct key
-                    EncryptionData encryptionData = JsonConvert.DeserializeObject<EncryptionData>(dte[Constants.EncryptionConstants.TableEncryptionKeyDetails].StringValue, DefaultSerializerSettings.Create());
+                    EncryptionData encryptionData = JsonConvert.DeserializeObject<EncryptionData>(dte[Constants.EncryptionConstants.TableEncryptionKeyDetails].StringValue);
                     if (entityIndex % 3 == 0)
                     {
                         Assert.AreEqual(aesKey2.Kid, encryptionData.WrappedContentKey.KeyId);

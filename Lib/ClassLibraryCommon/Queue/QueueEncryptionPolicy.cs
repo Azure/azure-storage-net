@@ -96,7 +96,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 }
 
                 encryptedMessage.EncryptionData = encryptionData;
-                return JsonConvert.SerializeObject(encryptedMessage, DefaultSerializerSettings.Create());
+                return JsonConvert.SerializeObject(encryptedMessage);
             }
         }
 

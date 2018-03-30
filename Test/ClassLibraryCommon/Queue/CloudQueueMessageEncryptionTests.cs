@@ -20,7 +20,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Core;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Core;
     using Newtonsoft.Json;
     using System;
     using System.Security.Cryptography;
@@ -339,7 +338,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 // Decrypt locally
                 CloudQueueMessage decryptedMessage;
-                CloudQueueEncryptedMessage encryptedMessage = JsonConvert.DeserializeObject<CloudQueueEncryptedMessage>(retrMessage.AsString, DefaultSerializerSettings.Create());
+                CloudQueueEncryptedMessage encryptedMessage = JsonConvert.DeserializeObject<CloudQueueEncryptedMessage>(retrMessage.AsString);
                 EncryptionData encryptionData = encryptedMessage.EncryptionData;
 
                 byte[] contentEncryptionKey = aesKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;

@@ -547,7 +547,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
                 {
                     string metadata = blob.Metadata[Constants.EncryptionConstants.BlobEncryptionData];
-                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata, DefaultSerializerSettings.Create());
+                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata);
                     myAes.IV = encryptionData.ContentEncryptionIV;
                     myAes.Key = aesKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
 
@@ -615,7 +615,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (AesCryptoServiceProvider myAes = new AesCryptoServiceProvider())
                 {
                     string metadata = blob.Metadata[Constants.EncryptionConstants.BlobEncryptionData];
-                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata, DefaultSerializerSettings.Create());
+                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(metadata);
                     myAes.IV = encryptionData.ContentEncryptionIV;
                     myAes.Key = aesKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result;
 

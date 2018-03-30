@@ -94,7 +94,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 if (encryptionDataString != null)
                 {
-                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString, DefaultSerializerSettings.Create());
+                    BlobEncryptionData encryptionData = JsonConvert.DeserializeObject<BlobEncryptionData>(encryptionDataString);
 
                     CommonUtility.AssertNotNull("ContentEncryptionIV", encryptionData.ContentEncryptionIV);
                     CommonUtility.AssertNotNull("EncryptedKey", encryptionData.WrappedContentKey.EncryptedKey);
@@ -243,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 encryptionData.KeyWrappingMetadata = new Dictionary<string, string>();
                 encryptionData.KeyWrappingMetadata[Constants.EncryptionConstants.AgentMetadataKey] = Constants.EncryptionConstants.AgentMetadataValue;
                 encryptionData.ContentEncryptionIV = aesProvider.IV;
-                metadata[Constants.EncryptionConstants.BlobEncryptionData] = JsonConvert.SerializeObject(encryptionData, DefaultSerializerSettings.Create());
+                metadata[Constants.EncryptionConstants.BlobEncryptionData] = JsonConvert.SerializeObject(encryptionData, Formatting.None);
                 return aesProvider.CreateEncryptor();
             }
         }
