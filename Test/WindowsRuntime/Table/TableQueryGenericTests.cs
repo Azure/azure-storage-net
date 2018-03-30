@@ -344,6 +344,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void TableGenericWithResolver()
         {
+            EntityResolver<BaseEntity> entityResolver =
+                (pk, rk, ts, prop, etag) =>
+                    new BaseEntity(pk, rk)
+                    {
+                        ETag = etag,
+                        Timestamp = ts,
+                        A = prop["A"].StringValue,
+                        C = prop["C"].StringValue
+                    };
+
 #if !FACADE_NETCORE
             TableQuery<TableEntity> query = new TableQuery<TableEntity>().Select(new List<string>() { "A", "C" });
 
@@ -352,7 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(ent, "ac");
             }
 
-            foreach (BaseEntity ent in ExecuteQuery(currentTable, query, resolver))
+            foreach (BaseEntity ent in ExecuteQuery(currentTable, query, entityResolver))
             {
                 Assert.IsNotNull(ent.PartitionKey);
                 Assert.IsNotNull(ent.RowKey);
@@ -372,7 +382,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 Assert.AreEqual(ent, "ac");
             }
 
-            foreach (BaseEntity ent in ExecuteQuery(currentTable, query, resolver))
+            foreach (BaseEntity ent in ExecuteQuery(currentTable, query, entityResolver))
             {
                 Assert.IsNotNull(ent.PartitionKey);
                 Assert.IsNotNull(ent.RowKey);
