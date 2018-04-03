@@ -112,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             try
             {
-                CloudQueueEncryptedMessage encryptedMessage = JsonConvert.DeserializeObject<CloudQueueEncryptedMessage>(inputMessage, DefaultSerializerSettings.Create());
+                CloudQueueEncryptedMessage encryptedMessage = JsonConvert.DeserializeObject<CloudQueueEncryptedMessage>(inputMessage);
 
                 if (requireEncryption.HasValue && requireEncryption.Value && encryptedMessage.EncryptionData == null)
                 {
