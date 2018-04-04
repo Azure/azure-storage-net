@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Net;
 
     /// <summary>
     /// Represents the context for a request operation against the storage service, and provides additional runtime information about its execution.
@@ -39,6 +40,13 @@ namespace Microsoft.WindowsAzure.Storage
             this.ClientRequestID = Guid.NewGuid().ToString();
             this.LogLevel = OperationContext.DefaultLogLevel;
         }
+
+#if !WINDOWS_PHONE && !NETCORE
+        /// <summary>
+        /// Gets or sets proxy information for the request.
+        /// </summary>
+        public IWebProxy Proxy { get; set; }
+#endif
 
         #region Headers
 
@@ -247,7 +255,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
             }
         }
-        #endregion
 
+        #endregion
     }
 }
