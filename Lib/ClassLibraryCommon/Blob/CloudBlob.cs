@@ -4114,7 +4114,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 throw new InvalidOperationException(SR.KeyRotationNoKeyID);
             }
-
+            
             // Use the key resolver to resolve the old KEK.
             Azure.KeyVault.Core.IKey oldKey = await modifiedOptions.EncryptionPolicy.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, cancellationToken).ConfigureAwait(false);
             if (oldKey == null)

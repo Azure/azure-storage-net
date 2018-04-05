@@ -20,11 +20,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Core;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Core;
     using Newtonsoft.Json;
     using System;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
 
     [TestClass]

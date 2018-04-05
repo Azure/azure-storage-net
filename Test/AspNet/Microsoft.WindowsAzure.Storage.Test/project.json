@@ -1,11 +1,11 @@
 ﻿{
-    "version": "9.1.0.0",
+    "version": "9.1.1.0",
     "testRunner": "xunit",
 
     "dependencies": {
         "xunit": "2.1.0",
         "dotnet-test-xunit": "2.2.0-preview2-build1029",
-        "Microsoft.WindowsAzure.Storage": "9.1.0.0",
+        "Microsoft.WindowsAzure.Storage": "9.1.1.0",
         "XUnitForMsTest": "1.0.0-*"
     },
 

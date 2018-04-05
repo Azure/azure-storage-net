@@ -454,7 +454,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         private static Dictionary<string, object> ReadSingleItem(JToken token, out string etag)
         {
-            Dictionary<string, object> properties = token.ToObject<Dictionary<string, object>>();
+            Dictionary<string, object> properties = token.ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
 
             // Parse the etag, and remove all the "odata.*" properties we don't use.
             if (properties.ContainsKey(@"odata.etag"))
@@ -498,17 +498,29 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 string propName = typeAnnotation.Key.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries)[0];
                 switch ((string)typeAnnotation.Value)
                 {
-                    case @"Edm.DateTime":
-                        properties[propName] = DateTime.Parse((string)properties[propName], null, DateTimeStyles.AdjustToUniversal);
-                        break;
-                    case @"Edm.Binary":
+                    case Constants.EdmBinary:
                         properties[propName] = Convert.FromBase64String((string)properties[propName]);
                         break;
-                    case @"Edm.Guid":
+                    case Constants.EdmBoolean:
+                        properties[propName] = Boolean.Parse((string)properties[propName]);
+                        break;
+                    case Constants.EdmDateTime:
+                        properties[propName] = DateTime.Parse((string)properties[propName], CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+                        break;
+                    case Constants.EdmDouble:
+                        properties[propName] = Double.Parse((string)properties[propName], CultureInfo.InvariantCulture);
+                        break;
+                    case Constants.EdmGuid:
                         properties[propName] = Guid.Parse((string)properties[propName]);
                         break;
-                    case @"Edm.Int64":
+                    case Constants.EdmInt32:
+                        properties[propName] = Int32.Parse((string)properties[propName], CultureInfo.InvariantCulture);
+                        break;
+                    case Constants.EdmInt64:
                         properties[propName] = Int64.Parse((string)properties[propName], CultureInfo.InvariantCulture);
+                        break;
+                    case Constants.EdmString:
+                        properties[propName] = (string)properties[propName];
                         break;
                     default:
                         throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, SR.UnexpectedEDMType, typeAnnotation.Value));
@@ -710,7 +722,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             }
             else
             {
-                encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length));
+                encryptedPropertyDetailsSet = JsonConvert.DeserializeObject<HashSet<string>>(Encoding.UTF8.GetString(binaryVal, 0, binaryVal.Length), DefaultSerializerSettings.Create());
             }
 
             return encryptedPropertyDetailsSet;
