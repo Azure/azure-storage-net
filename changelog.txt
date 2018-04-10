@@ -1,5 +1,8 @@
 Change in 9.x:
-- Blob&Queue: Added OAuth token support for authentication.
+- All: Support for 2017-11-09 REST version.
+- Blobs: Added support for blob creation time property.
+- Blobs: Added support for blob container immutability and legal hold policies.
+- Blob/Queue: Added OAuth token support for authentication.
 
 Changes in 9.1.1:
 - Table: Updated Table related APIs to use the default Json Serializer settings.

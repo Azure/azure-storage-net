@@ -767,6 +767,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 Assert.IsTrue(container2.Exists());
                 Assert.IsNotNull(container2.Properties.ETag);
+                Assert.IsTrue(container2.Properties.HasImmutabilityPolicy.HasValue);
+                Assert.IsTrue(container2.Properties.HasLegalHold.HasValue);
+                Assert.IsFalse(container2.Properties.HasImmutabilityPolicy.Value);
+                Assert.IsFalse(container2.Properties.HasLegalHold.Value);
             }
             finally
             {
@@ -2117,6 +2121,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 foreach (IListBlobItem blobItem in results)
                 {
                     Assert.IsInstanceOfType(blobItem, typeof(CloudPageBlob));
+                    Assert.IsTrue(((CloudPageBlob)blobItem).Properties.Created.HasValue);
+                    Assert.IsTrue(((CloudPageBlob)blobItem).Properties.Created.Value > DateTime.Now.AddMinutes(-1));
                     Assert.IsTrue(blobNames.Remove(((CloudPageBlob)blobItem).Name));
                     Assert.AreEqual(RetryPolicies.LocationMode.PrimaryThenSecondary, ((CloudPageBlob)blobItem).ServiceClient.DefaultRequestOptions.LocationMode);
                 }
