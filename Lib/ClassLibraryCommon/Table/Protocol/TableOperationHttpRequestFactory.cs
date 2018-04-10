@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using Newtonsoft.Json.Serialization;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -174,10 +175,35 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                     continue;
                 }
 
+                if (kvp.Value.GetType() == typeof(Double))
+                {
+                    Double value = ((Double)kvp.Value);
+
+                    if (Double.IsNaN(value))
+                    {
+                        propertyDictionary[kvp.Key] = "NaN";
+                    }
+                    else if (Double.IsPositiveInfinity(value))
+                    {
+                        propertyDictionary[kvp.Key] = "Infinity";
+                    }
+                    else if (Double.IsNegativeInfinity(value))
+                    {
+                        propertyDictionary[kvp.Key] = "-Infinity";
+                    }
+                    else
+                    {
+                        propertyDictionary[kvp.Key] = kvp.Value;
+                    }
+
+                    propertyDictionary[kvp.Key + Constants.OdataTypeString] = Constants.EdmDouble;
+                    continue;
+                }
+
                 propertyDictionary[kvp.Key] = kvp.Value;
             }
 
-            JObject json = JObject.FromObject(propertyDictionary);
+            JObject json = JObject.FromObject(propertyDictionary, DefaultSerializer.Create());
 
             json.WriteTo(jsonWriter);
         }

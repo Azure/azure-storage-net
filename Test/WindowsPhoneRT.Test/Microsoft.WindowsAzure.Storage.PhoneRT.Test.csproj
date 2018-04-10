@@ -17,6 +17,7 @@
     <AppxBundle>Auto</AppxBundle>
     <IsTargetingWindowsPhonePlatform>true</IsTargetingWindowsPhonePlatform>
     <AllowCrossPlatformRetargeting>False</AllowCrossPlatformRetargeting>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <AppXPackage>True</AppXPackage>
