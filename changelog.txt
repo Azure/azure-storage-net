@@ -1,5 +1,6 @@
 Changes in 9.x:
 - All: Support for 2018-03-28 REST version.
+- Blob: Added support for static website properties.
 - Blob: Added support for GetAccountProperties on blobs, blob containers, and blob clients.
 
 Changes in 9.2:

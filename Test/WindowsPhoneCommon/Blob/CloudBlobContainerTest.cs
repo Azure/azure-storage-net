@@ -767,6 +767,83 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+
+        private async Task ValidateWebContainerAsync(CloudBlobContainer webContainer)
+        {
+            CloudBlockBlob blob0 = webContainer.GetBlockBlobReference("blob");
+            blob0.Properties.ContentType = @"multipart/form-data; boundary=thingz";  // Content-type is important for the $web container
+            CloudBlockBlob blob1 = webContainer.GetBlockBlobReference("blob/abcd");
+            blob1.Properties.ContentType = @"image/gif";
+            CloudBlockBlob blob2 = webContainer.GetBlockBlobReference("blob/other.html");
+            blob2.Properties.ContentType = @"text/html; charset=utf-8";
+
+            List<CloudBlockBlob> expectedBlobs = new List<CloudBlockBlob> { blob0, blob1, blob2 };
+            List<string> texts = new List<string> { "blob0text", "blbo1text", "blob2text" };
+            for (int i = 0; i < 3; i++)
+            {
+                await expectedBlobs[i].UploadTextAsync(texts[i]);
+            }
+
+            List<CloudBlob> blobs =
+                (await webContainer.ListBlobsSegmentedAsync(string.Empty, true, BlobListingDetails.All, default(int?), default(BlobContinuationToken), default(BlobRequestOptions), default(OperationContext), CancellationToken.None))
+                .Results
+                .Select(blob => (CloudBlob)blob)
+                .ToList();
+            Assert.AreEqual(expectedBlobs.Count, blobs.Count);
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.AreEqual(expectedBlobs[i].Name, blobs[i].Name);
+                Assert.AreEqual(expectedBlobs[i].Properties.ContentType, blobs[i].Properties.ContentType);
+                Assert.AreEqual(texts[i], await ((CloudBlockBlob)blobs[i]).DownloadTextAsync());
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure container operations work on the $web container.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobContainerWebContainerOperationsAsync()
+        {
+            // Test operations with shard key
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer webContainer = blobClient.GetContainerReference("$web");
+            try
+            {
+                await webContainer.DeleteIfExistsAsync();
+                Assert.IsFalse(await webContainer.ExistsAsync());
+                await TestHelper.SpinUpToNSecondsIgnoringFailuresAsync(async () => await webContainer.CreateAsync(), 120);
+                Assert.IsTrue(await webContainer.ExistsAsync());
+                Assert.IsTrue(
+                    (await blobClient.ListContainersSegmentedAsync("$", null))
+                    .Results
+                    .Any(container => container.Name == webContainer.Name)
+                    );
+
+                await ValidateWebContainerAsync(webContainer);
+
+                // Clear out the old data, faster than deleting / re-creating the container.
+                foreach (CloudBlob blob in (await webContainer.ListBlobsSegmentedAsync(string.Empty, true, BlobListingDetails.All, default(int?), default(BlobContinuationToken), default(BlobRequestOptions), default(OperationContext))).Results)
+                {
+                    await blob.DeleteAsync();
+                }
+
+                // Test relevant operations with a service SAS.
+                string webContainerSAS = webContainer.GetSharedAccessSignature(new SharedAccessBlobPolicy() { SharedAccessExpiryTime = DateTime.Now + TimeSpan.FromDays(30), Permissions = SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Delete | SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Write });
+                await ValidateWebContainerAsync(new CloudBlobContainer(new Uri(webContainer.Uri + webContainerSAS)));
+                await webContainer.DeleteAsync();
+                Assert.IsFalse(
+                    (await blobClient.ListContainersSegmentedAsync("$", null))
+                    .Results
+                    .Any(container => container.Name == webContainer.Name)
+                    );
+            }
+            finally
+            {
+                webContainer.DeleteIfExistsAsync().Wait();
+            }
+        }
         [TestMethod]
         [Description("GetAccountProperties via Blob container")]
         [TestCategory(ComponentCategory.Blob)]
