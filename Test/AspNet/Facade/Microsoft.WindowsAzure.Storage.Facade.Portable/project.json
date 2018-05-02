@@ -1,8 +1,8 @@
 ﻿{
-  "version": "9.1.1.0",
+  "version": "9.2.2.0",
   "supports": {},
   "dependencies": {
-    "WindowsAzure.Storage": "9.1.1"
+    "WindowsAzure.Storage": "9.2.2"
   },
   "frameworks": {
     ".NETPortable,Version=v4.5,Profile=Profile259": {}
