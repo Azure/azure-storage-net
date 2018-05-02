@@ -20,7 +20,9 @@ namespace Microsoft.WindowsAzure.Storage
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+#if !WINDOWS_PHONE && WINDOWS_DESKTOP
     using System.Net;
+#endif
 
     /// <summary>
     /// Represents the context for a request operation against the storage service, and provides additional runtime information about its execution.
@@ -41,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage
             this.LogLevel = OperationContext.DefaultLogLevel;
         }
 
-#if !WINDOWS_PHONE && !NETCORE
+#if !WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <summary>
         /// Gets or sets proxy information for the request.
         /// </summary>
