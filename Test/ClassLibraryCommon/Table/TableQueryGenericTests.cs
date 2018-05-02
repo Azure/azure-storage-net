@@ -112,7 +112,6 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 () =>
                 new JsonSerializerSettings
                 {
-                    ContractResolver = new DummyContractResolver(),
                     Formatting = Formatting.Indented
                 };
         }
